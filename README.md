@@ -64,8 +64,8 @@ Unreal Engine 4.17.x - Unreal Engine 4.23.x
 
 
 # Documentation
-* [Programming Guide] (UnLua_Programming_Guide_EN.md)
+* [Programming Guide](UnLua_Programming_Guide_EN.md)
 
 
 # License
-* UnLua is distributed under the terms of [the MIT license] (LICENSE.TXT)
+* UnLua is distributed under the terms of [the MIT license](LICENSE.TXT)
