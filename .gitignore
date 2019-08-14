@@ -1,0 +1,17 @@
+.vs/
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+Content/Collections/
+Content/Developers/
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+WindowsNoEditor/
+MacNoEditor/
+Android_*/
+IOS/
+*.sln
+*.VC.db
+*.xcworkspace
