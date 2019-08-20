@@ -19,7 +19,11 @@ struct TPrimitiveTypeWrapper
 {
     friend uint32 GetTypeHash(TPrimitiveTypeWrapper<T> In)
     {
+#if ENGINE_MINOR_VERSION > 22
+        static_assert(TModels<CGetTypeHashable, T>::Value, "type must support GetTypeHash()!");
+#else
         static_assert(THasGetTypeHash<T>::Value, "type must support GetTypeHash()!");
+#endif
         return GetTypeHash(In.Value);
     }
 
@@ -33,7 +37,11 @@ struct TAggregateTypeWrapper
 {
     friend uint32 GetTypeHash(const TAggregateTypeWrapper<T> &In)
     {
+#if ENGINE_MINOR_VERSION > 22
+        static_assert(TModels<CGetTypeHashable, T>::Value, "type must support GetTypeHash()!");
+#else
         static_assert(THasGetTypeHash<T>::Value, "type must support GetTypeHash()!");
+#endif
         return GetTypeHash(In.Value);
     }
 
