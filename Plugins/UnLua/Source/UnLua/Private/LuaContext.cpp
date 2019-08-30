@@ -32,6 +32,19 @@
 #include "Editor.h"
 #endif
 
+#if UE_BUILD_TEST
+#include "Tests/UnLuaPerformanceTestProxy.h"
+
+void RunPerformanceTest(UWorld *World)
+{
+    if (!World)
+    {
+        return;
+    }
+    static AActor *PerformanceTestProxy = World->SpawnActor(AUnLuaPerformanceTestProxy::StaticClass());
+}
+#endif
+
 static UUnLuaManager *SManager = nullptr;
 
 /**
@@ -190,6 +203,9 @@ void FLuaContext::CreateState()
         RegisterEObjectTypeQuery(L);
         RegisterETraceTypeQuery(L);
 
+#if UE_BUILD_TEST
+        lua_gc(L, LUA_GCSTOP, 0);
+#else
         if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
         {
             FUnLuaDelegates::ConfigureLuaGC.Execute(L);
@@ -200,6 +216,7 @@ void FLuaContext::CreateState()
             lua_gc(L, LUA_GCSETPAUSE, 100);
             lua_gc(L, LUA_GCSETSTEPMUL, 5000);
         }
+#endif
 
         // add new package path
         FString LuaSrcPath = GLuaSrcFullPath + TEXT("?.lua");
@@ -655,6 +672,10 @@ void FLuaContext::PostLoadMapWithWorld(UWorld *World)
 
     // register callback for spawning an actor
     OnActorSpawnedHandle = World->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(Manager, &UUnLuaManager::OnActorSpawned));
+
+#if UE_BUILD_TEST
+    RunPerformanceTest(World);
+#endif
 }
 
 /**
