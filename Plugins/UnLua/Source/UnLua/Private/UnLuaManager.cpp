@@ -313,22 +313,21 @@ void UUnLuaManager::PostCleanup()
         for (UObjectBaseUtility *ObjectBU : Objects)
         {
             UObject *Object = (UObject*)ObjectBU;
-            UClass *Class = Object->GetClass();
-            if (!Class->ImplementsInterface(InterfaceClass))
+            UFunction *Func = nullptr;
+            UClass *Class = GetTargetClass(Object->GetClass(), &Func);
+            if (!Class)
             {
                 continue;
             }
-            if (!RegisterClass(*GLuaCxt, Class))
+            if (!RegisterClass(*GLuaCxt, Object->GetClass()))
             {
                 continue;
             }
 
             // bind survival UObjects again...
-            UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));
-            check(Func && Func->GetNativeFunc());
+            check(Func);
             FString ModuleName;
             Object->UObject::ProcessEvent(Func, &ModuleName);    // force to invoke UObject::ProcessEvent(...)
-            Class = Func->GetOuterUClass();
             if (ModuleName.Len() < 1)
             {
                 ModuleName = Class->GetName();
@@ -410,7 +409,7 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
 #if SUPPORTS_RPC_CALL
     for (AActor *Actor : ActorsWithoutWorld)
     {
-        UClass *Class = Actor->GetClass();
+        UClass *Class = GetTargetClass(Actor->GetClass());
         FString *ModuleName = ModuleNames.Find(Class);
         check(ModuleName);
         TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleName);
@@ -486,6 +485,30 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
 void UUnLuaManager::OnLatentActionCompleted(int32 LinkID)
 {
     GLuaCxt->ResumeThread(LinkID);              // resume a coroutine
+}
+
+/**
+ * Get target UCLASS for Lua binding
+ */
+UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc)
+{
+    static UClass *InterfaceClass = UUnLuaInterface::StaticClass();
+    if (!Class || !Class->ImplementsInterface(InterfaceClass))
+    {
+        return nullptr;
+    }
+    UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));
+    if (Func && Func->GetNativeFunc())
+    {
+        if (GetModuleNameFunc)
+        {
+            *GetModuleNameFunc = Func;
+        }
+
+        UClass *OuterClass = Func->GetOuterUClass();
+        return OuterClass == InterfaceClass ? Class : OuterClass;
+    }
+    return nullptr;
 }
 
 /**

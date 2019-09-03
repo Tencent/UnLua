@@ -72,6 +72,8 @@ public:
     void TriggerAnimNotify();
 
 private:
+    UClass* GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc = nullptr);
+
     bool BindInternal(UObjectBaseUtility *Object, UClass *Class, const FString &InModuleName, bool bNewCreated);
     bool BindSurvivalObject(struct lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
     bool ConditionalUpdateClass(UClass *Class, const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions);
