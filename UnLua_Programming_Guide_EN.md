@@ -133,7 +133,8 @@ coroutine.resume(coroutine.create(function(GameMode, Duration) UKismetSystemLibr
 UnLua optimizes UFUNCTION invoking in following two points:
 
  * Persistent Parameters Buffer
- * Optimized 'ProcessEvent' （it's **disabled** for RPC calls）
+ * Optimized parameters passing
+ * Optimized output values handling
 
 ### Access USTRUCT
 ```
