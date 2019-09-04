@@ -72,6 +72,8 @@ public:
     void TriggerAnimNotify();
 
 private:
+    void OnDerivedClassBinded(UClass *DerivedClass, UClass *BaseClass);
+
     UClass* GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc = nullptr);
 
     bool BindInternal(UObjectBaseUtility *Object, UClass *Class, const FString &InModuleName, bool bNewCreated);

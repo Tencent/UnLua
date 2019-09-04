@@ -86,8 +86,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     {
         if (Object->GetClass() != Class)
         {
-            TArray<UClass*> &DerivedClasses = Base2DerivedClasses.FindOrAdd(Class);
-            DerivedClasses.AddUnique(Object->GetClass());
+            OnDerivedClassBinded(Object->GetClass(), Class);
         }
 
         GLuaCxt->AddModuleName(InModuleName);                                       // record this required module
@@ -488,6 +487,23 @@ void UUnLuaManager::OnLatentActionCompleted(int32 LinkID)
 }
 
 /**
+ * Notify that a derived class is binded to its base class
+ */
+void UUnLuaManager::OnDerivedClassBinded(UClass *DerivedClass, UClass *BaseClass)
+{
+    TArray<UClass*> &DerivedClasses = Base2DerivedClasses.FindOrAdd(BaseClass);
+    do
+    {
+        if (DerivedClasses.Find(DerivedClass) != INDEX_NONE)
+        {
+            break;
+        }
+        DerivedClasses.Add(DerivedClass);
+        DerivedClass = DerivedClass->GetSuperClass();
+    } while (DerivedClass != BaseClass);
+}
+
+/**
  * Get target UCLASS for Lua binding
  */
 UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc)
@@ -585,6 +601,12 @@ bool UUnLuaManager::BindSurvivalObject(lua_State *L, UObjectBaseUtility *Object,
     lua_pop(L, 2);
     int32 ObjectRef = luaL_ref(L, LUA_REGISTRYINDEX);
     AddAttachedObject(Object, ObjectRef);
+
+    if (Object->GetClass() != Class)
+    {
+        OnDerivedClassBinded(Object->GetClass(), Class);
+    }
+
     return true;
 }
 
