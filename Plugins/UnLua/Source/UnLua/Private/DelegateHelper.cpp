@@ -51,14 +51,14 @@ public:
 
 void FSignatureDesc::MarkForDelete()
 {
-    if (NumCalls > 0)
-    {
-        bPendingKill = true;        // raise pending kill flag if it's being called
-        return;
-    }
-    else if (NumBindings > 1)
+    if (NumBindings > 1)
     {
         --NumBindings;              // dec bindings if there is more than one bindings.
+        return;
+    }
+    else if (NumCalls > 0)
+    {
+        bPendingKill = true;        // raise pending kill flag if it's being called
         return;
     }
 
@@ -74,14 +74,8 @@ void FSignatureDesc::Execute(FFrame &Stack, void *RetValueAddress)
         --NumCalls;         // dec calls
         if (!NumCalls && bPendingKill)
         {
-            if (NumBindings == 1)
-            {
-                FDelegateHelper::CleanUpByFunction(SignatureFunctionDesc->GetFunction());       // clean up the delegate only if there is only one bindings.
-            }
-            else
-            {
-                --NumBindings;
-            }
+            check(NumBindings == 1);
+            FDelegateHelper::CleanUpByFunction(SignatureFunctionDesc->GetFunction());       // clean up the delegate only if there is only one bindings.
         }
     }
 }
