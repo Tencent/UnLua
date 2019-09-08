@@ -11,7 +11,7 @@
 * Override **Animation Notify** without helper codes.
 * Override **Input Event** without helper codes.
 * Simple solution to export classes, member variables, member functions, global functions and enums outside the reflection system statically.
-* Highly optimized **UFUNCTION** invoking (including persistent parameters buffer, optimized parameters passing, optimized output values handling).
+* Highly optimized **UFUNCTION** invoking (including persistent parameters buffer, optimized local function invoking, optimized parameters passing, optimized output values handling).
 * Optimized containers (**TArray**, **TSet**, **TMap**) accessing. There is no conversion between Lua table and containers.
 * Optimized structure accessing.
 
