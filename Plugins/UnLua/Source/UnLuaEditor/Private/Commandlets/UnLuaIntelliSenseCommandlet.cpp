@@ -57,7 +57,7 @@ int32 UUnLuaIntelliSenseCommandlet::Main(const FString &Params)
     const TArray<UnLua::IExportedFunction*> &ExportedFunctions = Context->GetExportedFunctions();
 
     FString GeneratedFileContent;
-    FString ModuleName(TEXT("StaticExports"));
+    FString ModuleName(TEXT("StaticallyExports"));
 
     // reflected classes
     for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedReflectedClasses); It; ++It)

@@ -759,7 +759,7 @@ public:
         {
             if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
             {
-                FMemory::Memcpy(ValuePtr, Value, StructSize);           // shalow copy
+                FMemory::Memcpy(ValuePtr, Value, StructSize);           // shallow copy
                 return false;
             }
             else
