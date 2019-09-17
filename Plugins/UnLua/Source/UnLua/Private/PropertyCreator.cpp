@@ -135,118 +135,127 @@ public:
     virtual FPropertyDesc* CreateEnumProperty(UEnum *Enum) override
     {
         FPropertyDesc **PropertyDescPtr = EnumPropertyDescMap.Find(Enum);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...)
-            UEnumProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UEnumProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Enum);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...)
+        UEnumProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UEnumProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Enum);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateClassProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = ClassPropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...). TSubclassOf<...>
-            UClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class, nullptr);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, ClassPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...). TSubclassOf<...>
+        UClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class, nullptr);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, ClassPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateObjectProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = ObjectPropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...)
-            UObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Class);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, ObjectPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...)
+        UObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Class);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, ObjectPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateSoftClassProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = SoftClassPropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftClassPtr<...>
-            USoftClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, SoftClassPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftClassPtr<...>
+        USoftClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, SoftClassPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateSoftObjectProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = SoftObjectPropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftObjectPtr<...>
-            USoftObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, SoftObjectPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftObjectPtr<...>
+        USoftObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, SoftObjectPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateWeakObjectProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = WeakObjectPropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...). TWeakObjectPtr<...>
-            UWeakObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UWeakObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, WeakObjectPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...). TWeakObjectPtr<...>
+        UWeakObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UWeakObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, WeakObjectPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateLazyObjectProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = LazyObjectPropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...). TLazyObjectPtr<...>
-            ULazyObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) ULazyObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, LazyObjectPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...). TLazyObjectPtr<...>
+        ULazyObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) ULazyObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, LazyObjectPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateInterfaceProperty(UClass *Class) override
     {
         FPropertyDesc **PropertyDescPtr = InterfacePropertyDescMap.Find(Class);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...). TScriptInterface<...>
-            UInterfaceProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UInterfaceProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, InterfacePropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...). TScriptInterface<...>
+        UInterfaceProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UInterfaceProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, InterfacePropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateStructProperty(UScriptStruct *Struct) override
     {
         FPropertyDesc **PropertyDescPtr = StructPropertyDescMap.Find(Struct);
-        if (!PropertyDescPtr)
+        if (PropertyDescPtr)
         {
-            // see overloaded operator new that defined in DECLARE_CLASS(...)
-            UStructProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStructProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Struct);
-            FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Struct, StructPropertyDescMap);
-            PropertyDescPtr = &PropertyDesc;
+            return *PropertyDescPtr;
         }
-        return *PropertyDescPtr;
+
+        // see overloaded operator new that defined in DECLARE_CLASS(...)
+        UStructProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStructProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Struct);
+        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Struct, StructPropertyDescMap);
+        return PropertyDesc;
     }
 
     virtual FPropertyDesc* CreateProperty(UProperty *TemplateProperty) override
