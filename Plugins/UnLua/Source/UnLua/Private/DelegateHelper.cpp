@@ -91,9 +91,14 @@ TMap<UClass*, TArray<UFunction*>> FDelegateHelper::Class2Functions;
 
 DEFINE_FUNCTION(FDelegateHelper::ProcessDelegate)
 {
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
     FSignatureDesc *SignatureDesc = nullptr;
     FMemory::Memcpy(&SignatureDesc, Stack.Code, sizeof(SignatureDesc));
     //Stack.SkipCode(sizeof(SignatureDesc));        // skip 'FSignatureDesc' pointer
+#else
+    FSignatureDesc **SignatureDescPtr = Signatures.Find(Stack.CurrentNativeFunction);   // find the signature
+    FSignatureDesc *SignatureDesc = SignatureDescPtr ? *SignatureDescPtr : nullptr;
+#endif
     if (SignatureDesc)
     {
         SignatureDesc->Execute(Stack, (void*)RESULT_PARAM);     // fire the delegate

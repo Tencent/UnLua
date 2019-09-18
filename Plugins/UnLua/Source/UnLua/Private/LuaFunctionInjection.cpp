@@ -29,7 +29,9 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
         if (Func != Stack.CurrentNativeFunction)
         {
             Func = Stack.CurrentNativeFunction;
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
             FMemory::Memcpy(&FuncDesc, &Stack.CurrentNativeFunction->Script[1], sizeof(FuncDesc));
+#endif
             bUnpackParams = true;
         }
         else
@@ -38,11 +40,15 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
         }
     }
 
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
     if (!FuncDesc)
     {
         FMemory::Memcpy(&FuncDesc, Stack.Code, sizeof(FuncDesc));
         Stack.SkipCode(sizeof(FuncDesc));       // skip 'FFunctionDesc' pointer
     }
+#else
+    FuncDesc = GReflectionRegistry.RegisterFunction(Func);
+#endif
 
     bool bRpcCall = false;
 #if SUPPORTS_RPC_CALL
@@ -204,6 +210,7 @@ void OverrideUFunction(UFunction *Function, FNativeFuncPtr NativeFunc, void *Use
     Function->SetNativeFunc(NativeFunc);
     if (Function->Script.Num() < 1)
     {
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
         if (bInsertOpcodes)
         {
             Function->Script.Add(EX_CallLua);
@@ -217,5 +224,10 @@ void OverrideUFunction(UFunction *Function, FNativeFuncPtr NativeFunc, void *Use
             int32 Index = Function->Script.AddZeroed(sizeof(Userdata));
             FMemory::Memcpy(Function->Script.GetData() + Index, &Userdata, sizeof(Userdata));
         }
+#else
+        Function->Script.Add(EX_CallLua);
+        Function->Script.Add(EX_Return);
+        Function->Script.Add(EX_Nothing);
+#endif
     }
 }
