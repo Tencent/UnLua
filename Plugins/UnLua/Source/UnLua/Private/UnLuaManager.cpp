@@ -165,22 +165,39 @@ bool UUnLuaManager::OnModuleHotfixed(const TCHAR *InModuleName)
 /**
  * Remove binded UObjects
  */
-void UUnLuaManager::RemoveAttachedObject(UObjectBaseUtility *Object)
+void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bUClass)
 {
-    lua_State *L = *GLuaCxt;
-    if (!L)
-    {
-        return;
-    }
-
-    int32 ObjectRef = LUA_REFNIL;
-    bool bSuccess = AttachedObjects.RemoveAndCopyValue(Object, ObjectRef);
-    if (bSuccess && ObjectRef != LUA_REFNIL)
-    {
-        luaL_unref(L, LUA_REGISTRYINDEX, ObjectRef);        // remove Lua reference of Lua instance (table)
-    }
     GObjectReferencer.RemoveObjectRef((UObject*)Object);
-    DeleteLuaObject(L, Object);                             // delete the Lua instance (table)
+
+    if (bUClass)
+    {
+        UClass *BaseClass = nullptr;
+        UClass *DerivedClass = (UClass*)Object;
+        if (Derived2BaseClasses.RemoveAndCopyValue(DerivedClass, BaseClass))
+        {
+            TArray<UClass*> *DerivedClasses = Base2DerivedClasses.Find(BaseClass);
+            if (DerivedClasses)
+            {
+                DerivedClasses->Remove(DerivedClass);
+            }
+        }
+    }
+    else
+    {
+        lua_State *L = *GLuaCxt;
+        if (!L)
+        {
+            return;
+        }
+
+        int32 ObjectRef = LUA_REFNIL;
+        bool bSuccess = AttachedObjects.RemoveAndCopyValue((UObjectBaseUtility*)Object, ObjectRef);
+        if (bSuccess && ObjectRef != LUA_REFNIL)
+        {
+            luaL_unref(L, LUA_REGISTRYINDEX, ObjectRef);        // remove Lua reference of Lua instance (table)
+        }
+        DeleteLuaObject(L, (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
+    }
 }
 
 /**
@@ -256,6 +273,7 @@ void UUnLuaManager::CleanupDuplicatedFunctions()
     }
     DuplicatedFunctions.Empty();
     Base2DerivedClasses.Empty();
+    Derived2BaseClasses.Empty();
 }
 
 /**
@@ -474,7 +492,7 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
     int32 Num = AttachedActors.Remove(Actor);
     if (Num > 0)
     {
-        RemoveAttachedObject(Actor);            // remove record of this actor
+        NotifyUObjectDeleted(Actor);            // remove record of this actor
     }
 }
 
@@ -498,6 +516,7 @@ void UUnLuaManager::OnDerivedClassBinded(UClass *DerivedClass, UClass *BaseClass
         {
             break;
         }
+        Derived2BaseClasses.Add(DerivedClass, BaseClass);
         DerivedClasses.Add(DerivedClass);
         DerivedClass = DerivedClass->GetSuperClass();
     } while (DerivedClass != BaseClass);

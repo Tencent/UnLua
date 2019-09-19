@@ -879,9 +879,8 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
         return;
     }
 
-    Manager->RemoveAttachedObject((UObjectBaseUtility*)InObject);
-
-    GReflectionRegistry.NotifyUObjectDeleted(InObject);
+    bool bUClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
+    Manager->NotifyUObjectDeleted(InObject, bUClass);
 
     if (CandidateInputComponents.Num() > 0)
     {

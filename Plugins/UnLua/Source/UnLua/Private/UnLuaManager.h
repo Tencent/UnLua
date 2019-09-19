@@ -31,7 +31,7 @@ public:
 
     bool OnModuleHotfixed(const TCHAR *InModuleName);
 
-    void RemoveAttachedObject(UObjectBaseUtility *Object);
+    void NotifyUObjectDeleted(const UObjectBase *Object, bool bUClass = false);
 
     void Cleanup(class UWorld *World, bool bFullCleanup);
 
@@ -110,6 +110,7 @@ private:
     TMap<UFunction*, TArray<uint8>> CachedScripts;
 
     TMap<UClass*, TArray<UClass*>> Base2DerivedClasses;
+    TMap<UClass*, UClass*> Derived2BaseClasses;
 
     TSet<FName> DefaultAxisNames;
     TSet<FName> DefaultActionNames;
