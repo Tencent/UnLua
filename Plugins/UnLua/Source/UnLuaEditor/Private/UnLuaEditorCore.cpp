@@ -57,27 +57,19 @@ bool CreateLuaTemplateFile(UBlueprint *Blueprint)
 
         UClass *Class = Blueprint->GeneratedClass;
         FString ClassName = Class->GetName();
-
-
         FString FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *ClassName);
-
         if (FPaths::FileExists(FileName))
         {
-            UE_LOG(LogUnLua, Warning, TEXT("Lua File (%s) is exist!"), *ClassName);
+            UE_LOG(LogUnLua, Warning, TEXT("Lua file (%s) is already existed!"), *ClassName);
             return false;
         }
 
-
         static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
 
-        FString Content;
-
         FString TemplateName;
-
         if (Class->IsChildOf(AActor::StaticClass()))
         {
             // default BlueprintEvents for Actor
-
             TemplateName = ContentDir + TEXT("/ActorTemplate.lua");
         }
         else if (Class->IsChildOf(UUserWidget::StaticClass()))
@@ -96,11 +88,12 @@ bool CreateLuaTemplateFile(UBlueprint *Blueprint)
             TemplateName = ContentDir + TEXT("/ActorComponentTemplate.lua");
         }
 
+        FString Content;
         FFileHelper::LoadFileToString(Content, *TemplateName);
-
         Content = Content.Replace(TEXT("TemplateName"), *ClassName);
 
         return FFileHelper::SaveStringToFile(Content, *FileName);
     }
     return false;
 }
+
