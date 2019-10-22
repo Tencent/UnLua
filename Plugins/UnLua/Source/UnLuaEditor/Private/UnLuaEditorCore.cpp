@@ -20,41 +20,11 @@
 #include "GameFramework/Actor.h"
 #include "Interfaces/IPluginManager.h"
 
-// copy dependency file to plugin's content dir
-static bool CopyDependencyFile(const TCHAR *FileName)
-{
-    static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
-    FString SrcFilePath = ContentDir / FileName;
-    FString DestFilePath = GLuaSrcFullPath / FileName;
-    bool bSuccess = IFileManager::Get().FileExists(*DestFilePath);
-    if (!bSuccess)
-    {
-        bSuccess = IFileManager::Get().FileExists(*SrcFilePath);
-        if (!bSuccess)
-        {
-            return false;
-        }
-
-        uint32 CopyResult = IFileManager::Get().Copy(*DestFilePath, *SrcFilePath, 1, true);
-        if (CopyResult != COPY_OK)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 // create Lua template file for the selected blueprint
 bool CreateLuaTemplateFile(UBlueprint *Blueprint)
 {
     if (Blueprint)
     {
-        // copy dependency file first
-        if (!CopyDependencyFile(TEXT("UnLua.lua")))
-        {
-            return false;
-        }
-
         UClass *Class = Blueprint->GeneratedClass;
         FString ClassName = Class->GetName();
         FString FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *ClassName);

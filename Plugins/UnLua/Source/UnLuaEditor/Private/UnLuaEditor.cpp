@@ -25,10 +25,36 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
+#include "Interfaces/IPluginManager.h"
+#include "Misc/FileHelper.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
 extern bool CreateLuaTemplateFile(UBlueprint *Blueprint);
+
+// copy dependency file to plugin's content dir
+static bool CopyDependencyFile(const TCHAR *FileName)
+{
+    static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
+    FString SrcFilePath = ContentDir / FileName;
+    FString DestFilePath = GLuaSrcFullPath / FileName;
+    bool bSuccess = IFileManager::Get().FileExists(*DestFilePath);
+    if (!bSuccess)
+    {
+        bSuccess = IFileManager::Get().FileExists(*SrcFilePath);
+        if (!bSuccess)
+        {
+            return false;
+        }
+
+        uint32 CopyResult = IFileManager::Get().Copy(*DestFilePath, *SrcFilePath, 1, true);
+        if (CopyResult != COPY_OK)
+        {
+            return false;
+        }
+    }
+    return true;
+}
 
 class FUnLuaEditorModule : public IModuleInterface
 {
@@ -111,6 +137,12 @@ private:
     {
         // register default key input to 'Hotfix' Lua
         FPlayWorldCommands::GlobalPlayWorldActions->MapAction(FUnLuaEditorCommands::Get().HotfixLua, FExecuteAction::CreateLambda([]() { HotfixLua(); }), FCanExecuteAction::CreateRaw(this, &FUnLuaEditorModule::CanHotfixLua));
+
+        // copy dependency files
+        bool bSuccess = CopyDependencyFile(TEXT("UnLua.lua"));
+        check(bSuccess);
+        CopyDependencyFile(TEXT("UnLuaPerformanceTestProxy.lua"));
+        check(bSuccess);
     }
 
     void AddToolbarExtension(FToolBarBuilder &ToolbarBuilder)
