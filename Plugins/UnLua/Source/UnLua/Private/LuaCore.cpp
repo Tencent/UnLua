@@ -1193,6 +1193,8 @@ static bool RegisterCollisionEnum(lua_State *L, const char *Name, lua_CFunction 
         return true;
     }
 
+    GReflectionRegistry.RegisterEnum(ANSI_TO_TCHAR(Name));
+
     lua_pop(L, 1);
     luaL_newmetatable(L, Name);
     lua_pushvalue(L, -1);
