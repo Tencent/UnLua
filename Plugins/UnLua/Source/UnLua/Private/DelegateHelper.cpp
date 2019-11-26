@@ -339,6 +339,12 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
 #endif
 
     UMulticastDelegateProperty *Property = nullptr;
+	UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
+	if (PropertyPtr)
+	{
+		Property = *PropertyPtr;
+	}
+
     FFunctionDesc *SignatureFunctionDesc = nullptr;
     FFunctionDesc **SignatureFunctionDescPtr = MulticastDelegate2Signatures.Find(InScriptDelegate);
     if (SignatureFunctionDescPtr)
@@ -347,22 +353,17 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
     }
     else
     {
-        UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
-        if (PropertyPtr)
-        {
-            Property = *PropertyPtr;
-            UFunction *SignatureFunction = Property->SignatureFunction;
-            SignatureFunctionDesc = GReflectionRegistry.RegisterFunction(SignatureFunction);
-            MulticastDelegate2Signatures.Add(InScriptDelegate, SignatureFunctionDesc);
-        }
+		UFunction *SignatureFunction = Property->SignatureFunction;
+		SignatureFunctionDesc = GReflectionRegistry.RegisterFunction(SignatureFunction);
+		MulticastDelegate2Signatures.Add(InScriptDelegate, SignatureFunctionDesc);
     }
 
-    if (SignatureFunctionDesc)
-    {
-        FMulticastScriptDelegate *ScriptDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, InScriptDelegate);  // get target delegate
-        SignatureFunctionDesc->BroadcastMulticastDelegate(L, NumParams, FirstParamIndex, ScriptDelegate);        // fire the delegate
-        return;
-    }
+	if (SignatureFunctionDesc && Property)
+	{
+		FMulticastScriptDelegate *ScriptDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, InScriptDelegate);  // get target delegate
+		SignatureFunctionDesc->BroadcastMulticastDelegate(L, NumParams, FirstParamIndex, ScriptDelegate);        // fire the delegate
+		return;
+	}
 
     UE_LOG(LogUnLua, Warning, TEXT("Failed to broadcast multicast delegate!!!"));
 }
