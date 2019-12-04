@@ -1195,7 +1195,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #endif
 
     // call the UFuncton...
-#if !SUPPORTS_RPC_CALL
+#if !SUPPORTS_RPC_CALL && !WITH_EDITOR
     if (FinalFunction->HasAnyFunctionFlags(FUNC_Native))
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
