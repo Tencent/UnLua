@@ -5,7 +5,7 @@ function _G.Index(t, k)
 	local super = mt
 	while super do
 		local v = rawget(super, k)
-		if v then
+		if v ~= nil then
 			rawset(t, k, v)
 			return v
 		end
