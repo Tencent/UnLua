@@ -79,7 +79,7 @@ static int32 UWorld_SpawnActor(lua_State *L)
             APawn *Instigator = Cast<APawn>(Actor);
             if (!Instigator)
             {
-                Instigator = Actor->Instigator;
+                Instigator = Actor->GetInstigator();
             }
             SpawnParameters.Instigator = Instigator;
         }
