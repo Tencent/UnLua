@@ -12,23 +12,36 @@ local RegisterClass = RegisterClass
 local RegisterEnum = RegisterEnum
 local print = UEPrint
 
+_NotExist = _NotExist or {}
+local NotExist = _NotExist
+
 local function Index(t, k)
 	local mt = getmetatable(t)
 	local super = mt
 	while super do
 		local v = rawget(super, k)
-		if v then
+        if v then
+            if rawequal(v, NotExist) then
+                return nil
+            end
 			rawset(t, k, v)
 			return v
 		end
 		super = rawget(super, "Super")
 	end
-	local p = mt[k]
-	if type(p) == "userdata" then
-		return GetUProperty(t, p)
-	elseif type(p) == "function" then
-		rawset(t, k, p)
-	end
+    local p = mt[k]
+
+    if p ~= nil then
+        if type(p) == "userdata" then
+            return GetUProperty(t, p)
+        elseif type(p) == "function" then
+            rawset(t, k, p)
+        elseif rawequal(p, NotExist) then
+            return nil
+        end
+    else
+        rawset(mt, k, NotExist)
+    end
 	return p
 end
 
