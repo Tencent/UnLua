@@ -331,6 +331,8 @@ namespace UnLua
         template <ESPMode Mode, typename... ArgType> void AddSharedPtrConstructor();
         template <ESPMode Mode, typename... ArgType> void AddSharedRefConstructor();
 
+        void AddStaticCFunction(const FString &InName, lua_CFunction InFunc);
+
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;
 #endif
@@ -478,6 +480,12 @@ namespace UnLua
 
 #define ADD_EXTERNAL_FUNCTION_EX(Name, RetType, Function, ...) \
             Class->AddStaticFunction<RetType, ##__VA_ARGS__>(Name, Function);
+
+#define ADD_STATIC_CFUNTION(Function) \
+            Class->AddStaticCFunction(#Function, &ClassType::Function);
+
+#define ADD_NAMED_STATIC_CFUNTION(Name, Function) \
+            Class->AddStaticCFunction(Name, &ClassType::Function);
 
 #define ADD_LIB(Lib) \
             Class->AddLib(Lib);
