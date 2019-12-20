@@ -28,12 +28,12 @@ bool CreateLuaTemplateFile(UBlueprint *Blueprint)
         UClass *Class = Blueprint->GeneratedClass;
         FString ClassName = Class->GetName();
         FString OuterPath = Class->GetPathName();
-        int lastIndex;
-        if (OuterPath.FindLastChar('/', lastIndex))
+        int32 LastIndex;
+        if (OuterPath.FindLastChar('/', LastIndex))
         {
-            OuterPath = OuterPath.Left(lastIndex + 1);
+            OuterPath = OuterPath.Left(LastIndex + 1);
         }
-        OuterPath = OuterPath.RightChop(6);
+        OuterPath = OuterPath.RightChop(6);         // ignore "/Game/"
         FString FileName = FString::Printf(TEXT("%s%s%s.lua"), *GLuaSrcFullPath, *OuterPath, *ClassName);
         if (FPaths::FileExists(FileName))
         {
