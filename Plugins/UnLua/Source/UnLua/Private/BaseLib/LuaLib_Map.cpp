@@ -25,13 +25,13 @@ static int32 TMap_New(lua_State *L)
         return 0;
     }
 
-    UnLua::ITypeInterface *KeyInterface = CreateTypeInterface(L, 2);
+    TSharedPtr<UnLua::ITypeInterface> KeyInterface(CreateTypeInterface(L, 2));
     if (!KeyInterface)
     {
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Bad key type, failed to create TMap!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
-    UnLua::ITypeInterface *ValueInterface = CreateTypeInterface(L, 3);
+    TSharedPtr<UnLua::ITypeInterface> ValueInterface(CreateTypeInterface(L, 3));
     if (!ValueInterface)
     {
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Bad value type, failed to create TMap!"), ANSI_TO_TCHAR(__FUNCTION__));

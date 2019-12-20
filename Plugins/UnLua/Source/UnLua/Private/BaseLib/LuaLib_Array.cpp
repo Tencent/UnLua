@@ -25,7 +25,7 @@ static int32 TArray_New(lua_State *L)
         return 0;
     }
 
-    UnLua::ITypeInterface *TypeInterface = CreateTypeInterface(L, 2);
+    TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
     if (!TypeInterface)
     {
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Failed to create TArray!"), ANSI_TO_TCHAR(__FUNCTION__));

@@ -25,7 +25,7 @@ public:
         OwnedBySelf,    // 'ScriptArray' is owned by self, it'll be freed in destructor
     };
 
-    FLuaArray(const FScriptArray *InScriptArray, const UnLua::ITypeInterface *InTypeInterface, EScriptArrayFlag Flag = OwnedByOther)
+    FLuaArray(const FScriptArray *InScriptArray, TSharedPtr<UnLua::ITypeInterface> InTypeInterface, EScriptArrayFlag Flag = OwnedByOther)
         : ScriptArray((FScriptArray*)InScriptArray), Inner(InTypeInterface), ElementCache(nullptr), ElementSize(Inner->GetSize()), ScriptArrayFlag(Flag)
     {
         // allocate cache for a single element
@@ -349,7 +349,7 @@ public:
     }
 
     FScriptArray *ScriptArray;
-    const UnLua::ITypeInterface *Inner;
+    TSharedPtr<UnLua::ITypeInterface> Inner;
     void *ElementCache;            // can only hold one element...
     int32 ElementSize;
     EScriptArrayFlag ScriptArrayFlag;

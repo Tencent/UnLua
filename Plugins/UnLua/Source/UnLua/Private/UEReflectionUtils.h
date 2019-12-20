@@ -46,7 +46,8 @@ class FPropertyDesc : public UnLua::ITypeInterface
 {
 public:
     static FPropertyDesc* Create(UProperty *InProperty);
-    static void Release(FPropertyDesc *PropertyDesc);
+
+    virtual ~FPropertyDesc() {}
 
     /**
      * Check the validity of this property
@@ -153,7 +154,6 @@ public:
 
 protected:
     explicit FPropertyDesc(UProperty *InProperty) : Property(InProperty) {}
-    virtual ~FPropertyDesc() {}
 
     union
     {

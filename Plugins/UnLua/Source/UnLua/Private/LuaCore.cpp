@@ -2304,7 +2304,7 @@ int32 ScriptStruct_Compare(lua_State *L)
 /**
  * Create a type interface according to Lua parameter's type
  */
-UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index)
+TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
 {
     if (Index < 0 && Index > LUA_REGISTRYINDEX)
     {
@@ -2312,7 +2312,7 @@ UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index)
         Index = Top + Index + 1;
     }
 
-    UnLua::ITypeInterface *TypeInterface = nullptr;
+    TSharedPtr<UnLua::ITypeInterface> TypeInterface;
     int32 Type = lua_type(L, Index);
     switch (Type)
     {
@@ -2690,7 +2690,7 @@ namespace UnLua
     /**
      * Push an untyped dynamic array (same memory layout with TArray)
      */
-    int32 PushArray(lua_State *L, const FScriptArray *ScriptArray, ITypeInterface *TypeInterface, bool bCreateCopy)
+    int32 PushArray(lua_State *L, const FScriptArray *ScriptArray, TSharedPtr<ITypeInterface> TypeInterface, bool bCreateCopy)
     {
         if (!L || !ScriptArray || !TypeInterface)
         {
@@ -2734,7 +2734,7 @@ namespace UnLua
     /**
      * Push an untyped set (same memory layout with TSet). see PushArray
      */
-    int32 PushSet(lua_State *L, const FScriptSet *ScriptSet, ITypeInterface *TypeInterface, bool bCreateCopy)
+    int32 PushSet(lua_State *L, const FScriptSet *ScriptSet, TSharedPtr<ITypeInterface> TypeInterface, bool bCreateCopy)
     {
         if (!L || !ScriptSet || !TypeInterface)
         {
@@ -2775,7 +2775,7 @@ namespace UnLua
     /**
      * Push an untyped map (same memory layout with TMap). see PushArray
      */
-    int32 PushMap(lua_State *L, const FScriptMap *ScriptMap, ITypeInterface *KeyInterface, ITypeInterface *ValueInterface, bool bCreateCopy)
+    int32 PushMap(lua_State *L, const FScriptMap *ScriptMap, TSharedPtr<ITypeInterface> KeyInterface, TSharedPtr<ITypeInterface> ValueInterface, bool bCreateCopy)
     {
         if (!L || !ScriptMap || !KeyInterface || !ValueInterface)
         {

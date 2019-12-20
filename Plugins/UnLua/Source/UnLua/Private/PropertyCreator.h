@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "CoreUObject.h"
+#include "UnLuaBase.h"
 
 class FPropertyDesc;
 
@@ -30,22 +29,22 @@ public:
     static IPropertyCreator& Instance();
 
     virtual void Cleanup() = 0;
-    virtual FPropertyDesc* CreateBoolProperty() = 0;
-    virtual FPropertyDesc* CreateIntProperty() = 0;
-    virtual FPropertyDesc* CreateFloatProperty() = 0;
-    virtual FPropertyDesc* CreateStringProperty() = 0;
-    virtual FPropertyDesc* CreateNameProperty() = 0;
-    virtual FPropertyDesc* CreateTextProperty() = 0;
-    virtual FPropertyDesc* CreateEnumProperty(UEnum *Enum) = 0;
-    virtual FPropertyDesc* CreateClassProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateObjectProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateSoftClassProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateSoftObjectProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateWeakObjectProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateLazyObjectProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateInterfaceProperty(UClass *Class) = 0;
-    virtual FPropertyDesc* CreateStructProperty(UScriptStruct *Struct) = 0;
-    virtual FPropertyDesc* CreateProperty(UProperty *TemplateProperty) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateBoolProperty() = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateIntProperty() = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateFloatProperty() = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateStringProperty() = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateNameProperty() = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateTextProperty() = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateEnumProperty(UEnum *Enum) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateClassProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateObjectProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateSoftClassProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateSoftObjectProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateWeakObjectProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateLazyObjectProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateInterfaceProperty(UClass *Class) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateStructProperty(UScriptStruct *Struct) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateProperty(UProperty *TemplateProperty) = 0;
 };
 
 #define GPropertyCreator IPropertyCreator::Instance()

@@ -175,7 +175,7 @@ namespace UnLua
      *
      * @return - type interface
      */
-    template <typename T> ITypeInterface* GetTypeInterface();
+    template <typename T> TSharedPtr<ITypeInterface> GetTypeInterface();
 
 
     /**

@@ -28,7 +28,7 @@ public:
         OwnedBySelf,    // 'Map' is owned by self, it'll be freed in destructor
     };
 
-    FLuaMap(const FScriptMap *InScriptMap, const UnLua::ITypeInterface *InKeyInterface, const UnLua::ITypeInterface *InValueInterface, FScriptMapFlag Flag = OwnedByOther)
+    FLuaMap(const FScriptMap *InScriptMap, TSharedPtr<UnLua::ITypeInterface> InKeyInterface, TSharedPtr<UnLua::ITypeInterface> InValueInterface, FScriptMapFlag Flag = OwnedByOther)
         : Map((FScriptMap*)InScriptMap), MapLayout(FScriptMap::GetScriptLayout(InKeyInterface->GetSize(), InKeyInterface->GetAlignment(), InValueInterface->GetSize(), InValueInterface->GetAlignment()))
         , KeyInterface(InKeyInterface), ValueInterface(InValueInterface), ElementCache(nullptr), ScriptMapFlag(Flag)
     {
@@ -68,8 +68,8 @@ public:
     FORCEINLINE void Add(const void *Key, const void *Value)
     {
         //MapHelper.AddPair(Key, Value);
-        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface;
-        const UnLua::ITypeInterface *LocalValueInterface = ValueInterface;
+        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface.Get();
+        const UnLua::ITypeInterface *LocalValueInterface = ValueInterface.Get();
         Map->Add(Key, Value, MapLayout,
             [LocalKeyInterface](const void* ElementKey) { return LocalKeyInterface->GetValueTypeHash(ElementKey); },
             [LocalKeyInterface](const void* A, const void* B) { return LocalKeyInterface->Identical(A, B); },
@@ -112,7 +112,7 @@ public:
     FORCEINLINE bool Remove(const void *Key)
     {
         //return MapHelper.RemovePair(Key);
-        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface;
+        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface.Get();
         if (uint8* Entry = Map->FindValue(Key, MapLayout,
             [LocalKeyInterface](const void* ElementKey) { return LocalKeyInterface->GetValueTypeHash(ElementKey); },
             [LocalKeyInterface](const void* A, const void* B) { return LocalKeyInterface->Identical(A, B); }
@@ -143,7 +143,7 @@ public:
         //    MapHelper.ValueProp->CopyCompleteValue(OutValue, Value);
         //    return true;
         //}
-        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface;
+        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface.Get();
         uint8 *Value = Map->FindValue(Key, MapLayout,
             [LocalKeyInterface](const void* ElementKey) { return LocalKeyInterface->GetValueTypeHash(ElementKey); },
             [LocalKeyInterface](const void* A, const void* B) { return LocalKeyInterface->Identical(A, B); }
@@ -166,7 +166,7 @@ public:
     FORCEINLINE void* Find(const void *Key)
     {
         //return MapHelper.FindValueFromHash(Key);
-        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface;
+        const UnLua::ITypeInterface *LocalKeyInterface = KeyInterface.Get();
         return Map->FindValue(Key, MapLayout,
             [LocalKeyInterface](const void* ElementKey) { return LocalKeyInterface->GetValueTypeHash(ElementKey); },
             [LocalKeyInterface](const void* A, const void* B) { return LocalKeyInterface->Identical(A, B); }
@@ -283,8 +283,7 @@ public:
         {
             FScriptArray *ScriptArray = new FScriptArray;
             //ArrayProperty->InitializeValue(ScriptArray);        // do nothing...
-            const UnLua::ITypeInterface *ArrayInner = GPropertyCreator.CreateProperty(ValueInterface->GetUProperty());
-            FLuaArray *LuaArray = new(OutArray) FLuaArray(ScriptArray, ArrayInner, FLuaArray::OwnedBySelf);
+            FLuaArray *LuaArray = new(OutArray) FLuaArray(ScriptArray, GPropertyCreator.CreateProperty(ValueInterface->GetUProperty()), FLuaArray::OwnedBySelf);
             int32 i = -1, Size = Map->Num();
             while (Size > 0)
             {
@@ -301,8 +300,8 @@ public:
 
     FScriptMap *Map;
     FScriptMapLayout MapLayout;
-    const UnLua::ITypeInterface *KeyInterface;
-    const UnLua::ITypeInterface *ValueInterface;
+    TSharedPtr<UnLua::ITypeInterface> KeyInterface;
+    TSharedPtr<UnLua::ITypeInterface> ValueInterface;
     //FScriptMapHelper MapHelper;
     void *ElementCache;             // can only hold a key-value pair
     FScriptMapFlag ScriptMapFlag;

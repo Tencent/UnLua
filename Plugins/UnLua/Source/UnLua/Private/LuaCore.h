@@ -180,4 +180,4 @@ int32 ScriptStruct_Compare(lua_State *L);
 /**
  * Create a type interface
  */
-UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index);
+TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index);

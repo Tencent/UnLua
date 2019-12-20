@@ -26,7 +26,7 @@ DEFINE_STAT(STAT_UnLua_OutParmRec_Memory);
 namespace UnLua
 {
 
-    bool AddTypeInterface(FName Name, ITypeInterface *TypeInterface)
+    bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface)
     {
         FLuaContext::Create();
         return GLuaCxt->AddTypeInterface(Name, TypeInterface);

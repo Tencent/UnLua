@@ -19,7 +19,7 @@ class FPropertyCreator : public IPropertyCreator
 {
 public:
     FPropertyCreator()
-        : ScriptStruct(nullptr), BoolPropertyDesc(nullptr), IntPropertyDesc(nullptr), FloatPropertyDesc(nullptr), StringPropertyDesc(nullptr), NamePropertyDesc(nullptr), TextPropertyDesc(nullptr)
+        : ScriptStruct(nullptr)
     {
         ScriptStruct = FindObject<UScriptStruct>(ANY_PACKAGE, TEXT("PropertyCollector"));
 
@@ -36,12 +36,12 @@ public:
 
     virtual ~FPropertyCreator()
     {
-        FPropertyDesc::Release(BoolPropertyDesc);
-        FPropertyDesc::Release(IntPropertyDesc);
-        FPropertyDesc::Release(FloatPropertyDesc);
-        FPropertyDesc::Release(StringPropertyDesc);
-        FPropertyDesc::Release(NamePropertyDesc);
-        FPropertyDesc::Release(TextPropertyDesc);
+        BoolPropertyDesc.Reset();
+        IntPropertyDesc.Reset();
+        FloatPropertyDesc.Reset();
+        StringPropertyDesc.Reset();
+        NamePropertyDesc.Reset();
+        TextPropertyDesc.Reset();
 
         CleanupProperties(EnumPropertyDescMap);
         CleanupProperties(ClassPropertyDescMap);
@@ -66,7 +66,7 @@ public:
         CleanupNonNativeProperties(StructPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateBoolProperty() override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateBoolProperty() override
     {
         if (!BoolPropertyDesc)
         {
@@ -77,7 +77,7 @@ public:
         return BoolPropertyDesc;
     }
 
-    virtual FPropertyDesc* CreateIntProperty() override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateIntProperty() override
     {
         if (!IntPropertyDesc)
         {
@@ -88,7 +88,7 @@ public:
         return IntPropertyDesc;
     }
 
-    virtual FPropertyDesc* CreateFloatProperty() override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateFloatProperty() override
     {
         if (!FloatPropertyDesc)
         {
@@ -99,7 +99,7 @@ public:
         return FloatPropertyDesc;
     }
 
-    virtual FPropertyDesc* CreateStringProperty() override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateStringProperty() override
     {
         if (!StringPropertyDesc)
         {
@@ -110,7 +110,7 @@ public:
         return StringPropertyDesc;
     }
 
-    virtual FPropertyDesc* CreateNameProperty() override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateNameProperty() override
     {
         if (!NamePropertyDesc)
         {
@@ -121,7 +121,7 @@ public:
         return NamePropertyDesc;
     }
 
-    virtual FPropertyDesc* CreateTextProperty() override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateTextProperty() override
     {
         if (!TextPropertyDesc)
         {
@@ -132,9 +132,9 @@ public:
         return TextPropertyDesc;
     }
 
-    virtual FPropertyDesc* CreateEnumProperty(UEnum *Enum) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateEnumProperty(UEnum *Enum) override
     {
-        FPropertyDesc **PropertyDescPtr = EnumPropertyDescMap.Find(Enum);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = EnumPropertyDescMap.Find(Enum);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -144,13 +144,12 @@ public:
         UEnumProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UEnumProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Enum);
         UNumericProperty *UnderlyingProp = NewObject<UByteProperty>(Property, TEXT("UnderlyingType"));
         Property->AddCppProperty(UnderlyingProp);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateClassProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateClassProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = ClassPropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = ClassPropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -158,13 +157,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSubclassOf<...>
         UClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class, nullptr);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, ClassPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, ClassPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateObjectProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateObjectProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = ObjectPropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = ObjectPropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -172,13 +170,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Class);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, ObjectPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, ObjectPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateSoftClassProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateSoftClassProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = SoftClassPropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = SoftClassPropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -186,13 +183,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftClassPtr<...>
         USoftClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, SoftClassPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, SoftClassPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateSoftObjectProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateSoftObjectProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = SoftObjectPropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = SoftObjectPropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -200,13 +196,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftObjectPtr<...>
         USoftObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, SoftObjectPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, SoftObjectPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateWeakObjectProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateWeakObjectProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = WeakObjectPropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = WeakObjectPropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -214,13 +209,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...). TWeakObjectPtr<...>
         UWeakObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UWeakObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, WeakObjectPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, WeakObjectPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateLazyObjectProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateLazyObjectProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = LazyObjectPropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = LazyObjectPropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -228,13 +222,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...). TLazyObjectPtr<...>
         ULazyObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) ULazyObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, LazyObjectPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, LazyObjectPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateInterfaceProperty(UClass *Class) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateInterfaceProperty(UClass *Class) override
     {
-        FPropertyDesc **PropertyDescPtr = InterfacePropertyDescMap.Find(Class);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = InterfacePropertyDescMap.Find(Class);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -242,13 +235,12 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...). TScriptInterface<...>
         UInterfaceProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UInterfaceProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Class, InterfacePropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Class, InterfacePropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateStructProperty(UScriptStruct *Struct) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateStructProperty(UScriptStruct *Struct) override
     {
-        FPropertyDesc **PropertyDescPtr = StructPropertyDescMap.Find(Struct);
+        TSharedPtr<UnLua::ITypeInterface> *PropertyDescPtr = StructPropertyDescMap.Find(Struct);
         if (PropertyDescPtr)
         {
             return *PropertyDescPtr;
@@ -256,11 +248,10 @@ public:
 
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UStructProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStructProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Struct);
-        FPropertyDesc *PropertyDesc = OnPropertyCreated(Property, Struct, StructPropertyDescMap);
-        return PropertyDesc;
+        return OnPropertyCreated(Property, Struct, StructPropertyDescMap);
     }
 
-    virtual FPropertyDesc* CreateProperty(UProperty *TemplateProperty) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateProperty(UProperty *TemplateProperty) override
     {
         // #lizard forgives
 
@@ -269,7 +260,7 @@ public:
             return nullptr;
         }
 
-        FPropertyDesc *PropertyDesc = nullptr;
+        TSharedPtr<UnLua::ITypeInterface> PropertyDesc;
         int32 Type = GetPropertyType(TemplateProperty);
         switch (Type)
         {
@@ -352,13 +343,11 @@ private:
      * @param PropertyDescMap - the map the properties reside in
      */
     template <typename KeyType>
-    void CleanupProperties(TMap<KeyType*, FPropertyDesc*> &PropertyDescMap)
+    void CleanupProperties(TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
     {
-        for (typename TMap<KeyType*, FPropertyDesc*>::TIterator It(PropertyDescMap); It; ++It)
+        for (typename TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>>::TIterator It(PropertyDescMap); It; ++It)
         {
-            FPropertyDesc *PropertyDesc = It.Value();
-            Properties.Remove(PropertyDesc->GetProperty());
-            FPropertyDesc::Release(PropertyDesc);
+            Properties.Remove(It.Value()->GetUProperty());
         }
         PropertyDescMap.Empty();
     }
@@ -369,15 +358,13 @@ private:
      * @param PropertyDescMap - the map the properties reside in
      */
     template <typename KeyType>
-    void CleanupNonNativeProperties(TMap<KeyType*, FPropertyDesc*> &PropertyDescMap)
+    void CleanupNonNativeProperties(TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
     {
-        for (typename TMap<KeyType*, FPropertyDesc*>::TIterator It(PropertyDescMap); It; ++It)
+        for (typename TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>>::TIterator It(PropertyDescMap); It; ++It)
         {
             if (!It.Key()->IsNative())
             {
-                FPropertyDesc *PropertyDesc = It.Value();
-                Properties.Remove(PropertyDesc->GetProperty());
-                FPropertyDesc::Release(PropertyDesc);
+                Properties.Remove(It.Value()->GetUProperty());
                 It.RemoveCurrent();
             }
         }
@@ -392,11 +379,11 @@ private:
      * @return - the new created FPropertyDesc
      */
     template <typename KeyType>
-    FPropertyDesc* OnPropertyCreated(UProperty *Property, KeyType *Key, TMap<KeyType*, FPropertyDesc*> &PropertyDescMap)
+    TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(UProperty *Property, KeyType *Key, TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
     {
         Property->AddToCluster(ScriptStruct);
         Properties.Add(Property);
-        FPropertyDesc *PropertyDesc = FPropertyDesc::Create(Property);
+        TSharedPtr<UnLua::ITypeInterface> PropertyDesc(FPropertyDesc::Create(Property));
         PropertyDescMap.Add(Key, PropertyDesc);
         return PropertyDesc;
     }
@@ -408,29 +395,29 @@ private:
      * @param Property - new created UProperty
      * @return - the new created FPropertyDesc
      */
-    FPropertyDesc* OnPropertyCreated(UProperty *Property)
+    TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(UProperty *Property)
     {
         Property->AddToCluster(ScriptStruct);
         Properties.Add(Property);
-        return FPropertyDesc::Create(Property);
+        return TSharedPtr<UnLua::ITypeInterface>(FPropertyDesc::Create(Property));
     }
 
     UScriptStruct *ScriptStruct;
-    FPropertyDesc *BoolPropertyDesc;
-    FPropertyDesc *IntPropertyDesc;
-    FPropertyDesc *FloatPropertyDesc;
-    FPropertyDesc *StringPropertyDesc;
-    FPropertyDesc *NamePropertyDesc;
-    FPropertyDesc *TextPropertyDesc;
-    TMap<UEnum*, FPropertyDesc*> EnumPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> ClassPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> ObjectPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> SoftClassPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> SoftObjectPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> WeakObjectPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> LazyObjectPropertyDescMap;
-    TMap<UClass*, FPropertyDesc*> InterfacePropertyDescMap;
-    TMap<UScriptStruct*, FPropertyDesc*> StructPropertyDescMap;
+    TSharedPtr<UnLua::ITypeInterface> BoolPropertyDesc;
+    TSharedPtr<UnLua::ITypeInterface> IntPropertyDesc;
+    TSharedPtr<UnLua::ITypeInterface> FloatPropertyDesc;
+    TSharedPtr<UnLua::ITypeInterface> StringPropertyDesc;
+    TSharedPtr<UnLua::ITypeInterface> NamePropertyDesc;
+    TSharedPtr<UnLua::ITypeInterface> TextPropertyDesc;
+    TMap<UEnum*, TSharedPtr<UnLua::ITypeInterface>> EnumPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> ClassPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> ObjectPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> SoftClassPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> SoftObjectPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> WeakObjectPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> LazyObjectPropertyDescMap;
+    TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> InterfacePropertyDescMap;
+    TMap<UScriptStruct*, TSharedPtr<UnLua::ITypeInterface>> StructPropertyDescMap;
 
     TArray<UProperty*> Properties;
 };
