@@ -925,6 +925,12 @@ namespace UnLua
         FExportedClassBase::Functions.Add(new TSharedRefConstructor<Mode, ClassType, ArgType...>);
     }
 
+    template <bool bIsReflected, typename ClassType, typename... CtorArgType>
+    void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddStaticCFunction(const FString &InName, lua_CFunction InFunc)
+    {
+        FExportedClassBase::GlueFunctions.Add(new FGlueFunction(InName, InFunc));
+    }
+
 #if WITH_EDITOR
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     void TExportedClass<bIsReflected, ClassType, CtorArgType...>::GenerateIntelliSense(FString &Buffer) const
