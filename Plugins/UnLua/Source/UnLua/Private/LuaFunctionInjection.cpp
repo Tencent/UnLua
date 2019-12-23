@@ -138,8 +138,8 @@ struct FFakeProperty : public UField
  */
 UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
 {
-    // (int32)offsetof(UProperty, RepNotifyFunc) - sizeof(int32);    // offset for Offset_Internal... todo: use UProperty::Link()
     static int32 Offset = offsetof(FFakeProperty, Offset_Internal);
+    static FArchive Ar;         // dummy archive used for UProperty::Link()
 
     UFunction *NewFunc = DuplicateObject(TemplateFunction, OuterClass, NewFuncName);
     NewFunc->PropertiesSize = TemplateFunction->PropertiesSize;
@@ -153,11 +153,12 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
         while (true)
         {
             check(SrcProperty && DestProperty);
-            DestProperty->ArrayDim = SrcProperty->ArrayDim;
-            DestProperty->ElementSize = SrcProperty->ElementSize;
-            DestProperty->PropertyFlags = SrcProperty->PropertyFlags;
+            DestProperty->Link(Ar);
+            //DestProperty->ArrayDim = SrcProperty->ArrayDim;
+            //DestProperty->ElementSize = SrcProperty->ElementSize;
+            //DestProperty->PropertyFlags = SrcProperty->PropertyFlags;
             DestProperty->RepIndex = SrcProperty->RepIndex;
-            *((int32*)((uint8*)DestProperty + Offset)) = *((int32*)((uint8*)SrcProperty + Offset));        // set Offset_Internal ...
+            *((int32*)((uint8*)DestProperty + Offset)) = *((int32*)((uint8*)SrcProperty + Offset)); // set Offset_Internal (Offset_Internal set by DestProperty->Link(Ar) is incorrect because of incorrect Outer class)
             if (--NumParams < 1)
             {
                 break;
