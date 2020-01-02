@@ -45,7 +45,11 @@ public:
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
     void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
 
+#if ENGINE_MINOR_VERSION > 23	
+    void OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime);
+#else
     void OnWorldTickStart(ELevelTick TickType, float DeltaTime);
+#endif
     void OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources);
     void OnPostWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources);
     void OnPreWorldInitialization(UWorld *World, const UWorld::InitializationValues);
