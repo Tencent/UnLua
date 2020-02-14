@@ -31,5 +31,5 @@ public:
 
 void GetOverridableFunctions(UClass *Class, TMap<FName, UFunction*> &Functions);
 UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName);
-void RemoveUFunction(UFunction *Function, UClass *OuterClass);
+void RemoveUFunction(UFunction *Function, UClass *OuterClass, bool ClearCache=false);
 void OverrideUFunction(UFunction *Function, FNativeFuncPtr NativeFunc, void *Userdata, bool bInsertOpcodes = true);

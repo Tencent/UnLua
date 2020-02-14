@@ -356,6 +356,7 @@ public:
     {
         return RegisterField(FName(FieldName), this);
     }
+    void UnRegisterField(FName FieldName);
 
     FFieldDesc* RegisterField(FName FieldName, FClassDesc *QueryClass);
 

@@ -1490,6 +1490,51 @@ void FClassDesc::Reset()
     ClearLoadedModule(*GLuaCxt, ClassAnsiName.Get());       // clean up required Lua module
 }
 
+void FClassDesc::UnRegisterField(FName FieldName)
+{
+    if (!Struct)
+    {
+        return;
+    }
+    FFieldDesc *FieldDesc = nullptr;
+    FFieldDesc **FieldDescPtr = Fields.Find(FieldName);
+    if (FieldDescPtr)
+    {
+        FieldDesc = *FieldDescPtr;
+    }
+    else {
+        return;
+    }
+    Fields.Remove(FieldName);
+
+    if (FieldDesc->FieldIndex > 0)
+    {
+        delete Properties[FieldDesc->FieldIndex - 1];
+        Properties.RemoveAt(FieldDesc->FieldIndex - 1);
+        for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
+        {
+            FFieldDesc* Desc = It.Value();
+            if (Desc->FieldIndex > FieldDesc->FieldIndex)
+            {
+                --Desc->FieldIndex;
+            }
+        }
+    }
+    else {
+        FFunctionDesc* FuncDesc = Functions[-FieldDesc->FieldIndex - 1];
+        delete FuncDesc;
+        Functions.RemoveAt(-FieldDesc->FieldIndex - 1);
+        for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
+        {
+            FFieldDesc* Desc = It.Value();
+            if (Desc->FieldIndex < FieldDesc->FieldIndex)
+            {
+                ++Desc->FieldIndex;
+            }
+        }
+    }
+    delete FieldDesc;
+}
 /**
  * Register a field of this class
  */

@@ -183,8 +183,16 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
  * 3. Remove from root if necessary
  * 4. Clear 'Native' flag if necessary
  */
-void RemoveUFunction(UFunction *Function, UClass *OuterClass)
+void RemoveUFunction(UFunction *Function, UClass *OuterClass, bool ClearCache)
 {
+    if (ClearCache)
+    {
+        FClassDesc* Desc = GReflectionRegistry.RegisterClass(OuterClass);
+        if (Desc)
+        {
+            Desc->UnRegisterField(Function->GetFName());
+        }
+    }
     OuterClass->RemoveFunctionFromFunctionMap(Function);
     GReflectionRegistry.UnRegisterFunction(Function);
     if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())

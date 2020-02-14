@@ -265,7 +265,7 @@ void UUnLuaManager::CleanupDuplicatedFunctions()
         TArray<UFunction*> &Functions = It.Value();
         for (UFunction *Func : Functions)
         {
-            RemoveUFunction(Func, Class);                           // clean up duplicated UFunction
+            RemoveUFunction(Func, Class, true);                           // clean up duplicated UFunction
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
             GReflectionRegistry.RemoveOverriddenFunction(Func);
 #endif
@@ -294,7 +294,7 @@ void UUnLuaManager::CleanupCachedNatives()
         UFunction *OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Func);
         if (OverriddenFunc)
         {
-            RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
+            RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass(), true);
         }
 #endif
     }
