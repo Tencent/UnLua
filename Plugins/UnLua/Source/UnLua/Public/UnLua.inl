@@ -144,6 +144,8 @@ namespace UnLua
     template <typename T>
     struct TTypeInterface : public ITypeInterface
     {
+        virtual ~TTypeInterface() {}
+        
         virtual bool IsPODType() const override { return TIsPODType<T>::Value; }
 
         virtual bool IsTriviallyDestructible() const override
