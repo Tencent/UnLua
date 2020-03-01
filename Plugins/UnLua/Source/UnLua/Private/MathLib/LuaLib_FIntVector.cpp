@@ -91,6 +91,7 @@ static const luaL_Reg FIntVectorLib[] =
     { "__sub", UnLua::TMathCalculation<FIntVector, UnLua::TSub<int32>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FIntVector, UnLua::TMul<int32>>::Calculate },
     { "__div", UnLua::TMathCalculation<FIntVector, UnLua::TDiv<int32>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FIntVector>::ToString },
     { "__unm", FIntVector_UNM },
     { "__call", FIntVector_New },
     { nullptr, nullptr }
@@ -98,7 +99,6 @@ static const luaL_Reg FIntVectorLib[] =
 
 BEGIN_EXPORT_REFLECTED_CLASS(FIntVector)
     ADD_FUNCTION(Size)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FIntVectorLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FIntVector)

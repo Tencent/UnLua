@@ -110,6 +110,7 @@ static const luaL_Reg FVector2DLib[] =
     { "__sub", UnLua::TMathCalculation<FVector2D, UnLua::TSub<float>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FVector2D, UnLua::TMul<float>>::Calculate },
     { "__div", UnLua::TMathCalculation<FVector2D, UnLua::TDiv<float>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FVector2D>::ToString },
     { "__unm", FVector2D_UNM },
     { "__call", FVector2D_New },
     { nullptr, nullptr }
@@ -122,7 +123,6 @@ BEGIN_EXPORT_REFLECTED_CLASS(FVector2D)
     ADD_FUNCTION(SizeSquared)
     ADD_STATIC_FUNCTION_EX("Dist", float, Distance, const FVector2D&, const FVector2D&)
     ADD_STATIC_FUNCTION(DistSquared)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FVector2DLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FVector2D)

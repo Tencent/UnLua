@@ -55,6 +55,7 @@ static const luaL_Reg FLinearColorLib[] =
     { "__sub", UnLua::TMathCalculation<FLinearColor, UnLua::TSub<float>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FLinearColor, UnLua::TMul<float>>::Calculate },
     { "__div", UnLua::TMathCalculation<FLinearColor, UnLua::TDiv<float>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FLinearColor>::ToString },
     { "__call", FLinearColor_New },
     { nullptr, nullptr }
 };
@@ -62,7 +63,6 @@ static const luaL_Reg FLinearColorLib[] =
 BEGIN_EXPORT_REFLECTED_CLASS(FLinearColor)
     ADD_FUNCTION(ToFColor)
     ADD_NAMED_FUNCTION("Clamp", GetClamped)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FLinearColorLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FLinearColor)

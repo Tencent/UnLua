@@ -69,6 +69,7 @@ static const luaL_Reg FIntPointLib[] =
     { "__sub", UnLua::TMathCalculation<FIntPoint, UnLua::TSub<int32>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FIntPoint, UnLua::TMul<int32>>::Calculate },
     { "__div", UnLua::TMathCalculation<FIntPoint, UnLua::TDiv<int32>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FIntPoint>::ToString },
     { "__unm", FIntPoint_UNM },
     { "__call", FIntPoint_New },
     { nullptr, nullptr }
@@ -77,7 +78,6 @@ static const luaL_Reg FIntPointLib[] =
 BEGIN_EXPORT_REFLECTED_CLASS(FIntPoint)
     ADD_FUNCTION(Size)
     ADD_FUNCTION(SizeSquared)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FIntPointLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FIntPoint)

@@ -81,6 +81,7 @@ static const luaL_Reg FTransformLib[] =
     { "Blend", FTransform_Blend },
     { "Mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, true, UnLua::TMul<FTransform, float>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, false, UnLua::TMul<FTransform, float>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FTransform>::ToString },
     { "__call", FTransform_New },
     { nullptr, nullptr }
 };
@@ -97,7 +98,6 @@ BEGIN_EXPORT_REFLECTED_CLASS(FTransform)
     ADD_FUNCTION(InverseTransformVectorNoScale)
     ADD_FUNCTION(TransformRotation)
     ADD_FUNCTION(InverseTransformRotation)
-    ADD_NAMED_FUNCTION("__tostring", ToHumanReadableString)
     ADD_CONST_FUNCTION_EX("__add", FTransform, operator+, const FTransform&)
     ADD_FUNCTION_EX("Add", FTransform&, operator+=, const FTransform&)
     ADD_LIB(FTransformLib)
