@@ -51,6 +51,8 @@ namespace UnLua
      */
     struct ITypeInterface : public ITypeOps
     {
+        virtual ~ITypeInterface() {}
+
         virtual bool IsPODType() const = 0;
         virtual bool IsTriviallyDestructible() const = 0;
         virtual int32 GetSize() const = 0;
