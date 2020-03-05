@@ -356,7 +356,7 @@ namespace UnLua
             int32 NumParams = lua_gettop(L);
             if (NumParams != 1)
             {
-                UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters for __tostring!"));
+                UE_LOG(LogUnLua, Log, TEXT("Invalid parameters for __tostring!"));
                 return 0;
             }
 

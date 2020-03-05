@@ -321,12 +321,43 @@ IMPLEMENT_EXPORTED_CLASS(UObject)
 /**
  * Export FSoftObjectPtr
  */
+static int32 FSoftObjectPtr_ToString(lua_State *L)
+{
+    int32 NumParams = lua_gettop(L);
+    if (NumParams != 1)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters for __tostring!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FSoftObjectPtr *A = (FSoftObjectPtr*)GetCppInstanceFast(L, 1);
+    if (!A)
+    {
+        int32 Type = luaL_getmetafield(L, 1, "__name");
+        lua_pushfstring(L, "%s: %p", (Type == LUA_TSTRING) ? lua_tostring(L, -1) : lua_typename(L, lua_type(L, 1)), lua_topointer(L, 1));
+        if (Type != LUA_TNIL)
+        {
+            lua_remove(L, -2);
+        }
+        return 1;
+    }
+
+    lua_pushstring(L, TCHAR_TO_ANSI(*A->ToString()));
+    return 1;
+}
+
+static const luaL_Reg FSoftObjectPtrLib[] =
+{
+    { "__tostring", FSoftObjectPtr_ToString },
+    { nullptr, nullptr }
+};
+
 BEGIN_EXPORT_CLASS(FSoftObjectPtr, const UObject*)
     ADD_CONST_FUNCTION_EX("IsValid", bool, IsValid)
     ADD_FUNCTION_EX("Reset", void, Reset)
     ADD_FUNCTION_EX("Set", void, operator=, const UObject*)
     ADD_CONST_FUNCTION_EX("Get", UObject*, Get)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
+    ADD_LIB(FSoftObjectPtrLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FSoftObjectPtr)
 
