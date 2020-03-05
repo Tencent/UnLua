@@ -52,9 +52,11 @@ public class Lua : ModuleRules
             }
             else        // UnrealTargetPlatform.Android
             {
-                PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "lib/Android/ARMv7"));
-                PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "lib/Android/ARM64"));
-                PublicAdditionalLibraries.Add("lua");
+                //PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "lib/Android/ARMv7"));
+                //PublicLibraryPaths.Add(Path.Combine(ModuleDirectory, "lib/Android/ARM64"));
+                //PublicAdditionalLibraries.Add("lua");
+                PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib/Android/ARMv7/liblua.a"));
+                PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib/Android/ARM64/liblua.a"));
             }
 
             if (Target.bBuildEditor == true)
