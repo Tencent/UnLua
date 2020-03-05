@@ -854,6 +854,70 @@ namespace UnLua
         }
     }
 
+#if WITH_EDITOR
+    template <bool bIsReflected>
+    void TExportedClassBase<bIsReflected>::GenerateIntelliSense(FString &Buffer) const
+    {
+        GenerateIntelliSenseInternal(Buffer, typename TChooseClass<bIsReflected, FTrue, FFalse>::Result());
+    }
+
+    template <bool bIsReflected>
+    void TExportedClassBase<bIsReflected>::GenerateIntelliSenseInternal(FString &Buffer, FFalse NotReflected) const
+    {
+        // class name
+        Buffer = FString::Printf(TEXT("---@class %s\r\n"), *Name);
+
+        // fields
+        for (IExportedProperty *Property : Properties)
+        {
+            Property->GenerateIntelliSense(Buffer);
+        }
+
+        // definition
+        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *Name);
+
+        // functions
+        for (IExportedFunction *Function : Functions)
+        {
+            Function->GenerateIntelliSense(Buffer);
+        }
+
+        // return
+        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *Name);
+    }
+
+    template <bool bIsReflected>
+    void TExportedClassBase<bIsReflected>::GenerateIntelliSenseInternal(FString &Buffer, FTrue Reflected) const
+    {
+        // class name
+        Buffer = FString::Printf(TEXT("---@type %s\r\n"), *Name);
+        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *Name);
+
+        // fields
+        for (IExportedProperty *Property : Properties)
+        {
+            FString Field;
+            TArray<FString> OutArray;
+            Property->GenerateIntelliSense(Field);
+            int32 Num = Field.ParseIntoArray(OutArray, TEXT(" "));
+            if (Num >= 4)
+            {
+                Buffer += FString::Printf(TEXT("\r\n\r\n---@type %s \r\n"), *OutArray[3]);
+                Buffer += FString::Printf(TEXT("%s.%s = nil"), *Name, *OutArray[2]);
+            }
+        }
+
+        // functions
+        for (IExportedFunction *Function : Functions)
+        {
+            Function->GenerateIntelliSense(Buffer);
+        }
+
+        // return
+        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *Name);
+    }
+#endif
+
 
     /**
      * Exported class
@@ -931,14 +995,6 @@ namespace UnLua
         FExportedClassBase::GlueFunctions.Add(new FGlueFunction(InName, InFunc));
     }
 
-#if WITH_EDITOR
-    template <bool bIsReflected, typename ClassType, typename... CtorArgType>
-    void TExportedClass<bIsReflected, ClassType, CtorArgType...>::GenerateIntelliSense(FString &Buffer) const
-    {
-        GenerateIntelliSenseInternal(Buffer, typename TChooseClass<bIsReflected, FTrue, FFalse>::Result());
-    }
-#endif
-
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddDefaultFunctions(FFalse NotReflected)
     {
@@ -973,67 +1029,5 @@ namespace UnLua
     {
         FExportedClassBase::Functions.Add(new TDestructor<ClassType>);
     }
-
-#if WITH_EDITOR
-    template <bool bIsReflected, typename ClassType, typename... CtorArgType>
-    void TExportedClass<bIsReflected, ClassType, CtorArgType...>::GenerateIntelliSenseInternal(FString &Buffer, FFalse NotReflected) const
-    {
-        FString StrName = FExportedClassBase::Name;
-
-        // class name
-        Buffer = FString::Printf(TEXT("---@class %s\r\n"), *StrName);
-
-        // fields
-        for (IExportedProperty *Property : FExportedClassBase::Properties)
-        {
-            Property->GenerateIntelliSense(Buffer);
-        }
-
-        // definition
-        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *StrName);
-
-        // functions
-        for (IExportedFunction *Function : FExportedClassBase::Functions)
-        {
-            Function->GenerateIntelliSense(Buffer);
-        }
-
-        // return
-        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *StrName);
-    }
-
-    template <bool bIsReflected, typename ClassType, typename... CtorArgType>
-    void TExportedClass<bIsReflected, ClassType, CtorArgType...>::GenerateIntelliSenseInternal(FString &Buffer, FTrue Reflected) const
-    {
-        FString StrName = FExportedClassBase::Name;
-
-        // class name
-        Buffer = FString::Printf(TEXT("---@type %s\r\n"), *StrName);
-        Buffer += FString::Printf(TEXT("local %s \r\n"), *StrName);
-
-        // fields
-        for (IExportedProperty *Property : FExportedClassBase::Properties)
-        {
-            FString Field;
-            TArray<FString> OutArray;
-            Property->GenerateIntelliSense(Field);
-            int32 Num = Field.ParseIntoArray(OutArray, TEXT(" "));
-            if (Num >= 4)
-            {
-                Buffer += FString::Printf(TEXT("\r\n\r\n---@type %s \r\n"), *OutArray[3]);
-                Buffer += FString::Printf(TEXT("%s.%s = nil"), *StrName, *OutArray[2]);
-            }
-        }
-
-        // functions
-        for (IExportedFunction *Function : FExportedClassBase::Functions)
-        {
-            Function->GenerateIntelliSense(Buffer);
-        }
-
-        // return
-        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *StrName);
-    }
-#endif
 
 }
