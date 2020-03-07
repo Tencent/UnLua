@@ -77,13 +77,21 @@ static int32 FScriptDelegate_Unbind(lua_State *L)
     }
 
     FScriptDelegate *Delegate = (FScriptDelegate*)GetCppInstanceFast(L, 1);
-    if (!Delegate)
+    if (Delegate)
     {
-        UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("%s: Invalid dynamic delegate!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
+        FDelegateHelper::Unbind(Delegate);
+    }
+    else
+    {
+        UObject *Object = nullptr;
+        const void *CallbackFunction = nullptr;
+        int32 FuncIdx = GetDelegateInfo(L, 1, Object, CallbackFunction);     // get target UObject and Lua function
+        if (FuncIdx != INDEX_NONE)
+        {
+            FDelegateHelper::Unbind(FCallbackDesc(Object->GetClass(), CallbackFunction));
+        }
     }
 
-    FDelegateHelper::Unbind(Delegate);
     return 0;
 }
 

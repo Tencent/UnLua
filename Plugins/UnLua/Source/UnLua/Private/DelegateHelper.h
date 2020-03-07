@@ -53,7 +53,7 @@ struct FSignatureDesc
         : SignatureFunctionDesc(nullptr), CallbackRef(INDEX_NONE), NumCalls(0), NumBindings(1), bPendingKill(false)
     {}
 
-    void MarkForDelete();
+    void MarkForDelete(bool bIgnoreBindings = false);
 
     void Execute(FFrame &Stack, void *RetValueAddress);
 
@@ -82,6 +82,7 @@ public:
     static void PreBind(FScriptDelegate *ScriptDelegate, UDelegateProperty *Property);
     static bool Bind(FScriptDelegate *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static bool Bind(FScriptDelegate *ScriptDelegate, UDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
+    static void Unbind(const FCallbackDesc &Callback);
     static void Unbind(FScriptDelegate *ScriptDelegate);
     static int32 Execute(lua_State *L, FScriptDelegate *ScriptDelegate, int32 NumParams, int32 FirstParamIndex);
 

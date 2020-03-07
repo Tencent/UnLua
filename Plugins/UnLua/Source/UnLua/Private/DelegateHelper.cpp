@@ -49,9 +49,9 @@ public:
     TArray<FName> FunctionNames;
 };
 
-void FSignatureDesc::MarkForDelete()
+void FSignatureDesc::MarkForDelete(bool bIgnoreBindings)
 {
-    if (NumBindings > 1)
+    if (!bIgnoreBindings && NumBindings > 1)
     {
         --NumBindings;              // dec bindings if there is more than one bindings.
         return;
@@ -151,6 +151,19 @@ bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, UDelegateProperty *P
         CreateSignature(Property->SignatureFunction, FuncName, Callback, CallbackRef);      // create the signature function for the callback
     }
     return true;
+}
+
+void FDelegateHelper::Unbind(const FCallbackDesc &Callback)
+{
+    UFunction **CallbackFuncPtr = Callbacks.Find(Callback);
+    if (CallbackFuncPtr && *CallbackFuncPtr)
+    {
+        FSignatureDesc **SignatureDesc = Signatures.Find(*CallbackFuncPtr);
+        if (SignatureDesc && *SignatureDesc)
+        {
+            (*SignatureDesc)->MarkForDelete(true);
+        }
+    }
 }
 
 void FDelegateHelper::Unbind(FScriptDelegate *ScriptDelegate)
