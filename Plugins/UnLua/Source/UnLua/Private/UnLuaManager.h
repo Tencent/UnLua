@@ -31,9 +31,11 @@ public:
 
     bool OnModuleHotfixed(const TCHAR *InModuleName);
 
-    void NotifyUObjectDeleted(const UObjectBase *Object, bool bUClass = false);
+    void NotifyUObjectDeleted(const UObjectBase *Object, bool bClass = false);
 
     void Cleanup(class UWorld *World, bool bFullCleanup);
+
+    void CleanUpByClass(UClass *Class);
 
     void PostCleanup();
 
@@ -100,6 +102,10 @@ private:
     void CleanupDuplicatedFunctions();
     void CleanupCachedNatives();
     void CleanupCachedScripts();
+
+    void OnClassCleanup(UClass *Class);
+    void ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr);
+    void RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions);
 
     TMap<UClass*, FString> ModuleNames;
     TMap<FString, UClass*> Classes;

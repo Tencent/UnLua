@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
+#include "UnLuaManager.h"
+#include "LuaContext.h"
 #include "LuaCore.h"
 #include "UEReflectionUtils.h"
 #include "UEObjectReferencer.h"
@@ -218,6 +220,37 @@ static int32 UObject_IsA(lua_State *L)
     return 1;
 }
 
+static int32 UObject_Destroy(lua_State *L)
+{
+    int32 NumParams = lua_gettop(L);
+    if (NumParams != 1)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    UObject *Object = UnLua::GetUObject(L, -1);
+    if (Object)
+    {
+        if (Object->IsA<UClass>())
+        {
+            UClass *Class = (UClass*)Object;
+            ClearLibrary(L, TCHAR_TO_ANSI(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName())));
+            GLuaCxt->GetManager()->CleanUpByClass(Class);
+            GObjectReferencer.RemoveObjectRef(Class);
+        }
+        else
+        {
+            int32 Type = lua_type(L, -1);
+            if (Type == LUA_TTABLE)
+            {
+                GLuaCxt->NotifyUObjectDeleted(Object, INDEX_NONE);
+            }
+        }
+    }
+    return 0;
+}
+
 /**
  * Test whether two objects are identical
  */
@@ -305,6 +338,7 @@ static const luaL_Reg UObjectLib[] =
     { "GetClass", UObject_GetClass },
     { "GetWorld", UObject_GetWorld },
     { "IsA", UObject_IsA },
+    { "Destroy", UObject_Destroy },
     { "__eq", UObject_Identical },
     { "__gc", UObject_Delete },
     { nullptr, nullptr }
