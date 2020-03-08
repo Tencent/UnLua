@@ -36,7 +36,11 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
         }
         else
         {
-            Stack.SkipCode(1);      // skip EX_CallLua
+            if (Func->GetNativeFunc() == (FNativeFuncPtr)&FLuaInvoker::execCallLua)
+            {
+                check(*Stack.Code == EX_CallLua);
+                Stack.SkipCode(1);      // skip EX_CallLua only when called from native func
+            }
         }
     }
 
