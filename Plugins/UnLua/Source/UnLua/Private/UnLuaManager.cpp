@@ -223,7 +223,6 @@ void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
             AttachedObjects.Empty();
         }
         AttachedActors.Empty();
-        ActorsWithoutWorld.Empty();
     }
 
     ModuleNames.Empty();
@@ -494,29 +493,6 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
     }
 
     ENetMode NetMode = World->GetNetMode();
-#if SUPPORTS_RPC_CALL
-    for (AActor *Actor : ActorsWithoutWorld)
-    {
-        UClass *Class = GetTargetClass(Actor->GetClass());
-        FString *ModuleName = ModuleNames.Find(Class);
-        check(ModuleName);
-        TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleName);
-        TMap<FName, UFunction*> *UEFunctionsPtr = OverridableFunctions.Find(Class);
-        check(LuaFunctionsPtr && UEFunctionsPtr);
-        for (const FName &LuaFuncName : (*LuaFunctionsPtr))
-        {
-            UFunction **Func = UEFunctionsPtr->Find(LuaFuncName);
-            if (Func)
-            {
-                UFunction *Function = *Func;
-                if ((Function->HasAnyFunctionFlags(FUNC_NetClient) && NetMode == NM_Client) || (Function->HasAnyFunctionFlags(FUNC_NetServer) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer)))
-                {
-                    OverrideFunction(Function, Class, LuaFuncName);
-                }
-            }
-        }
-    }
-#endif
     if (NetMode == NM_DedicatedServer)
     {
         return;
@@ -659,8 +635,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility *Object, UClass *Class, cons
     TMap<FName, UFunction*> &UEFunctions = OverridableFunctions.Add(Class);
     GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
 
-    ENetMode NetMode = CheckObjectNetMode(Object, Class, bNewCreated);
-    OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated, NetMode);  // try to override UFunctions
+    OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated);           // try to override UFunctions
 
     return ConditionalUpdateClass(Class, LuaFunctions, UEFunctions);
 }
@@ -727,32 +702,9 @@ bool UUnLuaManager::ConditionalUpdateClass(UClass *Class, const TSet<FName> &Lua
 }
 
 /**
- * Check net mode of the UObject
- */
-ENetMode UUnLuaManager::CheckObjectNetMode(UObjectBaseUtility *Object, UClass *Class, bool bNewCreated)
-{
-    ENetMode NetMode = NM_Standalone;
-#if SUPPORTS_RPC_CALL
-    if (bNewCreated)
-    {
-        if (Class->IsChildOf<AActor>() && !Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject) && !Object->GetOuter()->HasAnyFlags(RF_BeginDestroyed) && !Object->GetOuter()->IsUnreachable())
-        {
-            ULevel *Level = Object->GetTypedOuter<ULevel>();
-            NetMode = Level && Level->OwningWorld ? Level->OwningWorld->GetNetMode() : NM_MAX;
-        }
-        if (NetMode == NM_MAX)
-        {
-            ActorsWithoutWorld.Add((AActor*)Object);
-        }
-    }
-#endif
-    return NetMode;
-}
-
-/**
  * Override candidate UFunctions
  */
-void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode, ENetMode NetMode)
+void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode)
 {
     for (const FName &LuaFuncName : LuaFunctions)
     {
@@ -760,16 +712,6 @@ void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FNam
         if (Func)
         {
             UFunction *Function = *Func;
-#if SUPPORTS_RPC_CALL
-            if (bCheckFuncNetMode)
-            {
-                if ((Function->HasAnyFunctionFlags(FUNC_NetClient) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer || NetMode == NM_MAX)) ||
-                    (Function->HasAnyFunctionFlags(FUNC_NetServer) && (NetMode == NM_Client || NetMode == NM_MAX)))
-                {
-                    continue;
-                }
-            }
-#endif
             OverrideFunction(Function, OuterClass, LuaFuncName);
         }
     }

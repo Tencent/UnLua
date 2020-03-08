@@ -82,9 +82,7 @@ private:
     bool BindSurvivalObject(struct lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
     bool ConditionalUpdateClass(UClass *Class, const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions);
 
-    ENetMode CheckObjectNetMode(UObjectBaseUtility *Object, UClass *Class, bool bNewCreated);
-
-    void OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode = false, ENetMode NetMode = NM_Standalone);
+    void OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode = false);
     void OverrideFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName);
     void AddFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName);
     void ReplaceFunction(UFunction *TemplateFunction, UClass *OuterClass);
@@ -124,7 +122,6 @@ private:
 
     TMap<UObjectBaseUtility*, int32> AttachedObjects;
     TSet<AActor*> AttachedActors;
-    TSet<AActor*> ActorsWithoutWorld;
 
     UFunction *InputActionFunc;
     UFunction *InputAxisFunc;

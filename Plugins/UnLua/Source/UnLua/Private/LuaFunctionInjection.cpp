@@ -212,7 +212,11 @@ void RemoveUFunction(UFunction *Function, UClass *OuterClass)
  */
 void OverrideUFunction(UFunction *Function, FNativeFuncPtr NativeFunc, void *Userdata, bool bInsertOpcodes)
 {
-    Function->SetNativeFunc(NativeFunc);
+    if (Function->HasAnyFunctionFlags(FUNC_Native))
+    {
+        Function->SetNativeFunc(NativeFunc);
+    }
+
     if (Function->Script.Num() < 1)
     {
 #if UE_BUILD_SHIPPING || UE_BUILD_TEST
