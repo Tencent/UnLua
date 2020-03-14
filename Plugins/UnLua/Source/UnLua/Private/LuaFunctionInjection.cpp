@@ -57,6 +57,14 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
     bool bRpcCall = false;
 #if SUPPORTS_RPC_CALL
     AActor *Actor = Cast<AActor>(Stack.Object);
+    if (!Actor)
+    {
+        UActorComponent *ActorComponent = Cast<UActorComponent>(Stack.Object);
+        if (ActorComponent)
+        {
+            Actor = ActorComponent->GetOwner();
+        }
+    }
     if (Actor)
     {
         ENetMode NetMode = Actor->GetNetMode();
