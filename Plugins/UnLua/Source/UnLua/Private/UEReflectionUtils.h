@@ -108,13 +108,13 @@ public:
      * @param bCopyValue - whether to create a copy for the value
      * @return - true if 'ContainerPtr' should be cleaned up by 'DestroyValue_InContainer', false otherwise
      */
-    FORCEINLINE bool SetValue(lua_State *L, void *ContainerPtr, int32 IndexInStack = -1, bool bCopyValue = true, bool bRemote = false) const
+    FORCEINLINE bool SetValue(lua_State *L, void *ContainerPtr, int32 IndexInStack = -1, bool bCopyValue = true) const
     {
-        return SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, bCopyValue, bRemote);
+        return SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, bCopyValue);
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const = 0;
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack = -1, bool bCopyValue = true, bool bRemote = false) const = 0;
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack = -1, bool bCopyValue = true) const = 0;
 
     /**
      * Copy an element at the given Lua index to the value of this property
@@ -269,7 +269,7 @@ public:
     void BroadcastMulticastDelegate(lua_State *L, int32 NumParams, int32 FirstParamIndex, FMulticastScriptDelegate *ScriptDelegate);
 
 private:
-    void* PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Userdata = nullptr, bool bRemote = false);
+    void* PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Userdata = nullptr);
     int32 PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;

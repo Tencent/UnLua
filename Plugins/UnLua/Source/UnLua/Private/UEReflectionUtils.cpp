@@ -40,7 +40,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         NumericProperty->SetIntPropertyValue(ValuePtr, (uint64)lua_tointeger(L, IndexInStack));
         return false;
@@ -67,7 +67,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         NumericProperty->SetFloatingPointPropertyValue(ValuePtr, lua_tonumber(L, IndexInStack));
         return false;
@@ -98,7 +98,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(ValuePtr, lua_tointeger(L, IndexInStack));
         return false;
@@ -118,7 +118,7 @@ public:
         lua_pushboolean(L, BoolProperty->GetPropertyValue(ValuePtr));
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         BoolProperty->SetPropertyValue(ValuePtr, lua_toboolean(L, IndexInStack) != 0);
         return false;
@@ -193,7 +193,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         if (MetaClass)
         {
@@ -240,7 +240,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         FScriptInterface *Interface = (FScriptInterface*)ValuePtr;
         UObject *Value = UnLua::GetUObject(L, IndexInStack);
@@ -270,7 +270,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         NameProperty->SetPropertyValue(ValuePtr, FName(lua_tostring(L, IndexInStack)));
         return true;
@@ -297,7 +297,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         StringProperty->SetPropertyValue(ValuePtr, UTF8_TO_TCHAR(lua_tostring(L, IndexInStack)));
         return true;
@@ -324,7 +324,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         TextProperty->SetPropertyValue(ValuePtr, FText::FromString(UTF8_TO_TCHAR(lua_tostring(L, IndexInStack))));
         return true;
@@ -390,7 +390,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         int32 Type = lua_type(L, IndexInStack);
         if (Type == LUA_TTABLE)
@@ -405,7 +405,7 @@ public:
             FScriptArray *Src = (FScriptArray*)GetScriptContainer(L, IndexInStack);
             if (Src)
             {
-                if (!bCopyValue && !bRemote && Property->HasAnyPropertyFlags(CPF_OutParm))
+                if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
                     FMemory::Memcpy(ValuePtr, Src, sizeof(FScriptArray));                   // shallow copy
                     return false;
@@ -417,7 +417,7 @@ public:
                 }
             }
         }
-        return bCopyValue;
+        return true;
     }
 
     static bool FillArray(lua_State *L, void *Userdata)
@@ -493,7 +493,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         int32 Type = lua_type(L, IndexInStack);
         if (Type == LUA_TTABLE)
@@ -508,7 +508,7 @@ public:
             FLuaMap *LuaMap = (FLuaMap*)GetCppInstanceFast(L, IndexInStack);
             if (LuaMap)
             {
-                if (!bCopyValue && !bRemote && Property->HasAnyPropertyFlags(CPF_OutParm))
+                if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
                     FMemory::Memcpy(ValuePtr, LuaMap->Map, sizeof(FScriptMap));     // shallow copy
                     return false;
@@ -519,7 +519,7 @@ public:
                 }
             }
         }
-        return bCopyValue;
+        return true;
     }
 
     static bool FillMap(lua_State *L, void *Userdata)
@@ -598,7 +598,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         int32 Type = lua_type(L, IndexInStack);
         if (Type == LUA_TTABLE)
@@ -613,7 +613,7 @@ public:
             FLuaSet *LuaSet = (FLuaSet*)GetCppInstanceFast(L, IndexInStack);
             if (LuaSet)
             {
-                if (!bCopyValue && !bRemote && Property->HasAnyPropertyFlags(CPF_OutParm))
+                if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
                     FMemory::Memcpy(ValuePtr, LuaSet->Set, sizeof(FScriptSet));     // shallow copy
                     return false;
@@ -624,7 +624,7 @@ public:
                 }
             }
         }
-        return bCopyValue;
+        return true;
     }
 
     static bool FillSet(lua_State *L, void *Userdata)
@@ -718,7 +718,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
 #if UE_BUILD_DEBUG
         int32 Type = lua_type(L, IndexInStack);
@@ -751,7 +751,7 @@ public:
         void *Value = GetCppInstanceFast(L, IndexInStack);
         if (Value)
         {
-            if (!bCopyValue && !bRemote && Property->HasAnyPropertyFlags(CPF_OutParm))
+            if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
             {
                 FMemory::Memcpy(ValuePtr, Value, StructSize);           // shallow copy
                 return false;
@@ -761,7 +761,7 @@ public:
                 StructProperty->CopySingleValue(ValuePtr, Value);
             }
         }
-        return bCopyValue;
+        return true;
     }
 
 private:
@@ -792,7 +792,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
@@ -841,7 +841,7 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue, bool bRemote) const override
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
@@ -1152,7 +1152,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     bool bRemote = false;
 #endif
 
-    void *Params = PreCall(L, NumParams, FirstParamIndex, Userdata, bRemote);       // prepare values of properties
+    void *Params = PreCall(L, NumParams, FirstParamIndex, Userdata);        // prepare values of properties
 
     UFunction *FinalFunction = Function;
     if (bInterfaceFunc)
@@ -1200,7 +1200,14 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     else
 #endif
     {
-        Object->UObject::ProcessEvent(FinalFunction, Params);
+        if (bRemote)
+        {
+            Object->CallRemoteFunction(FinalFunction, Params, nullptr, nullptr);
+        }
+        else
+        {
+            Object->UObject::ProcessEvent(FinalFunction, Params);
+        }
     }
 
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params);        // push 'out' properties to Lua stack
@@ -1243,7 +1250,7 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
 /**
  * Prepare values of properties for the UFunction
  */
-void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Userdata, bool bRemote)
+void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Userdata)
 {
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     void *Params = Buffer;
@@ -1273,7 +1280,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
         }
         if (ParamIndex < NumParams)
         {
-            CleanupFlags[i] = Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false, bRemote);
+            CleanupFlags[i] = Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false);
         }
         else if (!Property->IsOutParameter())
         {
