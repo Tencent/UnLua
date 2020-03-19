@@ -218,9 +218,9 @@ void RemoveUFunction(UFunction *Function, UClass *OuterClass)
  * 1. Replace thunk function
  * 2. Insert special opcodes if necessary
  */
-void OverrideUFunction(UFunction *Function, FNativeFuncPtr NativeFunc, void *Userdata, bool bForceSetNativeFunc, bool bInsertOpcodes)
+void OverrideUFunction(UFunction *Function, FNativeFuncPtr NativeFunc, void *Userdata, bool bInsertOpcodes)
 {
-    if (Function->HasAnyFunctionFlags(FUNC_Native) || bForceSetNativeFunc)
+    if (!Function->HasAnyFunctionFlags(FUNC_Net) || Function->HasAnyFunctionFlags(FUNC_Native))
     {
         Function->SetNativeFunc(NativeFunc);
     }
