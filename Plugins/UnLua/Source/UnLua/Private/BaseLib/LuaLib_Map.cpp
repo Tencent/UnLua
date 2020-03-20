@@ -311,8 +311,17 @@ static int32 TMap_ToTable(lua_State *L)
         Keys->Get(i, Keys->ElementCache);
         Keys->Inner->Read(L, Keys->ElementCache, true);
 
-        void *Value = Map->Find(Keys->ElementCache);
-        Map->ValueInterface->Read(L, Value, false);
+        void *ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
+        Map->ValueInterface->Initialize(ValueCache);
+        bool bSuccess = Map->Find(Keys->ElementCache, ValueCache);
+        if (bSuccess)
+        {
+            Map->ValueInterface->Read(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
+        }
+        else
+        {
+            lua_pushnil(L);
+        }
 
         lua_rawset(L, -3);
     }
