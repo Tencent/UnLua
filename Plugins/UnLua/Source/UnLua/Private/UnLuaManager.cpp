@@ -464,6 +464,15 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
 
     UClass *Class = Actor->GetClass();
     FString *ModuleNamePtr = ModuleNames.Find(Class);
+    if (!ModuleNamePtr)
+    {
+        UClass **SuperClassPtr = Derived2BaseClasses.Find(Class);
+        if (!SuperClassPtr || !(*SuperClassPtr))
+        {
+            return false;
+        }
+        ModuleNamePtr = ModuleNames.Find(*SuperClassPtr);
+    }
     check(ModuleNamePtr);
     TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleNamePtr);
     check(LuaFunctionsPtr);
