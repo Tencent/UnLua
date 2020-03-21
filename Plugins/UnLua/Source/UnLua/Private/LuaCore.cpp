@@ -2797,7 +2797,7 @@ namespace UnLua
                     uint8 *SrcData = SrcMap.GetData(SrcIndex);
                     uint8 *DestData = DestMap->GetData(DestIndex);
                     KeyInterface->Copy(DestData, SrcData);
-                    ValueInterface->Copy(DestData, SrcData);
+                    ValueInterface->Copy(DestData + DestMap->MapLayout.ValueOffset, SrcData + SrcMap.MapLayout.ValueOffset);
                     --Num;
                 }
             }
