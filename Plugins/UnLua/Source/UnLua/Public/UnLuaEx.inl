@@ -807,8 +807,8 @@ namespace UnLua
                 }
                 lua_rawset(L, -3);
 
-                //lua_pushvalue(L, -1);                    // set metatable to self
-                //lua_setmetatable(L, -2);
+                lua_pushvalue(L, -1);                    // set metatable to self
+                lua_setmetatable(L, -2);
             }
         }
 
