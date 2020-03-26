@@ -750,7 +750,7 @@ void PushStructArray(lua_State *L, UProperty *Property, void *Value, const char 
 /**
  * Create a Lua instance (table) for a UObject
  */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, const char *ModuleName)
+int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName)
 {
     check(Object);
 
@@ -762,7 +762,16 @@ int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, const char *ModuleN
     lua_pushvalue(L, -2);
     lua_rawset(L, -4);                                          // INSTANCET.Object = RAW_UOBJECT
     int32 Type = GetLoadedModule(L, ModuleName);                // push the required module/table ('REQUIRED_MODULE') to the top of the stack
-    lua_getmetatable(L, -2);                                    // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
+    if (Class)
+    {
+        TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ClassName(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName()));
+        Type = luaL_getmetatable(L, ClassName.Get());
+        check(Type == LUA_TTABLE);
+    }
+    else
+    {
+        lua_getmetatable(L, -2);                                // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
+    }
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     lua_pushstring(L, "Overridden");
     lua_pushvalue(L, -2);

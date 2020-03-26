@@ -78,7 +78,7 @@ void PushStructArray(lua_State *L, UProperty *Property, void *Value, const char 
 /**
  * Functions to New/Delete Lua instance for UObjectBaseUtility
  */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, const char *ModuleName);
+int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
 void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object);
 
 /**

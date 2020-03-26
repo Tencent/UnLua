@@ -85,13 +85,18 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
 
     if (bSuccess)
     {
+        bool bDerivedClassBinded = false;
         if (Object->GetClass() != Class)
         {
+            bDerivedClassBinded = true;
             OnDerivedClassBinded(Object->GetClass(), Class);
         }
 
         GLuaCxt->AddModuleName(InModuleName);                                       // record this required module
-        int32 ObjectRef = NewLuaObject(L, Object,TCHAR_TO_ANSI(InModuleName));      // create a Lua instance for this UObject
+
+        // create a Lua instance for this UObject
+        int32 ObjectRef = NewLuaObject(L, Object, bDerivedClassBinded ? Class : nullptr, TCHAR_TO_ANSI(InModuleName));
+
         AddAttachedObject(Object, ObjectRef);                                       // record this binded UObject
 
         int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
