@@ -283,8 +283,8 @@ public:
     void BroadcastMulticastDelegate(lua_State *L, int32 NumParams, int32 FirstParamIndex, FMulticastScriptDelegate *ScriptDelegate);
 
 private:
-    void* PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Userdata = nullptr);
-    int32 PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params);
+    void* PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, TArray<bool> &CleanupFlags, void *Userdata = nullptr);
+    int32 PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params, const TArray<bool> &CleanupFlags);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 
@@ -298,7 +298,6 @@ private:
 #endif
     TArray<FPropertyDesc*> Properties;
     TArray<int32> OutPropertyIndices;
-    TArray<bool> CleanupFlags;
     FParameterCollection *DefaultParams;
     int32 ReturnPropertyIndex;
     int32 LatentPropertyIndex;

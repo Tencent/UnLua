@@ -1013,8 +1013,6 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         }
     }
 
-    CleanupFlags.AddZeroed(Properties.Num());
-
 #if !SUPPORTS_RPC_CALL
     if (CurrentOutParmRec)
     {
@@ -1152,7 +1150,9 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     bool bRemote = false;
 #endif
 
-    void *Params = PreCall(L, NumParams, FirstParamIndex, Userdata);        // prepare values of properties
+    TArray<bool> CleanupFlags;
+    CleanupFlags.AddZeroed(Properties.Num());
+    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
 
     UFunction *FinalFunction = Function;
     if (bInterfaceFunc)
@@ -1210,7 +1210,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         }
     }
 
-    int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params);        // push 'out' properties to Lua stack
+    int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // push 'out' properties to Lua stack
     return NumReturnValues;
 }
 
@@ -1225,9 +1225,11 @@ int32 FFunctionDesc::ExecuteDelegate(lua_State *L, int32 NumParams, int32 FirstP
         return 0;
     }
 
-    void *Params = PreCall(L, NumParams, FirstParamIndex);
+    TArray<bool> CleanupFlags;
+    CleanupFlags.AddZeroed(Properties.Num());
+    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
     ScriptDelegate->ProcessDelegate<UObject>(Params);
-    int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params);
+    int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);
     return NumReturnValues;
 }
 
@@ -1242,23 +1244,23 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
         return;
     }
 
-    void *Params = PreCall(L, NumParams, FirstParamIndex);
+    TArray<bool> CleanupFlags;
+    CleanupFlags.AddZeroed(Properties.Num());
+    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
     ScriptDelegate->ProcessMulticastDelegate<UObject>(Params);
-    PostCall(L, NumParams, FirstParamIndex, Params);    // !!! have no return values for multi-cast delegates
+    PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // !!! have no return values for multi-cast delegates
 }
 
 /**
  * Prepare values of properties for the UFunction
  */
-void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Userdata)
+void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, TArray<bool> &CleanupFlags, void *Userdata)
 {
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     void *Params = Buffer;
 #else
     void *Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
 #endif
-
-    FMemory::Memzero(CleanupFlags.GetData(), CleanupFlags.Num());
 
     int32 ParamIndex = 0;
     for (int32 i = 0; i < Properties.Num(); ++i)
@@ -1305,7 +1307,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
 /**
  * Handling 'out' properties
  */
-int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params)
+int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params, const TArray<bool> &CleanupFlags)
 {
     int32 NumReturnValues = 0;
 
