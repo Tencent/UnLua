@@ -69,6 +69,8 @@ public:
     void PrePIEEnded(bool bIsSimulating);
     void EndPIE(bool bIsSimulating);
 
+    void OnEndPlayMap();
+
     const TMap<FName, UnLua::IExportedClass*>& GetExportedReflectedClasses() const { return ExportedReflectedClasses; }
     const TMap<FName, UnLua::IExportedClass*>& GetExportedNonReflectedClasses() const { return ExportedNonReflectedClasses; }
     const TArray<UnLua::IExportedEnum*>& GetExportedEnums() const { return ExportedEnums; }
