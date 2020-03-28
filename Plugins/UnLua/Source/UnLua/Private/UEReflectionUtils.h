@@ -57,7 +57,21 @@ public:
     FORCEINLINE bool IsValid() const  { return Property != nullptr; }
 
     /**
-     * Test if this property is an out parameter. out parameter means return parameter or non-const parameter
+     * Test if this property is a const reference parameter.
+     *
+     * @return - true if the property is a const reference parameter, false otherwise
+     */
+    FORCEINLINE bool IsConstOutParameter() const { return Property->HasAllPropertyFlags(CPF_OutParm | CPF_ConstParm); }
+
+    /**
+     * Test if this property is a non-const reference parameter.
+     *
+     * @return - true if the property is a non-const reference parameter, false otherwise
+     */
+    FORCEINLINE bool IsNonConstOutParameter() const { return Property->HasAnyPropertyFlags(CPF_OutParm) && !Property->HasAnyPropertyFlags(CPF_ConstParm); }
+
+    /**
+     * Test if this property is an out parameter. out parameter means return parameter or non-const reference parameter
      *
      * @return - true if the property is an out parameter, false otherwise
      */
