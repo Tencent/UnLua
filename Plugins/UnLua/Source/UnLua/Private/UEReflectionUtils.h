@@ -209,9 +209,9 @@ public:
     FORCEINLINE bool IsValid() const { return Function != nullptr; }
 
     /**
-     * Test if this function has return parameter
+     * Test if this function has return property
      *
-     * @return - true if the function has return parameter, false otherwise
+     * @return - true if the function has return property, false otherwise
      */
     FORCEINLINE bool HasReturnProperty() const { return ReturnPropertyIndex > INDEX_NONE; }
 
@@ -235,6 +235,20 @@ public:
      * @return - the number of out properties. out properties means return property or non-const reference properties
      */
     FORCEINLINE uint8 GetNumOutProperties() const { return ReturnPropertyIndex > INDEX_NONE ? OutPropertyIndices.Num() + 1 : OutPropertyIndices.Num(); }
+
+    /**
+     * Get the number of reference properties
+     *
+     * @return - the number of reference properties.
+     */
+    FORCEINLINE uint8 GetNumRefProperties() const { return NumRefProperties; }
+
+    /**
+     * Get the number of non-const reference properties
+     *
+     * @return - the number of non-const reference properties.
+     */
+    FORCEINLINE uint8 GetNumNoConstRefProperties() const { return OutPropertyIndices.Num(); }
 
     /**
      * Get the 'true' function
@@ -302,6 +316,7 @@ private:
     int32 ReturnPropertyIndex;
     int32 LatentPropertyIndex;
     int32 FunctionRef;
+    uint8 NumRefProperties;
     bool bStaticFunc;
     bool bInterfaceFunc;
 };

@@ -510,11 +510,10 @@ void FDelegateHelper::CreateSignature(UFunction *TemplateFunction, FName FuncNam
     // set custom thunk function for the duplicated UFunction
     OverrideUFunction(SignatureFunction, (FNativeFuncPtr)&FDelegateHelper::ProcessDelegate, SignatureDesc, false);
 
-    uint8 NumOutProperties = SignatureDesc->SignatureFunctionDesc->GetNumOutProperties();
-    uint8 NumNonConstRefProperties = SignatureDesc->SignatureFunctionDesc->HasReturnProperty() ? NumOutProperties - 1 : NumOutProperties;
-    if (NumNonConstRefProperties > 0)
+    uint8 NumRefProperties = SignatureDesc->SignatureFunctionDesc->GetNumRefProperties();
+    if (NumRefProperties > 0)
     {
-        SignatureFunction->FunctionFlags |= FUNC_HasOutParms;        // 'FUNC_HasOutParms' will not be set for signature function even if it has non-const reference parameters
+        SignatureFunction->FunctionFlags |= FUNC_HasOutParms;        // 'FUNC_HasOutParms' will not be set for signature function even if it has out parameters
     }
 
     Callbacks.Add(Callback, SignatureFunction);

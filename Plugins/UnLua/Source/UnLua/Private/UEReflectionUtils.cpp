@@ -936,7 +936,8 @@ FPropertyDesc* FPropertyDesc::Create(UProperty *InProperty)
  * Function descriptor constructor
  */
 FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams, int32 InFunctionRef)
-    : Function(InFunction), DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE), FunctionRef(InFunctionRef), bStaticFunc(false), bInterfaceFunc(false)
+    : Function(InFunction), DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
+    , FunctionRef(InFunctionRef), NumRefProperties(0), bStaticFunc(false), bInterfaceFunc(false)
 {
     check(InFunction);
 
@@ -985,6 +986,8 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         }
         else if (Property->HasAnyPropertyFlags(CPF_OutParm))
         {
+            ++NumRefProperties;
+
             // pre-create OutParmRec for 'out' property
 #if !SUPPORTS_RPC_CALL
             FOutParmRec *Out = (FOutParmRec*)FMemory::Malloc(sizeof(FOutParmRec), alignof(FOutParmRec));
