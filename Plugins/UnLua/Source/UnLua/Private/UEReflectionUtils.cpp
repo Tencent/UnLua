@@ -937,7 +937,7 @@ FPropertyDesc* FPropertyDesc::Create(UProperty *InProperty)
  */
 FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams, int32 InFunctionRef)
     : Function(InFunction), DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
-    , FunctionRef(InFunctionRef), NumRefProperties(0), bStaticFunc(false), bInterfaceFunc(false)
+    , FunctionRef(InFunctionRef), NumRefProperties(0), NumCalls(0), bStaticFunc(false), bInterfaceFunc(false)
 {
     check(InFunction);
 
@@ -1259,11 +1259,17 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
  */
 void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, TArray<bool> &CleanupFlags, void *Userdata)
 {
+    void *Params = nullptr;
 #if ENABLE_PERSISTENT_PARAM_BUFFER
-    void *Params = Buffer;
-#else
-    void *Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
+    if (NumCalls < 1)
+    {
+        Params = Buffer;
+    }
+    else
 #endif
+    Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
+
+    ++NumCalls;
 
     int32 ParamIndex = 0;
     for (int32 i = 0; i < Properties.Num(); ++i)
@@ -1349,9 +1355,12 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
         }
     }
 
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
-    FMemory::Free(Params);
+    --NumCalls;
+
+#if ENABLE_PERSISTENT_PARAM_BUFFER
+    if (NumCalls > 0)
 #endif
+    FMemory::Free(Params);
 
     return NumReturnValues;
 }
