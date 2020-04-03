@@ -182,6 +182,7 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     }
     OuterClass->AddFunctionToFunctionMap(NewFunc, NewFuncName);
     //GReflectionRegistry.RegisterFunction(NewFunc);
+    NewFunc->ClearInternalFlags(EInternalObjectFlags::Native);
     if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())
     {
         NewFunc->AddToRoot();
