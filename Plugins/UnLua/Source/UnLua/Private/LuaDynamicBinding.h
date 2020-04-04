@@ -24,12 +24,22 @@ struct FLuaDynamicBinding
     {}
 
     bool IsValid(UClass *InClass) const;
-    bool Setup(UClass *InClass, const TCHAR *InModuleName, int32 InInitializerTableRef);
-    int32 Cleanup();
 
     UClass *Class;
     FString ModuleName;
     int32 InitializerTableRef;
+
+    struct FLuaDynamicBindingStackNode
+    {
+        UClass *Class;
+        FString ModuleName;
+        int32 InitializerTableRef;
+    };
+
+    TArray<FLuaDynamicBindingStackNode> Stack;
+
+    bool Push(UClass *InClass, const TCHAR *InModuleName, int32 InInitializerTableRef);
+    int32 Pop();
 };
 
 extern FLuaDynamicBinding GLuaDynamicBinding;
