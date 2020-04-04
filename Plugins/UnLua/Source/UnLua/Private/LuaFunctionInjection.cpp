@@ -16,6 +16,8 @@
 #include "UEReflectionUtils.h"
 #include "GameFramework/Actor.h"
 
+#define CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION 1
+
 /**
  * Custom thunk function to call Lua function
  */
@@ -153,7 +155,14 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     static int32 Offset = offsetof(FFakeProperty, Offset_Internal);
     static FArchive Ar;         // dummy archive used for UProperty::Link()
 
+#if CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION
+    FObjectDuplicationParameters DuplicationParams(TemplateFunction, OuterClass);
+    DuplicationParams.DestName = NewFuncName;
+    DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
+    UFunction *NewFunc = Cast<UFunction>(StaticDuplicateObjectEx(DuplicationParams));
+#else
     UFunction *NewFunc = DuplicateObject(TemplateFunction, OuterClass, NewFuncName);
+#endif
     NewFunc->PropertiesSize = TemplateFunction->PropertiesSize;
     NewFunc->MinAlignment = TemplateFunction->MinAlignment;
     int32 NumParams = NewFunc->NumParms;
@@ -204,6 +213,7 @@ void RemoveUFunction(UFunction *Function, UClass *OuterClass)
     {
         Function->RemoveFromRoot();
     }
+#if !CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION
     if (Function->IsNative())
     {
         Function->ClearInternalFlags(EInternalObjectFlags::Native);
@@ -213,6 +223,7 @@ void RemoveUFunction(UFunction *Function, UClass *OuterClass)
             Property->ClearInternalFlags(EInternalObjectFlags::Native);
         }
     }
+#endif
 }
 
 /**
