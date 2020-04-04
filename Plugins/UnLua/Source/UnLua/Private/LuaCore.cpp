@@ -2233,7 +2233,7 @@ int32 ScriptStruct_Delete(lua_State *L)
     {
         if (!bTwoLvlPtr)
         {
-            ScriptStruct->DestroyStruct((uint8*)Userdata + ClassDesc->GetUserdataPadding());
+            ScriptStruct->DestroyStruct(Userdata);
         }
     }
     else
