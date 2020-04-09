@@ -144,6 +144,8 @@ public:
         UEnumProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UEnumProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Enum);
         UNumericProperty *UnderlyingProp = NewObject<UByteProperty>(Property, TEXT("UnderlyingType"));
         Property->AddCppProperty(UnderlyingProp);
+        FArchive Ar;
+        Property->Link(Ar);
         return OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
     }
 
