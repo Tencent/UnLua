@@ -187,7 +187,7 @@ namespace UnLua
         }
 
         virtual FString GetName() const override { return FString(TType<typename TDecay<T>::Type>::GetName()); }
-        virtual UProperty* GetUProperty() const override { return nullptr; }
+        virtual FProperty* GetUProperty() const override { return nullptr; }
 
         // interfaces of ITypeOps
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override
@@ -226,7 +226,7 @@ namespace UnLua
         virtual void Copy(void *Dest, const void *Src) const override { *((T**)Dest) = *((T**)Src); }
         virtual bool Identical(const void *A, const void *B) const override { return *((T**)A) == *((T**)B); }
         virtual FString GetName() const override { return FString(TType<typename TDecay<T>::Type>::GetName()); }
-        virtual UProperty* GetUProperty() const override { return nullptr; }
+        virtual FProperty* GetUProperty() const override { return nullptr; }
 
         // interfaces of ITypeOps
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override

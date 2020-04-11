@@ -19,7 +19,6 @@
 #include "LuaMap.h"
 #include "UnLua.h"
 #include "UnLuaDelegates.h"
-#include "UnLuaCompatibility.h"
 #include "UEReflectionUtils.h"
 #include "UEObjectReferencer.h"
 #include "CollisionHelper.h"
@@ -514,7 +513,7 @@ static void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 /**
  * Push a integer
  */
-static void PushIntegerElement(lua_State *L, UNumericProperty *Property, void *Value)
+static void PushIntegerElement(lua_State *L, FNumericProperty *Property, void *Value)
 {
     lua_pushinteger(L, Property->GetUnsignedIntPropertyValue(Value));
 }
@@ -522,7 +521,7 @@ static void PushIntegerElement(lua_State *L, UNumericProperty *Property, void *V
 /**
  * Push a float
  */
-static void PushFloatElement(lua_State *L, UNumericProperty *Property, void *Value)
+static void PushFloatElement(lua_State *L, FNumericProperty *Property, void *Value)
 {
     lua_pushnumber(L, Property->GetFloatingPointPropertyValue(Value));
 }
@@ -530,7 +529,7 @@ static void PushFloatElement(lua_State *L, UNumericProperty *Property, void *Val
 /**
  * Push a enum
  */
-static void PushEnumElement(lua_State *L, UNumericProperty *Property, void *Value)
+static void PushEnumElement(lua_State *L, FNumericProperty *Property, void *Value)
 {
     lua_pushinteger(L, Property->GetSignedIntPropertyValue(Value));
 }
@@ -538,7 +537,7 @@ static void PushEnumElement(lua_State *L, UNumericProperty *Property, void *Valu
 /**
  * Push a FName
  */
-static void PushFNameElement(lua_State *L, UNameProperty *Property, void *Value)
+static void PushFNameElement(lua_State *L, FNameProperty *Property, void *Value)
 {
     lua_pushstring(L, TCHAR_TO_UTF8(*Property->GetPropertyValue(Value).ToString()));
 }
@@ -546,7 +545,7 @@ static void PushFNameElement(lua_State *L, UNameProperty *Property, void *Value)
 /**
  * Push a FString
  */
-static void PushFStringElement(lua_State *L, UStrProperty *Property, void *Value)
+static void PushFStringElement(lua_State *L, FStrProperty *Property, void *Value)
 {
     lua_pushstring(L, TCHAR_TO_UTF8(*Property->GetPropertyValue(Value)));
 }
@@ -554,7 +553,7 @@ static void PushFStringElement(lua_State *L, UStrProperty *Property, void *Value
 /**
  * Push a FText
  */
-static void PushFTextElement(lua_State *L, UTextProperty *Property, void *Value)
+static void PushFTextElement(lua_State *L, FTextProperty *Property, void *Value)
 {
     lua_pushstring(L, TCHAR_TO_UTF8(*Property->GetPropertyValue(Value).ToString()));
 }
@@ -562,7 +561,7 @@ static void PushFTextElement(lua_State *L, UTextProperty *Property, void *Value)
 /**
  * Push a UObject
  */
-static void PushObjectElement(lua_State *L, UObjectPropertyBase *Property, void *Value)
+static void PushObjectElement(lua_State *L, FObjectPropertyBase *Property, void *Value)
 {
     UObject *Object = Property->GetObjectPropertyValue(Value);
     GObjectReferencer.AddObjectRef(Object);
@@ -572,7 +571,7 @@ static void PushObjectElement(lua_State *L, UObjectPropertyBase *Property, void 
 /**
  * Push a Interface
  */
-static void PushInterfaceElement(lua_State *L, UInterfaceProperty *Property, void *Value)
+static void PushInterfaceElement(lua_State *L, FInterfaceProperty *Property, void *Value)
 {
     const FScriptInterface &Interface = Property->GetPropertyValue(Value);
     UObject *Object = Interface.GetObject();
@@ -583,7 +582,7 @@ static void PushInterfaceElement(lua_State *L, UInterfaceProperty *Property, voi
 /**
  * Push a ScriptStruct
  */
-static void PushStructElement(lua_State *L, UProperty *Property, void *Value)
+static void PushStructElement(lua_State *L, FProperty *Property, void *Value)
 {
     void **Userdata = (void**)lua_newuserdata(L, sizeof(void*));
     *Userdata = Value;
@@ -593,7 +592,7 @@ static void PushStructElement(lua_State *L, UProperty *Property, void *Value)
 /**
  * Push a delegate
  */
-static void PushDelegateElement(lua_State *L, UDelegateProperty *Property, void *Value)
+static void PushDelegateElement(lua_State *L, FDelegateProperty *Property, void *Value)
 {
     FScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
     FDelegateHelper::PreBind(ScriptDelegate, Property);
@@ -605,7 +604,7 @@ static void PushDelegateElement(lua_State *L, UDelegateProperty *Property, void 
 /**
  * Push a multicast delegate
  */
-static void PushMCDelegateElement(lua_State *L, UMulticastDelegateProperty *Property, void *Value)
+static void PushMCDelegateElement(lua_State *L, FMulticastDelegateProperty *Property, void *Value)
 {
 #if ENGINE_MINOR_VERSION < 23
     FMulticastScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
@@ -692,59 +691,59 @@ static void PushPropertyArray(lua_State *L, T *Property, void *Value, void(*Push
 }
 
 
-void PushIntegerArray(lua_State *L, UNumericProperty *Property, void *Value)
+void PushIntegerArray(lua_State *L, FNumericProperty *Property, void *Value)
 {
-    PushPropertyArray<UNumericProperty, false>(L, Property, Value, PushIntegerElement);
+    PushPropertyArray<FNumericProperty, false>(L, Property, Value, PushIntegerElement);
 }
 
-void PushFloatArray(lua_State *L, UNumericProperty *Property, void *Value)
+void PushFloatArray(lua_State *L, FNumericProperty *Property, void *Value)
 {
-    PushPropertyArray<UNumericProperty, false>(L, Property, Value, PushFloatElement);
+    PushPropertyArray<FNumericProperty, false>(L, Property, Value, PushFloatElement);
 }
 
-void PushEnumArray(lua_State *L, UNumericProperty *Property, void *Value)
+void PushEnumArray(lua_State *L, FNumericProperty *Property, void *Value)
 {
-    PushPropertyArray<UNumericProperty, false>(L, Property, Value, PushEnumElement);
+    PushPropertyArray<FNumericProperty, false>(L, Property, Value, PushEnumElement);
 }
 
-void PushFNameArray(lua_State *L, UNameProperty *Property, void *Value)
+void PushFNameArray(lua_State *L, FNameProperty *Property, void *Value)
 {
-    PushPropertyArray<UNameProperty, false>(L, Property, Value, PushFNameElement);
+    PushPropertyArray<FNameProperty, false>(L, Property, Value, PushFNameElement);
 }
 
-void PushFStringArray(lua_State *L, UStrProperty *Property, void *Value)
+void PushFStringArray(lua_State *L, FStrProperty *Property, void *Value)
 {
-    PushPropertyArray<UStrProperty, false>(L, Property, Value, PushFStringElement);
+    PushPropertyArray<FStrProperty, false>(L, Property, Value, PushFStringElement);
 }
 
-void PushFTextArray(lua_State *L, UTextProperty *Property, void *Value)
+void PushFTextArray(lua_State *L, FTextProperty *Property, void *Value)
 {
-    PushPropertyArray<UTextProperty, false>(L, Property, Value, PushFTextElement);
+    PushPropertyArray<FTextProperty, false>(L, Property, Value, PushFTextElement);
 }
 
-void PushObjectArray(lua_State *L, UObjectPropertyBase *Property, void *Value)
+void PushObjectArray(lua_State *L, FObjectPropertyBase *Property, void *Value)
 {
-    PushPropertyArray<UObjectPropertyBase, false>(L, Property, Value, PushObjectElement);
+    PushPropertyArray<FObjectPropertyBase, false>(L, Property, Value, PushObjectElement);
 }
 
-void PushInterfaceArray(lua_State *L, UInterfaceProperty *Property, void *Value)
+void PushInterfaceArray(lua_State *L, FInterfaceProperty *Property, void *Value)
 {
-    PushPropertyArray<UInterfaceProperty, false>(L, Property, Value, PushInterfaceElement);
+    PushPropertyArray<FInterfaceProperty, false>(L, Property, Value, PushInterfaceElement);
 }
 
-void PushDelegateArray(lua_State *L, UDelegateProperty *Property, void *Value)
+void PushDelegateArray(lua_State *L, FDelegateProperty *Property, void *Value)
 {
-    PushPropertyArray<UDelegateProperty, true>(L, Property, Value, PushDelegateElement, "FScriptDelegate");
+    PushPropertyArray<FDelegateProperty, true>(L, Property, Value, PushDelegateElement, "FScriptDelegate");
 }
 
-void PushMCDelegateArray(lua_State *L, UMulticastDelegateProperty *Property, void *Value, const char *MetatableName)
+void PushMCDelegateArray(lua_State *L, FMulticastDelegateProperty *Property, void *Value, const char *MetatableName)
 {
-    PushPropertyArray<UMulticastDelegateProperty, true>(L, Property, Value, PushMCDelegateElement, MetatableName);
+    PushPropertyArray<FMulticastDelegateProperty, true>(L, Property, Value, PushMCDelegateElement, MetatableName);
 }
 
-void PushStructArray(lua_State *L, UProperty *Property, void *Value, const char *MetatableName)
+void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char *MetatableName)
 {
-    PushPropertyArray<UProperty, true>(L, Property, Value, PushStructElement, MetatableName);
+    PushPropertyArray<FProperty, true>(L, Property, Value, PushStructElement, MetatableName);
 }
 
 /**
@@ -1773,7 +1772,7 @@ int32 Global_GetUProperty(lua_State *L)
         UObject *Object = UnLua::GetUObject(L, 1);
         if (Property && Object)
         {
-            Property->Read(L, Object, false);           // get UProperty value
+            Property->Read(L, Object, false);           // get FProperty value
         }
     }
     else
@@ -1791,7 +1790,7 @@ int32 Global_SetUProperty(lua_State *L)
         UObject *Object = UnLua::GetUObject(L, 1);
         if (Property && Object)
         {
-            Property->Write(L, Object, 3);              // set UProperty value
+            Property->Write(L, Object, 3);              // set FProperty value
         }
     }
     return 0;

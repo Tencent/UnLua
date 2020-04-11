@@ -16,14 +16,14 @@
 
 #include "CoreMinimal.h"
 #include "CoreUObject.h"
+#include "Engine/UserDefinedEnum.h"
 #include "UnLuaBase.h"
-#include "UnLuaCompatibility.h"
 
 #define ENABLE_PERSISTENT_PARAM_BUFFER 1            // option to allocate persistent buffer for UFunction's parameters
 #define ENABLE_CALL_OVERRIDDEN_FUNCTION 1           // option to call overridden UFunction
 
 /**
- * new UProperty types
+ * new FProperty types
  */
 enum
 {
@@ -45,7 +45,7 @@ class FClassDesc;
 class FPropertyDesc : public UnLua::ITypeInterface
 {
 public:
-    static FPropertyDesc* Create(UProperty *InProperty);
+    static FPropertyDesc* Create(FProperty *InProperty);
 
     virtual ~FPropertyDesc() {}
 
@@ -87,22 +87,22 @@ public:
     /**
      * Get the 'true' property
      *
-     * @return - the UProperty
+     * @return - the FProperty
      */
-    FORCEINLINE UProperty* GetProperty() const { return Property; }
+    FORCEINLINE FProperty* GetProperty() const { return Property; }
 
     /**
-     * @see UProperty::InitializeValue_InContainer(...)
+     * @see FProperty::InitializeValue_InContainer(...)
      */
     FORCEINLINE void InitializeValue(void *ContainerPtr) const { Property->InitializeValue_InContainer(ContainerPtr); }
 
     /**
-     * @see UProperty::DestroyValue_InContainer(...)
+     * @see FProperty::DestroyValue_InContainer(...)
      */
     FORCEINLINE void DestroyValue(void *ContainerPtr) const { Property->DestroyValue_InContainer(ContainerPtr); }
 
     /**
-     * @see UProperty::CopySingleValue(...)
+     * @see FProperty::CopySingleValue(...)
      */
     FORCEINLINE void CopyValue(void *ContainerPtr, const void *Src) const { Property->CopySingleValue(Property->ContainerPtrToValuePtr<void>(ContainerPtr), Src); }
 
@@ -162,31 +162,31 @@ public:
     virtual void Copy(void *Dest, const void *Src) const override { Property->CopySingleValue(Dest, Src); }
     virtual bool Identical(const void *A, const void *B) const override { return Property->Identical(A, B); }
     virtual FString GetName() const override { return TEXT(""); }
-    virtual UProperty* GetUProperty() const override { return Property; }
+    virtual FProperty* GetUProperty() const override { return Property; }
     virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override { GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy); }
     virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override { SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, true); }
 
 protected:
-    explicit FPropertyDesc(UProperty *InProperty) : Property(InProperty) {}
+    explicit FPropertyDesc(FProperty *InProperty) : Property(InProperty) {}
 
     union
     {
-        UProperty *Property;
-        UNumericProperty *NumericProperty;
-        UEnumProperty *EnumProperty;
-        UBoolProperty *BoolProperty;
-        UObjectPropertyBase *ObjectBaseProperty;
-        USoftObjectProperty *SoftObjectProperty;
-        UInterfaceProperty *InterfaceProperty;
-        UNameProperty *NameProperty;
-        UStrProperty *StringProperty;
-        UTextProperty *TextProperty;
-        UArrayProperty *ArrayProperty;
-        UMapProperty *MapProperty;
-        USetProperty *SetProperty;
-        UStructProperty *StructProperty;
-        UDelegateProperty *DelegateProperty;
-        UMulticastDelegateProperty *MulticastDelegateProperty;
+        FProperty *Property;
+        FNumericProperty *NumericProperty;
+        FEnumProperty *EnumProperty;
+        FBoolProperty *BoolProperty;
+        FObjectPropertyBase *ObjectBaseProperty;
+        FSoftObjectProperty *SoftObjectProperty;
+        FInterfaceProperty *InterfaceProperty;
+        FNameProperty *NameProperty;
+        FStrProperty *StringProperty;
+        FTextProperty *TextProperty;
+        FArrayProperty *ArrayProperty;
+        FMapProperty *MapProperty;
+        FSetProperty *SetProperty;
+        FStructProperty *StructProperty;
+        FDelegateProperty *DelegateProperty;
+        FMulticastDelegateProperty *MulticastDelegateProperty;
     };
 };
 
@@ -515,17 +515,17 @@ private:
  */
 class FEnumDesc
 {
-public:
-    explicit FEnumDesc(UEnum *InEnum)
-        : Enum(InEnum), RefCount(0)
+    enum class EType
     {
-        if (Enum)
-        {
-            EnumName = Enum->GetName();
-        }
-    }
+        Enum,
+        UserDefinedEnum,
+    };
 
+public:
+    explicit FEnumDesc(UEnum *InEnum);
     ~FEnumDesc() {}
+
+    bool Release();
 
     FORCEINLINE bool IsValid() const { return Enum != nullptr; }
 
@@ -534,7 +534,8 @@ public:
     template <typename CharType>
     FORCEINLINE int64 GetValue(const CharType *EntryName) const
     {
-        return Enum->GetValueByName(FName(EntryName));
+        static int64 (*Func[2])(UEnum*, FName) = { FEnumDesc::GetEnumValue, FEnumDesc::GetUserDefinedEnumValue };
+        return (Func[(int32)Type])(Enum, FName(EntryName));
     }
 
     FORCEINLINE UEnum* GetEnum() const { return Enum; }
@@ -543,21 +544,19 @@ public:
 
     FORCEINLINE void AddRef() { ++RefCount; }
 
-    bool Release()
-    {
-        --RefCount;
-        if (!RefCount)
-        {
-            delete this;
-            return true;
-        }
-        return false;
-    }
+    static int64 GetEnumValue(UEnum *Enum, FName EntryName);
+    static int64 GetUserDefinedEnumValue(UEnum *Enum, FName EntryName);
 
 private:
-    UEnum *Enum;
+    union
+    {
+        UEnum *Enum;
+        UUserDefinedEnum *UserDefinedEnum;
+    };
+
     FString EnumName;
     int32 RefCount;
+    EType Type;
 };
 
 /**
@@ -641,4 +640,4 @@ private:
 
 extern FReflectionRegistry GReflectionRegistry;
 
-UNLUA_API int32 GetPropertyType(const UProperty *Property);
+UNLUA_API int32 GetPropertyType(const FProperty *Property);

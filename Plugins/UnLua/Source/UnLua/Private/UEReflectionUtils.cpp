@@ -26,7 +26,7 @@
 class FIntegerPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FIntegerPropertyDesc(UProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FIntegerPropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -53,7 +53,7 @@ public:
 class FFloatPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FFloatPropertyDesc(UProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FFloatPropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -80,7 +80,7 @@ public:
 class FEnumPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FEnumPropertyDesc(UProperty *InProperty)
+    explicit FEnumPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty)
     {
         RegisterEnum(*GLuaCxt, EnumProperty->GetEnum());
@@ -111,7 +111,7 @@ public:
 class FBoolPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FBoolPropertyDesc(UProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FBoolPropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -131,12 +131,12 @@ public:
 class FObjectPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FObjectPropertyDesc(UProperty *InProperty, bool bSoftObject)
+    explicit FObjectPropertyDesc(FProperty *InProperty, bool bSoftObject)
         : FPropertyDesc(InProperty), MetaClass(nullptr)
     {
         if (ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
         {
-            MetaClass = bSoftObject ? (((USoftClassProperty*)Property)->MetaClass) : ((UClassProperty*)Property)->MetaClass;
+            MetaClass = bSoftObject ? (((FSoftClassProperty*)Property)->MetaClass) : ((FClassProperty*)Property)->MetaClass;
         }
         RegisterClass(*GLuaCxt, MetaClass ? MetaClass : ObjectBaseProperty->PropertyClass);     // register meta/property class first
     }
@@ -221,7 +221,7 @@ private:
 class FInterfacePropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FInterfacePropertyDesc(UProperty *InProperty)
+    explicit FInterfacePropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty)
     {
         RegisterClass(*GLuaCxt, InterfaceProperty->InterfaceClass);         // register interface class first
@@ -256,7 +256,7 @@ public:
 class FNamePropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FNamePropertyDesc(UProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FNamePropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -283,7 +283,7 @@ public:
 class FStringPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FStringPropertyDesc(UProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FStringPropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -310,7 +310,7 @@ public:
 class FTextPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FTextPropertyDesc(UProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FTextPropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -337,7 +337,7 @@ public:
 class FArrayPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FArrayPropertyDesc(UProperty *InProperty)
+    explicit FArrayPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty), InnerProperty(FPropertyDesc::Create(ArrayProperty->Inner))
     {}
 
@@ -439,7 +439,7 @@ private:
 class FMapPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FMapPropertyDesc(UProperty *InProperty)
+    explicit FMapPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty), KeyProperty(FPropertyDesc::Create(MapProperty->KeyProp)), ValueProperty(FPropertyDesc::Create(MapProperty->ValueProp))
     {}
 
@@ -545,7 +545,7 @@ private:
 class FSetPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FSetPropertyDesc(UProperty *InProperty)
+    explicit FSetPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty), InnerProperty(FPropertyDesc::Create(SetProperty->ElementProp))
     {}
 
@@ -643,8 +643,8 @@ private:
 class FStructPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FStructPropertyDesc(UProperty *InProperty)
-        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(Property->GetOuter()->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
+    explicit FStructPropertyDesc(FProperty *InProperty)
+        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
     {}
 
 protected:
@@ -657,7 +657,7 @@ protected:
 class FScriptStructPropertyDesc : public FStructPropertyDesc
 {
 public:
-    explicit FScriptStructPropertyDesc(UProperty *InProperty)
+    explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
         FClassDesc *ClassDesc = RegisterClass(*GLuaCxt, StructProperty->Struct);    // register UScriptStruct first
@@ -665,7 +665,7 @@ public:
         UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
     }
 
-    FScriptStructPropertyDesc(UProperty *InProperty, bool bDynamicallyCreated)
+    FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
         FClassDesc *ClassDesc = RegisterClass(*GLuaCxt, StructProperty->Struct);
@@ -776,7 +776,7 @@ private:
 class FDelegatePropertyDesc : public FStructPropertyDesc
 {
 public:
-    explicit FDelegatePropertyDesc(UProperty *InProperty) : FStructPropertyDesc(InProperty) {}
+    explicit FDelegatePropertyDesc(FProperty *InProperty) : FStructPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -825,7 +825,7 @@ template <typename T>
 class TMulticastDelegatePropertyDesc : public FStructPropertyDesc
 {
 public:
-    explicit TMulticastDelegatePropertyDesc(UProperty *InProperty) : FStructPropertyDesc(InProperty) {}
+    explicit TMulticastDelegatePropertyDesc(FProperty *InProperty) : FStructPropertyDesc(InProperty) {}
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -874,7 +874,7 @@ public:
 /**
  * Create a property descriptor
  */
-FPropertyDesc* FPropertyDesc::Create(UProperty *InProperty)
+FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
 {
     // #lizard forgives
 
@@ -972,9 +972,9 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
 
     static const FName NAME_LatentInfo = TEXT("LatentInfo");
     Properties.Reserve(InFunction->NumParms);
-    for (TFieldIterator<UProperty> It(InFunction); It && (It->PropertyFlags & CPF_Parm); ++It)
+    for (TFieldIterator<FProperty> It(InFunction); It && (It->PropertyFlags & CPF_Parm); ++It)
     {
-        UProperty *Property = *It;
+        FProperty *Property = *It;
         int32 Index = Properties.Add(FPropertyDesc::Create(Property));
         if (Property->HasAnyPropertyFlags(CPF_ReturnParm))
         {
@@ -1096,7 +1096,7 @@ bool FFunctionDesc::CallLua(FFrame &Stack, void *RetValueAddress, bool bRpcCall,
             void *Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
 #endif
 
-            for (TFieldIterator<UProperty> It(Function); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
+            for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
             {
                 Stack.Step(Stack.Object, It->ContainerPtrToValuePtr<uint8>(Params));
             }
@@ -1196,7 +1196,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
         uint8* ReturnValueAddress = FinalFunction->ReturnValueOffset != MAX_uint16 ? (uint8*)Params + FinalFunction->ReturnValueOffset : nullptr;
-        FFrame NewStack(Object, FinalFunction, Params, nullptr, Function->Children);
+        FFrame NewStack(Object, FinalFunction, Params, nullptr, GetChildProperties(Function));
         NewStack.OutParms = OutParmRec;
         FinalFunction->Invoke(Object, NewStack, ReturnValueAddress);
     }
@@ -1368,7 +1368,7 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
 /**
  * Get OutParmRec for a non-const reference property
  */
-static FOutParmRec* FindOutParmRec(FOutParmRec *OutParam, UProperty *OutProperty)
+static FOutParmRec* FindOutParmRec(FOutParmRec *OutParam, FProperty *OutProperty)
 {
     while (OutParam)
     {
@@ -1546,15 +1546,20 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
     else
     {
         // a property or a function ?
-        UProperty *Property = Struct->FindPropertyByName(FieldName);
+        FProperty *Property = Struct->FindPropertyByName(FieldName);
         UFunction *Function = (!Property && Type == EType::CLASS) ? Class->FindFunctionByName(FieldName) : nullptr;
-        UField *Field = Property ? (UField*)Property : Function;
-        if (!Field)
+        bool bValid = Property || Function;
+        if (!bValid && Type == EType::SCRIPTSTRUCT)
+        {
+            Property = Struct->CustomFindProperty(FieldName);
+            bValid = Property != nullptr;
+        }
+        if (!bValid)
         {
             return nullptr;
         }
 
-        UStruct *OuterStruct = Cast<UStruct>(Field->GetOuter());
+        UStruct *OuterStruct = Property ? Cast<UStruct>(GetPropertyOuter(Property)) : Cast<UStruct>(Function->GetOuter());
         if (OuterStruct)
         {
             if (OuterStruct != Struct)
@@ -1603,6 +1608,52 @@ void FClassDesc::GetInheritanceChain(TArray<FString> &NameChain, TArray<UStruct*
     }
 }
 
+
+/**
+ * Enum descriptor
+ */
+FEnumDesc::FEnumDesc(UEnum *InEnum)
+    : Enum(InEnum), RefCount(0), Type(EType::Enum)
+{
+    if (Enum)
+    {
+        EnumName = Enum->GetName();
+        UUserDefinedEnum *UDEnum = Cast<UUserDefinedEnum>(Enum);
+        Type = UDEnum ? EType::UserDefinedEnum : EType::Enum;
+    }
+}
+
+bool FEnumDesc::Release()
+{
+    --RefCount;
+    if (!RefCount)
+    {
+        delete this;
+        return true;
+    }
+    return false;
+}
+
+int64 FEnumDesc::GetEnumValue(UEnum *Enum, FName EntryName)
+{
+    check(Enum);
+    return Enum->GetValueByName(EntryName);
+}
+
+int64 FEnumDesc::GetUserDefinedEnumValue(UEnum *Enum, FName EntryName)
+{
+    check(Enum);
+    int32 NumEntries = Enum->NumEnums();
+    for (int32 i = 0; i < NumEntries; ++i)
+    {
+        FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
+        if (DisplayName == EntryName)
+        {
+            return Enum->GetValueByIndex(i);
+        }
+    }
+    return INDEX_NONE;
+}
 
 /**
  * Clean up
@@ -1877,126 +1928,126 @@ FReflectionRegistry GReflectionRegistry;        // global reflection registry
 
 
 /**
- * Get type of a UProperty
+ * Get type of a FProperty
  */
-int32 GetPropertyType(const UProperty *Property)
+int32 GetPropertyType(const FProperty *Property)
 {
     // #lizard forgives
 
     int32 Type = CPT_None;
     if (Property)
     {
-        if (const UByteProperty *TempByteProperty = Cast<UByteProperty>(Property))
+        if (const FByteProperty *TempByteProperty = CastField<FByteProperty>(Property))
         {
             Type = CPT_Byte;
         }
-        else if (const UInt8Property *TempI8Property = Cast<UInt8Property>(Property))
+        else if (const FInt8Property *TempI8Property = CastField<FInt8Property>(Property))
         {
             Type = CPT_Int8;
         }
-        else if (const UInt16Property *TempI16Property = Cast<UInt16Property>(Property))
+        else if (const FInt16Property *TempI16Property = CastField<FInt16Property>(Property))
         {
             Type = CPT_Int16;
         }
-        else if (const UIntProperty *TempI32Property = Cast<UIntProperty>(Property))
+        else if (const FIntProperty *TempI32Property = CastField<FIntProperty>(Property))
         {
             Type = CPT_Int;
         }
-        else if (const UInt64Property *TempI64Property = Cast<UInt64Property>(Property))
+        else if (const FInt64Property *TempI64Property = CastField<FInt64Property>(Property))
         {
             Type = CPT_Int64;
         }
-        else if (const UUInt16Property *TempU16Property = Cast<UUInt16Property>(Property))
+        else if (const FUInt16Property *TempU16Property = CastField<FUInt16Property>(Property))
         {
             Type = CPT_UInt16;
         }
-        else if (const UUInt32Property *TempU32Property = Cast<UUInt32Property>(Property))
+        else if (const FUInt32Property *TempU32Property = CastField<FUInt32Property>(Property))
         {
             Type = CPT_UInt32;
         }
-        else if (const UUInt64Property *TempU64Property = Cast<UUInt64Property>(Property))
+        else if (const FUInt64Property *TempU64Property = CastField<FUInt64Property>(Property))
         {
             Type = CPT_UInt64;
         }
-        else if (const UFloatProperty *TempFloatProperty = Cast<UFloatProperty>(Property))
+        else if (const FFloatProperty *TempFloatProperty = CastField<FFloatProperty>(Property))
         {
             Type = CPT_Float;
         }
-        else if (const UDoubleProperty *TempDoubleProperty = Cast<UDoubleProperty>(Property))
+        else if (const FDoubleProperty *TempDoubleProperty = CastField<FDoubleProperty>(Property))
         {
             Type = CPT_Double;
         }
-        else if (const UEnumProperty *TempEnumProperty = Cast<UEnumProperty>(Property))
+        else if (const FEnumProperty *TempEnumProperty = CastField<FEnumProperty>(Property))
         {
             Type = CPT_Enum;
         }
-        else if (const UBoolProperty *TempBoolProperty = Cast<UBoolProperty>(Property))
+        else if (const FBoolProperty *TempBoolProperty = CastField<FBoolProperty>(Property))
         {
             Type = CPT_Bool;
         }
-        else if (const UObjectProperty *TempObjectProperty = Cast<UObjectProperty>(Property))
+        else if (const FObjectProperty *TempObjectProperty = CastField<FObjectProperty>(Property))
         {
             Type = CPT_ObjectReference;
         }
-        else if (const UWeakObjectProperty *TempWeakObjectProperty = Cast<UWeakObjectProperty>(Property))
+        else if (const FWeakObjectProperty *TempWeakObjectProperty = CastField<FWeakObjectProperty>(Property))
         {
             Type = CPT_WeakObjectReference;
         }
-        else if (const ULazyObjectProperty *TempLazyObjectProperty = Cast<ULazyObjectProperty>(Property))
+        else if (const FLazyObjectProperty *TempLazyObjectProperty = CastField<FLazyObjectProperty>(Property))
         {
             Type = CPT_LazyObjectReference;
         }
-        else if (const USoftObjectProperty *TempSoftObjectProperty = Cast<USoftObjectProperty>(Property))
+        else if (const FSoftObjectProperty *TempSoftObjectProperty = CastField<FSoftObjectProperty>(Property))
         {
             Type = CPT_SoftObjectReference;
         }
-        else if (const UInterfaceProperty *TempInterfaceProperty = Cast<UInterfaceProperty>(Property))
+        else if (const FInterfaceProperty *TempInterfaceProperty = CastField<FInterfaceProperty>(Property))
         {
             Type = CPT_Interface;
         }
-        else if (const UNameProperty *TempNameProperty = Cast<UNameProperty>(Property))
+        else if (const FNameProperty *TempNameProperty = CastField<FNameProperty>(Property))
         {
             Type = CPT_Name;
         }
-        else if (const UStrProperty *TempStringProperty = Cast<UStrProperty>(Property))
+        else if (const FStrProperty *TempStringProperty = CastField<FStrProperty>(Property))
         {
             Type = CPT_String;
         }
-        else if (const UTextProperty *TempTextProperty = Cast<UTextProperty>(Property))
+        else if (const FTextProperty *TempTextProperty = CastField<FTextProperty>(Property))
         {
             Type = CPT_Text;
         }
-        else if (const UArrayProperty *TempArrayProperty = Cast<UArrayProperty>(Property))
+        else if (const FArrayProperty *TempArrayProperty = CastField<FArrayProperty>(Property))
         {
             Type = CPT_Array;
         }
-        else if (const UMapProperty *TempMapProperty = Cast<UMapProperty>(Property))
+        else if (const FMapProperty *TempMapProperty = CastField<FMapProperty>(Property))
         {
             Type = CPT_Map;
         }
-        else if (const USetProperty *TempSetProperty = Cast<USetProperty>(Property))
+        else if (const FSetProperty *TempSetProperty = CastField<FSetProperty>(Property))
         {
             Type = CPT_Set;
         }
-        else if (const UStructProperty *TempStructProperty = Cast<UStructProperty>(Property))
+        else if (const FStructProperty *TempStructProperty = CastField<FStructProperty>(Property))
         {
             Type = CPT_Struct;
         }
-        else if (const UDelegateProperty *TempDelegateProperty = Cast<UDelegateProperty>(Property))
+        else if (const FDelegateProperty *TempDelegateProperty = CastField<FDelegateProperty>(Property))
         {
             Type = CPT_Delegate;
         }
 #if ENGINE_MINOR_VERSION < 23
-        else if (const UMulticastDelegateProperty *TempMulticastDelegateProperty = Cast<UMulticastDelegateProperty>(Property))
+        else if (const FMulticastDelegateProperty *TempMulticastDelegateProperty = CastField<FMulticastDelegateProperty>(Property))
         {
             Type = CPT_MulticastDelegate;
         }
 #else
-        else if (const UMulticastInlineDelegateProperty *TempMulticastInlineDelegateProperty = Cast<UMulticastInlineDelegateProperty>(Property))
+        else if (const FMulticastInlineDelegateProperty *TempMulticastInlineDelegateProperty = CastField<FMulticastInlineDelegateProperty>(Property))
         {
             Type = CPT_MulticastDelegate;
         }
-        else if (const UMulticastSparseDelegateProperty *TempMulticastSparseDelegateProperty = Cast<UMulticastSparseDelegateProperty>(Property))
+        else if (const FMulticastSparseDelegateProperty *TempMulticastSparseDelegateProperty = CastField<FMulticastSparseDelegateProperty>(Property))
         {
             Type = CPT_MulticastSparseDelegate;
         }

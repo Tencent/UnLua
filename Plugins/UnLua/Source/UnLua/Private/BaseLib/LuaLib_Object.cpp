@@ -57,7 +57,15 @@ int32 UObject_Load(lua_State *L)
     UObject *Object = LoadObject<UObject>(nullptr, *ObjectPath);
     if (Object)
     {
-        UnLua::PushUObject(L, Object);
+        UEnum *Enum = Cast<UEnum>(Object);
+        if (Enum)
+        {
+            RegisterEnum(L, Enum);
+        }
+        else
+        {
+            UnLua::PushUObject(L, Object);
+        }
     }
     else
     {

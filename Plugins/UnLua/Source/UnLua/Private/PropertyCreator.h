@@ -44,7 +44,7 @@ public:
     virtual TSharedPtr<UnLua::ITypeInterface> CreateLazyObjectProperty(UClass *Class) = 0;
     virtual TSharedPtr<UnLua::ITypeInterface> CreateInterfaceProperty(UClass *Class) = 0;
     virtual TSharedPtr<UnLua::ITypeInterface> CreateStructProperty(UScriptStruct *Struct) = 0;
-    virtual TSharedPtr<UnLua::ITypeInterface> CreateProperty(UProperty *TemplateProperty) = 0;
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateProperty(FProperty *TemplateProperty) = 0;
 };
 
 #define GPropertyCreator IPropertyCreator::Instance()

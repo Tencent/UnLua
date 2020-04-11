@@ -115,7 +115,7 @@ void GetOverridableFunctions(UClass *Class, TMap<FName, UFunction*> &Functions)
     // all 'RepNotifyFunc'
     for (int32 i = 0; i < Class->ClassReps.Num(); ++i)
     {
-        UProperty *Property = Class->ClassReps[i].Property;
+        FProperty *Property = Class->ClassReps[i].Property;
         if (Property->HasAnyPropertyFlags(CPF_RepNotify))
         {
             UFunction *Function = Class->FindFunctionByName(Property->RepNotifyFunc);
@@ -134,14 +134,18 @@ void GetOverridableFunctions(UClass *Class, TMap<FName, UFunction*> &Functions)
 /**
  * Only used to get offset of 'Offset_Internal'
  */
+#if ENGINE_MINOR_VERSION < 25
 struct FFakeProperty : public UField
+#else
+struct FFakeProperty : public FField
+#endif
 {
-    int32        ArrayDim;
-    int32        ElementSize;
-    uint64        PropertyFlags;
-    uint16        RepIndex;
+    int32       ArrayDim;
+    int32       ElementSize;
+    uint64      PropertyFlags;
+    uint16      RepIndex;
     TEnumAsByte<ELifetimeCondition> BlueprintReplicationCondition;
-    int32        Offset_Internal;
+    int32       Offset_Internal;
 };
 
 /**
@@ -153,7 +157,7 @@ struct FFakeProperty : public UField
 UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
 {
     static int32 Offset = offsetof(FFakeProperty, Offset_Internal);
-    static FArchive Ar;         // dummy archive used for UProperty::Link()
+    static FArchive Ar;         // dummy archive used for FProperty::Link()
 
 #if CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION
     FObjectDuplicationParameters DuplicationParams(TemplateFunction, OuterClass);
@@ -168,9 +172,9 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     int32 NumParams = NewFunc->NumParms;
     if (NumParams > 0)
     {
-        NewFunc->PropertyLink = Cast<UProperty>(NewFunc->Children);
-        UProperty *SrcProperty = Cast<UProperty>(TemplateFunction->Children);
-        UProperty *DestProperty = NewFunc->PropertyLink;
+        NewFunc->PropertyLink = CastField<FProperty>(GetChildProperties(NewFunc));
+        FProperty *SrcProperty = CastField<FProperty>(GetChildProperties(TemplateFunction));
+        FProperty *DestProperty = NewFunc->PropertyLink;
         while (true)
         {
             check(SrcProperty && DestProperty);
@@ -184,7 +188,7 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
             {
                 break;
             }
-            DestProperty->PropertyLinkNext = Cast<UProperty>(DestProperty->Next);
+            DestProperty->PropertyLinkNext = CastField<FProperty>(DestProperty->Next);
             DestProperty = DestProperty->PropertyLinkNext;
             SrcProperty = SrcProperty->PropertyLinkNext;
         }
@@ -217,9 +221,9 @@ void RemoveUFunction(UFunction *Function, UClass *OuterClass)
     if (Function->IsNative())
     {
         Function->ClearInternalFlags(EInternalObjectFlags::Native);
-        for (TFieldIterator<UProperty> It(Function); It; ++It)
+        for (TFieldIterator<FProperty> It(Function); It; ++It)
         {
-            UProperty *Property = *It;
+            FProperty *Property = *It;
             Property->ClearInternalFlags(EInternalObjectFlags::Native);
         }
     }

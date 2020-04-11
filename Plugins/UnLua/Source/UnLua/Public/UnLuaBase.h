@@ -16,6 +16,7 @@
 
 #include "CoreMinimal.h"
 #include "CoreUObject.h"
+#include "UnLuaCompatibility.h"
 
 #ifndef AUTO_UNLUA_STARTUP
 #define AUTO_UNLUA_STARTUP 0
@@ -64,7 +65,7 @@ namespace UnLua
         virtual void Copy(void *Dest, const void *Src) const = 0;
         virtual bool Identical(const void *A, const void *B) const = 0;
         virtual FString GetName() const = 0;
-        virtual UProperty* GetUProperty() const = 0;
+        virtual FProperty* GetUProperty() const = 0;
     };
 
     /**

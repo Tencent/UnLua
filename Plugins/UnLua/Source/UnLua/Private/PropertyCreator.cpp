@@ -70,8 +70,12 @@ public:
     {
         if (!BoolPropertyDesc)
         {
+#if ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UBoolProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UBoolProperty(FObjectInitializer(), EC_CppProperty, 0, (EPropertyFlags)0, 0xFF, 1, true);
+#else
+            FBoolProperty *Property = new FBoolProperty(ScriptStruct, NAME_None, RF_Transient, 0, (EPropertyFlags)0, 0xFF, 1, true);
+#endif
             BoolPropertyDesc = OnPropertyCreated(Property);
         }
         return BoolPropertyDesc;
@@ -81,8 +85,12 @@ public:
     {
         if (!IntPropertyDesc)
         {
+#if ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UIntProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UIntProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
+#else
+            FIntProperty *Property = new FIntProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash);
+#endif
             IntPropertyDesc = OnPropertyCreated(Property);
         }
         return IntPropertyDesc;
@@ -92,8 +100,12 @@ public:
     {
         if (!FloatPropertyDesc)
         {
+#if ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UFloatProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UFloatProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
+#else
+            FFloatProperty *Property = new FFloatProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash);
+#endif
             FloatPropertyDesc = OnPropertyCreated(Property);
         }
         return FloatPropertyDesc;
@@ -103,8 +115,12 @@ public:
     {
         if (!StringPropertyDesc)
         {
+#if ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UStrProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStrProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
+#else
+            FStrProperty *Property = new FStrProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash);
+#endif
             StringPropertyDesc = OnPropertyCreated(Property);
         }
         return StringPropertyDesc;
@@ -114,8 +130,12 @@ public:
     {
         if (!NamePropertyDesc)
         {
+#if ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UNameProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UNameProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
+#else
+            FNameProperty *Property = new FNameProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash);
+#endif
             NamePropertyDesc = OnPropertyCreated(Property);
         }
         return NamePropertyDesc;
@@ -125,8 +145,12 @@ public:
     {
         if (!TextPropertyDesc)
         {
+#if ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UTextProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UTextProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
+#else
+            FTextProperty *Property = new FTextProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash);
+#endif
             TextPropertyDesc = OnPropertyCreated(Property);
         }
         return TextPropertyDesc;
@@ -140,10 +164,18 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UEnumProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UEnumProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Enum);
         UNumericProperty *UnderlyingProp = NewObject<UByteProperty>(Property, TEXT("UnderlyingType"));
         Property->AddCppProperty(UnderlyingProp);
+#else
+        FEnumProperty *Property = new FEnumProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash, Enum);
+        FByteProperty *UnderlyingProp = new FByteProperty(Property, TEXT("UnderlyingType"), RF_Transient);
+        Property->AddCppProperty(UnderlyingProp);
+#endif
+        FArchive Ar;
+        Property->Link(Ar);
         return OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
     }
 
@@ -155,8 +187,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSubclassOf<...>
         UClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class, nullptr);
+#else
+        FClassProperty *Property = new FClassProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class, nullptr);
+#endif
         return OnPropertyCreated(Property, Class, ClassPropertyDescMap);
     }
 
@@ -168,8 +204,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Class);
+#else
+        FObjectProperty *Property = new FObjectProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash, Class);
+#endif
         return OnPropertyCreated(Property, Class, ObjectPropertyDescMap);
     }
 
@@ -181,8 +221,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftClassPtr<...>
         USoftClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#else
+        FSoftClassProperty *Property = new FSoftClassProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#endif
         return OnPropertyCreated(Property, Class, SoftClassPropertyDescMap);
     }
 
@@ -194,8 +238,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftObjectPtr<...>
         USoftObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#else
+        FSoftObjectProperty *Property = new FSoftObjectProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#endif
         return OnPropertyCreated(Property, Class, SoftObjectPropertyDescMap);
     }
 
@@ -207,8 +255,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TWeakObjectPtr<...>
         UWeakObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UWeakObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#else
+        FWeakObjectProperty *Property = new FWeakObjectProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#endif
         return OnPropertyCreated(Property, Class, WeakObjectPropertyDescMap);
     }
 
@@ -220,8 +272,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TLazyObjectPtr<...>
         ULazyObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) ULazyObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#else
+        FLazyObjectProperty *Property = new FLazyObjectProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#endif
         return OnPropertyCreated(Property, Class, LazyObjectPropertyDescMap);
     }
 
@@ -233,8 +289,12 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TScriptInterface<...>
         UInterfaceProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UInterfaceProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#else
+        FInterfaceProperty *Property = new FInterfaceProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
+#endif
         return OnPropertyCreated(Property, Class, InterfacePropertyDescMap);
     }
 
@@ -246,12 +306,16 @@ public:
             return *PropertyDescPtr;
         }
 
+#if ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UStructProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStructProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Struct);
+#else
+        FStructProperty *Property = new FStructProperty(ScriptStruct, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash, Struct);
+#endif
         return OnPropertyCreated(Property, Struct, StructPropertyDescMap);
     }
 
-    virtual TSharedPtr<UnLua::ITypeInterface> CreateProperty(UProperty *TemplateProperty) override
+    virtual TSharedPtr<UnLua::ITypeInterface> CreateProperty(FProperty *TemplateProperty) override
     {
         // #lizard forgives
 
@@ -279,17 +343,17 @@ public:
             PropertyDesc = CreateFloatProperty();
             break;
         case CPT_Enum:
-            PropertyDesc = CreateEnumProperty(((UEnumProperty*)TemplateProperty)->GetEnum());
+            PropertyDesc = CreateEnumProperty(((FEnumProperty*)TemplateProperty)->GetEnum());
             break;
         case CPT_Bool:
             PropertyDesc = CreateBoolProperty();
             break;
         case CPT_ObjectReference:
             {
-                UObjectPropertyBase *ObjectBaseProperty = (UObjectPropertyBase*)TemplateProperty;
+                FObjectPropertyBase *ObjectBaseProperty = (FObjectPropertyBase*)TemplateProperty;
                 if (ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
                 {
-                    PropertyDesc = CreateClassProperty(((UClassProperty*)ObjectBaseProperty)->MetaClass);
+                    PropertyDesc = CreateClassProperty(((FClassProperty*)ObjectBaseProperty)->MetaClass);
                 }
                 else
                 {
@@ -298,17 +362,17 @@ public:
             }
             break;
         case CPT_WeakObjectReference:
-            PropertyDesc = CreateWeakObjectProperty(((UObjectPropertyBase*)TemplateProperty)->PropertyClass);
+            PropertyDesc = CreateWeakObjectProperty(((FObjectPropertyBase*)TemplateProperty)->PropertyClass);
             break;
         case CPT_LazyObjectReference:
-            PropertyDesc = CreateLazyObjectProperty(((UObjectPropertyBase*)TemplateProperty)->PropertyClass);
+            PropertyDesc = CreateLazyObjectProperty(((FObjectPropertyBase*)TemplateProperty)->PropertyClass);
             break;
         case CPT_SoftObjectReference:
             {
-                UObjectPropertyBase *SoftObjectProperty = (USoftObjectProperty*)TemplateProperty;
+                FObjectPropertyBase *SoftObjectProperty = (FSoftObjectProperty*)TemplateProperty;
                 if (SoftObjectProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
                 {
-                    PropertyDesc = CreateSoftClassProperty(((USoftClassProperty*)SoftObjectProperty)->MetaClass);
+                    PropertyDesc = CreateSoftClassProperty(((FSoftClassProperty*)SoftObjectProperty)->MetaClass);
                 }
                 else
                 {
@@ -317,7 +381,7 @@ public:
             }
             break;
         case CPT_Interface:
-            PropertyDesc = CreateInterfaceProperty(((UInterfaceProperty*)TemplateProperty)->InterfaceClass);
+            PropertyDesc = CreateInterfaceProperty(((FInterfaceProperty*)TemplateProperty)->InterfaceClass);
             break;
         case CPT_Name:
             PropertyDesc = CreateNameProperty();
@@ -329,7 +393,7 @@ public:
             PropertyDesc = CreateTextProperty();
             break;
         case CPT_Struct:
-            PropertyDesc = CreateStructProperty(((UStructProperty*)TemplateProperty)->Struct);
+            PropertyDesc = CreateStructProperty(((FStructProperty*)TemplateProperty)->Struct);
             break;
         }
 
@@ -371,17 +435,19 @@ private:
     }
 
     /**
-     * 1. Add the new created UProperty to cluster;
-     * 2. Create a 'FPropertyDesc' based on the new created UProperty;
+     * 1. Add the new created FProperty to cluster;
+     * 2. Create a 'FPropertyDesc' based on the new created FProperty;
      * 3. Add the new created 'FPropertyDesc' to a map.
      *
-     * @param Property - new created UProperty
+     * @param Property - new created FProperty
      * @return - the new created FPropertyDesc
      */
     template <typename KeyType>
-    TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(UProperty *Property, KeyType *Key, TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
+    TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(FProperty *Property, KeyType *Key, TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
     {
+#if ENGINE_MINOR_VERSION < 25
         Property->AddToCluster(ScriptStruct);
+#endif
         Properties.Add(Property);
         TSharedPtr<UnLua::ITypeInterface> PropertyDesc(FPropertyDesc::Create(Property));
         PropertyDescMap.Add(Key, PropertyDesc);
@@ -389,15 +455,17 @@ private:
     }
 
     /**
-     * 1. Add the new created UProperty to cluster;
-     * 2. Create a 'FPropertyDesc' based on the new created UProperty.
+     * 1. Add the new created FProperty to cluster;
+     * 2. Create a 'FPropertyDesc' based on the new created FProperty.
      *
-     * @param Property - new created UProperty
+     * @param Property - new created FProperty
      * @return - the new created FPropertyDesc
      */
-    TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(UProperty *Property)
+    TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(FProperty *Property)
     {
+#if ENGINE_MINOR_VERSION < 25
         Property->AddToCluster(ScriptStruct);
+#endif
         Properties.Add(Property);
         return TSharedPtr<UnLua::ITypeInterface>(FPropertyDesc::Create(Property));
     }
@@ -419,7 +487,7 @@ private:
     TMap<UClass*, TSharedPtr<UnLua::ITypeInterface>> InterfacePropertyDescMap;
     TMap<UScriptStruct*, TSharedPtr<UnLua::ITypeInterface>> StructPropertyDescMap;
 
-    TArray<UProperty*> Properties;
+    TArray<FProperty*> Properties;
 };
 
 IPropertyCreator& IPropertyCreator::Instance()

@@ -80,8 +80,8 @@ void FSignatureDesc::Execute(FFrame &Stack, void *RetValueAddress)
     }
 }
 
-TMap<FScriptDelegate*, UDelegateProperty*> FDelegateHelper::Delegate2Property;
-TMap<FMulticastDelegateType*, UMulticastDelegateProperty*> FDelegateHelper::MulticastDelegate2Property;
+TMap<FScriptDelegate*, FDelegateProperty*> FDelegateHelper::Delegate2Property;
+TMap<FMulticastDelegateType*, FMulticastDelegateProperty*> FDelegateHelper::MulticastDelegate2Property;
 TMap<FScriptDelegate*, FFunctionDesc*> FDelegateHelper::Delegate2Signatures;
 TMap<FMulticastDelegateType*, FFunctionDesc*> FDelegateHelper::MulticastDelegate2Signatures;
 TMap<UFunction*, FSignatureDesc*> FDelegateHelper::Signatures;
@@ -119,10 +119,10 @@ FName FDelegateHelper::GetBindedFunctionName(const FCallbackDesc &Callback)
     return NAME_None;
 }
 
-void FDelegateHelper::PreBind(FScriptDelegate *ScriptDelegate, UDelegateProperty *Property)
+void FDelegateHelper::PreBind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property)
 {
     check(ScriptDelegate && Property);
-    UDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
+    FDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr)
     {
         Delegate2Property.Add(ScriptDelegate, Property);
@@ -131,11 +131,11 @@ void FDelegateHelper::PreBind(FScriptDelegate *ScriptDelegate, UDelegateProperty
 
 bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
-    UDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
+    FDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
     return PropertyPtr ? Bind(ScriptDelegate, *PropertyPtr, Object, Callback, CallbackRef) : false;
 }
 
-bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, UDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
+bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
     if (!ScriptDelegate || ScriptDelegate->IsBound() || !Property || !Object || !Callback.Class || CallbackRef == INDEX_NONE)
     {
@@ -211,7 +211,7 @@ int32 FDelegateHelper::Execute(lua_State *L, FScriptDelegate *ScriptDelegate, in
     }
     else
     {
-        UDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
+        FDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
         if (PropertyPtr)
         {
             UFunction *SignatureFunction = (*PropertyPtr)->SignatureFunction;
@@ -229,10 +229,10 @@ int32 FDelegateHelper::Execute(lua_State *L, FScriptDelegate *ScriptDelegate, in
     return 0;
 }
 
-void FDelegateHelper::PreAdd(FMulticastDelegateType *ScriptDelegate, UMulticastDelegateProperty *Property)
+void FDelegateHelper::PreAdd(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property)
 {
     check(ScriptDelegate && Property);
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr)
     {
         MulticastDelegate2Property.Add(ScriptDelegate, Property);
@@ -241,11 +241,11 @@ void FDelegateHelper::PreAdd(FMulticastDelegateType *ScriptDelegate, UMulticastD
 
 bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     return PropertyPtr ? Add(ScriptDelegate, *PropertyPtr, Object, Callback, CallbackRef) : false;
 }
 
-bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, UMulticastDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
+bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
     if (!ScriptDelegate || !Property || !Object || !Callback.Class || CallbackRef == INDEX_NONE)
     {
@@ -279,7 +279,7 @@ void FDelegateHelper::Remove(FMulticastDelegateType *ScriptDelegate, UObject *Ob
     UFunction **CallbackFuncPtr = Callbacks.Find(Callback);
     if (CallbackFuncPtr && *CallbackFuncPtr)
     {
-        UMulticastDelegateProperty *Property = nullptr;
+        FMulticastDelegateProperty *Property = nullptr;
         MulticastDelegate2Property.RemoveAndCopyValue(ScriptDelegate, Property);
         if (Property)
         {
@@ -304,12 +304,12 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
         return;
     }
 
-    UMulticastDelegateProperty *Property = nullptr;
+    FMulticastDelegateProperty *Property = nullptr;
 #if ENGINE_MINOR_VERSION > 22
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {
-        return;     // invalid UMulticastDelegateProperty
+        return;     // invalid FMulticastDelegateProperty
     }
     Property = *PropertyPtr;
 #endif
@@ -351,8 +351,8 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
     }
 #endif
 
-    UMulticastDelegateProperty *Property = nullptr;
-	UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
+    FMulticastDelegateProperty *Property = nullptr;
+	FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
 	if (PropertyPtr)
 	{
 		Property = *PropertyPtr;
@@ -383,12 +383,12 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
 
 void FDelegateHelper::AddDelegate(FMulticastDelegateType *ScriptDelegate, FScriptDelegate DynamicDelegate)
 {
-    UMulticastDelegateProperty *Property = nullptr;
+    FMulticastDelegateProperty *Property = nullptr;
 #if ENGINE_MINOR_VERSION > 22
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {
-        return;     // invalid UMulticastDelegateProperty
+        return;     // invalid FMulticastDelegateProperty
     }
     Property = *PropertyPtr;
 #endif

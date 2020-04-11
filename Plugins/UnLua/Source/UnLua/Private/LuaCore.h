@@ -61,19 +61,19 @@ void* GetScriptContainer(lua_State *L, int32 Index);
 void* GetScriptContainer(lua_State *L, void *Key);
 
 /**
- * Functions to push UProperty array
+ * Functions to push FProperty array
  */
-void PushIntegerArray(lua_State *L, UNumericProperty *Property, void *Value);
-void PushFloatArray(lua_State *L, UNumericProperty *Property, void *Value);
-void PushEnumArray(lua_State *L, UNumericProperty *Property, void *Value);
-void PushFNameArray(lua_State *L, UNameProperty *Property, void *Value);
-void PushFStringArray(lua_State *L, UStrProperty *Property, void *Value);
-void PushFTextArray(lua_State *L, UTextProperty *Property, void *Value);
-void PushObjectArray(lua_State *L, UObjectPropertyBase *Property, void *Value);
-void PushInterfaceArray(lua_State *L, UInterfaceProperty *Property, void *Value);
-void PushDelegateArray(lua_State *L, UDelegateProperty *Property, void *Value);
-void PushMCDelegateArray(lua_State *L, UMulticastDelegateProperty *Property, void *Value, const char *MetatableName);
-void PushStructArray(lua_State *L, UProperty *Property, void *Value, const char *MetatableName);
+void PushIntegerArray(lua_State *L, FNumericProperty *Property, void *Value);
+void PushFloatArray(lua_State *L, FNumericProperty *Property, void *Value);
+void PushEnumArray(lua_State *L, FNumericProperty *Property, void *Value);
+void PushFNameArray(lua_State *L, FNameProperty *Property, void *Value);
+void PushFStringArray(lua_State *L, FStrProperty *Property, void *Value);
+void PushFTextArray(lua_State *L, FTextProperty *Property, void *Value);
+void PushObjectArray(lua_State *L, FObjectPropertyBase *Property, void *Value);
+void PushInterfaceArray(lua_State *L, FInterfaceProperty *Property, void *Value);
+void PushDelegateArray(lua_State *L, FDelegateProperty *Property, void *Value);
+void PushMCDelegateArray(lua_State *L, FMulticastDelegateProperty *Property, void *Value, const char *MetatableName);
+void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char *MetatableName);
 
 /**
  * Functions to New/Delete Lua instance for UObjectBaseUtility
