@@ -32,7 +32,7 @@
 
 
 # Supported engine versions
-Unreal Engine 4.17.x - Unreal Engine 4.24.x
+Unreal Engine 4.17.x - Unreal Engine 4.25.x
 
 **NOTE**: build.cs files need tiny modifications under 4.17.x and 4.18.x.
 
