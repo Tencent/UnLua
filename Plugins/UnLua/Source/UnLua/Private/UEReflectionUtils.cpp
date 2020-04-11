@@ -1549,6 +1549,11 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
         UProperty *Property = Struct->FindPropertyByName(FieldName);
         UFunction *Function = (!Property && Type == EType::CLASS) ? Class->FindFunctionByName(FieldName) : nullptr;
         UField *Field = Property ? (UField*)Property : Function;
+        if (!Field && Type == EType::SCRIPTSTRUCT)
+        {
+            Property = Struct->CustomFindProperty(FieldName);
+            Field = Property;
+        }
         if (!Field)
         {
             return nullptr;
@@ -1603,6 +1608,52 @@ void FClassDesc::GetInheritanceChain(TArray<FString> &NameChain, TArray<UStruct*
     }
 }
 
+
+/**
+ * Enum descriptor
+ */
+FEnumDesc::FEnumDesc(UEnum *InEnum)
+    : Enum(InEnum), RefCount(0), Type(EType::Enum)
+{
+    if (Enum)
+    {
+        EnumName = Enum->GetName();
+        UUserDefinedEnum *UDEnum = Cast<UUserDefinedEnum>(Enum);
+        Type = UDEnum ? EType::UserDefinedEnum : EType::Enum;
+    }
+}
+
+bool FEnumDesc::Release()
+{
+    --RefCount;
+    if (!RefCount)
+    {
+        delete this;
+        return true;
+    }
+    return false;
+}
+
+int64 FEnumDesc::GetEnumValue(UEnum *Enum, FName EntryName)
+{
+    check(Enum);
+    return Enum->GetValueByName(EntryName);
+}
+
+int64 FEnumDesc::GetUserDefinedEnumValue(UEnum *Enum, FName EntryName)
+{
+    check(Enum);
+    int32 NumEntries = Enum->NumEnums();
+    for (int32 i = 0; i < NumEntries; ++i)
+    {
+        FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
+        if (DisplayName == EntryName)
+        {
+            return Enum->GetValueByIndex(i);
+        }
+    }
+    return INDEX_NONE;
+}
 
 /**
  * Clean up

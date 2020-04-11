@@ -16,6 +16,7 @@
 
 #include "CoreMinimal.h"
 #include "CoreUObject.h"
+#include "Engine/UserDefinedEnum.h"
 #include "UnLuaBase.h"
 #include "UnLuaCompatibility.h"
 
@@ -515,17 +516,17 @@ private:
  */
 class FEnumDesc
 {
-public:
-    explicit FEnumDesc(UEnum *InEnum)
-        : Enum(InEnum), RefCount(0)
+    enum class EType
     {
-        if (Enum)
-        {
-            EnumName = Enum->GetName();
-        }
-    }
+        Enum,
+        UserDefinedEnum,
+    };
 
+public:
+    explicit FEnumDesc(UEnum *InEnum);
     ~FEnumDesc() {}
+
+    bool Release();
 
     FORCEINLINE bool IsValid() const { return Enum != nullptr; }
 
@@ -534,7 +535,8 @@ public:
     template <typename CharType>
     FORCEINLINE int64 GetValue(const CharType *EntryName) const
     {
-        return Enum->GetValueByName(FName(EntryName));
+        static int64 (*Func[2])(UEnum*, FName) = { FEnumDesc::GetEnumValue, FEnumDesc::GetUserDefinedEnumValue };
+        return (Func[(int32)Type])(Enum, FName(EntryName));
     }
 
     FORCEINLINE UEnum* GetEnum() const { return Enum; }
@@ -543,21 +545,19 @@ public:
 
     FORCEINLINE void AddRef() { ++RefCount; }
 
-    bool Release()
-    {
-        --RefCount;
-        if (!RefCount)
-        {
-            delete this;
-            return true;
-        }
-        return false;
-    }
+    static int64 GetEnumValue(UEnum *Enum, FName EntryName);
+    static int64 GetUserDefinedEnumValue(UEnum *Enum, FName EntryName);
 
 private:
-    UEnum *Enum;
+    union
+    {
+        UEnum *Enum;
+        UUserDefinedEnum *UserDefinedEnum;
+    };
+
     FString EnumName;
     int32 RefCount;
+    EType Type;
 };
 
 /**
