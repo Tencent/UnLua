@@ -480,7 +480,6 @@ static int32 TArray_LastIndex(lua_State *L)
     }
 
     int32 Index = Array->Num();
-    ++Index;
     lua_pushinteger(L, Index);
     return 1;
 }

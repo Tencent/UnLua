@@ -66,8 +66,10 @@ typedef USetProperty FSetProperty;
 typedef UStructProperty FStructProperty;
 typedef UDelegateProperty FDelegateProperty;
 typedef UMulticastDelegateProperty FMulticastDelegateProperty;
+#if ENGINE_MINOR_VERSION > 22
 typedef UMulticastInlineDelegateProperty FMulticastInlineDelegateProperty;
 typedef UMulticastSparseDelegateProperty FMulticastSparseDelegateProperty;
+#endif
 #else
 #define GetPropertyOuter(Property) (Property)->GetOwnerUObject()
 #define GetChildProperties(Function) (Function)->ChildProperties
