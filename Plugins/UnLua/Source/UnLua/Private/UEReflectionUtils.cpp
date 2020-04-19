@@ -1549,9 +1549,31 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
         FProperty *Property = Struct->FindPropertyByName(FieldName);
         UFunction *Function = (!Property && Type == EType::CLASS) ? Class->FindFunctionByName(FieldName) : nullptr;
         bool bValid = Property || Function;
-        if (!bValid && Type == EType::SCRIPTSTRUCT)
+        if (!bValid && Type == EType::SCRIPTSTRUCT && !Struct->IsNative())
         {
-            Property = Struct->CustomFindProperty(FieldName);
+            FString FieldNameStr = FieldName.ToString();
+            const int32 GuidStrLen = 32;
+            const int32 MinimalPostfixlen = GuidStrLen + 3;
+            for (TFieldIterator<FProperty> PropertyIt(Struct, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); PropertyIt; ++PropertyIt)
+            {
+                FString DisplayName = (*PropertyIt)->GetName();
+                if (DisplayName.Len() > MinimalPostfixlen)
+                {
+                    DisplayName = DisplayName.LeftChop(GuidStrLen + 1);
+                    int32 FirstCharToRemove = INDEX_NONE;
+                    if (DisplayName.FindLastChar(TCHAR('_'), FirstCharToRemove))
+                    {
+                        DisplayName = DisplayName.Mid(0, FirstCharToRemove);
+                    }
+                }
+
+                if (DisplayName == FieldNameStr)
+                {
+                    Property = *PropertyIt;
+                    break;
+                }
+            }
+
             bValid = Property != nullptr;
         }
         if (!bValid)
