@@ -70,7 +70,7 @@ void FSignatureDesc::Execute(FFrame &Stack, void *RetValueAddress)
     if (SignatureFunctionDesc)
     {
         ++NumCalls;         // inc calls, so it won't be deleted during call
-        SignatureFunctionDesc->CallLua(Stack, RetValueAddress, false, false);
+        SignatureFunctionDesc->CallLua(nullptr, Stack, RetValueAddress, false, false);
         --NumCalls;         // dec calls
         if (!NumCalls && bPendingKill)
         {
@@ -507,8 +507,7 @@ void FDelegateHelper::CreateSignature(UFunction *TemplateFunction, FName FuncNam
     SignatureDesc->CallbackRef = CallbackRef;
     Signatures.Add(SignatureFunction, SignatureDesc);
 
-    // set custom thunk function for the duplicated UFunction
-    OverrideUFunction(SignatureFunction, (FNativeFuncPtr)&FDelegateHelper::ProcessDelegate, SignatureDesc, false);
+	OverrideUFunction(SignatureFunction, (FNativeFuncPtr)&FDelegateHelper::ProcessDelegate, SignatureDesc, false);      // set custom thunk function for the duplicated UFunction
 
     uint8 NumRefProperties = SignatureDesc->SignatureFunctionDesc->GetNumRefProperties();
     if (NumRefProperties > 0)

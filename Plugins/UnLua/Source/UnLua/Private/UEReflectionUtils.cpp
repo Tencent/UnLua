@@ -1071,18 +1071,19 @@ FFunctionDesc::~FFunctionDesc()
 /**
  * Call Lua function that overrides this UFunction
  */
-bool FFunctionDesc::CallLua(FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams)
+bool FFunctionDesc::CallLua(UObject* Context, FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams)
 {
     // push Lua function to the stack
     bool bSuccess = false;
     lua_State *L = *GLuaCxt;
+	UObject* CallableObject = Context ? Context : Stack.Object;
     if (FunctionRef != INDEX_NONE)
     {
-        bSuccess = PushFunction(L, Stack.Object, FunctionRef);
+        bSuccess = PushFunction(L, CallableObject, FunctionRef);
     }
     else
     {
-        FunctionRef = PushFunction(L, Stack.Object, bRpcCall ? TCHAR_TO_ANSI(*FString::Printf(TEXT("%s_RPC"), *FuncName)) : TCHAR_TO_ANSI(*FuncName));
+        FunctionRef = PushFunction(L, CallableObject, bRpcCall ? TCHAR_TO_ANSI(*FString::Printf(TEXT("%s_RPC"), *FuncName)) : TCHAR_TO_ANSI(*FuncName));
         bSuccess = FunctionRef != INDEX_NONE;
     }
 
@@ -1545,6 +1546,7 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
     }
     else
     {
+#if ENGINE_MINOR_VERSION >22
         // a property or a function ?
         FProperty *Property = Struct->FindPropertyByName(FieldName);
         UFunction *Function = (!Property && Type == EType::CLASS) ? Class->FindFunctionByName(FieldName) : nullptr;
@@ -1558,7 +1560,15 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
         {
             return nullptr;
         }
-
+#else
+		UProperty *Property = Struct->FindPropertyByName(FieldName);
+		UFunction *Function = (!Property && Type == EType::CLASS) ? Class->FindFunctionByName(FieldName) : nullptr;
+		UField *Field = Property ? (UField*)Property : Function;
+		if (!Field)
+		{
+			return nullptr;
+		}
+#endif
         UStruct *OuterStruct = Property ? Cast<UStruct>(GetPropertyOuter(Property)) : Cast<UStruct>(Function->GetOuter());
         if (OuterStruct)
         {
