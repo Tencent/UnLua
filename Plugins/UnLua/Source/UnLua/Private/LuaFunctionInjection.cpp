@@ -14,6 +14,7 @@
 
 #include "LuaFunctionInjection.h"
 #include "UEReflectionUtils.h"
+#include "Misc/MemStack.h"
 #include "GameFramework/Actor.h"
 
 #define CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION 1
@@ -76,7 +77,18 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
         }
     }
 #endif
-    FuncDesc->CallLua(Stack, (void*)RESULT_PARAM, bRpcCall, bUnpackParams);
+
+    bool bSuccess = FuncDesc->CallLua(Context, Stack, (void*)RESULT_PARAM, bRpcCall, bUnpackParams);
+    if (!bSuccess && bUnpackParams)
+    {
+        FMemMark Mark(FMemStack::Get());
+        void *Params = New<uint8>(FMemStack::Get(), Func->ParmsSize, 16);
+        for (TFieldIterator<FProperty> It(Func); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
+        {
+            Stack.Step(Stack.Object, It->ContainerPtrToValuePtr<uint8>(Params));
+        }
+        Stack.SkipCode(1);          // skip EX_EndFunctionParms
+    }
 }
 
 /**

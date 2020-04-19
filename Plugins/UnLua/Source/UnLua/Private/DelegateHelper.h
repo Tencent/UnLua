@@ -55,7 +55,7 @@ struct FSignatureDesc
 
     void MarkForDelete(bool bIgnoreBindings = false);
 
-    void Execute(FFrame &Stack, void *RetValueAddress);
+    void Execute(UObject *Context, FFrame &Stack, void *RetValueAddress);
 
     class FFunctionDesc *SignatureFunctionDesc;
     int32 CallbackRef;

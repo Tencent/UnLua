@@ -266,7 +266,7 @@ public:
      * @param bUnpackParams - whether to unpack parameters from the stack
      * @return - true if the Lua function executes successfully, false otherwise
      */
-    bool CallLua(FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams);
+    bool CallLua(UObject *Context, FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams);
 
     /**
      * Call this UFunction

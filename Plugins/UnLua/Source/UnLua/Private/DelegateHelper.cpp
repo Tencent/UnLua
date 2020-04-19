@@ -65,12 +65,12 @@ void FSignatureDesc::MarkForDelete(bool bIgnoreBindings)
     FDelegateHelper::CleanUpByFunction(SignatureFunctionDesc->GetFunction());
 }
 
-void FSignatureDesc::Execute(FFrame &Stack, void *RetValueAddress)
+void FSignatureDesc::Execute(UObject *Context, FFrame &Stack, void *RetValueAddress)
 {
     if (SignatureFunctionDesc)
     {
         ++NumCalls;         // inc calls, so it won't be deleted during call
-        SignatureFunctionDesc->CallLua(Stack, RetValueAddress, false, false);
+        SignatureFunctionDesc->CallLua(Context, Stack, RetValueAddress, false, false);
         --NumCalls;         // dec calls
         if (!NumCalls && bPendingKill)
         {
@@ -101,7 +101,7 @@ DEFINE_FUNCTION(FDelegateHelper::ProcessDelegate)
 #endif
     if (SignatureDesc)
     {
-        SignatureDesc->Execute(Stack, (void*)RESULT_PARAM);     // fire the delegate
+        SignatureDesc->Execute(Context, Stack, (void*)RESULT_PARAM);     // fire the delegate
         return;
     }
     UE_LOG(LogUnLua, Warning, TEXT("Failed to process delegate (%s)!"), *Stack.CurrentNativeFunction->GetName());
@@ -507,8 +507,7 @@ void FDelegateHelper::CreateSignature(UFunction *TemplateFunction, FName FuncNam
     SignatureDesc->CallbackRef = CallbackRef;
     Signatures.Add(SignatureFunction, SignatureDesc);
 
-    // set custom thunk function for the duplicated UFunction
-    OverrideUFunction(SignatureFunction, (FNativeFuncPtr)&FDelegateHelper::ProcessDelegate, SignatureDesc, false);
+	OverrideUFunction(SignatureFunction, (FNativeFuncPtr)&FDelegateHelper::ProcessDelegate, SignatureDesc, false);      // set custom thunk function for the duplicated UFunction
 
     uint8 NumRefProperties = SignatureDesc->SignatureFunctionDesc->GetNumRefProperties();
     if (NumRefProperties > 0)

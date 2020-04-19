@@ -1071,18 +1071,18 @@ FFunctionDesc::~FFunctionDesc()
 /**
  * Call Lua function that overrides this UFunction
  */
-bool FFunctionDesc::CallLua(FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams)
+bool FFunctionDesc::CallLua(UObject *Context, FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams)
 {
     // push Lua function to the stack
     bool bSuccess = false;
     lua_State *L = *GLuaCxt;
     if (FunctionRef != INDEX_NONE)
     {
-        bSuccess = PushFunction(L, Stack.Object, FunctionRef);
+        bSuccess = PushFunction(L, Context, FunctionRef);
     }
     else
     {
-        FunctionRef = PushFunction(L, Stack.Object, bRpcCall ? TCHAR_TO_ANSI(*FString::Printf(TEXT("%s_RPC"), *FuncName)) : TCHAR_TO_ANSI(*FuncName));
+        FunctionRef = PushFunction(L, Context, bRpcCall ? TCHAR_TO_ANSI(*FString::Printf(TEXT("%s_RPC"), *FuncName)) : TCHAR_TO_ANSI(*FuncName));
         bSuccess = FunctionRef != INDEX_NONE;
     }
 
