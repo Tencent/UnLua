@@ -754,6 +754,12 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
     UFunction *Func = OuterClass->FindFunctionByName(NewFuncName, EIncludeSuperFlag::ExcludeSuper);
     if (!Func)
     {
+        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
+        {
+            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
+            OuterClass->AddNativeFunction(*NewFuncName.ToString(), (FNativeFuncPtr)&FLuaInvoker::execCallLua);
+        }
+
         UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName); // duplicate a UFunction
         if (!NewFunc->HasAnyFunctionFlags(FUNC_Native) && NewFunc->Script.Num() > 0)
         {
