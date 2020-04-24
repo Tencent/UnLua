@@ -14,10 +14,10 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreUObject.h"
 #include "Engine/UserDefinedEnum.h"
 #include "UnLuaBase.h"
+#include "UnLuaCompatibility.h"
 
 #define ENABLE_PERSISTENT_PARAM_BUFFER 1            // option to allocate persistent buffer for UFunction's parameters
 #define ENABLE_CALL_OVERRIDDEN_FUNCTION 1           // option to call overridden UFunction

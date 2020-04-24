@@ -15,6 +15,7 @@
 #pragma once
 
 #include "UnLuaPrivate.h"
+#include "UnLuaCompatibility.h"
 #include "lua.hpp"
 
 struct FScriptContainerDesc

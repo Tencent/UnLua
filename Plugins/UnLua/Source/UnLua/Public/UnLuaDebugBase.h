@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreUObject.h"
 #include "UnLuaCompatibility.h"
 #include "lua.hpp"

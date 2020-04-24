@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 #if ENGINE_MINOR_VERSION < 19

@@ -14,9 +14,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreUObject.h"
-#include "UnLuaCompatibility.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #ifndef AUTO_UNLUA_STARTUP
 #define AUTO_UNLUA_STARTUP 0
@@ -31,6 +30,10 @@
 #endif
 
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
+
+#if ENGINE_MINOR_VERSION < 25
+typedef UProperty FProperty;
+#endif
 
 struct lua_State;
 struct luaL_Reg;
