@@ -40,6 +40,11 @@ void CreateNamespaceForUE(lua_State *L);
 void SetTableForClass(lua_State *L, const char *Name);
 
 /**
+ * Set metatable for the userdata/table on the top of the stack
+ */
+bool TryToSetMetatable(lua_State *L, const char *MetatableName);
+
+/**
  * Functions to handle Lua userdata
  */
 uint8 CalcUserdataPadding(int32 Alignment);
@@ -75,6 +80,11 @@ void PushInterfaceArray(lua_State *L, FInterfaceProperty *Property, void *Value)
 void PushDelegateArray(lua_State *L, FDelegateProperty *Property, void *Value);
 void PushMCDelegateArray(lua_State *L, FMulticastDelegateProperty *Property, void *Value, const char *MetatableName);
 void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char *MetatableName);
+
+/**
+ * Push a UObject to Lua stack
+ */
+void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
 
 /**
  * Functions to New/Delete Lua instance for UObjectBaseUtility
