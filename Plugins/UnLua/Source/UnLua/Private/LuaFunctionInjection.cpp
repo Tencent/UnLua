@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaFunctionInjection.h"
-#include "UEReflectionUtils.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Misc/MemStack.h"
 #include "GameFramework/Actor.h"
 

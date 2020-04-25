@@ -14,11 +14,11 @@
 
 #include "LuaCore.h"
 #include "LuaContext.h"
-#include "LuaSet.h"
-#include "LuaMap.h"
 #include "UnLuaDelegates.h"
-#include "UEReflectionUtils.h"
 #include "UEObjectReferencer.h"
+#include "Containers/LuaSet.h"
+#include "Containers/LuaMap.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 

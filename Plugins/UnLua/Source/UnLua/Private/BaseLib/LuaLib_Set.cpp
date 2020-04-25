@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
-#include "LuaSet.h"
 #include "LuaCore.h"
+#include "Containers/LuaSet.h"
 
 static int32 TSet_New(lua_State *L)
 {

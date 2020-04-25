@@ -15,8 +15,7 @@
 #pragma once
 
 #include "LuaArray.h"
-#include "PropertyCreator.h"
-#include "UEReflectionUtils.h"
+#include "ReflectionUtils/PropertyCreator.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 class FLuaMap

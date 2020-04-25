@@ -14,7 +14,7 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "UEReflectionUtils.h"
+#include "ReflectionUtils/ClassDesc.h"
 
 /**
  * Load a class. for example: UClass.Load("/Game/Core/Blueprints/AICharacter.AICharacter_C")

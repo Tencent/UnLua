@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
-#include "LuaArray.h"
 #include "LuaCore.h"
+#include "Containers/LuaArray.h"
 
 static int32 TArray_New(lua_State *L)
 {

@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaDebugBase.h"
-#include "LuaSet.h"
-#include "LuaMap.h"
-#include "UEReflectionUtils.h"
+#include "Containers/LuaSet.h"
+#include "Containers/LuaMap.h"
+#include "ReflectionUtils/PropertyDesc.h"
 
 namespace UnLua
 {

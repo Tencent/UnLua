@@ -21,11 +21,11 @@
 #include "UnLuaDelegates.h"
 #include "UnLuaDebugBase.h"
 #include "UEObjectReferencer.h"
-#include "UEReflectionUtils.h"
 #include "CollisionHelper.h"
 #include "DelegateHelper.h"
-#include "PropertyCreator.h"
+#include "ReflectionUtils/PropertyCreator.h"
 #include "DefaultParamCollection.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Interfaces/IPluginManager.h"
 
 #if WITH_EDITOR

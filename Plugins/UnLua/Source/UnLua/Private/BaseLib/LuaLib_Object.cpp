@@ -16,9 +16,9 @@
 #include "UnLuaManager.h"
 #include "LuaContext.h"
 #include "LuaCore.h"
-#include "UEReflectionUtils.h"
-#include "UEObjectReferencer.h"
 #include "DelegateHelper.h"
+#include "UEObjectReferencer.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 
 /**
  * Load an object. for example: UObject.Load("/Game/Core/Blueprints/AI/BehaviorTree_Enemy.BehaviorTree_Enemy")

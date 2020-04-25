@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "DelegateHelper.h"
-#include "UEReflectionUtils.h"
 #include "LuaFunctionInjection.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 
 /**
  * archive used to get invocation list from a multicast delegate
