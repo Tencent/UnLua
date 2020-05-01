@@ -59,8 +59,8 @@ struct FSignatureDesc
     class FFunctionDesc *SignatureFunctionDesc;
     int32 CallbackRef;
     int16 NumCalls;
-    int8 NumBindings;
-    bool bPendingKill;
+    uint16 NumBindings : 15;
+    uint16 bPendingKill : 1;
 };
 
 struct lua_State;
