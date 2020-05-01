@@ -45,7 +45,7 @@ public:
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
     void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
 
-#if ENGINE_MINOR_VERSION > 23	
+#if ENGINE_MINOR_VERSION > 23
     void OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime);
 #else
     void OnWorldTickStart(ELevelTick TickType, float DeltaTime);
