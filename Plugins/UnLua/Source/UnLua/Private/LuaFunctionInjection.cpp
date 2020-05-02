@@ -17,6 +17,7 @@
 #include "Misc/MemStack.h"
 #include "GameFramework/Actor.h"
 
+#define CHECK_BLUEPRINTEVENT_FOR_NATIVIZED_CLASS 1
 #define CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION 1
 
 /**
@@ -100,6 +101,22 @@ static uint8 CallLuaBytecode = GRegisterNative(EX_CallLua, (FNativeFuncPtr)&FLua
 
 
 /**
+ * Whether the UFunction is overridable
+ */
+bool IsOverridable(UFunction *Function)
+{
+    check(Function);
+
+#if CHECK_BLUEPRINTEVENT_FOR_NATIVIZED_CLASS
+    static const uint32 FlagMask = FUNC_Native | FUNC_Event | FUNC_Net;
+    static const uint32 FlagResult = FUNC_Native | FUNC_Event;
+    return Function->HasAnyFunctionFlags(FUNC_BlueprintEvent) || (Function->FunctionFlags & FlagMask) == FlagResult;
+#else
+    return Function->HasAnyFunctionFlags(FUNC_BlueprintEvent);
+#endif
+}
+
+/**
  * Get all UFUNCTIONs that can be overrode
  */
 void GetOverridableFunctions(UClass *Class, TMap<FName, UFunction*> &Functions)
@@ -113,7 +130,7 @@ void GetOverridableFunctions(UClass *Class, TMap<FName, UFunction*> &Functions)
     for (TFieldIterator<UFunction> It(Class, EFieldIteratorFlags::IncludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::IncludeInterfaces); It; ++It)
     {
         UFunction *Function = *It;
-        if (Function->HasAnyFunctionFlags(FUNC_BlueprintEvent))
+        if (IsOverridable(Function))
         {
             FName FuncName = Function->GetFName();
             UFunction **FuncPtr = Functions.Find(FuncName);

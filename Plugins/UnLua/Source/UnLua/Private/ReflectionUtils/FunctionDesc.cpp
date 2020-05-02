@@ -17,6 +17,7 @@
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
 #include "LuaContext.h"
+#include "LuaFunctionInjection.h"
 #include "DefaultParamCollection.h"
 
 /**
@@ -266,7 +267,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     else
     {
-        if (Function->HasAnyFunctionFlags(FUNC_BlueprintEvent) && !bRemote)
+        if (IsOverridable(Function) && !bRemote)
         {
             UFunction *OverriddenFunc = GReflectionRegistry.FindOverriddenFunction(Function);
             if (OverriddenFunc)
