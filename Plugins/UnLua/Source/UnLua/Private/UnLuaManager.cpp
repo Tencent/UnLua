@@ -20,7 +20,6 @@
 #include "LuaFunctionInjection.h"
 #include "DelegateHelper.h"
 #include "UEObjectReferencer.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
 #include "Animation/AnimInstance.h"
@@ -738,6 +737,16 @@ void UUnLuaManager::OverrideFunction(UFunction *TemplateFunction, UClass *OuterC
 {
     if (TemplateFunction->GetOuter() != OuterClass)
     {
+#if UE_BUILD_SHIPPING || UE_BUILD_TEST
+        if (TemplateFunction->Script.Num() > 0 && TemplateFunction->Script[0] == EX_CallLua)
+        {
+#if ENABLE_CALL_OVERRIDDEN_FUNCTION
+            TemplateFunction = GReflectionRegistry.FindOverriddenFunction(TemplateFunction);
+#else
+            TemplateFunction = New2TemplateFunctions.FindChecked(TemplateFunction);
+#endif
+        }
+#endif
         AddFunction(TemplateFunction, OuterClass, NewFuncName);     // add a duplicated UFunction to child UClass
     }
     else
@@ -770,6 +779,8 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
         DuplicatedFuncs.AddUnique(NewFunc);
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
         GReflectionRegistry.AddOverriddenFunction(NewFunc, TemplateFunction);
+#else
+        New2TemplateFunctions.Add(NewFunc, TemplateFunction);
 #endif
     }
 }

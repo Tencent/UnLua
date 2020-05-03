@@ -17,6 +17,7 @@
 #include "InputCoreTypes.h"
 #include "Engine/EngineBaseTypes.h"
 #include "UnLuaCompatibility.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "UnLuaManager.generated.h"
 
 UCLASS()
@@ -112,6 +113,10 @@ private:
     TMap<FString, TSet<FName>> ModuleFunctions;
     TMap<UFunction*, FNativeFuncPtr> CachedNatives;
     TMap<UFunction*, TArray<uint8>> CachedScripts;
+
+#if !ENABLE_CALL_OVERRIDDEN_FUNCTION
+    TMap<UFunction*, UFunction*> New2TemplateFunctions;
+#endif
 
     TMap<UClass*, TArray<UClass*>> Base2DerivedClasses;
     TMap<UClass*, UClass*> Derived2BaseClasses;

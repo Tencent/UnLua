@@ -17,7 +17,6 @@
 #include "UnLuaBase.h"
 
 #define ENABLE_PERSISTENT_PARAM_BUFFER 1            // option to allocate persistent buffer for UFunction's parameters
-#define ENABLE_CALL_OVERRIDDEN_FUNCTION 1           // option to call overridden UFunction
 
 struct lua_State;
 struct FParameterCollection;

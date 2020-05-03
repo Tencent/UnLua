@@ -18,6 +18,8 @@
 #include "ClassDesc.h"
 #include "FunctionDesc.h"
 
+#define ENABLE_CALL_OVERRIDDEN_FUNCTION 1           // option to call overridden UFunction
+
 /**
  * Reflection registry
  */
