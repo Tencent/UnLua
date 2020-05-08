@@ -174,8 +174,10 @@ public:
         FByteProperty *UnderlyingProp = new FByteProperty(Property, TEXT("UnderlyingType"), RF_Transient);
         Property->AddCppProperty(UnderlyingProp);
 #endif
-        FArchive Ar;
-        Property->Link(Ar);
+
+        Property->ElementSize = UnderlyingProp->ElementSize;
+        Property->PropertyFlags |= CPF_IsPlainOldData | CPF_NoDestructor | CPF_ZeroConstructor;
+
         return OnPropertyCreated(Property, Enum, EnumPropertyDescMap);
     }
 
