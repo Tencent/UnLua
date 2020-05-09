@@ -470,6 +470,14 @@ void FLuaContext::OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanu
         return;
     }
 
+#if WITH_EDITOR
+    UGameInstance *OwningGameInstance = World->GetGameInstance();
+    if (OwningGameInstance && OwningGameInstance->GetWorldContext() && OwningGameInstance->GetWorldContext()->PendingNetGame)
+    {
+        return;
+    }
+#endif
+
     World->RemoveOnActorSpawnedHandler(OnActorSpawnedHandle);
 
     if (World->PersistentLevel && World->PersistentLevel->OwningWorld == World)
@@ -500,6 +508,14 @@ void FLuaContext::OnPostWorldCleanup(UWorld *World, bool bSessionEnded, bool bCl
     {
         return;
     }
+
+#if WITH_EDITOR
+    UGameInstance *OwningGameInstance = World->GetGameInstance();
+    if (OwningGameInstance && OwningGameInstance->GetWorldContext() && OwningGameInstance->GetWorldContext()->PendingNetGame)
+    {
+        return;
+    }
+#endif
 
     if (NextMap.Len() > 0)
     {
