@@ -61,6 +61,8 @@ int32 UObject_Load(lua_State *L)
         if (Enum)
         {
             RegisterEnum(L, Enum);
+            int32 Type = luaL_getmetatable(L, TCHAR_TO_ANSI(*Enum->GetName()));
+            check(Type == LUA_TTABLE);
         }
         else
         {
