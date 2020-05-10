@@ -396,6 +396,16 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
         }
         if (Class->ImplementsInterface(InterfaceClass))                             // static binding
         {
+#if WITH_EDITOR
+            if (GIsEditor && Object->GetOuter())
+            {
+                UWorld *World = Object->GetOuter()->GetWorld();
+                if (World && !World->IsGameWorld())
+                {
+                    return false;
+                }
+            }
+#endif
             UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
             if (Func)
             {
