@@ -237,6 +237,10 @@ void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
     CleanupDuplicatedFunctions();       // clean up duplicated UFunctions
     CleanupCachedNatives();             // restore cached thunk functions
     CleanupCachedScripts();             // restore cached scripts
+
+#if !ENABLE_CALL_OVERRIDDEN_FUNCTION
+    New2TemplateFunctions.Empty();
+#endif
 }
 
 /**
