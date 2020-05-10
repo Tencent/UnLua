@@ -737,7 +737,7 @@ void UUnLuaManager::OverrideFunction(UFunction *TemplateFunction, UClass *OuterC
 {
     if (TemplateFunction->GetOuter() != OuterClass)
     {
-#if UE_BUILD_SHIPPING || UE_BUILD_TEST
+//#if UE_BUILD_SHIPPING || UE_BUILD_TEST
         if (TemplateFunction->Script.Num() > 0 && TemplateFunction->Script[0] == EX_CallLua)
         {
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
@@ -746,7 +746,7 @@ void UUnLuaManager::OverrideFunction(UFunction *TemplateFunction, UClass *OuterC
             TemplateFunction = New2TemplateFunctions.FindChecked(TemplateFunction);
 #endif
         }
-#endif
+//#endif
         AddFunction(TemplateFunction, OuterClass, NewFuncName);     // add a duplicated UFunction to child UClass
     }
     else
