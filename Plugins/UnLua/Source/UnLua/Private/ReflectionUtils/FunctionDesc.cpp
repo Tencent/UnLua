@@ -280,7 +280,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 
     // call the UFuncton...
 #if !SUPPORTS_RPC_CALL && !WITH_EDITOR
-    if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native))
+    if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native) && NumCalls == 1)
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
         uint8* ReturnValueAddress = FinalFunction->ReturnValueOffset != MAX_uint16 ? (uint8*)Params + FinalFunction->ReturnValueOffset : nullptr;
