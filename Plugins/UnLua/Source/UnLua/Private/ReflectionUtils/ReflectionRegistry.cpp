@@ -124,7 +124,11 @@ bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase *InObject)
     {
         UE_LOG(LogUnLua, Warning, TEXT("Class/ScriptStruct %s has been GCed by engine!!!"), *ClassDesc->GetName());
         ClassDesc->Reset();
-        Name2Classes.Remove(ClassDesc->GetFName());
+        FClassDesc** PClassDesc = Name2Classes.Find(ClassDesc->GetFName());
+		if (PClassDesc && *PClassDesc == ClassDesc)
+		{
+			Name2Classes.Remove(ClassDesc->GetFName());
+		}
         Struct2Classes.Remove(Struct);
         return true;
     }
