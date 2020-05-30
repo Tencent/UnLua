@@ -21,6 +21,17 @@
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 
+class FStructPropertyDesc : public FPropertyDesc
+{
+public:
+    explicit FStructPropertyDesc(FProperty *InProperty)
+        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
+    {}
+
+protected:
+    bool bFirstPropOfScriptStruct;
+};
+
 /**
  * Integer property descriptor
  */
@@ -214,6 +225,87 @@ public:
 
 private:
     UClass *MetaClass;
+};
+
+/**
+ * Soft object property descriptor
+ */
+class FSoftObjectPropertyDesc : public FStructPropertyDesc
+{
+public:
+    FSoftObjectPropertyDesc(FProperty *InProperty)
+        : FStructPropertyDesc(InProperty)
+    {
+        UClass *Class = SoftObjectProperty->PropertyClass->IsChildOf(UClass::StaticClass()) ? ((FSoftClassProperty*)SoftObjectProperty)->MetaClass : SoftObjectProperty->PropertyClass;
+        RegisterClass(*GLuaCxt, Class);
+    }
+
+    virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
+    {
+        FSoftObjectPtr *Src = (FSoftObjectPtr*)GetCppInstanceFast(L, SrcIndexInStack);
+        return CopyBack(Property->ContainerPtrToValuePtr<void>(DestContainerPtr), Src);
+    }
+
+    virtual bool CopyBack(lua_State *L, void *SrcContainerPtr, int32 DestIndexInStack) override
+    {
+        FSoftObjectPtr *Dest = (FSoftObjectPtr*)GetCppInstanceFast(L, DestIndexInStack);
+        return CopyBack(Dest, Property->ContainerPtrToValuePtr<void>(SrcContainerPtr));
+    }
+
+    virtual bool CopyBack(void *Dest, const void *Src) override
+    {
+        if (Dest && Src && IsOutParameter())
+        {
+            SoftObjectProperty->CopySingleValue(Dest, Src);
+            return true;
+        }
+        return false;
+    }
+
+    virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
+    {
+        if (bCreateCopy)
+        {
+            void *Userdata = NewUserdataWithPadding(L, sizeof(FSoftObjectPtr), "FSoftObjectPtr");
+            SoftObjectProperty->InitializeValue(Userdata);
+            SoftObjectProperty->CopySingleValue(Userdata, ValuePtr);
+        }
+        else
+        {
+            if (Property->ArrayDim > 1)
+            {
+                PushStructArray(L, Property, (void*)ValuePtr, "FSoftObjectPtr");
+            }
+            else
+            {
+                UnLua::PushPointer(L, (void*)ValuePtr, "FSoftObjectPtr", bFirstPropOfScriptStruct);
+            }
+        }
+    }
+
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        switch (Type)
+        {
+        case LUA_TSTRING:
+            {
+                FSoftObjectPtr SoftObject(FSoftObjectPath(ANSI_TO_TCHAR(lua_tostring(L, IndexInStack))));
+                SoftObjectProperty->CopySingleValue(ValuePtr, &SoftObject);
+            }
+            break;
+        case LUA_TUSERDATA:
+            {
+                FSoftObjectPtr *Value = (FSoftObjectPtr*)GetCppInstanceFast(L, IndexInStack);
+                if (Value)
+                {
+                    SoftObjectProperty->SetPropertyValue(ValuePtr, *Value);
+                }
+            }
+            break;
+        }
+        return true;
+    }
 };
 
 /**
@@ -641,17 +733,6 @@ private:
     TSharedPtr<UnLua::ITypeInterface> InnerProperty;
 };
 
-class FStructPropertyDesc : public FPropertyDesc
-{
-public:
-    explicit FStructPropertyDesc(FProperty *InProperty)
-        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
-    {}
-
-protected:
-    bool bFirstPropOfScriptStruct;
-};
-
 /**
  * ScriptStruct property descriptor
  */
@@ -903,7 +984,7 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
     case CPT_LazyObjectReference:
         return new FObjectPropertyDesc(InProperty, false);
     case CPT_SoftObjectReference:
-        return new FObjectPropertyDesc(InProperty, true);
+        return new FSoftObjectPropertyDesc(InProperty);
     case CPT_Interface:
         return new FInterfacePropertyDesc(InProperty);
     case CPT_Name:

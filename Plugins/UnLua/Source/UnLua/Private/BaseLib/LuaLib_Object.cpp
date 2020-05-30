@@ -398,9 +398,12 @@ static const luaL_Reg FSoftObjectPtrLib[] =
 
 BEGIN_EXPORT_CLASS(FSoftObjectPtr, const UObject*)
     ADD_CONST_FUNCTION_EX("IsValid", bool, IsValid)
+    ADD_CONST_FUNCTION_EX("IsNull", bool, IsNull)
+    ADD_CONST_FUNCTION_EX("IsPending", bool, IsPending)
     ADD_FUNCTION_EX("Reset", void, Reset)
     ADD_FUNCTION_EX("Set", void, operator=, const UObject*)
     ADD_CONST_FUNCTION_EX("Get", UObject*, Get)
+    ADD_CONST_FUNCTION_EX("LoadSynchronous", UObject*, LoadSynchronous)
     ADD_LIB(FSoftObjectPtrLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FSoftObjectPtr)
