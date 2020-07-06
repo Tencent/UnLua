@@ -117,6 +117,16 @@ namespace UnLua
         template <typename... T>
         FLuaRetValues Call(const char *FuncName, T&&... Args) const;
 
+        /**
+         * Iterate for Array
+         */
+        bool Iterate(std::function<void (const lua_Integer& Index, const FLuaValue& Value)> Func);
+
+        /**
+         * Iterate for Table
+         */
+        bool Iterate(std::function<void (const FName& Key, const FLuaValue& Value)> Func);
+
     private:
         mutable int32 PushedValues;
     };

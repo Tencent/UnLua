@@ -140,6 +140,56 @@ namespace UnLua
         return FLuaValue(-1, Type);
     }
 
+    bool FLuaTable::Iterate(std::function<void(const lua_Integer& Index, const FLuaValue& Value)> Func)
+    {
+        // push table to stack
+        lua_pushvalue(*GLuaCxt, Index);
+
+        // get length of array
+        const auto Len = luaL_len(*GLuaCxt, -1);
+
+        // iterate array
+        for (lua_Integer i = 1; i <= Len; i++)
+        {
+            lua_pushinteger(*GLuaCxt, i);
+            lua_gettable(*GLuaCxt, -2);
+
+            Func(i, FLuaValue(-1));
+
+            // pop value from stack
+            lua_pop(*GLuaCxt, 1);
+        }
+
+        // pop table from stack
+        lua_pop(*GLuaCxt, 1);
+
+        return true;
+    }
+
+    bool FLuaTable::Iterate(const std::function<void (const FName& Key, const FLuaValue& Value)> Func)
+    {
+        // push table to stack
+        lua_pushvalue(*GLuaCxt, Index);
+
+        // iterate table
+        lua_pushnil(*GLuaCxt);
+        while (lua_next(*GLuaCxt, -2) != 0)
+        {
+            FName Key(lua_tostring(*GLuaCxt, -2));
+            FLuaValue Value(-1);
+
+            Func(Key, Value);
+
+            // pop value from stack, keep key in stack to continue iterate
+            lua_pop(*GLuaCxt, 1);
+        }
+
+        // pop table from stack
+        lua_pop(*GLuaCxt, 1);
+
+        return true;
+    }
+
     /**
      * Lua function wrapper
      */
