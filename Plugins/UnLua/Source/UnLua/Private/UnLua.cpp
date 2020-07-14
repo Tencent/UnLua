@@ -140,7 +140,7 @@ namespace UnLua
         return FLuaValue(-1, Type);
     }
 
-    bool FLuaTable::Iterate(std::function<void(const lua_Integer& Index, const FLuaValue& Value)> Func)
+    bool FLuaTable::Iterate(TFunction<void (const lua_Integer& Index, const FLuaValue& Value)> Func) const
     {
         // push table to stack
         lua_pushvalue(*GLuaCxt, Index);
@@ -166,7 +166,7 @@ namespace UnLua
         return true;
     }
 
-    bool FLuaTable::Iterate(const std::function<void (const FName& Key, const FLuaValue& Value)> Func)
+    bool FLuaTable::Iterate(TFunction<void (const FName& Key, const FLuaValue& Value)> Func) const
     {
         // push table to stack
         lua_pushvalue(*GLuaCxt, Index);

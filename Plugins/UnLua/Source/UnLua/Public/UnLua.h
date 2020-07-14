@@ -120,12 +120,12 @@ namespace UnLua
         /**
          * Iterate for Array
          */
-        bool Iterate(std::function<void (const lua_Integer& Index, const FLuaValue& Value)> Func);
+        bool Iterate(TFunction<void (const lua_Integer& Index, const FLuaValue& Value)> Func) const;
 
         /**
          * Iterate for Table
          */
-        bool Iterate(std::function<void (const FName& Key, const FLuaValue& Value)> Func);
+        bool Iterate(TFunction<void (const FName& Key, const FLuaValue& Value)> Func) const;
 
     private:
         mutable int32 PushedValues;
