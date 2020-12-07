@@ -1852,7 +1852,14 @@ int32 Global_NewObject(lua_State *L)
             TableRef = luaL_ref(L, LUA_REGISTRYINDEX);
         }
         FScopedLuaDynamicBinding Binding(L, Class, ANSI_TO_TCHAR(ModuleName), TableRef);
+#if ENGINE_MINOR_VERSION < 26
         UObject *Object = StaticConstructObject_Internal(Class, Outer, Name);
+#else
+        FStaticConstructObjectParameters ObjParams(Class);
+        ObjParams.Outer = Outer;
+        ObjParams.Name = Name;
+        UObject *Object = StaticConstructObject_Internal(ObjParams);
+#endif
         if (Object)
         {
             UnLua::PushUObject(L, Object);
