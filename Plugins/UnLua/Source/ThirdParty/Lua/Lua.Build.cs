@@ -57,6 +57,7 @@ public class Lua : ModuleRules
                 //PublicAdditionalLibraries.Add("lua");
                 PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib/Android/ARMv7/liblua.a"));
                 PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib/Android/ARM64/liblua.a"));
+				PublicAdditionalLibraries.Add(Path.Combine(ModuleDirectory, "lib/Android/x86_64/liblua.a"));
             }
 
             if (Target.bBuildEditor == true)
