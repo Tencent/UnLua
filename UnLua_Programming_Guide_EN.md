@@ -68,8 +68,8 @@ Output Values includes **non-const reference parameters** and **return parameter
 ![OUT_PRIMITIVE_TYPES](./Images/out_primitive_types.png)
 
 Lua codes：
-```
-local Level, Health, Name = self:GetPlayerBaseInfo()
+```lua
+self:GetPlayerBaseInfo(Level, Health, Name)
 ```
 
 ###### Non-Primitive Types
@@ -227,12 +227,12 @@ For customization and performance considerations, UnLua manually exports several
  * UObject
  * UClass
  * UWorld
- 
+
 #### Common Containers
  * TArray
  * TSet
  * TMap
- 
+
 ##### Example
 ```
 	local Indices = TArray(0)
