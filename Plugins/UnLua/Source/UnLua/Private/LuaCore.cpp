@@ -1984,7 +1984,7 @@ int32 Global_Require(lua_State *L)
     FString FullFilePath = GLuaSrcFullPath + RelativeFilePath;
     lua_pushvalue(L, 1);
     lua_pushstring(L, TCHAR_TO_UTF8(*FullFilePath));
-    lua_pcall(L, 2, 1, 0);
+    lua_call(L, 2, 1);
 
     if (!lua_isnil(L, -1))
     {

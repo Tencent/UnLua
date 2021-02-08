@@ -75,7 +75,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     if (!ModuleNamePtr)
     {
         UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_ANSI(InModuleName));    // require Lua module
-        bSuccess = RetValues.IsValid();
+        bSuccess = RetValues.IsValid() && RetValues.Num() > 0 && RetValues[0].GetType() == LUA_TTABLE;
         if (bSuccess)
         {
             bSuccess = BindInternal(Object, Class, InModuleName, true);                             // bind!!!
