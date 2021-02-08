@@ -176,7 +176,7 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
 
     if (bClass)
     {
-        OnClassCleanup((UClass*)Object);
+        CleanUpByClass((UClass*)Object);
     }
     else
     {
@@ -253,11 +253,9 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
         return;
     }
 
-    const FString *ModuleNamePtr = ModuleNames.Find(Class);
-    if (ModuleNamePtr)
+    FString ModuleName;
+    if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
     {
-        FString ModuleName = *ModuleNamePtr;
-
         Classes.Remove(ModuleName);
         ModuleFunctions.Remove(ModuleName);
 
