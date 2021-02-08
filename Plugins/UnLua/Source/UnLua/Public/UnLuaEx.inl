@@ -999,7 +999,7 @@ namespace UnLua
     void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddDefaultFunctions(FFalse NotReflected)
     {
         AddConstructor(typename TChooseClass<TIsConstructible<ClassType, CtorArgType...>::Value, FTrue, FFalse>::Result());
-        AddDestructor(typename TChooseClass<TAnd<TIsDestructible<ClassType>, TNot<TIsTriviallyDestructible<ClassType>>>::Value, FTrue, FFalse>::Result());
+        AddDestructor(typename TChooseClass<TAnd<TIsDestructible<ClassType>, TNot<TIsTriviallyDestructible<ClassType>>>::Value, FFalse, FTrue>::Result());
     }
 
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
