@@ -65,6 +65,7 @@ void* NewScriptContainer(lua_State *L, const FScriptContainerDesc &Desc);
 void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &Desc);
 void* GetScriptContainer(lua_State *L, int32 Index);
 void* GetScriptContainer(lua_State *L, void *Key);
+void RemoveCachedScriptContainer(lua_State *L, void *Key);
 
 /**
  * Functions to push FProperty array

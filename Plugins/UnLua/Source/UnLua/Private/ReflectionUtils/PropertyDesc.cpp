@@ -427,7 +427,7 @@ public:
 /**
  * TArray property descriptor
  */
-class FArrayPropertyDesc : public FPropertyDesc
+class FArrayPropertyDesc : public FPropertyDesc, public TLuaContainerInterface<FLuaArray>
 {
 public:
     explicit FArrayPropertyDesc(FProperty *InProperty)
@@ -478,7 +478,8 @@ public:
             void *Userdata = CacheScriptContainer(L, ScriptArray, FScriptContainerDesc::Array);
             if (Userdata)
             {
-                FLuaArray *LuaArray = new(Userdata) FLuaArray(ScriptArray, InnerProperty, FLuaArray::OwnedByOther);
+                FLuaArray *LuaArray = new(Userdata) FLuaArray(ScriptArray, (TLuaContainerInterface<FLuaArray>*)this, FLuaArray::OwnedByOther);
+                ((TLuaContainerInterface<FLuaArray>*)this)->AddContainer(LuaArray);
             }
         }
     }
@@ -513,6 +514,10 @@ public:
         return true;
     }
 
+    // interfaces from 'TLuaContainerInterface<FLuaArray>'
+    virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const override { return InnerProperty; }
+    virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const override { return TSharedPtr<UnLua::ITypeInterface>(); }
+
     static bool FillArray(lua_State *L, void *Userdata)
     {
         FLuaArray *Array = (FLuaArray*)Userdata;
@@ -529,7 +534,7 @@ private:
 /**
  * TMap property descriptor
  */
-class FMapPropertyDesc : public FPropertyDesc
+class FMapPropertyDesc : public FPropertyDesc, public TLuaContainerInterface<FLuaMap>
 {
 public:
     explicit FMapPropertyDesc(FProperty *InProperty)
@@ -581,7 +586,8 @@ public:
             void *Userdata = CacheScriptContainer(L, ScriptMap, FScriptContainerDesc::Map);
             if (Userdata)
             {
-                FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, KeyProperty, ValueProperty, FLuaMap::OwnedByOther);
+                FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, (TLuaContainerInterface<FLuaMap>*)this, FLuaMap::OwnedByOther);
+                ((TLuaContainerInterface<FLuaMap>*)this)->AddContainer(LuaMap);
             }
         }
     }
@@ -615,6 +621,10 @@ public:
         return true;
     }
 
+    // interfaces from 'TLuaContainerInterface<FLuaMap>'
+    virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const override { return KeyProperty; }
+    virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const override { return ValueProperty; }
+
     static bool FillMap(lua_State *L, void *Userdata)
     {
         FLuaMap *Map = (FLuaMap*)Userdata;
@@ -635,7 +645,7 @@ private:
 /**
  * TSet property descriptor
  */
-class FSetPropertyDesc : public FPropertyDesc
+class FSetPropertyDesc : public FPropertyDesc, public TLuaContainerInterface<FLuaSet>
 {
 public:
     explicit FSetPropertyDesc(FProperty *InProperty)
@@ -686,7 +696,8 @@ public:
             void *Userdata = CacheScriptContainer(L, ScriptSet, FScriptContainerDesc::Set);
             if (Userdata)
             {
-                FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, InnerProperty, FLuaSet::OwnedByOther);
+                FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, (TLuaContainerInterface<FLuaSet>*)this, FLuaSet::OwnedByOther);
+                ((TLuaContainerInterface<FLuaSet>*)this)->AddContainer(LuaSet);
             }
         }
     }
@@ -719,6 +730,10 @@ public:
         }
         return true;
     }
+
+    // interfaces from 'TLuaContainerInterface<FLuaSet>'
+    virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const override { return InnerProperty; }
+    virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const override { return TSharedPtr<UnLua::ITypeInterface>(); }
 
     static bool FillSet(lua_State *L, void *Userdata)
     {
