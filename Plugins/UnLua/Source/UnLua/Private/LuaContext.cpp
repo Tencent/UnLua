@@ -183,6 +183,10 @@ void FLuaContext::CreateState()
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
+        lua_pushstring(L, "MetatableMap");                              // create weak table 'ArrayMap'
+        CreateWeakValueTable(L);
+        lua_rawset(L, LUA_REGISTRYINDEX);
+
         CreateNamespaceForUE(L);                                    // create 'UE4' namespace (table)
 
         // register global Lua functions

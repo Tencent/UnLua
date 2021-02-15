@@ -781,7 +781,8 @@ int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, cons
     lua_pushstring(L, "Object");
     lua_pushvalue(L, -2);
     lua_rawset(L, -4);                                          // INSTANCET.Object = RAW_UOBJECT
-    int32 Type = GetLoadedModule(L, ModuleName);                // push the required module/table ('REQUIRED_MODULE') to the top of the stack
+    int32 Type = GetBindMetatable(L, ModuleName, TCHAR_TO_ANSI(*Object->GetName()));
+    //int32 Type = GetBindMetatable(L, ModuleName);                // push the required module/table ('REQUIRED_MODULE') to the top of the stack
     if (Class)
     {
         TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ClassName(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName()));
@@ -1210,6 +1211,55 @@ int32 GetLoadedModule(lua_State *L, const char *ModuleName)
     return Type;
 }
 
+
+/**
+ * Functions to push the metable of (moduleName|ClassName) to the top of stack
+ */
+int32 GetBindMetatable(lua_State *L, const char *ModuleName, const char* ClassName)
+{
+    FString name(ANSI_TO_TCHAR(ModuleName));
+    name.Append(ANSI_TO_TCHAR("||"));
+    name.Append(ANSI_TO_TCHAR(ClassName));
+    lua_getfield(L, LUA_REGISTRYINDEX, "MetatableMap");
+  //  lua_getglobal(L, "MetatableMap");
+    lua_pushstring(L, TCHAR_TO_ANSI(*name));
+    lua_rawget(L, -2);
+    int32 type = lua_type(L, -1);
+    if (type == LUA_TTABLE)
+    {
+        lua_remove(L, -2);
+        return type;
+    }
+    lua_pop(L, 1);
+    lua_newtable(L);                                            //  -2：MetatableMap  -1： newtable，
+ //  lua_rawset(L, -3);
+    type = GetLoadedModule(L, ModuleName); //  ：MetatableMap  ： newtable ： ModuleNametable
+    if (type != LUA_TTABLE)
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("Invalid loaded module object! name:%s"), *ModuleName);
+        return LUA_TNONE;
+    }
+    //copy loaded module to new metatable(ModuleName | ClassName)
+    lua_pushnil(L); 
+    while (lua_next(L, -2) != 0) {
+     //   const char* key = lua_tostring(L, -2);
+    //    UE_LOG(LogUnLua, Warning, TEXT("key is:%s"), key);
+        lua_pushvalue(L, -2);
+        lua_pushvalue(L, -2);
+        ////  ：MetatableMap  ： newtable ： ModuleNametable : key:value:key:value
+        lua_rawset(L, -6);////  ：MetatableMap  ： newtable ： ModuleNametable : key:value:
+        lua_pop(L, 1);
+    }
+    ////  ：MetatableMap  ： newtable ： ModuleNametable 
+    lua_pop(L, 1);
+
+    lua_pushstring(L, TCHAR_TO_ANSI(*name));
+    lua_pushvalue(L, -2);  ////  ：MetatableMap  ： newtable ：string : newtable
+    lua_rawset(L, -4); //
+    lua_remove(L, -2);
+
+    return LUA_TTABLE;
+}
 /**
  * Get collision related enums
  */

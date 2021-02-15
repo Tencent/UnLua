@@ -122,6 +122,11 @@ UNLUA_API void AddPackagePath(lua_State *L, const char *Path);
 void ClearLoadedModule(lua_State *L, const char *ModuleName);
 int32 GetLoadedModule(lua_State *L, const char *ModuleName);
 
+
+/**
+ * Functions to push the metable of (moduleName|ClassName) to the top of stack
+ */
+int32 GetBindMetatable(lua_State *L, const char *ModuleName, const char* ClassName);
 /**
  * Functions to register collision enums
  */
