@@ -75,7 +75,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     if (!ModuleNamePtr)
     {
         UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_ANSI(InModuleName));    // require Lua module
-        bSuccess = RetValues.IsValid();
+        bSuccess = RetValues.IsValid() && RetValues.Num() > 0 && RetValues[0].GetType() == LUA_TTABLE;
         if (bSuccess)
         {
             bSuccess = BindInternal(Object, Class, InModuleName, true);                             // bind!!!
@@ -176,7 +176,7 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
 
     if (bClass)
     {
-        OnClassCleanup((UClass*)Object);
+        CleanUpByClass((UClass*)Object);
     }
     else
     {
@@ -253,11 +253,9 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
         return;
     }
 
-    const FString *ModuleNamePtr = ModuleNames.Find(Class);
-    if (ModuleNamePtr)
+    FString ModuleName;
+    if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
     {
-        FString ModuleName = *ModuleNamePtr;
-
         Classes.Remove(ModuleName);
         ModuleFunctions.Remove(ModuleName);
 

@@ -29,7 +29,7 @@ public:
 
     FLuaMap(const FScriptMap *InScriptMap, TSharedPtr<UnLua::ITypeInterface> InKeyInterface, TSharedPtr<UnLua::ITypeInterface> InValueInterface, FScriptMapFlag Flag = OwnedByOther)
         : Map((FScriptMap*)InScriptMap), MapLayout(FScriptMap::GetScriptLayout(InKeyInterface->GetSize(), InKeyInterface->GetAlignment(), InValueInterface->GetSize(), InValueInterface->GetAlignment()))
-        , KeyInterface(InKeyInterface), ValueInterface(InValueInterface), ElementCache(nullptr), ScriptMapFlag(Flag)
+        , KeyInterface(InKeyInterface), ValueInterface(InValueInterface), Interface(nullptr), ElementCache(nullptr), ScriptMapFlag(Flag)
     {
         FStructBuilder StructBuilder;
         StructBuilder.AddMember(InKeyInterface->GetSize(), InKeyInterface->GetAlignment());
@@ -38,14 +38,44 @@ public:
         ElementCache = FMemory::Malloc(StructBuilder.GetSize(), StructBuilder.GetAlignment());
     }
 
+    FLuaMap(const FScriptMap *InScriptMap, TLuaContainerInterface<FLuaMap> *InMapInterface, FScriptMapFlag Flag = OwnedByOther)
+        : Map((FScriptMap*)InScriptMap), Interface(InMapInterface), ElementCache(nullptr), ScriptMapFlag(Flag)
+    {
+        if (Interface)
+        {
+            KeyInterface = Interface->GetInnerInterface();
+            ValueInterface = Interface->GetExtraInterface();
+            MapLayout = FScriptMap::GetScriptLayout(KeyInterface->GetSize(), KeyInterface->GetAlignment(), ValueInterface->GetSize(), ValueInterface->GetAlignment());
+
+            FStructBuilder StructBuilder;
+            StructBuilder.AddMember(KeyInterface->GetSize(), KeyInterface->GetAlignment());
+            StructBuilder.AddMember(ValueInterface->GetSize(), ValueInterface->GetAlignment());
+            // allocate cache for a key-value pair with alignment
+            ElementCache = FMemory::Malloc(StructBuilder.GetSize(), StructBuilder.GetAlignment());
+        }
+    }
+
     ~FLuaMap()
     {
+        DetachInterface();
+
         if (ScriptMapFlag == OwnedBySelf)
         {
             delete Map;
         }
         FMemory::Free(ElementCache);
     }
+
+    void DetachInterface()
+    {
+        if (Interface)
+        {
+            Interface->RemoveContainer(this);
+            Interface = nullptr;
+        }
+    }
+
+    FORCEINLINE void* GetContainerPtr() const { return Map; }
 
     /**
      * Get the length of the map
@@ -301,6 +331,7 @@ public:
     FScriptMapLayout MapLayout;
     TSharedPtr<UnLua::ITypeInterface> KeyInterface;
     TSharedPtr<UnLua::ITypeInterface> ValueInterface;
+    TLuaContainerInterface<FLuaMap> *Interface;
     //FScriptMapHelper MapHelper;
     void *ElementCache;             // can only hold a key-value pair
     FScriptMapFlag ScriptMapFlag;

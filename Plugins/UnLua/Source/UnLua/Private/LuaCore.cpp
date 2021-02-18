@@ -466,6 +466,28 @@ void* GetScriptContainer(lua_State *L, void *Key)
 }
 
 /**
+ * Remove a cached script container from 'ScriptContainerMap'
+ */
+void RemoveCachedScriptContainer(lua_State *L, void *Key)
+{
+    if (!L || !Key)
+    {
+        return;
+    }
+
+    lua_getfield(L, LUA_REGISTRYINDEX, "ScriptContainerMap");
+    lua_pushlightuserdata(L, Key);
+    int32 Type = lua_rawget(L, -2);
+    if (Type != LUA_TNIL)
+    {
+        lua_pushlightuserdata(L, Key);
+        lua_pushnil(L);
+        lua_rawset(L, -4);
+    }
+    lua_pop(L, 2);
+}
+
+/**
  * Push a UObject to Lua stack
  */
 void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
@@ -1984,7 +2006,7 @@ int32 Global_Require(lua_State *L)
     FString FullFilePath = GLuaSrcFullPath + RelativeFilePath;
     lua_pushvalue(L, 1);
     lua_pushstring(L, TCHAR_TO_UTF8(*FullFilePath));
-    lua_pcall(L, 2, 1, 0);
+    lua_call(L, 2, 1);
 
     if (!lua_isnil(L, -1))
     {
