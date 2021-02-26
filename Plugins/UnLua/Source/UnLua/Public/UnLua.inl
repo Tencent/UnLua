@@ -286,7 +286,7 @@ namespace UnLua
     /**
      * Helper for generic type operation
      */
-    template <typename T, bool IsEnum = TIsEnum<TRemoveReference<T>::Type>::Value>
+    template <typename T, bool IsEnum = TIsEnum<typename TRemoveReference<T>::Type>::Value>
     struct TGenericTypeHelper
     {
         static int32 Push(lua_State *L, T &&V, bool bCopy)
