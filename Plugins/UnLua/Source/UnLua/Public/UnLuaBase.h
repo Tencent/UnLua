@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "CoreUObject.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #ifndef AUTO_UNLUA_STARTUP
 #define AUTO_UNLUA_STARTUP 0
@@ -30,6 +30,10 @@
 #endif
 
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
+
+#if ENGINE_MINOR_VERSION < 25
+typedef UProperty FProperty;
+#endif
 
 struct lua_State;
 struct luaL_Reg;
@@ -51,6 +55,8 @@ namespace UnLua
      */
     struct ITypeInterface : public ITypeOps
     {
+        virtual ~ITypeInterface() {}
+
         virtual bool IsPODType() const = 0;
         virtual bool IsTriviallyDestructible() const = 0;
         virtual int32 GetSize() const = 0;
@@ -62,7 +68,7 @@ namespace UnLua
         virtual void Copy(void *Dest, const void *Src) const = 0;
         virtual bool Identical(const void *A, const void *B) const = 0;
         virtual FString GetName() const = 0;
-        virtual UProperty* GetUProperty() const = 0;
+        virtual FProperty* GetUProperty() const = 0;
     };
 
     /**
@@ -136,7 +142,7 @@ namespace UnLua
      * @param TypeInterface - instance of the type info
      * @return - true if type interface is added successfully, false otherwise
      */
-    UNLUA_API bool AddTypeInterface(FName Name, ITypeInterface *TypeInterface);
+    UNLUA_API bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface);
 
     /**
      * Find the exported class with its name
@@ -313,7 +319,7 @@ namespace UnLua
      * @param bCreateCopy - whether to copy the dynamic array
      * @return - the number of results on Lua stack
      */
-    UNLUA_API int32 PushArray(lua_State *L, const FScriptArray *ScriptArray, ITypeInterface *TypeInterface, bool bCreateCopy = false);
+    UNLUA_API int32 PushArray(lua_State *L, const FScriptArray *ScriptArray, TSharedPtr<ITypeInterface> TypeInterface, bool bCreateCopy = false);
 
     /**
      * Push an untyped set (same memory layout with TSet)
@@ -323,7 +329,7 @@ namespace UnLua
      * @param bCreateCopy - whether to copy the set
      * @return - the number of results on Lua stack
      */
-    UNLUA_API int32 PushSet(lua_State *L, const FScriptSet *ScriptSet, ITypeInterface *TypeInterface, bool bCreateCopy = false);
+    UNLUA_API int32 PushSet(lua_State *L, const FScriptSet *ScriptSet, TSharedPtr<ITypeInterface> TypeInterface, bool bCreateCopy = false);
 
     /**
      * Push an untyped map (same memory layout with TMap)
@@ -333,7 +339,7 @@ namespace UnLua
      * @param bCreateCopy - whether to copy the map
      * @return - the number of results on Lua stack
      */
-    UNLUA_API int32 PushMap(lua_State *L, const FScriptMap *ScriptMap, ITypeInterface *KeyInterface, ITypeInterface *ValueInterface, bool bCreateCopy = false);
+    UNLUA_API int32 PushMap(lua_State *L, const FScriptMap *ScriptMap, TSharedPtr<ITypeInterface> KeyInterface, TSharedPtr<ITypeInterface> ValueInterface, bool bCreateCopy = false);
 
     /**
      * Get an untyped dynamic array at the given stack index

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
-#include "LuaArray.h"
 #include "LuaCore.h"
+#include "Containers/LuaArray.h"
 
 static int32 TArray_New(lua_State *L)
 {
@@ -25,7 +25,7 @@ static int32 TArray_New(lua_State *L)
         return 0;
     }
 
-    UnLua::ITypeInterface *TypeInterface = CreateTypeInterface(L, 2);
+    TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
     if (!TypeInterface)
     {
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Failed to create TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -346,6 +346,7 @@ static int32 TArray_Get(lua_State *L)
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: TArray Invalid Index!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
+
     Array->Inner->Initialize(Array->ElementCache);
     Array->Get(Index, Array->ElementCache);
     Array->Inner->Read(L, Array->ElementCache, true);
@@ -373,6 +374,12 @@ static int32 TArray_GetRef(lua_State *L)
 
     int32 Index = lua_tointeger(L, 2);
     --Index;
+    if (!Array->IsValidIndex(Index))
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: TArray Invalid Index!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
     const void *Element = Array->GetData(Index);
     Array->Inner->Read(L, Element, false);
     return 1;
@@ -404,6 +411,7 @@ static int32 TArray_Set(lua_State *L)
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: TArray Invalid Index!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
+
     Array->Inner->Initialize(Array->ElementCache);
     Array->Inner->Write(L, Array->ElementCache, 3);
     Array->Set(Index, Array->ElementCache);
@@ -480,7 +488,6 @@ static int32 TArray_LastIndex(lua_State *L)
     }
 
     int32 Index = Array->Num();
-    ++Index;
     lua_pushinteger(L, Index);
     return 1;
 }

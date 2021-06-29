@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
-#include "LuaCore.h"
+#include "LuaLib_Math.h"
 
 static int32 FColor_New(lua_State *L)
 {
@@ -108,13 +108,13 @@ static const luaL_Reg FColorLib[] =
     { "Set", FColor_Set },
     { "__add", FColor_Add },
     { "__call", FColor_New },
+    { "__tostring", UnLua::TMathUtils<FColor>::ToString },
     { nullptr, nullptr }
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FColor)
     ADD_FUNCTION_EX("Add", void, operator+=, const FColor&)
     ADD_NAMED_FUNCTION("ToLinearColor", ReinterpretAsLinear)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FColorLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FColor)

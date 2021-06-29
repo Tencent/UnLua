@@ -108,6 +108,7 @@ static const luaL_Reg FQuatLib[] =
     { "Set", FQuat_Set },
     { "Mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, true, UnLua::TMul<FQuat, float>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, false, UnLua::TMul<FQuat, float>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FQuat>::ToString },
     { "__call", FQuat_New },
     { nullptr, nullptr }
 };
@@ -130,7 +131,6 @@ BEGIN_EXPORT_REFLECTED_CLASS(FQuat)
     ADD_STATIC_FUNCTION(Slerp)
     ADD_NAMED_FUNCTION("ToEuler", Euler)
     ADD_NAMED_FUNCTION("ToRotator", Rotator)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_CONST_FUNCTION_EX("__add", FQuat, operator+, const FQuat&)
     ADD_CONST_FUNCTION_EX("__sub", FQuat, operator-, const FQuat&)
     ADD_CONST_FUNCTION_EX("__div", FQuat, operator/, const float)

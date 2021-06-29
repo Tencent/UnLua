@@ -13,9 +13,9 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaDebugBase.h"
-#include "LuaSet.h"
-#include "LuaMap.h"
-#include "UEReflectionUtils.h"
+#include "Containers/LuaSet.h"
+#include "Containers/LuaMap.h"
+#include "ReflectionUtils/PropertyDesc.h"
 
 namespace UnLua
 {
@@ -245,7 +245,7 @@ namespace UnLua
                 {
                     // the userdata is a TArray instance
                     FLuaArray *Array = (FLuaArray*)ContainerPtr;
-                    UProperty *InnerProperty = Array->Inner->GetUProperty();
+                    FProperty *InnerProperty = Array->Inner->GetUProperty();
                     if (InnerProperty)
                     {
                         FScriptArrayHelper ArrayHelper = FScriptArrayHelper::CreateHelperFormInnerProperty(InnerProperty, Array->ScriptArray);
@@ -260,8 +260,8 @@ namespace UnLua
                 {
                     // the userdata is a TMap instance
                     FLuaMap *Map = (FLuaMap*)ContainerPtr;
-                    UProperty *KeyProperty = Map->KeyInterface->GetUProperty();
-                    UProperty *ValueProperty = Map->ValueInterface->GetUProperty();
+                    FProperty *KeyProperty = Map->KeyInterface->GetUProperty();
+                    FProperty *ValueProperty = Map->ValueInterface->GetUProperty();
                     if (KeyProperty && ValueProperty)
                     {
                         FScriptMapHelper MapHelper = FScriptMapHelper::CreateHelperFormInnerProperties(KeyProperty, ValueProperty, Map->Map);
@@ -276,7 +276,7 @@ namespace UnLua
                 {
                     // the userdata is a TSet instance
                     FLuaSet *Set = (FLuaSet*)ContainerPtr;
-                    UProperty *ElementProperty = Set->ElementInterface->GetUProperty();
+                    FProperty *ElementProperty = Set->ElementInterface->GetUProperty();
                     if (ElementProperty)
                     {
                         FScriptSetHelper SetHelper = FScriptSetHelper::CreateHelperFormElementProperty(ElementProperty, Set->Set);
@@ -320,9 +320,9 @@ namespace UnLua
             return;
         }
 
-        for (UProperty *Property = Struct->PropertyLink; Property; Property = Property->PropertyLinkNext)
+        for (FProperty *Property = Struct->PropertyLink; Property; Property = Property->PropertyLinkNext)
         {
-            // filter out deprecated UProperty
+            // filter out deprecated FProperty
             if (Property->HasAnyPropertyFlags(CPF_Deprecated))
             {
                 continue;
@@ -344,7 +344,7 @@ namespace UnLua
     /**
      * Build value based on a TArray
      */
-    void FLuaDebugValue::BuildFromTArray(FScriptArrayHelper &ArrayHelper, const UProperty *InnerProperty)
+    void FLuaDebugValue::BuildFromTArray(FScriptArrayHelper &ArrayHelper, const FProperty *InnerProperty)
     {
         check(InnerProperty);
         FString InnerExtendedTypeText;
@@ -423,9 +423,9 @@ namespace UnLua
     }
 
     /**
-     * Build value based on a UProperty
+     * Build value based on a FProperty
      */
-    void FLuaDebugValue::BuildFromUProperty(const UProperty *InProperty, void *ValuePtr)
+    void FLuaDebugValue::BuildFromUProperty(const FProperty *InProperty, void *ValuePtr)
     {
         // #lizard forgives
 
@@ -446,33 +446,33 @@ namespace UnLua
         case CPT_UInt32:
         case CPT_UInt64:
             {
-                UNumericProperty *NumericProperty = (UNumericProperty*)InProperty;
+                FNumericProperty *NumericProperty = (FNumericProperty*)InProperty;
                 ReadableValue = FString::Printf(TEXT("%ld"), NumericProperty->GetUnsignedIntPropertyValue(ValuePtr));
             }
             break;
         case CPT_Float:
         case CPT_Double:
             {
-                UNumericProperty *NumericProperty = (UNumericProperty*)InProperty;
+                FNumericProperty *NumericProperty = (FNumericProperty*)InProperty;
                 ReadableValue = FString::Printf(TEXT("%lf"), NumericProperty->GetFloatingPointPropertyValue(ValuePtr));
             }
             break;
         case CPT_Enum:
             {
-                UEnumProperty *EnumProperty = (UEnumProperty*)InProperty;
+                FEnumProperty *EnumProperty = (FEnumProperty*)InProperty;
                 int64 Value = EnumProperty->GetUnderlyingProperty()->GetSignedIntPropertyValue(ValuePtr);
                 ReadableValue = FString::Printf(TEXT("%s: %s"), *EnumProperty->GetCPPType(nullptr, 0), *EnumProperty->GetEnum()->GetNameStringByValue(Value));
             }
             break;
         case CPT_Bool:
             {
-                UBoolProperty *BoolProperty = (UBoolProperty*)InProperty;
+                FBoolProperty *BoolProperty = (FBoolProperty*)InProperty;
                 ReadableValue = BoolProperty->GetPropertyValue(ValuePtr) ? TEXT("true") : TEXT("false");
             }
             break;
         case CPT_ObjectReference:
             {
-                UObjectProperty *ObjectProperty = (UObjectProperty*)InProperty;
+                FObjectProperty *ObjectProperty = (FObjectProperty*)InProperty;
                 //UObject *Object = ObjectProperty->GetPropertyValue(ValuePtr);
                 //LuaValue->ReadableValue = FString::Printf(TEXT("%s: %p"), *ObjectProperty->GetCPPType(nullptr, 0), Object);
                 //if (Object && !ObjectProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
@@ -482,7 +482,7 @@ namespace UnLua
                 if (ObjectProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
                 {
                     // UClass
-                    UClassProperty *ClassProperty = (UClassProperty*)ObjectProperty;
+                    FClassProperty *ClassProperty = (FClassProperty*)ObjectProperty;
                     UClass *Class = Cast<UClass>(ObjectProperty->GetPropertyValue(ValuePtr));
                     UClass *MetaClass = Class ? Class : ClassProperty->MetaClass;
                     if (MetaClass == UClass::StaticClass())
@@ -506,7 +506,7 @@ namespace UnLua
             break;
         case CPT_WeakObjectReference:    // serial number and index (in 'GUObjectArray') of the object
             {
-                UWeakObjectProperty *WeakObjectProperty = (UWeakObjectProperty*)InProperty;
+                FWeakObjectProperty *WeakObjectProperty = (FWeakObjectProperty*)InProperty;
                 const FWeakObjectPtr &WeakObject = WeakObjectProperty->GetPropertyValue(ValuePtr);
                 UObject *Object = WeakObject.Get();
                 UClass *Class = Object ? Object->GetClass() : nullptr;
@@ -516,7 +516,7 @@ namespace UnLua
             break;
         case CPT_LazyObjectReference:    // GUID of the object
             {
-                ULazyObjectProperty *LazyObjectProperty = (ULazyObjectProperty*)InProperty;
+                FLazyObjectProperty *LazyObjectProperty = (FLazyObjectProperty*)InProperty;
                 const FLazyObjectPtr &LazyObject = LazyObjectProperty->GetPropertyValue(ValuePtr);
                 UObject *Object = LazyObject.Get();
                 UClass *Class = Object ? Object->GetClass() : nullptr;
@@ -526,7 +526,7 @@ namespace UnLua
             break;
         case CPT_SoftObjectReference:    // path of the object
             {
-                USoftObjectProperty *SoftObjectProperty = (USoftObjectProperty*)InProperty;
+                FSoftObjectProperty *SoftObjectProperty = (FSoftObjectProperty*)InProperty;
                 const FSoftObjectPtr &SoftObject = SoftObjectProperty->GetPropertyValue(ValuePtr);
                 UObject *Object = SoftObject.Get();
                 UClass *Class = Object ? Object->GetClass() : nullptr;
@@ -536,7 +536,7 @@ namespace UnLua
             break;
         case CPT_Interface:
             {
-                UInterfaceProperty *InterfaceProperty = (UInterfaceProperty*)InProperty;
+                FInterfaceProperty *InterfaceProperty = (FInterfaceProperty*)InProperty;
                 FString InterfaceExtendedTypeText;
                 FString InterfaceTypeText = InterfaceProperty->GetCPPType(&InterfaceExtendedTypeText, 0);
                 const FScriptInterface &Interface = InterfaceProperty->GetPropertyValue(ValuePtr);
@@ -548,25 +548,25 @@ namespace UnLua
             break;
         case CPT_Name:
             {
-                UNameProperty *NameProperty = (UNameProperty*)InProperty;
+                FNameProperty *NameProperty = (FNameProperty*)InProperty;
                 ReadableValue = NameProperty->GetPropertyValue(ValuePtr).ToString();
             }
             break;
         case CPT_String:
             {
-                UStrProperty *StringProperty = (UStrProperty*)InProperty;
+                FStrProperty *StringProperty = (FStrProperty*)InProperty;
                 ReadableValue = StringProperty->GetPropertyValue(ValuePtr);
             }
             break;
         case CPT_Text:
             {
-                UTextProperty *TextProperty = (UTextProperty*)InProperty;
+                FTextProperty *TextProperty = (FTextProperty*)InProperty;
                 ReadableValue = TextProperty->GetPropertyValue(ValuePtr).ToString();
             }
             break;
         case CPT_Array:
             {
-                UArrayProperty *ArrayProperty = (UArrayProperty*)InProperty;
+                FArrayProperty *ArrayProperty = (FArrayProperty*)InProperty;
                 FScriptArray *ScriptArray = (FScriptArray*)(&ArrayProperty->GetPropertyValue(ValuePtr));
                 FScriptArrayHelper ArrayHelper(ArrayProperty, ScriptArray);
                 BuildFromTArray(ArrayHelper, ArrayProperty->Inner);
@@ -574,7 +574,7 @@ namespace UnLua
             break;
         case CPT_Map:
             {
-                UMapProperty *MapProperty = (UMapProperty*)InProperty;
+                FMapProperty *MapProperty = (FMapProperty*)InProperty;
                 FScriptMap *ScriptMap = (FScriptMap*)(&MapProperty->GetPropertyValue(ValuePtr));
                 FScriptMapHelper MapHelper(MapProperty, ScriptMap);
                 BuildFromTMap(MapHelper);
@@ -582,7 +582,7 @@ namespace UnLua
             break;
         case CPT_Set:
             {
-                USetProperty *SetProperty = (USetProperty*)InProperty;
+                FSetProperty *SetProperty = (FSetProperty*)InProperty;
                 FScriptSet *ScriptSet = (FScriptSet*)(&SetProperty->GetPropertyValue(ValuePtr));
                 FScriptSetHelper SetHelper(SetProperty, ScriptSet);
                 BuildFromTSet(SetHelper);
@@ -590,7 +590,7 @@ namespace UnLua
             break;
         case CPT_Struct:
             {
-                UStructProperty *StructProperty = (UStructProperty*)InProperty;
+                FStructProperty *StructProperty = (FStructProperty*)InProperty;
                 ReadableValue = FString::Printf(TEXT("%s: 0x%p"), *StructProperty->GetCPPType(nullptr, 0), ValuePtr);
                 BuildFromUStruct(StructProperty->Struct, ValuePtr);
             }

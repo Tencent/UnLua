@@ -69,6 +69,7 @@ static const luaL_Reg FVector4Lib[] =
     { "__sub", UnLua::TMathCalculation<FVector4, UnLua::TSub<float>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FVector4, UnLua::TMul<float>>::Calculate },
     { "__div", UnLua::TMathCalculation<FVector4, UnLua::TDiv<float>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FVector4>::ToString },
     { "__unm", FVector4_UNM },
     { "__call", FVector4_New },
     { nullptr, nullptr }
@@ -87,7 +88,6 @@ BEGIN_EXPORT_REFLECTED_CLASS(FVector4)
     ADD_FUNCTION(SizeSquared3)
     ADD_NAMED_FUNCTION("ToRotator", ToOrientationRotator)
     ADD_NAMED_FUNCTION("ToQuat", ToOrientationQuat)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FVector4Lib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FVector4)

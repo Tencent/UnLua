@@ -5,7 +5,7 @@
 
 
 # Main features
-* Access all **UCLASS**, **UPROPETY**, **UFUNCTION**, **USTRUCT**, **UENUM** without glue codes.
+* Access all **UCLASS**, **UPROPERTY**, **UFUNCTION**, **USTRUCT**, **UENUM** without glue codes.
 * Override **'BlueprintEvent'** (UFUNCTIONs tagged with **'BlueprintImplementableEvent'** or **'BlueprintNativeEvent'**, **All** Events/Functions defined in Blueprints) without helper codes.
 * Override **Replication Notify** without helper codes.
 * Override **Animation Notify** without helper codes.
@@ -28,11 +28,11 @@
 * **UnLua**. Main **'Runtime'** module.
 * **UnLuaEditor**. **'Editor'** module includes editor extention (Lua template exporting) and a commandlet.
 * **UnLuaDefaultParamCollector**. **'Program'** module to collect default parameters for UFUNCTION.
-* **UnLuaIntelliSense**. **'Program'** module to generate **IntelliSense** (**symbols**) of all **UCLASS**, **UPROPETY**, **UFUNCTION**, **USTRUCT**, **UENUM** for a **private** IDE (which will be **PUBLIC** soon). It's **disabled** by default.
+* **UnLuaIntelliSense**. **'Program'** module to generate **IntelliSense** (**symbols**) of all **UCLASS**, **UPROPERTY**, **UFUNCTION**, **USTRUCT**, **UENUM** for a **private** IDE (which will be **PUBLIC** soon). It's **disabled** by default.
 
 
 # Supported engine versions
-Unreal Engine 4.17.x - Unreal Engine 4.23.x
+Unreal Engine 4.17.x - Unreal Engine 4.26.x
 
 **NOTE**: build.cs files need tiny modifications under 4.17.x and 4.18.x.
 

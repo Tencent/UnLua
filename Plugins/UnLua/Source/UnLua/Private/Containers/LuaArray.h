@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "UnLuaBase.h"
+#include "LuaContainerInterface.h"
 
 class FLuaArray
 {
@@ -25,21 +25,47 @@ public:
         OwnedBySelf,    // 'ScriptArray' is owned by self, it'll be freed in destructor
     };
 
-    FLuaArray(const FScriptArray *InScriptArray, const UnLua::ITypeInterface *InTypeInterface, EScriptArrayFlag Flag = OwnedByOther)
-        : ScriptArray((FScriptArray*)InScriptArray), Inner(InTypeInterface), ElementCache(nullptr), ElementSize(Inner->GetSize()), ScriptArrayFlag(Flag)
+    FLuaArray(const FScriptArray *InScriptArray, TSharedPtr<UnLua::ITypeInterface> InInnerInterface, EScriptArrayFlag Flag = OwnedByOther)
+        : ScriptArray((FScriptArray*)InScriptArray), Inner(InInnerInterface), Interface(nullptr), ElementCache(nullptr), ElementSize(Inner->GetSize()), ScriptArrayFlag(Flag)
     {
         // allocate cache for a single element
         ElementCache = FMemory::Malloc(ElementSize, Inner->GetAlignment());
     }
 
+    FLuaArray(const FScriptArray *InScriptArray, TLuaContainerInterface<FLuaArray> *InArrayInterface, EScriptArrayFlag Flag = OwnedByOther)
+        : ScriptArray((FScriptArray*)InScriptArray), Interface(InArrayInterface), ElementCache(nullptr), ElementSize(0), ScriptArrayFlag(Flag)
+    {
+        if (Interface)
+        {
+            Inner = Interface->GetInnerInterface();
+            ElementSize = Inner->GetSize();
+
+            // allocate cache for a single element
+            ElementCache = FMemory::Malloc(ElementSize, Inner->GetAlignment());
+        }
+    }
+
     ~FLuaArray()
     {
+        DetachInterface();
+
         if (ScriptArrayFlag == OwnedBySelf)
         {
             delete ScriptArray;
         }
         FMemory::Free(ElementCache);
     }
+
+    void DetachInterface()
+    {
+        if (Interface)
+        {
+            Interface->RemoveContainer(this);
+            Interface = nullptr;
+        }
+    }
+
+    FORCEINLINE void* GetContainerPtr() const { return ScriptArray; }
 
     /**
      * Check the validity of an index
@@ -349,7 +375,8 @@ public:
     }
 
     FScriptArray *ScriptArray;
-    const UnLua::ITypeInterface *Inner;
+    TSharedPtr<UnLua::ITypeInterface> Inner;
+    TLuaContainerInterface<FLuaArray> *Interface;
     void *ElementCache;            // can only hold one element...
     int32 ElementSize;
     EScriptArrayFlag ScriptArrayFlag;

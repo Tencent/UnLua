@@ -35,6 +35,7 @@ namespace UnrealBuildTool.Rules
             PrivateIncludePaths.AddRange(
                 new string[] {
                     "UnLuaIntelliSense/Private",
+                    "UnLua/Private",
                 }
                 );
 

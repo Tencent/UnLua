@@ -18,7 +18,7 @@
 #include "LuaCore.h"
 #include "LuaContext.h"
 #include "LuaFunctionInjection.h"
-#include "UEReflectionUtils.h"
+#include "DelegateHelper.h"
 #include "UEObjectReferencer.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
@@ -75,7 +75,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     if (!ModuleNamePtr)
     {
         UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_ANSI(InModuleName));    // require Lua module
-        bSuccess = RetValues.IsValid();
+        bSuccess = RetValues.IsValid() && RetValues.Num() > 0 && RetValues[0].GetType() == LUA_TTABLE;
         if (bSuccess)
         {
             bSuccess = BindInternal(Object, Class, InModuleName, true);                             // bind!!!
@@ -84,13 +84,18 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
 
     if (bSuccess)
     {
+        bool bDerivedClassBinded = false;
         if (Object->GetClass() != Class)
         {
+            bDerivedClassBinded = true;
             OnDerivedClassBinded(Object->GetClass(), Class);
         }
 
         GLuaCxt->AddModuleName(InModuleName);                                       // record this required module
-        int32 ObjectRef = NewLuaObject(L, Object,TCHAR_TO_ANSI(InModuleName));      // create a Lua instance for this UObject
+
+        // create a Lua instance for this UObject
+        int32 ObjectRef = NewLuaObject(L, Object, bDerivedClassBinded ? Class : nullptr, TCHAR_TO_ANSI(InModuleName));
+
         AddAttachedObject(Object, ObjectRef);                                       // record this binded UObject
 
         int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
@@ -165,22 +170,13 @@ bool UUnLuaManager::OnModuleHotfixed(const TCHAR *InModuleName)
 /**
  * Remove binded UObjects
  */
-void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bUClass)
+void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
 {
     GObjectReferencer.RemoveObjectRef((UObject*)Object);
 
-    if (bUClass)
+    if (bClass)
     {
-        UClass *BaseClass = nullptr;
-        UClass *DerivedClass = (UClass*)Object;
-        if (Derived2BaseClasses.RemoveAndCopyValue(DerivedClass, BaseClass))
-        {
-            TArray<UClass*> *DerivedClasses = Base2DerivedClasses.Find(BaseClass);
-            if (DerivedClasses)
-            {
-                DerivedClasses->Remove(DerivedClass);
-            }
-        }
+        CleanUpByClass((UClass*)Object);
     }
     else
     {
@@ -231,7 +227,6 @@ void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
             AttachedObjects.Empty();
         }
         AttachedActors.Empty();
-        ActorsWithoutWorld.Empty();
     }
 
     ModuleNames.Empty();
@@ -242,6 +237,52 @@ void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
     CleanupDuplicatedFunctions();       // clean up duplicated UFunctions
     CleanupCachedNatives();             // restore cached thunk functions
     CleanupCachedScripts();             // restore cached scripts
+
+#if !ENABLE_CALL_OVERRIDDEN_FUNCTION
+    New2TemplateFunctions.Empty();
+#endif
+}
+
+/**
+ * Clean up everything linked to the target UClass
+ */
+void UUnLuaManager::CleanUpByClass(UClass *Class)
+{
+    if (!Class)
+    {
+        return;
+    }
+
+    FString ModuleName;
+    if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
+    {
+        Classes.Remove(ModuleName);
+        ModuleFunctions.Remove(ModuleName);
+
+        TMap<FName, UFunction*> FunctionMap;
+        OverridableFunctions.RemoveAndCopyValue(Class, FunctionMap);
+        for (TMap<FName, UFunction*>::TIterator It(FunctionMap); It; ++It)
+        {
+            UFunction *Function = It.Value();
+            FNativeFuncPtr NativeFuncPtr = nullptr;
+            if (CachedNatives.RemoveAndCopyValue(Function, NativeFuncPtr))
+            {
+                ResetUFunction(Function, NativeFuncPtr);
+            }
+        }
+
+        TArray<UFunction*> Functions;
+        if (DuplicatedFunctions.RemoveAndCopyValue(Class, Functions))
+        {
+            RemoveDuplicatedFunctions(Class, Functions);
+        }
+
+        OnClassCleanup(Class);
+
+        FDelegateHelper::CleanUpByClass(Class);
+
+        ClearLoadedModule(*GLuaCxt, TCHAR_TO_ANSI(*ModuleName));
+    }
 }
 
 /**
@@ -251,25 +292,8 @@ void UUnLuaManager::CleanupDuplicatedFunctions()
 {
     for (TMap<UClass*, TArray<UFunction*>>::TIterator It(DuplicatedFunctions); It; ++It)
     {
-        UClass *Class = It.Key();
-
-        TArray<UClass*> DerivedClasses;
-        if (Base2DerivedClasses.RemoveAndCopyValue(Class, DerivedClasses))
-        {
-            for (UClass *DerivedClass : DerivedClasses)
-            {
-                DerivedClass->ClearFunctionMapsCaches();            // clean up cached UFunctions of super class
-            }
-        }
-
-        TArray<UFunction*> &Functions = It.Value();
-        for (UFunction *Func : Functions)
-        {
-            RemoveUFunction(Func, Class);                           // clean up duplicated UFunction
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-            GReflectionRegistry.RemoveOverriddenFunction(Func);
-#endif
-        }
+        OnClassCleanup(It.Key());
+        RemoveDuplicatedFunctions(It.Key(), It.Value());
     }
     DuplicatedFunctions.Empty();
     Base2DerivedClasses.Empty();
@@ -283,20 +307,7 @@ void UUnLuaManager::CleanupCachedNatives()
 {
     for (TMap<UFunction*, FNativeFuncPtr>::TIterator It(CachedNatives); It; ++It)
     {
-        UFunction *Func = It.Key();
-        Func->SetNativeFunc(It.Value());
-        GReflectionRegistry.UnRegisterFunction(Func);
-        if (Func->Script.Num() > 0 && Func->Script[0] == EX_CallLua)
-        {
-            Func->Script.Empty();
-        }
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        UFunction *OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Func);
-        if (OverriddenFunc)
-        {
-            RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
-        }
-#endif
+        ResetUFunction(It.Key(), It.Value());
     }
     CachedNatives.Empty();
 }
@@ -312,6 +323,71 @@ void UUnLuaManager::CleanupCachedScripts()
         Func->Script = It.Value();
     }
     CachedScripts.Empty();
+}
+
+/**
+ * Cleanup intermediate data linked to a UClass
+ */
+void UUnLuaManager::OnClassCleanup(UClass *Class)
+{
+    UClass *BaseClass = nullptr;
+    if (Derived2BaseClasses.RemoveAndCopyValue(Class, BaseClass))
+    {
+        TArray<UClass*> *DerivedClasses = Base2DerivedClasses.Find(BaseClass);
+        if (DerivedClasses)
+        {
+            DerivedClasses->Remove(Class);
+        }
+    }
+
+    TArray<UClass*> DerivedClasses;
+    if (Base2DerivedClasses.RemoveAndCopyValue(Class, DerivedClasses))
+    {
+        for (UClass *DerivedClass : DerivedClasses)
+        {
+            DerivedClass->ClearFunctionMapsCaches();            // clean up cached UFunctions of super class
+        }
+    }
+}
+
+/**
+ * Reset a UFunction
+ */
+void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr)
+{
+    Function->SetNativeFunc(NativeFuncPtr);
+    GReflectionRegistry.UnRegisterFunction(Function);
+    if (Function->Script.Num() > 0 && Function->Script[0] == EX_CallLua)
+    {
+        Function->Script.Empty();
+    }
+#if ENABLE_CALL_OVERRIDDEN_FUNCTION
+    UFunction *OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
+    if (OverriddenFunc)
+    {
+        RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
+    }
+#endif
+
+    TArray<uint8> Script;
+    if (CachedScripts.RemoveAndCopyValue(Function, Script))
+    {
+        Function->Script = Script;
+    }
+}
+
+/**
+ * Remove duplicated UFunctions
+ */
+void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions)
+{
+    for (UFunction *Function : Functions)
+    {
+        RemoveUFunction(Function, Class);                       // clean up duplicated UFunction
+#if ENABLE_CALL_OVERRIDDEN_FUNCTION
+        GReflectionRegistry.RemoveOverriddenFunction(Function);
+#endif
+    }
 }
 
 /**
@@ -394,6 +470,15 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
 
     UClass *Class = Actor->GetClass();
     FString *ModuleNamePtr = ModuleNames.Find(Class);
+    if (!ModuleNamePtr)
+    {
+        UClass **SuperClassPtr = Derived2BaseClasses.Find(Class);
+        if (!SuperClassPtr || !(*SuperClassPtr))
+        {
+            return false;
+        }
+        ModuleNamePtr = ModuleNames.Find(*SuperClassPtr);
+    }
     check(ModuleNamePtr);
     TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleNamePtr);
     check(LuaFunctionsPtr);
@@ -423,29 +508,6 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
     }
 
     ENetMode NetMode = World->GetNetMode();
-#if SUPPORTS_RPC_CALL
-    for (AActor *Actor : ActorsWithoutWorld)
-    {
-        UClass *Class = GetTargetClass(Actor->GetClass());
-        FString *ModuleName = ModuleNames.Find(Class);
-        check(ModuleName);
-        TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleName);
-        TMap<FName, UFunction*> *UEFunctionsPtr = OverridableFunctions.Find(Class);
-        check(LuaFunctionsPtr && UEFunctionsPtr);
-        for (const FName &LuaFuncName : (*LuaFunctionsPtr))
-        {
-            UFunction **Func = UEFunctionsPtr->Find(LuaFuncName);
-            if (Func)
-            {
-                UFunction *Function = *Func;
-                if ((Function->HasAnyFunctionFlags(FUNC_NetClient) && NetMode == NM_Client) || (Function->HasAnyFunctionFlags(FUNC_NetServer) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer)))
-                {
-                    OverrideFunction(Function, Class, LuaFuncName);
-                }
-            }
-        }
-    }
-#endif
     if (NetMode == NM_DedicatedServer)
     {
         return;
@@ -588,8 +650,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility *Object, UClass *Class, cons
     TMap<FName, UFunction*> &UEFunctions = OverridableFunctions.Add(Class);
     GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
 
-    ENetMode NetMode = CheckObjectNetMode(Object, Class, bNewCreated);
-    OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated, NetMode);  // try to override UFunctions
+    OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated);           // try to override UFunctions
 
     return ConditionalUpdateClass(Class, LuaFunctions, UEFunctions);
 }
@@ -656,32 +717,9 @@ bool UUnLuaManager::ConditionalUpdateClass(UClass *Class, const TSet<FName> &Lua
 }
 
 /**
- * Check net mode of the UObject
- */
-ENetMode UUnLuaManager::CheckObjectNetMode(UObjectBaseUtility *Object, UClass *Class, bool bNewCreated)
-{
-    ENetMode NetMode = NM_Standalone;
-#if SUPPORTS_RPC_CALL
-    if (bNewCreated)
-    {
-        if (Class->IsChildOf<AActor>() && !Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject) && !Object->GetOuter()->HasAnyFlags(RF_BeginDestroyed) && !Object->GetOuter()->IsUnreachable())
-        {
-            ULevel *Level = Object->GetTypedOuter<ULevel>();
-            NetMode = Level && Level->OwningWorld ? Level->OwningWorld->GetNetMode() : NM_MAX;
-        }
-        if (NetMode == NM_MAX)
-        {
-            ActorsWithoutWorld.Add((AActor*)Object);
-        }
-    }
-#endif
-    return NetMode;
-}
-
-/**
  * Override candidate UFunctions
  */
-void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode, ENetMode NetMode)
+void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode)
 {
     for (const FName &LuaFuncName : LuaFunctions)
     {
@@ -689,16 +727,6 @@ void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FNam
         if (Func)
         {
             UFunction *Function = *Func;
-#if SUPPORTS_RPC_CALL
-            if (bCheckFuncNetMode)
-            {
-                if ((Function->HasAnyFunctionFlags(FUNC_NetClient) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer || NetMode == NM_MAX)) ||
-                    (Function->HasAnyFunctionFlags(FUNC_NetServer) && (NetMode == NM_Client || NetMode == NM_MAX)))
-                {
-                    continue;
-                }
-            }
-#endif
             OverrideFunction(Function, OuterClass, LuaFuncName);
         }
     }
@@ -711,6 +739,16 @@ void UUnLuaManager::OverrideFunction(UFunction *TemplateFunction, UClass *OuterC
 {
     if (TemplateFunction->GetOuter() != OuterClass)
     {
+//#if UE_BUILD_SHIPPING || UE_BUILD_TEST
+        if (TemplateFunction->Script.Num() > 0 && TemplateFunction->Script[0] == EX_CallLua)
+        {
+#if ENABLE_CALL_OVERRIDDEN_FUNCTION
+            TemplateFunction = GReflectionRegistry.FindOverriddenFunction(TemplateFunction);
+#else
+            TemplateFunction = New2TemplateFunctions.FindChecked(TemplateFunction);
+#endif
+        }
+//#endif
         AddFunction(TemplateFunction, OuterClass, NewFuncName);     // add a duplicated UFunction to child UClass
     }
     else
@@ -727,6 +765,12 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
     UFunction *Func = OuterClass->FindFunctionByName(NewFuncName, EIncludeSuperFlag::ExcludeSuper);
     if (!Func)
     {
+        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
+        {
+            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
+            OuterClass->AddNativeFunction(*NewFuncName.ToString(), (FNativeFuncPtr)&FLuaInvoker::execCallLua);
+        }
+
         UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName); // duplicate a UFunction
         if (!NewFunc->HasAnyFunctionFlags(FUNC_Native) && NewFunc->Script.Num() > 0)
         {
@@ -737,6 +781,8 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
         DuplicatedFuncs.AddUnique(NewFunc);
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
         GReflectionRegistry.AddOverriddenFunction(NewFunc, TemplateFunction);
+#else
+        New2TemplateFunctions.Add(NewFunc, TemplateFunction);
 #endif
     }
 }
@@ -751,6 +797,11 @@ void UUnLuaManager::ReplaceFunction(UFunction *TemplateFunction, UClass *OuterCl
     {
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
         FName NewFuncName(*FString::Printf(TEXT("%s%s"), *TemplateFunction->GetName(), TEXT("Copy")));
+        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
+        {
+            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
+            OuterClass->AddNativeFunction(*NewFuncName.ToString(), TemplateFunction->GetNativeFunc());
+        }
         UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName);
         GReflectionRegistry.AddOverriddenFunction(TemplateFunction, NewFunc);
 #endif

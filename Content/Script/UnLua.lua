@@ -20,7 +20,7 @@ local function Index(t, k)
 	local super = mt
 	while super do
 		local v = rawget(super, k)
-        if v then
+        if v~= nil then
             if rawequal(v, NotExist) then
                 return nil
             end

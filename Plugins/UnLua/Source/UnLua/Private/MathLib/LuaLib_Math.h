@@ -14,7 +14,6 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "LuaCore.h"
 
 namespace UnLua
@@ -342,6 +341,38 @@ namespace UnLua
                 break;
             }
             return bAssignment ? 0 : 1;
+        }
+    };
+
+    template <typename T> FString ToStringWrapper(T *A) { return A->ToString(); }
+    FORCEINLINE FString ToStringWrapper(FTransform *A) { return A->ToHumanReadableString(); }
+
+    template <typename T>
+    struct TMathUtils
+    {
+        static int32 ToString(lua_State *L)
+        {
+            int32 NumParams = lua_gettop(L);
+            if (NumParams != 1)
+            {
+                UE_LOG(LogUnLua, Log, TEXT("Invalid parameters for __tostring!"));
+                return 0;
+            }
+
+            T *A = (T*)GetCppInstanceFast(L, 1);
+            if (!A)
+            {
+                int32 Type = luaL_getmetafield(L, 1, "__name");
+                lua_pushfstring(L, "%s: %p", (Type == LUA_TSTRING) ? lua_tostring(L, -1) : lua_typename(L, lua_type(L, 1)), lua_topointer(L, 1));
+                if (Type != LUA_TNIL)
+                {
+                    lua_remove(L, -2);
+                }
+                return 1;
+            }
+
+            lua_pushstring(L, TCHAR_TO_ANSI(*(ToStringWrapper(A))));
+            return 1;
         }
     };
 

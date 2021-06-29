@@ -17,77 +17,12 @@
 #include "UnLuaDelegates.h"
 #include "LuaContext.h"
 
-DEFINE_LOG_CATEGORY(LogUnLua);
-
 DEFINE_STAT(STAT_UnLua_Lua_Memory);
 DEFINE_STAT(STAT_UnLua_PersistentParamBuffer_Memory);
 DEFINE_STAT(STAT_UnLua_OutParmRec_Memory);
 
 namespace UnLua
 {
-
-    bool AddTypeInterface(FName Name, ITypeInterface *TypeInterface)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->AddTypeInterface(Name, TypeInterface);
-    }
-
-    IExportedClass* FindExportedClass(FName Name)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->FindExportedClass(Name);
-    }
-
-    bool ExportClass(IExportedClass *Class)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportClass(Class);
-    }
-
-    bool ExportFunction(IExportedFunction *Function)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportFunction(Function);
-    }
-
-    bool ExportEnum(IExportedEnum *Enum)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportEnum(Enum);
-    }
-
-    lua_State* CreateState()
-    {
-        if (GLuaCxt)
-        {
-            GLuaCxt->CreateState();
-            return *GLuaCxt;
-        }
-        return nullptr;
-    }
-
-    lua_State* GetState()
-    {
-        return GLuaCxt ? (lua_State*)(*GLuaCxt) : nullptr;
-    }
-
-    bool Startup()
-    {
-        if (GLuaCxt)
-        {
-            GLuaCxt->SetEnable(true);
-            return true;
-        }
-        return false;
-    }
-
-    void Shutdown()
-    {
-        if (GLuaCxt)
-        {
-            GLuaCxt->SetEnable(false);
-        }
-    }
 
     /**
      * Lua stack index wrapper
@@ -203,6 +138,56 @@ namespace UnLua
         int32 Type = lua_gettable(*GLuaCxt, Index);
         ++PushedValues;
         return FLuaValue(-1, Type);
+    }
+
+    bool FLuaTable::Iterate(TFunction<void (const lua_Integer& Index, const FLuaValue& Value)> Func) const
+    {
+        // push table to stack
+        lua_pushvalue(*GLuaCxt, Index);
+
+        // get length of array
+        const auto Len = luaL_len(*GLuaCxt, -1);
+
+        // iterate array
+        for (lua_Integer i = 1; i <= Len; i++)
+        {
+            lua_pushinteger(*GLuaCxt, i);
+            lua_gettable(*GLuaCxt, -2);
+
+            Func(i, FLuaValue(-1));
+
+            // pop value from stack
+            lua_pop(*GLuaCxt, 1);
+        }
+
+        // pop table from stack
+        lua_pop(*GLuaCxt, 1);
+
+        return true;
+    }
+
+    bool FLuaTable::Iterate(TFunction<void (const FName& Key, const FLuaValue& Value)> Func) const
+    {
+        // push table to stack
+        lua_pushvalue(*GLuaCxt, Index);
+
+        // iterate table
+        lua_pushnil(*GLuaCxt);
+        while (lua_next(*GLuaCxt, -2) != 0)
+        {
+            FName Key(lua_tostring(*GLuaCxt, -2));
+            FLuaValue Value(-1);
+
+            Func(Key, Value);
+
+            // pop value from stack, keep key in stack to continue iterate
+            lua_pop(*GLuaCxt, 1);
+        }
+
+        // pop table from stack
+        lua_pop(*GLuaCxt, 1);
+
+        return true;
     }
 
     /**

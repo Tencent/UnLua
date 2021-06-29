@@ -15,6 +15,7 @@
 #pragma once
 
 #include "UnLuaPrivate.h"
+#include "UnLuaCompatibility.h"
 #include "lua.hpp"
 
 struct FScriptContainerDesc
@@ -39,6 +40,11 @@ void CreateNamespaceForUE(lua_State *L);
 void SetTableForClass(lua_State *L, const char *Name);
 
 /**
+ * Set metatable for the userdata/table on the top of the stack
+ */
+bool TryToSetMetatable(lua_State *L, const char *MetatableName);
+
+/**
  * Functions to handle Lua userdata
  */
 uint8 CalcUserdataPadding(int32 Alignment);
@@ -59,26 +65,32 @@ void* NewScriptContainer(lua_State *L, const FScriptContainerDesc &Desc);
 void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &Desc);
 void* GetScriptContainer(lua_State *L, int32 Index);
 void* GetScriptContainer(lua_State *L, void *Key);
+void RemoveCachedScriptContainer(lua_State *L, void *Key);
 
 /**
- * Functions to push UProperty array
+ * Functions to push FProperty array
  */
-void PushIntegerArray(lua_State *L, UNumericProperty *Property, void *Value);
-void PushFloatArray(lua_State *L, UNumericProperty *Property, void *Value);
-void PushEnumArray(lua_State *L, UNumericProperty *Property, void *Value);
-void PushFNameArray(lua_State *L, UNameProperty *Property, void *Value);
-void PushFStringArray(lua_State *L, UStrProperty *Property, void *Value);
-void PushFTextArray(lua_State *L, UTextProperty *Property, void *Value);
-void PushObjectArray(lua_State *L, UObjectPropertyBase *Property, void *Value);
-void PushInterfaceArray(lua_State *L, UInterfaceProperty *Property, void *Value);
-void PushDelegateArray(lua_State *L, UDelegateProperty *Property, void *Value);
-void PushMCDelegateArray(lua_State *L, UMulticastDelegateProperty *Property, void *Value, const char *MetatableName);
-void PushStructArray(lua_State *L, UProperty *Property, void *Value, const char *MetatableName);
+void PushIntegerArray(lua_State *L, FNumericProperty *Property, void *Value);
+void PushFloatArray(lua_State *L, FNumericProperty *Property, void *Value);
+void PushEnumArray(lua_State *L, FNumericProperty *Property, void *Value);
+void PushFNameArray(lua_State *L, FNameProperty *Property, void *Value);
+void PushFStringArray(lua_State *L, FStrProperty *Property, void *Value);
+void PushFTextArray(lua_State *L, FTextProperty *Property, void *Value);
+void PushObjectArray(lua_State *L, FObjectPropertyBase *Property, void *Value);
+void PushInterfaceArray(lua_State *L, FInterfaceProperty *Property, void *Value);
+void PushDelegateArray(lua_State *L, FDelegateProperty *Property, void *Value);
+void PushMCDelegateArray(lua_State *L, FMulticastDelegateProperty *Property, void *Value, const char *MetatableName);
+void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char *MetatableName);
+
+/**
+ * Push a UObject to Lua stack
+ */
+void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
 
 /**
  * Functions to New/Delete Lua instance for UObjectBaseUtility
  */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, const char *ModuleName);
+int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
 void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object);
 
 /**
@@ -180,4 +192,4 @@ int32 ScriptStruct_Compare(lua_State *L);
 /**
  * Create a type interface
  */
-UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index);
+TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index);

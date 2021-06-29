@@ -300,7 +300,13 @@ namespace UnLua
         virtual FName GetName() const override { return ClassFName; }
 
 #if WITH_EDITOR
-        virtual void GenerateIntelliSense(FString &Buffer) const override {}
+        virtual void GenerateIntelliSense(FString &Buffer) const override;
+#endif
+
+    private:
+#if WITH_EDITOR
+        void GenerateIntelliSenseInternal(FString &Buffer, FFalse NotReflected) const;
+        void GenerateIntelliSenseInternal(FString &Buffer, FTrue Reflected) const;
 #endif
 
     protected:
@@ -333,10 +339,6 @@ namespace UnLua
 
         void AddStaticCFunction(const FString &InName, lua_CFunction InFunc);
 
-#if WITH_EDITOR
-        virtual void GenerateIntelliSense(FString &Buffer) const override;
-#endif
-
     private:
         void AddDefaultFunctions(FFalse NotReflected);
         void AddDefaultFunctions(FTrue Reflected);
@@ -349,11 +351,6 @@ namespace UnLua
 
         void AddDestructor(FFalse NotTrivial);
         void AddDestructor(FTrue) {}
-
-#if WITH_EDITOR
-        void GenerateIntelliSenseInternal(FString &Buffer, FFalse NotReflected) const;
-        void GenerateIntelliSenseInternal(FString &Buffer, FTrue Reflected) const;
-#endif
     };
 
 

@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
-#include "LuaSet.h"
 #include "LuaCore.h"
+#include "Containers/LuaSet.h"
 
 static int32 TSet_New(lua_State *L)
 {
@@ -25,7 +25,7 @@ static int32 TSet_New(lua_State *L)
         return 0;
     }
 
-    UnLua::ITypeInterface *TypeInterface = CreateTypeInterface(L, 2);
+    TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
     if (!TypeInterface)
     {
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Failed to create TSet!"), ANSI_TO_TCHAR(__FUNCTION__));

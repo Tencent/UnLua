@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "DelegateHelper.h"
-#include "UEReflectionUtils.h"
 #include "LuaFunctionInjection.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 
 /**
  * archive used to get invocation list from a multicast delegate
@@ -49,9 +49,9 @@ public:
     TArray<FName> FunctionNames;
 };
 
-void FSignatureDesc::MarkForDelete()
+void FSignatureDesc::MarkForDelete(bool bIgnoreBindings)
 {
-    if (NumBindings > 1)
+    if (!bIgnoreBindings && NumBindings > 1)
     {
         --NumBindings;              // dec bindings if there is more than one bindings.
         return;
@@ -65,12 +65,12 @@ void FSignatureDesc::MarkForDelete()
     FDelegateHelper::CleanUpByFunction(SignatureFunctionDesc->GetFunction());
 }
 
-void FSignatureDesc::Execute(FFrame &Stack, void *RetValueAddress)
+void FSignatureDesc::Execute(UObject *Context, FFrame &Stack, void *RetValueAddress)
 {
     if (SignatureFunctionDesc)
     {
         ++NumCalls;         // inc calls, so it won't be deleted during call
-        SignatureFunctionDesc->CallLua(Stack, RetValueAddress, false, false);
+        SignatureFunctionDesc->CallLua(Context, Stack, RetValueAddress, false, false);
         --NumCalls;         // dec calls
         if (!NumCalls && bPendingKill)
         {
@@ -80,8 +80,8 @@ void FSignatureDesc::Execute(FFrame &Stack, void *RetValueAddress)
     }
 }
 
-TMap<FScriptDelegate*, UDelegateProperty*> FDelegateHelper::Delegate2Property;
-TMap<FMulticastDelegateType*, UMulticastDelegateProperty*> FDelegateHelper::MulticastDelegate2Property;
+TMap<FScriptDelegate*, FDelegateProperty*> FDelegateHelper::Delegate2Property;
+TMap<FMulticastDelegateType*, FMulticastDelegateProperty*> FDelegateHelper::MulticastDelegate2Property;
 TMap<FScriptDelegate*, FFunctionDesc*> FDelegateHelper::Delegate2Signatures;
 TMap<FMulticastDelegateType*, FFunctionDesc*> FDelegateHelper::MulticastDelegate2Signatures;
 TMap<UFunction*, FSignatureDesc*> FDelegateHelper::Signatures;
@@ -101,7 +101,7 @@ DEFINE_FUNCTION(FDelegateHelper::ProcessDelegate)
 #endif
     if (SignatureDesc)
     {
-        SignatureDesc->Execute(Stack, (void*)RESULT_PARAM);     // fire the delegate
+        SignatureDesc->Execute(Context, Stack, (void*)RESULT_PARAM);     // fire the delegate
         return;
     }
     UE_LOG(LogUnLua, Warning, TEXT("Failed to process delegate (%s)!"), *Stack.CurrentNativeFunction->GetName());
@@ -119,10 +119,10 @@ FName FDelegateHelper::GetBindedFunctionName(const FCallbackDesc &Callback)
     return NAME_None;
 }
 
-void FDelegateHelper::PreBind(FScriptDelegate *ScriptDelegate, UDelegateProperty *Property)
+void FDelegateHelper::PreBind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property)
 {
     check(ScriptDelegate && Property);
-    UDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
+    FDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr)
     {
         Delegate2Property.Add(ScriptDelegate, Property);
@@ -131,11 +131,11 @@ void FDelegateHelper::PreBind(FScriptDelegate *ScriptDelegate, UDelegateProperty
 
 bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
-    UDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
+    FDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
     return PropertyPtr ? Bind(ScriptDelegate, *PropertyPtr, Object, Callback, CallbackRef) : false;
 }
 
-bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, UDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
+bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
     if (!ScriptDelegate || ScriptDelegate->IsBound() || !Property || !Object || !Callback.Class || CallbackRef == INDEX_NONE)
     {
@@ -151,6 +151,19 @@ bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, UDelegateProperty *P
         CreateSignature(Property->SignatureFunction, FuncName, Callback, CallbackRef);      // create the signature function for the callback
     }
     return true;
+}
+
+void FDelegateHelper::Unbind(const FCallbackDesc &Callback)
+{
+    UFunction **CallbackFuncPtr = Callbacks.Find(Callback);
+    if (CallbackFuncPtr && *CallbackFuncPtr)
+    {
+        FSignatureDesc **SignatureDesc = Signatures.Find(*CallbackFuncPtr);
+        if (SignatureDesc && *SignatureDesc)
+        {
+            (*SignatureDesc)->MarkForDelete(true);
+        }
+    }
 }
 
 void FDelegateHelper::Unbind(FScriptDelegate *ScriptDelegate)
@@ -198,7 +211,7 @@ int32 FDelegateHelper::Execute(lua_State *L, FScriptDelegate *ScriptDelegate, in
     }
     else
     {
-        UDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
+        FDelegateProperty **PropertyPtr = Delegate2Property.Find(ScriptDelegate);
         if (PropertyPtr)
         {
             UFunction *SignatureFunction = (*PropertyPtr)->SignatureFunction;
@@ -216,10 +229,10 @@ int32 FDelegateHelper::Execute(lua_State *L, FScriptDelegate *ScriptDelegate, in
     return 0;
 }
 
-void FDelegateHelper::PreAdd(FMulticastDelegateType *ScriptDelegate, UMulticastDelegateProperty *Property)
+void FDelegateHelper::PreAdd(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property)
 {
     check(ScriptDelegate && Property);
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr)
     {
         MulticastDelegate2Property.Add(ScriptDelegate, Property);
@@ -228,11 +241,11 @@ void FDelegateHelper::PreAdd(FMulticastDelegateType *ScriptDelegate, UMulticastD
 
 bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     return PropertyPtr ? Add(ScriptDelegate, *PropertyPtr, Object, Callback, CallbackRef) : false;
 }
 
-bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, UMulticastDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
+bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef)
 {
     if (!ScriptDelegate || !Property || !Object || !Callback.Class || CallbackRef == INDEX_NONE)
     {
@@ -266,20 +279,31 @@ void FDelegateHelper::Remove(FMulticastDelegateType *ScriptDelegate, UObject *Ob
     UFunction **CallbackFuncPtr = Callbacks.Find(Callback);
     if (CallbackFuncPtr && *CallbackFuncPtr)
     {
-        UMulticastDelegateProperty *Property = nullptr;
+        FMulticastDelegateProperty *Property = nullptr;
         MulticastDelegate2Property.RemoveAndCopyValue(ScriptDelegate, Property);
-        if (Property)
+        if (!Property)
         {
-            FScriptDelegate DynamicDelegate;
-            DynamicDelegate.BindUFunction(Object, (*CallbackFuncPtr)->GetFName());
-            TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(Property, DynamicDelegate, ScriptDelegate);    // remove a callback from the delegate
+            return;
         }
 
-        // try to delete the signature
-        FSignatureDesc **SignatureDesc = Signatures.Find(*CallbackFuncPtr);
-        if (SignatureDesc && *SignatureDesc)
+        FMulticastScriptDelegate *MulticastDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, ScriptDelegate);
+        if (!MulticastDelegate)
         {
-            (*SignatureDesc)->MarkForDelete();
+            return;
+        }
+
+        FScriptDelegate DynamicDelegate;
+        DynamicDelegate.BindUFunction(Object, (*CallbackFuncPtr)->GetFName());
+        if (MulticastDelegate->Contains(DynamicDelegate))
+        {
+            TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(Property, DynamicDelegate, ScriptDelegate);    // remove a callback from the delegate
+
+            // try to delete the signature
+            FSignatureDesc **SignatureDesc = Signatures.Find(*CallbackFuncPtr);
+            if (SignatureDesc && *SignatureDesc)
+            {
+                (*SignatureDesc)->MarkForDelete();
+            }
         }
     }
 }
@@ -291,12 +315,12 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
         return;
     }
 
-    UMulticastDelegateProperty *Property = nullptr;
+    FMulticastDelegateProperty *Property = nullptr;
 #if ENGINE_MINOR_VERSION > 22
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {
-        return;     // invalid UMulticastDelegateProperty
+        return;     // invalid FMulticastDelegateProperty
     }
     Property = *PropertyPtr;
 #endif
@@ -338,7 +362,13 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
     }
 #endif
 
-    UMulticastDelegateProperty *Property = nullptr;
+    FMulticastDelegateProperty *Property = nullptr;
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
+    if (PropertyPtr)
+    {
+        Property = *PropertyPtr;
+    }
+
     FFunctionDesc *SignatureFunctionDesc = nullptr;
     FFunctionDesc **SignatureFunctionDescPtr = MulticastDelegate2Signatures.Find(InScriptDelegate);
     if (SignatureFunctionDescPtr)
@@ -347,17 +377,12 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
     }
     else
     {
-        UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
-        if (PropertyPtr)
-        {
-            Property = *PropertyPtr;
-            UFunction *SignatureFunction = Property->SignatureFunction;
-            SignatureFunctionDesc = GReflectionRegistry.RegisterFunction(SignatureFunction);
-            MulticastDelegate2Signatures.Add(InScriptDelegate, SignatureFunctionDesc);
-        }
+        UFunction *SignatureFunction = Property->SignatureFunction;
+        SignatureFunctionDesc = GReflectionRegistry.RegisterFunction(SignatureFunction);
+        MulticastDelegate2Signatures.Add(InScriptDelegate, SignatureFunctionDesc);
     }
 
-    if (SignatureFunctionDesc)
+    if (SignatureFunctionDesc && Property)
     {
         FMulticastScriptDelegate *ScriptDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, InScriptDelegate);  // get target delegate
         SignatureFunctionDesc->BroadcastMulticastDelegate(L, NumParams, FirstParamIndex, ScriptDelegate);        // fire the delegate
@@ -369,12 +394,12 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
 
 void FDelegateHelper::AddDelegate(FMulticastDelegateType *ScriptDelegate, FScriptDelegate DynamicDelegate)
 {
-    UMulticastDelegateProperty *Property = nullptr;
+    FMulticastDelegateProperty *Property = nullptr;
 #if ENGINE_MINOR_VERSION > 22
-    UMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
+    FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {
-        return;     // invalid UMulticastDelegateProperty
+        return;     // invalid FMulticastDelegateProperty
     }
     Property = *PropertyPtr;
 #endif
@@ -495,11 +520,10 @@ void FDelegateHelper::CreateSignature(UFunction *TemplateFunction, FName FuncNam
 
     OverrideUFunction(SignatureFunction, (FNativeFuncPtr)&FDelegateHelper::ProcessDelegate, SignatureDesc, false);      // set custom thunk function for the duplicated UFunction
 
-    uint8 NumOutProperties = SignatureDesc->SignatureFunctionDesc->GetNumOutProperties();
-    uint8 NumNonConstRefProperties = SignatureDesc->SignatureFunctionDesc->HasReturnProperty() ? NumOutProperties - 1 : NumOutProperties;
-    if (NumNonConstRefProperties > 0)
+    uint8 NumRefProperties = SignatureDesc->SignatureFunctionDesc->GetNumRefProperties();
+    if (NumRefProperties > 0)
     {
-        SignatureFunction->FunctionFlags |= FUNC_HasOutParms;        // 'FUNC_HasOutParms' will not be set for signature function even if it has non-const reference parameters
+        SignatureFunction->FunctionFlags |= FUNC_HasOutParms;        // 'FUNC_HasOutParms' will not be set for signature function even if it has out parameters
     }
 
     Callbacks.Add(Callback, SignatureFunction);

@@ -97,6 +97,7 @@ static const luaL_Reg FRotatorLib[] =
     { "GetRightVector", FRotator_GetRightVector },
     { "GetUpVector", FRotator_GetUpVector },
     { "GetUnitAxis", FRotator_GetUnitAxis },
+    { "__tostring", UnLua::TMathUtils<FRotator>::ToString },
     { "Set", FRotator_Set },
     { "__call", FRotator_New },
     { nullptr, nullptr }
@@ -113,7 +114,6 @@ BEGIN_EXPORT_REFLECTED_CLASS(FRotator)
     ADD_NAMED_FUNCTION("ToEuler", Euler)
     ADD_NAMED_FUNCTION("ToQuat", Quaternion)
     ADD_NAMED_FUNCTION("Inverse", GetInverse)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_CONST_FUNCTION_EX("__add", FRotator, operator+, const FRotator&)
     ADD_CONST_FUNCTION_EX("__sub", FRotator, operator-, const FRotator&)
     ADD_CONST_FUNCTION_EX("__mul", FRotator, operator*, float)

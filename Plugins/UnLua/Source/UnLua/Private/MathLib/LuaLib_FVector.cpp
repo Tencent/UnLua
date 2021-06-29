@@ -90,6 +90,7 @@ static const luaL_Reg FVectorLib[] =
     { "__sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>>::Calculate },
     { "__mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>>::Calculate },
     { "__div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>>::Calculate },
+    { "__tostring", UnLua::TMathUtils<FVector>::ToString },
     { "__unm", FVector_UNM },
     { "__call", FVector_New },
     { nullptr, nullptr }
@@ -111,7 +112,6 @@ BEGIN_EXPORT_REFLECTED_CLASS(FVector)
     ADD_FUNCTION(RotateAngleAxis)
     ADD_NAMED_FUNCTION("ToRotator", ToOrientationRotator)
     ADD_NAMED_FUNCTION("ToQuat", ToOrientationQuat)
-    ADD_NAMED_FUNCTION("__tostring", ToString)
     ADD_LIB(FVectorLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FVector)

@@ -15,18 +15,16 @@
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
 #include "LuaContext.h"
-#include "LuaSet.h"
-#include "LuaMap.h"
 #include "UnLua.h"
 #include "UnLuaDelegates.h"
-#include "UnLuaCompatibility.h"
-#include "UEReflectionUtils.h"
 #include "UEObjectReferencer.h"
 #include "CollisionHelper.h"
 #include "DelegateHelper.h"
-#include "PropertyCreator.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
+#include "Containers/LuaSet.h"
+#include "Containers/LuaMap.h"
+#include "ReflectionUtils/FieldDesc.h"
+#include "ReflectionUtils/PropertyCreator.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 extern "C"
@@ -279,7 +277,7 @@ void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr)
 /**
  * Set metatable for the userdata/table on the top of the stack
  */
-static bool TryToSetMetatable(lua_State *L, const char *MetatableName)
+bool TryToSetMetatable(lua_State *L, const char *MetatableName)
 {
     int32 Type = luaL_getmetatable(L, MetatableName);
     if (Type == LUA_TTABLE)
@@ -468,9 +466,31 @@ void* GetScriptContainer(lua_State *L, void *Key)
 }
 
 /**
+ * Remove a cached script container from 'ScriptContainerMap'
+ */
+void RemoveCachedScriptContainer(lua_State *L, void *Key)
+{
+    if (!L || !Key)
+    {
+        return;
+    }
+
+    lua_getfield(L, LUA_REGISTRYINDEX, "ScriptContainerMap");
+    lua_pushlightuserdata(L, Key);
+    int32 Type = lua_rawget(L, -2);
+    if (Type != LUA_TNIL)
+    {
+        lua_pushlightuserdata(L, Key);
+        lua_pushnil(L);
+        lua_rawset(L, -4);
+    }
+    lua_pop(L, 2);
+}
+
+/**
  * Push a UObject to Lua stack
  */
-static void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
+void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 {
     if (!Object)
     {
@@ -514,7 +534,7 @@ static void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 /**
  * Push a integer
  */
-static void PushIntegerElement(lua_State *L, UNumericProperty *Property, void *Value)
+static void PushIntegerElement(lua_State *L, FNumericProperty *Property, void *Value)
 {
     lua_pushinteger(L, Property->GetUnsignedIntPropertyValue(Value));
 }
@@ -522,7 +542,7 @@ static void PushIntegerElement(lua_State *L, UNumericProperty *Property, void *V
 /**
  * Push a float
  */
-static void PushFloatElement(lua_State *L, UNumericProperty *Property, void *Value)
+static void PushFloatElement(lua_State *L, FNumericProperty *Property, void *Value)
 {
     lua_pushnumber(L, Property->GetFloatingPointPropertyValue(Value));
 }
@@ -530,7 +550,7 @@ static void PushFloatElement(lua_State *L, UNumericProperty *Property, void *Val
 /**
  * Push a enum
  */
-static void PushEnumElement(lua_State *L, UNumericProperty *Property, void *Value)
+static void PushEnumElement(lua_State *L, FNumericProperty *Property, void *Value)
 {
     lua_pushinteger(L, Property->GetSignedIntPropertyValue(Value));
 }
@@ -538,7 +558,7 @@ static void PushEnumElement(lua_State *L, UNumericProperty *Property, void *Valu
 /**
  * Push a FName
  */
-static void PushFNameElement(lua_State *L, UNameProperty *Property, void *Value)
+static void PushFNameElement(lua_State *L, FNameProperty *Property, void *Value)
 {
     lua_pushstring(L, TCHAR_TO_UTF8(*Property->GetPropertyValue(Value).ToString()));
 }
@@ -546,7 +566,7 @@ static void PushFNameElement(lua_State *L, UNameProperty *Property, void *Value)
 /**
  * Push a FString
  */
-static void PushFStringElement(lua_State *L, UStrProperty *Property, void *Value)
+static void PushFStringElement(lua_State *L, FStrProperty *Property, void *Value)
 {
     lua_pushstring(L, TCHAR_TO_UTF8(*Property->GetPropertyValue(Value)));
 }
@@ -554,7 +574,7 @@ static void PushFStringElement(lua_State *L, UStrProperty *Property, void *Value
 /**
  * Push a FText
  */
-static void PushFTextElement(lua_State *L, UTextProperty *Property, void *Value)
+static void PushFTextElement(lua_State *L, FTextProperty *Property, void *Value)
 {
     lua_pushstring(L, TCHAR_TO_UTF8(*Property->GetPropertyValue(Value).ToString()));
 }
@@ -562,7 +582,7 @@ static void PushFTextElement(lua_State *L, UTextProperty *Property, void *Value)
 /**
  * Push a UObject
  */
-static void PushObjectElement(lua_State *L, UObjectPropertyBase *Property, void *Value)
+static void PushObjectElement(lua_State *L, FObjectPropertyBase *Property, void *Value)
 {
     UObject *Object = Property->GetObjectPropertyValue(Value);
     GObjectReferencer.AddObjectRef(Object);
@@ -572,7 +592,7 @@ static void PushObjectElement(lua_State *L, UObjectPropertyBase *Property, void 
 /**
  * Push a Interface
  */
-static void PushInterfaceElement(lua_State *L, UInterfaceProperty *Property, void *Value)
+static void PushInterfaceElement(lua_State *L, FInterfaceProperty *Property, void *Value)
 {
     const FScriptInterface &Interface = Property->GetPropertyValue(Value);
     UObject *Object = Interface.GetObject();
@@ -583,7 +603,7 @@ static void PushInterfaceElement(lua_State *L, UInterfaceProperty *Property, voi
 /**
  * Push a ScriptStruct
  */
-static void PushStructElement(lua_State *L, UProperty *Property, void *Value)
+static void PushStructElement(lua_State *L, FProperty *Property, void *Value)
 {
     void **Userdata = (void**)lua_newuserdata(L, sizeof(void*));
     *Userdata = Value;
@@ -593,7 +613,7 @@ static void PushStructElement(lua_State *L, UProperty *Property, void *Value)
 /**
  * Push a delegate
  */
-static void PushDelegateElement(lua_State *L, UDelegateProperty *Property, void *Value)
+static void PushDelegateElement(lua_State *L, FDelegateProperty *Property, void *Value)
 {
     FScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
     FDelegateHelper::PreBind(ScriptDelegate, Property);
@@ -605,7 +625,7 @@ static void PushDelegateElement(lua_State *L, UDelegateProperty *Property, void 
 /**
  * Push a multicast delegate
  */
-static void PushMCDelegateElement(lua_State *L, UMulticastDelegateProperty *Property, void *Value)
+static void PushMCDelegateElement(lua_State *L, FMulticastDelegateProperty *Property, void *Value)
 {
 #if ENGINE_MINOR_VERSION < 23
     FMulticastScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
@@ -692,65 +712,65 @@ static void PushPropertyArray(lua_State *L, T *Property, void *Value, void(*Push
 }
 
 
-void PushIntegerArray(lua_State *L, UNumericProperty *Property, void *Value)
+void PushIntegerArray(lua_State *L, FNumericProperty *Property, void *Value)
 {
-    PushPropertyArray<UNumericProperty, false>(L, Property, Value, PushIntegerElement);
+    PushPropertyArray<FNumericProperty, false>(L, Property, Value, PushIntegerElement);
 }
 
-void PushFloatArray(lua_State *L, UNumericProperty *Property, void *Value)
+void PushFloatArray(lua_State *L, FNumericProperty *Property, void *Value)
 {
-    PushPropertyArray<UNumericProperty, false>(L, Property, Value, PushFloatElement);
+    PushPropertyArray<FNumericProperty, false>(L, Property, Value, PushFloatElement);
 }
 
-void PushEnumArray(lua_State *L, UNumericProperty *Property, void *Value)
+void PushEnumArray(lua_State *L, FNumericProperty *Property, void *Value)
 {
-    PushPropertyArray<UNumericProperty, false>(L, Property, Value, PushEnumElement);
+    PushPropertyArray<FNumericProperty, false>(L, Property, Value, PushEnumElement);
 }
 
-void PushFNameArray(lua_State *L, UNameProperty *Property, void *Value)
+void PushFNameArray(lua_State *L, FNameProperty *Property, void *Value)
 {
-    PushPropertyArray<UNameProperty, false>(L, Property, Value, PushFNameElement);
+    PushPropertyArray<FNameProperty, false>(L, Property, Value, PushFNameElement);
 }
 
-void PushFStringArray(lua_State *L, UStrProperty *Property, void *Value)
+void PushFStringArray(lua_State *L, FStrProperty *Property, void *Value)
 {
-    PushPropertyArray<UStrProperty, false>(L, Property, Value, PushFStringElement);
+    PushPropertyArray<FStrProperty, false>(L, Property, Value, PushFStringElement);
 }
 
-void PushFTextArray(lua_State *L, UTextProperty *Property, void *Value)
+void PushFTextArray(lua_State *L, FTextProperty *Property, void *Value)
 {
-    PushPropertyArray<UTextProperty, false>(L, Property, Value, PushFTextElement);
+    PushPropertyArray<FTextProperty, false>(L, Property, Value, PushFTextElement);
 }
 
-void PushObjectArray(lua_State *L, UObjectPropertyBase *Property, void *Value)
+void PushObjectArray(lua_State *L, FObjectPropertyBase *Property, void *Value)
 {
-    PushPropertyArray<UObjectPropertyBase, false>(L, Property, Value, PushObjectElement);
+    PushPropertyArray<FObjectPropertyBase, false>(L, Property, Value, PushObjectElement);
 }
 
-void PushInterfaceArray(lua_State *L, UInterfaceProperty *Property, void *Value)
+void PushInterfaceArray(lua_State *L, FInterfaceProperty *Property, void *Value)
 {
-    PushPropertyArray<UInterfaceProperty, false>(L, Property, Value, PushInterfaceElement);
+    PushPropertyArray<FInterfaceProperty, false>(L, Property, Value, PushInterfaceElement);
 }
 
-void PushDelegateArray(lua_State *L, UDelegateProperty *Property, void *Value)
+void PushDelegateArray(lua_State *L, FDelegateProperty *Property, void *Value)
 {
-    PushPropertyArray<UDelegateProperty, true>(L, Property, Value, PushDelegateElement, "FScriptDelegate");
+    PushPropertyArray<FDelegateProperty, true>(L, Property, Value, PushDelegateElement, "FScriptDelegate");
 }
 
-void PushMCDelegateArray(lua_State *L, UMulticastDelegateProperty *Property, void *Value, const char *MetatableName)
+void PushMCDelegateArray(lua_State *L, FMulticastDelegateProperty *Property, void *Value, const char *MetatableName)
 {
-    PushPropertyArray<UMulticastDelegateProperty, true>(L, Property, Value, PushMCDelegateElement, MetatableName);
+    PushPropertyArray<FMulticastDelegateProperty, true>(L, Property, Value, PushMCDelegateElement, MetatableName);
 }
 
-void PushStructArray(lua_State *L, UProperty *Property, void *Value, const char *MetatableName)
+void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char *MetatableName)
 {
-    PushPropertyArray<UProperty, true>(L, Property, Value, PushStructElement, MetatableName);
+    PushPropertyArray<FProperty, true>(L, Property, Value, PushStructElement, MetatableName);
 }
 
 /**
  * Create a Lua instance (table) for a UObject
  */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, const char *ModuleName)
+int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName)
 {
     check(Object);
 
@@ -762,7 +782,16 @@ int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, const char *ModuleN
     lua_pushvalue(L, -2);
     lua_rawset(L, -4);                                          // INSTANCET.Object = RAW_UOBJECT
     int32 Type = GetLoadedModule(L, ModuleName);                // push the required module/table ('REQUIRED_MODULE') to the top of the stack
-    lua_getmetatable(L, -2);                                    // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
+    if (Class)
+    {
+        TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ClassName(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName()));
+        Type = luaL_getmetatable(L, ClassName.Get());
+        check(Type == LUA_TTABLE);
+    }
+    else
+    {
+        lua_getmetatable(L, -2);                                // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
+    }
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     lua_pushstring(L, "Overridden");
     lua_pushvalue(L, -2);
@@ -1192,6 +1221,8 @@ static bool RegisterCollisionEnum(lua_State *L, const char *Name, lua_CFunction 
         lua_pop(L, 1);
         return true;
     }
+
+    GReflectionRegistry.RegisterEnum(ANSI_TO_TCHAR(Name));
 
     lua_pop(L, 1);
     luaL_newmetatable(L, Name);
@@ -1762,7 +1793,7 @@ int32 Global_GetUProperty(lua_State *L)
         UObject *Object = UnLua::GetUObject(L, 1);
         if (Property && Object)
         {
-            Property->Read(L, Object, false);           // get UProperty value
+            Property->Read(L, Object, false);           // get FProperty value
         }
     }
     else
@@ -1780,7 +1811,7 @@ int32 Global_SetUProperty(lua_State *L)
         UObject *Object = UnLua::GetUObject(L, 1);
         if (Property && Object)
         {
-            Property->Write(L, Object, 3);              // set UProperty value
+            Property->Write(L, Object, 3);              // set FProperty value
         }
     }
     return 0;
@@ -1843,7 +1874,14 @@ int32 Global_NewObject(lua_State *L)
             TableRef = luaL_ref(L, LUA_REGISTRYINDEX);
         }
         FScopedLuaDynamicBinding Binding(L, Class, ANSI_TO_TCHAR(ModuleName), TableRef);
+#if ENGINE_MINOR_VERSION < 26
         UObject *Object = StaticConstructObject_Internal(Class, Outer, Name);
+#else
+        FStaticConstructObjectParameters ObjParams(Class);
+        ObjParams.Outer = Outer;
+        ObjParams.Name = Name;
+        UObject *Object = StaticConstructObject_Internal(ObjParams);
+#endif
         if (Object)
         {
             UnLua::PushUObject(L, Object);
@@ -1968,7 +2006,7 @@ int32 Global_Require(lua_State *L)
     FString FullFilePath = GLuaSrcFullPath + RelativeFilePath;
     lua_pushvalue(L, 1);
     lua_pushstring(L, TCHAR_TO_UTF8(*FullFilePath));
-    lua_pcall(L, 2, 1, 0);
+    lua_call(L, 2, 1);
 
     if (!lua_isnil(L, -1))
     {
@@ -2222,7 +2260,7 @@ int32 ScriptStruct_Delete(lua_State *L)
     {
         if (!bTwoLvlPtr)
         {
-            ScriptStruct->DestroyStruct((uint8*)Userdata + ClassDesc->GetUserdataPadding());
+            ScriptStruct->DestroyStruct(Userdata);
         }
     }
     else
@@ -2302,7 +2340,7 @@ int32 ScriptStruct_Compare(lua_State *L)
 /**
  * Create a type interface according to Lua parameter's type
  */
-UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index)
+TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
 {
     if (Index < 0 && Index > LUA_REGISTRYINDEX)
     {
@@ -2310,7 +2348,7 @@ UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index)
         Index = Top + Index + 1;
     }
 
-    UnLua::ITypeInterface *TypeInterface = nullptr;
+    TSharedPtr<UnLua::ITypeInterface> TypeInterface;
     int32 Type = lua_type(L, Index);
     switch (Type)
     {
@@ -2373,470 +2411,3 @@ UnLua::ITypeInterface* CreateTypeInterface(lua_State *L, int32 Index)
 
     return TypeInterface;
 }
-
-namespace UnLua
-{
-
-    /**
-     * Load a Lua file without running it
-     */
-    bool LoadFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
-    {
-        FString FullFilePath = GLuaSrcFullPath + RelativeFilePath;
-        FString ProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
-        FString ProjectPersistentDownloadDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectPersistentDownloadDir());
-        if (!ProjectPersistentDownloadDir.EndsWith("/"))
-        {
-            ProjectPersistentDownloadDir.Append("/");
-        }
-        FString RealFilePath = FullFilePath.Replace(*ProjectDir, *ProjectPersistentDownloadDir);        // try to load the file from 'ProjectPersistentDownloadDir' first
-        if (!IFileManager::Get().FileExists(*RealFilePath))
-        {
-            RealFilePath = FullFilePath;
-        }
-        else
-        {
-            UE_LOG(LogUnLua, Log, TEXT("Load lua file from DownloadDir : %s"), *RealFilePath);
-        }
-
-        TArray<uint8> Data;
-        // developers can provide a delegate to load the file
-        bool bSuccess = FUnLuaDelegates::LoadLuaFile.IsBound() ? FUnLuaDelegates::LoadLuaFile.Execute(RealFilePath, Data) : FFileHelper::LoadFileToArray(Data, *RealFilePath, 0);
-        if (!bSuccess)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        int32 SkipLen = (3 < Data.Num()) && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
-        return LoadChunk(L, (const char*)(Data.GetData() + SkipLen), Data.Num() - SkipLen, TCHAR_TO_ANSI(*RelativeFilePath), Mode, Env);    // loads the buffer as a Lua chunk
-    }
-
-    /**
-     * Run a Lua file
-     */
-    bool RunFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
-    {
-        bool bSuccess = LoadFile(L, RelativeFilePath, Mode, Env);       // load the file content as a Lua chunk
-        if (!bSuccess)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        int32 Code = lua_pcall(L, 0, LUA_MULTRET, 0);       // pcall
-        if (Code != LUA_OK)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("Failed to call lua_pcall, error code: %d"), Code);
-            ReportLuaCallError(L);                          // report pcall error
-        }
-
-        return Code == LUA_OK;
-    }
-
-    /**
-     * Load a Lua chunk without running it
-     */
-    bool LoadChunk(lua_State *L, const char *Chunk, int32 ChunkSize, const char *ChunkName, const char *Mode, int32 Env)
-    {
-        int32 Code = luaL_loadbufferx(L, Chunk, ChunkSize, ChunkName, Mode);        // loads the buffer as a Lua chunk
-        if (Code != LUA_OK)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("Failed to call luaL_loadbufferx, error code: %d"), Code);
-            ReportLuaCallError(L);                          // report pcall error
-        }
-
-        if (Code == LUA_OK)
-        {
-            if (Env != 0)
-            {
-                /* 'env' parameter? */
-                lua_pushvalue(L, Env);  /* environment for loaded function */
-                if (!lua_setupvalue(L, -2, 1))  /* set it as 1st upvalue */
-                {
-                    lua_pop(L, 1);  /* remove 'env' if not used by previous call */
-                }
-            }
-        }
-        else
-        {
-            lua_pushnil(L);     /* error (message is on top of the stack) */
-            lua_insert(L, -2);  /* put before error message */
-        }
-
-        return Code == LUA_OK;
-    }
-
-    /**
-     * Run a Lua chunk
-     */
-    bool RunChunk(lua_State *L, const char *Chunk)
-    {
-        if (!Chunk)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Invalid lua chunk!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        bool bSuccess = !luaL_dostring(L, Chunk);       // loads and runs the given chunk
-        if (!bSuccess)
-        {
-            ReportLuaCallError(L);
-            return false;
-        }
-
-        return bSuccess;
-    }
-
-    /**
-     * Report Lua error
-     */
-    int32 ReportLuaCallError(lua_State *L)
-    {
-        if (FUnLuaDelegates::ReportLuaCallError.IsBound())
-        {
-            return FUnLuaDelegates::ReportLuaCallError.Execute(L);      // developers can provide error reporter themselves
-        }
-
-        int32 Type = lua_type(L, -1);
-        if (Type == LUA_TSTRING)
-        {
-            const char *ErrorString = lua_tostring(L, -1);
-            luaL_traceback(L, L, ErrorString, 1);
-            ErrorString = lua_tostring(L, -1);
-            UE_LOG(LogUnLua, Warning, TEXT("Lua error message: %s"), UTF8_TO_TCHAR(ErrorString));
-        }
-        else if (Type == LUA_TTABLE)
-        {
-            // multiple errors is possible
-            int32 MessageIndex = 0;
-            lua_pushnil(L);
-            while (lua_next(L, -2) != 0)
-            {
-                const char *ErrorString = lua_tostring(L, -1);
-                UE_LOG(LogUnLua, Warning, TEXT("Lua error message %d : %s"), MessageIndex++, UTF8_TO_TCHAR(ErrorString));
-                lua_pop(L, 1);
-            }
-        }
-
-        lua_pop(L, 1);
-        return 0;
-    }
-
-    /**
-     * Push a pointer with the name of meta table
-     */
-    int32 PushPointer(lua_State *L, void *Value, const char *MetatableName, bool bAlwaysCreate)
-    {
-        if (!Value)
-        {
-            lua_pushnil(L);
-            return 1;
-        }
-
-        bool bCreateUserdata = bAlwaysCreate;
-        if (!bAlwaysCreate)
-        {
-            // find the pointer from 'StructMap' first
-            lua_getfield(L, LUA_REGISTRYINDEX, "StructMap");
-            lua_pushlightuserdata(L, Value);
-            int32 Type = lua_rawget(L, -2);
-            if (Type == LUA_TUSERDATA)
-            {
-                lua_remove(L, -2);
-            }
-            else
-            {
-                check(Type == LUA_TNIL);
-                lua_pop(L, 1);
-                bCreateUserdata = true;     // create a new userdata if the value is not found
-            }
-        }
-
-        if (bCreateUserdata)
-        {
-            void **Userdata = (void**)lua_newuserdata(L, sizeof(void*));
-            *Userdata = Value;
-            if (MetatableName)
-            {
-                bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
-                if (!bSuccess)
-                {
-                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), ANSI_TO_TCHAR(MetatableName));
-                    return 1;
-                }
-            }
-            MarkUserdataTwoLvlPtr(L, -1);       // mark the userdata as a two level pointer
-
-            if (!bAlwaysCreate)
-            {
-                // cache the new userdata in 'StructMap
-                lua_pushlightuserdata(L, Value);
-                lua_pushvalue(L, -2);
-                lua_rawset(L, -4);
-                lua_remove(L, -2);
-            }
-        }
-
-        return 1;
-    }
-
-    /**
-     * Get the address of user data at the given stack index
-     */
-    void* GetPointer(lua_State *L, int32 Index, bool *OutTwoLvlPtr)
-    {
-        bool bTwoLvlPtr = false;
-        void *Userdata = ::GetUserdataFast(L, Index, &bTwoLvlPtr);
-        if (Userdata)
-        {
-            if (OutTwoLvlPtr)
-            {
-                *OutTwoLvlPtr = bTwoLvlPtr;
-            }
-            return bTwoLvlPtr ? *((void**)Userdata) : Userdata;     // return the address
-        }
-        return nullptr;
-    }
-
-    /**
-     * Push a UObject
-     */
-    int32 PushUObject(lua_State *L, UObjectBaseUtility *Object, bool bAddRef)
-    {
-        if (!Object)
-        {
-            lua_pushnil(L);
-            return 1;
-        }
-
-        lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-        lua_pushlightuserdata(L, Object);
-        int32 Type = lua_rawget(L, -2);     // find the object from 'ObjectMap' first
-        if (Type == LUA_TNIL)
-        {
-            // 1. create a new userdata for the object if it's not found; 2. cache it in 'ObjectMap'
-            lua_pop(L, 1);
-            PushObjectCore(L, Object);
-            lua_pushlightuserdata(L, Object);
-            lua_pushvalue(L, -2);
-            lua_rawset(L, -4);
-
-            if (bAddRef && !Object->IsNative())
-            {
-                GObjectReferencer.AddObjectRef((UObject*)Object);       // add a reference for the object if it's a non-native object
-            }
-        }
-        lua_remove(L, -2);
-
-        return 1;
-    }
-
-    /**
-     * Get a UObject at the given stack index
-     */
-    UObject* GetUObject(lua_State *L, int32 Index)
-    {
-#if UE_BUILD_DEBUG
-        if (lua_getmetatable(L, Index) == 0)
-        {
-            return nullptr;
-        }
-        // todo: stricter check?
-        lua_pushstring(L, "__name");
-        lua_gettable(L, -2);
-        const char *ClassName = lua_tostring(L, -1);
-        FClassDesc *ClassDesc = GReflectionRegistry.FindClass(ClassName);
-        lua_pop(L, 2);
-        return ClassDesc && ClassDesc->IsClass() ? (UObject*)GetCppInstance(L, Index) : nullptr;
-#else
-        return (UObject*)GetCppInstance(L, Index);
-#endif
-    }
-
-    /**
-     * Allocate user data for smart pointer
-     */
-    void* NewSmartPointer(lua_State *L, int32 Size, const char *MetatableName)
-    {
-        void *Userdata = ::NewUserdataWithPadding(L, Size, MetatableName);
-        if (Userdata)
-        {
-            MarkUserdataTwoLvlPtr(L, -1);       // mark the new userdata as a two level pointer
-        }
-        return Userdata;
-    }
-
-    /**
-     * Get the address of smart pointer at the given stack index
-     */
-    void* GetSmartPointer(lua_State *L, int32 Index)
-    {
-        bool bTwoLvlPtr = false;
-        void *Userdata = ::GetUserdataFast(L, Index, &bTwoLvlPtr);
-        return Userdata;
-    }
-
-    /**
-     * Allocate user data
-     */
-    void* NewUserdata(lua_State *L, int32 Size, const char *MetatableName, int32 Alignment)
-    {
-        return ::NewUserdataWithPadding(L, Size, MetatableName, CalcUserdataPadding(Alignment));
-    }
-
-    /**
-     * Push an untyped dynamic array (same memory layout with TArray)
-     */
-    int32 PushArray(lua_State *L, const FScriptArray *ScriptArray, ITypeInterface *TypeInterface, bool bCreateCopy)
-    {
-        if (!L || !ScriptArray || !TypeInterface)
-        {
-            return 0;
-        }
-
-        if (bCreateCopy)
-        {
-            int32 Num = ScriptArray->Num();
-            int32 ElementSize = TypeInterface->GetSize();
-            FScriptArray *DestScriptArray = new FScriptArray;       // create a new FScriptArray
-            DestScriptArray->Empty(Num, ElementSize);
-            DestScriptArray->Add(Num, ElementSize);
-            if (Num)
-            {
-                uint8 *SrcData = (uint8*)ScriptArray->GetData();
-                uint8 *DestData = (uint8*)DestScriptArray->GetData();
-                for (int32 i = 0; i < Num; ++i)
-                {
-                    TypeInterface->Copy(DestData, SrcData);     // copy data
-                    SrcData += ElementSize;
-                    DestData += ElementSize;
-                }
-            }
-
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);                // create a new userdata for the new created FScriptArray
-            new(Userdata) FLuaArray(DestScriptArray, TypeInterface, FLuaArray::OwnedBySelf);    // placement new
-        }
-        else
-        {
-            // get the cached array or create a new one if not found
-            void *Userdata = CacheScriptContainer(L, (FScriptArray*)ScriptArray, FScriptContainerDesc::Array);
-            if (Userdata)
-            {
-                FLuaArray *LuaArray = new(Userdata) FLuaArray(ScriptArray, TypeInterface, FLuaArray::OwnedByOther);     // placement new
-            }
-        }
-        return 1;
-    }
-
-    /**
-     * Push an untyped set (same memory layout with TSet). see PushArray
-     */
-    int32 PushSet(lua_State *L, const FScriptSet *ScriptSet, ITypeInterface *TypeInterface, bool bCreateCopy)
-    {
-        if (!L || !ScriptSet || !TypeInterface)
-        {
-            return 0;
-        }
-
-        if (bCreateCopy)
-        {
-            int32 Num = ScriptSet->Num();
-            FLuaSet SrcSet(ScriptSet, TypeInterface, FLuaSet::OwnedByOther);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Set);
-            FLuaSet *DestSet = new(Userdata) FLuaSet(new FScriptSet, TypeInterface, FLuaSet::OwnedBySelf);
-            DestSet->Clear(Num);
-            for (int32 SrcIndex = 0; Num; ++SrcIndex)
-            {
-                if (ScriptSet->IsValidIndex(SrcIndex))
-                {
-                    const int32 DestIndex = DestSet->AddDefaultValue_Invalid_NeedsRehash();
-                    uint8 *SrcData = SrcSet.GetData(SrcIndex);
-                    uint8 *DestData = DestSet->GetData(DestIndex);
-                    TypeInterface->Copy(DestData, SrcData);
-                    --Num;
-                }
-            }
-            DestSet->Rehash();
-        }
-        else
-        {
-            void *Userdata = CacheScriptContainer(L, (FScriptSet*)ScriptSet, FScriptContainerDesc::Set);
-            if (Userdata)
-            {
-                FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, TypeInterface, FLuaSet::OwnedByOther);
-            }
-        }
-        return 1;
-    }
-
-    /**
-     * Push an untyped map (same memory layout with TMap). see PushArray
-     */
-    int32 PushMap(lua_State *L, const FScriptMap *ScriptMap, ITypeInterface *KeyInterface, ITypeInterface *ValueInterface, bool bCreateCopy)
-    {
-        if (!L || !ScriptMap || !KeyInterface || !ValueInterface)
-        {
-            return 0;
-        }
-
-        if (bCreateCopy)
-        {
-            int32 Num = ScriptMap->Num();
-            FLuaMap SrcMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedByOther);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-            FLuaMap *DestMap = new(Userdata) FLuaMap(new FScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
-            DestMap->Clear(Num);
-            for (int32 SrcIndex = 0; Num; ++SrcIndex)
-            {
-                if (ScriptMap->IsValidIndex(SrcIndex))
-                {
-                    int32 DestIndex = DestMap->AddDefaultValue_Invalid_NeedsRehash();
-                    uint8 *SrcData = SrcMap.GetData(SrcIndex);
-                    uint8 *DestData = DestMap->GetData(DestIndex);
-                    KeyInterface->Copy(DestData, SrcData);
-                    ValueInterface->Copy(DestData, SrcData);
-                    --Num;
-                }
-            }
-            DestMap->Rehash();
-        }
-        else
-        {
-            void *Userdata = CacheScriptContainer(L, (FScriptMap*)ScriptMap, FScriptContainerDesc::Map);
-            if (Userdata)
-            {
-                FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedByOther);
-            }
-        }
-        return 1;
-    }
-
-    /**
-     * Get an untyped dynamic array at the given stack index
-     */
-    FScriptArray* GetArray(lua_State *L, int32 Index)
-    {
-        FScriptArray *ScriptArray = (FScriptArray*)GetScriptContainer(L, Index);
-        return ScriptArray;
-    }
-
-    /**
-     * Get an untyped set at the given stack index
-     */
-    FScriptSet* GetSet(lua_State *L, int32 Index)
-    {
-        FScriptSet *ScriptSet = (FScriptSet*)GetScriptContainer(L, Index);
-        return ScriptSet;
-    }
-
-    /**
-     * Get an untyped map at the given stack index
-     */
-    FScriptMap* GetMap(lua_State *L, int32 Index)
-    {
-        FScriptMap *ScriptMap = (FScriptMap*)GetScriptContainer(L, Index);
-        return ScriptMap;
-    }
-
-} // namespace UnLua

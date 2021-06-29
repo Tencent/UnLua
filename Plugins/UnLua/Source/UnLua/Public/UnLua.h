@@ -117,6 +117,16 @@ namespace UnLua
         template <typename... T>
         FLuaRetValues Call(const char *FuncName, T&&... Args) const;
 
+        /**
+         * Iterate for Array
+         */
+        bool Iterate(TFunction<void (const lua_Integer& Index, const FLuaValue& Value)> Func) const;
+
+        /**
+         * Iterate for Table
+         */
+        bool Iterate(TFunction<void (const FName& Key, const FLuaValue& Value)> Func) const;
+
     private:
         mutable int32 PushedValues;
     };
@@ -175,7 +185,7 @@ namespace UnLua
      *
      * @return - type interface
      */
-    template <typename T> ITypeInterface* GetTypeInterface();
+    template <typename T> TSharedPtr<ITypeInterface> GetTypeInterface();
 
 
     /**
