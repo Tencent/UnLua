@@ -104,7 +104,7 @@ namespace UnLua
         int32 Type = lua_gettable(L, Index);
         if (Type != LUA_TFUNCTION)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("Function %s of table doesn't exist!"), ANSI_TO_TCHAR(FuncName));
+            UE_LOG(LogUnLua, Warning, TEXT("Function %s of table doesn't exist!"), UTF8_TO_TCHAR(FuncName));
             lua_pop(L, 2);
             return FLuaRetValues(INDEX_NONE);
         }
@@ -555,7 +555,7 @@ namespace UnLua
         lua_getglobal(L, FuncName);
         if (lua_isfunction(L, -1) == false)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("Global function %s doesn't exist!"), ANSI_TO_TCHAR(FuncName));
+            UE_LOG(LogUnLua, Warning, TEXT("Global function %s doesn't exist!"), UTF8_TO_TCHAR(FuncName));
             lua_pop(L, 2);
             return FLuaRetValues(INDEX_NONE);
         }
@@ -579,14 +579,14 @@ namespace UnLua
         int32 Type = lua_getglobal(L, TableName);
         if (Type != LUA_TTABLE)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("Global table %s doesn't exist!"), ANSI_TO_TCHAR(TableName));
+            UE_LOG(LogUnLua, Warning, TEXT("Global table %s doesn't exist!"), UTF8_TO_TCHAR(TableName));
             lua_pop(L, 2);
             return FLuaRetValues(INDEX_NONE);
         }
         Type = lua_getfield(L, -1, FuncName);
         if (Type != LUA_TFUNCTION)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("Function %s of global table %s doesn't exist!"), ANSI_TO_TCHAR(FuncName), ANSI_TO_TCHAR(TableName));
+            UE_LOG(LogUnLua, Warning, TEXT("Function %s of global table %s doesn't exist!"), UTF8_TO_TCHAR(FuncName), UTF8_TO_TCHAR(TableName));
             lua_pop(L, 3);
             return FLuaRetValues(INDEX_NONE);
         }

@@ -19,9 +19,9 @@
 
 #define UNLUA_LOGERROR(L, CategoryName, Verbosity, Format, ...) \
     {\
-        UE_LOG(CategoryName, Verbosity, Format, ##__VA_ARGS__); \
+    	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
         luaL_traceback(L, L, "", 0); \
-        lua_error(L); \
+        UE_LOG(CategoryName, Verbosity, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
     }
 
 #if STATS

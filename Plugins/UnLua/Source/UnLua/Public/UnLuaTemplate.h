@@ -265,7 +265,7 @@ namespace UnLua
         static const char* GetName()
         {
             UScriptStruct *ScriptStruct = TScriptStructTraits<T>::Get();
-            static TStringConversion<TStringConvert<TCHAR, ANSICHAR>> Name(*FString::Printf(TEXT("F%s"), *ScriptStruct->GetName()));
+            static FTCHARToUTF8 Name(*FString::Printf(TEXT("F%s"), *ScriptStruct->GetName()));
             return Name.Get();
         }
     };
@@ -276,7 +276,7 @@ namespace UnLua
         static const char* GetName()
         {
             UClass *Class = T::StaticClass();
-            static TStringConversion<TStringConvert<TCHAR, ANSICHAR>> Name(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName()));
+            static FTCHARToUTF8 Name(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName()));
             return Name.Get();
         }
     };

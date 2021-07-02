@@ -20,17 +20,70 @@
 #include "DelegateHelper.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
+#include "UEObjectReferencer.h"
 
-class FStructPropertyDesc : public FPropertyDesc
+TMap<FProperty*,FPropertyDesc*> FPropertyDesc::Property2Desc;
+
+FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty) 
+{ 
+	GReflectionRegistry.AddToDescSet(this, DESC_PROPERTY); 
+    Property2Desc.Add(Property,this);
+}
+
+FPropertyDesc::~FPropertyDesc()
 {
-public:
-    explicit FStructPropertyDesc(FProperty *InProperty)
-        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
-    {}
+	GReflectionRegistry.RemoveFromDescSet(this);
+    Property2Desc.Remove(Property);
+}
 
-protected:
-    bool bFirstPropOfScriptStruct;
-};
+bool FPropertyDesc::IsValid() const
+{
+#if ENGINE_MINOR_VERSION < 25
+    return GLuaCxt->IsUObjectValid(Property);
+#else
+    bool bValid = false;
+    if (Property)
+    {
+        bValid = true;
+
+        int32 type = GetPropertyType(Property);
+        switch (type)
+        {
+            case CPT_Interface:
+            {
+                bValid = GLuaCxt->IsUObjectValid(((FInterfaceProperty*)Property)->InterfaceClass);
+                break;
+            }
+            case CPT_Delegate:
+            {
+                bValid = GLuaCxt->IsUObjectValid(((FDelegateProperty*)Property)->SignatureFunction);
+                break;
+            }
+            case CPT_MulticastDelegate:
+            case CPT_MulticastSparseDelegate:
+            {
+                bValid = GLuaCxt->IsUObjectValid(((FMulticastDelegateProperty*)Property)->SignatureFunction);
+                break;
+            }
+            case CPT_Struct:
+            {
+                bValid = GLuaCxt->IsUObjectValid(((FStructProperty*)Property)->Struct);
+                break;
+            }
+            case CPT_ObjectReference:
+            case CPT_WeakObjectReference:
+            case CPT_LazyObjectReference:
+            case CPT_SoftObjectReference:
+            {
+                bValid = GLuaCxt->IsUObjectValid(((FObjectPropertyBase*)Property)->PropertyClass);
+                break;
+            }
+        }
+    }
+
+    return bValid;
+#endif
+}
 
 /**
  * Integer property descriptor
@@ -57,6 +110,31 @@ public:
         NumericProperty->SetIntPropertyValue(ValuePtr, (uint64)lua_tointeger(L, IndexInStack));
         return false;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TNUMBER)
+            {
+                ErrorMsg = FString::Printf(TEXT("integer needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+            else
+            {
+                if (!lua_isinteger(L, IndexInStack))
+                {
+                    ErrorMsg = FString::Printf(TEXT("integer needed but got float or double"));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -84,6 +162,23 @@ public:
         NumericProperty->SetFloatingPointPropertyValue(ValuePtr, lua_tonumber(L, IndexInStack));
         return false;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TNUMBER)
+            {
+                ErrorMsg = FString::Printf(TEXT("number needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -115,6 +210,31 @@ public:
         EnumProperty->GetUnderlyingProperty()->SetIntPropertyValue(ValuePtr, lua_tointeger(L, IndexInStack));
         return false;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TNUMBER)
+            {
+                ErrorMsg = FString::Printf(TEXT("integer needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+            else
+            {
+                if (!lua_isinteger(L, IndexInStack))
+                {
+                    ErrorMsg = FString::Printf(TEXT("integer needed but got float or double"));
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -131,10 +251,26 @@ public:
     }
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
-    {
+    {  
         BoolProperty->SetPropertyValue(ValuePtr, lua_toboolean(L, IndexInStack) != 0);
         return false;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TBOOLEAN)
+            {
+                ErrorMsg = FString::Printf(TEXT("bool needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+        return true;
+    };
+#endif
 };
 
 /**
@@ -144,7 +280,7 @@ class FObjectPropertyDesc : public FPropertyDesc
 {
 public:
     explicit FObjectPropertyDesc(FProperty *InProperty, bool bSoftObject)
-        : FPropertyDesc(InProperty), MetaClass(nullptr)
+        : FPropertyDesc(InProperty), MetaClass(nullptr), IsSoftObject(bSoftObject)
     {
         if (ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
         {
@@ -201,7 +337,14 @@ public:
         }
         else
         {
-            UnLua::PushUObject(L, ObjectBaseProperty->GetObjectPropertyValue(ValuePtr));
+            if (IsSoftObject)
+            {
+                UnLua::PushUObject(L, SoftObjectProperty->GetObjectPropertyValue(ValuePtr));
+            }
+            else
+            {
+                UnLua::PushUObject(L, ObjectBaseProperty->GetObjectPropertyValue(ValuePtr));
+            }
         }
     }
 
@@ -217,58 +360,101 @@ public:
             ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, Value);
         }
         else
-        {
-            ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, UnLua::GetUObject(L, IndexInStack));
+        {   
+            UObject* Object = UnLua::GetUObject(L, IndexInStack);
+            if (Object)
+            {
+                if (!Object->GetClass()->IsChildOf(ObjectBaseProperty->PropertyClass))
+                {
+                    Object = nullptr;
+                }
+            }
+            ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, Object);
         }
         return true;
     }
 
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+        UObject* Object = UnLua::GetUObject(L, IndexInStack);
+        if (Object)
+        {
+            if (MetaClass)
+            {
+                UClass* Class = Cast<UClass>(Object);
+                if (Class && !Class->IsChildOf(MetaClass))
+                {
+                    ErrorMsg = FString::Printf(TEXT("class %s needed but got %s"), *MetaClass->GetName(), *Class->GetName());
+                    return false;
+                }
+            }
+            else
+            {
+                UClass* Class = Object->GetClass();
+                if (Class && !Class->IsChildOf(ObjectBaseProperty->PropertyClass))
+                {
+                    ErrorMsg = FString::Printf(TEXT("object %s needed but got %s"), *ObjectBaseProperty->PropertyClass->GetName(), *Class->GetName());
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+#endif
+
 private:
     UClass *MetaClass;
+    bool IsSoftObject;
 };
 
 /**
- * Soft object property descriptor
+ * FSoftObject property descriptor
  */
-class FSoftObjectPropertyDesc : public FStructPropertyDesc
+class FSoftObjectPropertyDesc : public FPropertyDesc
 {
 public:
-    FSoftObjectPropertyDesc(FProperty *InProperty)
-        : FStructPropertyDesc(InProperty)
+    explicit FSoftObjectPropertyDesc(FProperty* InProperty)
+        : FPropertyDesc(InProperty)
     {
-        UClass *Class = SoftObjectProperty->PropertyClass->IsChildOf(UClass::StaticClass()) ? ((FSoftClassProperty*)SoftObjectProperty)->MetaClass : SoftObjectProperty->PropertyClass;
-        RegisterClass(*GLuaCxt, Class);
     }
 
-    virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
+    ~FSoftObjectPropertyDesc()
     {
-        FSoftObjectPtr *Src = (FSoftObjectPtr*)GetCppInstanceFast(L, SrcIndexInStack);
-        return CopyBack(Property->ContainerPtrToValuePtr<void>(DestContainerPtr), Src);
+        // release element property descriptor
     }
 
-    virtual bool CopyBack(lua_State *L, void *SrcContainerPtr, int32 DestIndexInStack) override
+    virtual bool CopyBack(lua_State* L, int32 SrcIndexInStack, void* DestContainerPtr) override
     {
-        FSoftObjectPtr *Dest = (FSoftObjectPtr*)GetCppInstanceFast(L, DestIndexInStack);
-        return CopyBack(Dest, Property->ContainerPtrToValuePtr<void>(SrcContainerPtr));
+        void* Value = GetCppInstanceFast(L, SrcIndexInStack);
+        return Value ? CopyBack(Property->ContainerPtrToValuePtr<void>(DestContainerPtr), Value) : false;
     }
 
-    virtual bool CopyBack(void *Dest, const void *Src) override
+    virtual bool CopyBack(lua_State* L, void* SrcContainerPtr, int32 DestIndexInStack) override
+    {
+        void* Value = GetCppInstanceFast(L, DestIndexInStack);
+        return Value ? CopyBack(Value, Property->ContainerPtrToValuePtr<void>(SrcContainerPtr)) : false;
+    }
+
+    virtual bool CopyBack(void* Dest, const void* Src) override
     {
         if (Dest && Src && IsOutParameter())
         {
-            SoftObjectProperty->CopySingleValue(Dest, Src);
+            FMemory::Memcpy(Dest, Src, Property->GetSize());        // shallow copy is enough
             return true;
         }
         return false;
     }
 
-    virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
+    virtual void GetValueInternal(lua_State* L, const void* ValuePtr, bool bCreateCopy) const override
     {
         if (bCreateCopy)
         {
-            void *Userdata = NewUserdataWithPadding(L, sizeof(FSoftObjectPtr), "FSoftObjectPtr");
-            SoftObjectProperty->InitializeValue(Userdata);
-            SoftObjectProperty->CopySingleValue(Userdata, ValuePtr);
+            void* Userdata = NewUserdataWithPadding(L, Property->GetSize(), "FSoftObjectPtr", 0);
+            Property->InitializeValue(Userdata);
+            Property->CopySingleValue(Userdata, ValuePtr);
         }
         else
         {
@@ -278,34 +464,68 @@ public:
             }
             else
             {
-                UnLua::PushPointer(L, (void*)ValuePtr, "FSoftObjectPtr", bFirstPropOfScriptStruct);
+                UnLua::PushPointer(L, (void*)ValuePtr, "FSoftObjectPtr", false);
             }
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
+    virtual bool SetValueInternal(lua_State* L, void* ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
-        int32 Type = lua_type(L, IndexInStack);
-        switch (Type)
+        void* Value = GetCppInstanceFast(L, IndexInStack);
+        if (Value)
         {
-        case LUA_TSTRING:
+            if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
             {
-                FSoftObjectPtr SoftObject(FSoftObjectPath(ANSI_TO_TCHAR(lua_tostring(L, IndexInStack))));
-                SoftObjectProperty->CopySingleValue(ValuePtr, &SoftObject);
+                FMemory::Memcpy(ValuePtr, Value, Property->GetSize());           // shallow copy
+                return false;
             }
-            break;
-        case LUA_TUSERDATA:
+            else
             {
-                FSoftObjectPtr *Value = (FSoftObjectPtr*)GetCppInstanceFast(L, IndexInStack);
-                if (Value)
-                {
-                    SoftObjectProperty->SetPropertyValue(ValuePtr, *Value);
-                }
+                Property->CopySingleValue(ValuePtr, Value);
             }
-            break;
         }
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TUSERDATA)
+            {
+                ErrorMsg = FString::Printf(TEXT("userdata is needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, IndexInStack)));
+                return false;
+            }
+
+            if (1 != lua_getmetatable(L, IndexInStack))
+            {
+                ErrorMsg = FString::Printf(TEXT("metatable of userdata is needed but got nil"));
+                return false;
+            }
+
+            lua_pushstring(L, "__name");
+            lua_rawget(L, -2);
+            FString MetatableName = lua_tostring(L, -1);
+            if (MetatableName.IsEmpty())
+            {
+                ErrorMsg = FString::Printf(TEXT("metatable name of userdata needed but got nil"));
+                return false;
+            }
+
+            if (!MetatableName.Equals("FSoftObjectPtr"))
+            {
+                ErrorMsg = FString::Printf(TEXT("metatable name of userdata FSoftObjectPtr needed but got %s"), *MetatableName);
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -341,6 +561,27 @@ public:
         Interface->SetInterface(Value ? Value->GetInterfaceAddress(InterfaceProperty->InterfaceClass) : nullptr);
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+
+        UObject* Object = UnLua::GetUObject(L, IndexInStack);
+        if (Object)
+        {
+            UClass* Class = Object->GetClass();
+            if ((Class)
+                && (!Class->ImplementsInterface(InterfaceProperty->InterfaceClass)))
+            {
+                ErrorMsg = FString::Printf(TEXT("implements of interface %s is needed but got nil for object %s"), *InterfaceProperty->InterfaceClass->GetName(), *Class->GetName());
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -368,6 +609,23 @@ public:
         NameProperty->SetPropertyValue(ValuePtr, FName(lua_tostring(L, IndexInStack)));
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TSTRING && Type != LUA_TNUMBER)
+            {
+                ErrorMsg = FString::Printf(TEXT("string needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -395,6 +653,23 @@ public:
         StringProperty->SetPropertyValue(ValuePtr, UTF8_TO_TCHAR(lua_tostring(L, IndexInStack)));
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TSTRING && Type != LUA_TNUMBER)
+            {
+                ErrorMsg = FString::Printf(TEXT("string needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -403,9 +678,9 @@ public:
 class FTextPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FTextPropertyDesc(FProperty *InProperty) : FPropertyDesc(InProperty) {}
+    explicit FTextPropertyDesc(FProperty* InProperty) : FPropertyDesc(InProperty) {}
 
-    virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
+    virtual void GetValueInternal(lua_State* L, const void* ValuePtr, bool bCreateCopy) const override
     {
         if (Property->ArrayDim > 1)
         {
@@ -417,11 +692,28 @@ public:
         }
     }
 
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
+    virtual bool SetValueInternal(lua_State* L, void* ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
         TextProperty->SetPropertyValue(ValuePtr, FText::FromString(UTF8_TO_TCHAR(lua_tostring(L, IndexInStack))));
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TSTRING && Type != LUA_TNUMBER)
+            {
+                ErrorMsg = FString::Printf(TEXT("string needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -514,10 +806,48 @@ public:
         return true;
     }
 
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if ((Type != LUA_TTABLE)
+                && (Type != LUA_TUSERDATA))
+            {
+                ErrorMsg = FString::Printf(TEXT("table or userdata needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+
+            if (Type == LUA_TUSERDATA)
+            {
+                int32 RetValue = lua_getmetatable(L, IndexInStack);
+                if (RetValue != 1)
+                {
+                    ErrorMsg = FString::Printf(TEXT("metatable of userdata needed but got nil"));
+                    return false;
+                }
+
+                lua_pushstring(L, "__name");
+                lua_rawget(L, -2);
+                FString MetatableName = lua_tostring(L, -1);
+                if (MetatableName.IsEmpty() || !MetatableName.Equals("TArray"))
+                {
+                    ErrorMsg = FString::Printf(TEXT("metatable name of userdata TArray needed but got %s"), *MetatableName);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+#endif
+
     // interfaces from 'TLuaContainerInterface<FLuaArray>'
     virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const override { return InnerProperty; }
     virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const override { return TSharedPtr<UnLua::ITypeInterface>(); }
-
     static bool FillArray(lua_State *L, void *Userdata)
     {
         FLuaArray *Array = (FLuaArray*)Userdata;
@@ -530,6 +860,7 @@ public:
 private:
     TSharedPtr<UnLua::ITypeInterface> InnerProperty;
 };
+
 
 /**
  * TMap property descriptor
@@ -621,10 +952,48 @@ public:
         return true;
     }
 
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if ((Type != LUA_TTABLE)
+                && (Type != LUA_TUSERDATA))
+            {
+                ErrorMsg = FString::Printf(TEXT("table or userdata needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+
+            if (Type == LUA_TUSERDATA)
+            {
+                int32 RetValue = lua_getmetatable(L, IndexInStack);
+                if (RetValue != 1)
+                {
+                    ErrorMsg = FString::Printf(TEXT("metatable of userdata needed but got nil"));
+                    return false;
+                }
+
+                lua_pushstring(L, "__name");
+                lua_rawget(L, -2);
+                FString MetatableName = lua_tostring(L, -1);
+                if (MetatableName.IsEmpty() || !MetatableName.Equals("TMap"))
+                {
+                    ErrorMsg = FString::Printf(TEXT("metatable name of userdata TMap needed but got %s"), *MetatableName);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+#endif
+
     // interfaces from 'TLuaContainerInterface<FLuaMap>'
     virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const override { return KeyProperty; }
     virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const override { return ValueProperty; }
-
     static bool FillMap(lua_State *L, void *Userdata)
     {
         FLuaMap *Map = (FLuaMap*)Userdata;
@@ -731,10 +1100,48 @@ public:
         return true;
     }
 
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if ((Type != LUA_TTABLE)
+                && (Type != LUA_TUSERDATA))
+            {
+                ErrorMsg = FString::Printf(TEXT("table or userdata needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+
+            if (Type == LUA_TUSERDATA)
+            {
+                int32 RetValue = lua_getmetatable(L, IndexInStack);
+                if (RetValue != 1)
+                {
+                    ErrorMsg = FString::Printf(TEXT("metatable of userdata needed but got nil"));
+                    return false;
+                }
+
+                lua_pushstring(L, "__name");
+                lua_rawget(L, -2);
+                FString MetatableName = lua_tostring(L, -1);
+                if (MetatableName.IsEmpty() || !MetatableName.Equals("TSet"))
+                {
+                    ErrorMsg = FString::Printf(TEXT("metatable name of userdata TSet needed but got %s"), *MetatableName);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    };
+#endif
+
     // interfaces from 'TLuaContainerInterface<FLuaSet>'
     virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const override { return InnerProperty; }
     virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const override { return TSharedPtr<UnLua::ITypeInterface>(); }
-
     static bool FillSet(lua_State *L, void *Userdata)
     {
         FLuaSet *Set = (FLuaSet*)Userdata;
@@ -746,6 +1153,17 @@ public:
 
 private:
     TSharedPtr<UnLua::ITypeInterface> InnerProperty;
+};
+
+class FStructPropertyDesc : public FPropertyDesc
+{
+public:
+    explicit FStructPropertyDesc(FProperty *InProperty)
+        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
+    {}
+
+protected:
+    bool bFirstPropOfScriptStruct;
 };
 
 /**
@@ -760,6 +1178,8 @@ public:
         FClassDesc *ClassDesc = RegisterClass(*GLuaCxt, StructProperty->Struct);    // register UScriptStruct first
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
+
+        //ClassDesc->AddRef();
     }
 
     FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
@@ -769,6 +1189,25 @@ public:
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();
         bFirstPropOfScriptStruct = false;
+    }
+
+    ~FScriptStructPropertyDesc()
+    {
+        /*FClassDesc* ClassDesc = GReflectionRegistry.FindClass(StructName.Get());
+        if (ClassDesc)
+        {
+            ClassDesc->SubRef();
+            if (ClassDesc->GetRefCount() <= 0)
+            {   
+                // give a chance to release scriptstruct
+                UScriptStruct* ScriptStruct = StructProperty->Struct;
+                if (!ScriptStruct->IsNative())
+                {
+                    GObjectReferencer.RemoveObjectRef(ScriptStruct);
+                }
+                GReflectionRegistry.UnRegisterClass(ClassDesc);
+            }
+        }*/
     }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
@@ -817,34 +1256,6 @@ public:
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
-#if UE_BUILD_DEBUG
-        int32 Type = lua_type(L, IndexInStack);
-        if (Type == LUA_TUSERDATA)
-        {
-            int32 RetValue = lua_getmetatable(L, IndexInStack);
-            if (RetValue != 1)
-            {
-                UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid meta table!"), ANSI_TO_TCHAR(__FUNCTION__));
-                return false;
-            }
-            lua_pushstring(L, "__name");
-            lua_rawget(L, -2);
-            const char *MetatableName = lua_tostring(L, -1);
-            if (FCStringAnsi::Strcmp(MetatableName, StructName.Get()))
-            {
-                FClassDesc *CurrentClassDesc = GReflectionRegistry.FindClass(MetatableName);
-                check(CurrentClassDesc);
-                UScriptStruct *ScriptStruct = CurrentClassDesc->AsScriptStruct();
-                if (!ScriptStruct || !ScriptStruct->IsChildOf(StructProperty->Struct))
-                {
-                    lua_pop(L, 2);
-                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Mismatched meta table name, %s != %s"), ANSI_TO_TCHAR(StructName.Get()), ANSI_TO_TCHAR(MetatableName));
-                    return false;
-                }
-            }
-            lua_pop(L, 2);
-        }
-#endif
         void *Value = GetCppInstanceFast(L, IndexInStack);
         if (Value)
         {
@@ -861,6 +1272,53 @@ public:
         return true;
     }
 
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        UnLua::FAutoStack AutoStack;
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TUSERDATA)
+            {
+                ErrorMsg = FString::Printf(TEXT("userdata needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+            int32 RetValue = lua_getmetatable(L, IndexInStack);
+            if (RetValue != 1)
+            {
+                ErrorMsg = FString::Printf(TEXT("metatable of userdata needed but got nil"));
+                return false;
+            }
+
+            lua_pushstring(L, "__name");
+            lua_rawget(L, -2);
+            const char* MetatableName = lua_tostring(L, -1);
+            if (!MetatableName)
+            {
+                ErrorMsg = FString::Printf(TEXT("metatable name of userdata needed but got nil"));
+                return false;
+            }
+
+            FClassDesc* CurrentClassDesc = GReflectionRegistry.FindClass(MetatableName);
+            if (!CurrentClassDesc)
+            {
+                ErrorMsg = FString::Printf(TEXT("metatable of userdata needed in registry but got no found"));
+                return false;
+            }
+
+            UScriptStruct* ScriptStruct = CurrentClassDesc->AsScriptStruct();
+            if (!ScriptStruct || !ScriptStruct->IsChildOf(StructProperty->Struct))
+            {
+                ErrorMsg = FString::Printf(TEXT("struct %s needed but got %s"), *StructProperty->Struct->GetName(), *ScriptStruct->GetName());
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
+
 private:
     TStringConversion<TStringConvert<TCHAR, ANSICHAR>> StructName;
     int32 StructSize;
@@ -875,10 +1333,17 @@ class FDelegatePropertyDesc : public FStructPropertyDesc
 public:
     explicit FDelegatePropertyDesc(FProperty *InProperty) : FStructPropertyDesc(InProperty) {}
 
+    virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
+    {
+        const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
+        FDelegateHelper::AddDelegateOwnerObject((void*)ValuePtr, (UObject*)ContainerPtr);
+        GetValueInternal(L, ValuePtr, bCreateCopy);
+    }
+
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
         if (Property->ArrayDim > 1)
-        {
+        {   
             PushDelegateArray(L, DelegateProperty, (void*)ValuePtr);
         }
         else
@@ -913,6 +1378,23 @@ public:
         }
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TTABLE)
+            {
+                ErrorMsg = FString::Printf(TEXT("table needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 /**
@@ -923,6 +1405,13 @@ class TMulticastDelegatePropertyDesc : public FStructPropertyDesc
 {
 public:
     explicit TMulticastDelegatePropertyDesc(FProperty *InProperty) : FStructPropertyDesc(InProperty) {}
+
+    virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
+    {
+        const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
+        FDelegateHelper::AddMulticastDelegateOwnerObject((void*)ValuePtr, (UObject*)ContainerPtr);
+        GetValueInternal(L, ValuePtr, bCreateCopy);
+    }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
@@ -965,6 +1454,23 @@ public:
         }
         return true;
     }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
+    {
+        int32 Type = lua_type(L, IndexInStack);
+        if (Type != LUA_TNIL)
+        {
+            if (Type != LUA_TTABLE)
+            {
+                ErrorMsg = FString::Printf(TEXT("table needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                return false;
+            }
+        }
+
+        return true;
+    };
+#endif
 };
 
 
@@ -1000,6 +1506,7 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
         return new FObjectPropertyDesc(InProperty, false);
     case CPT_SoftObjectReference:
         return new FSoftObjectPropertyDesc(InProperty);
+        //return new FObjectPropertyDesc(InProperty, true);
     case CPT_Interface:
         return new FInterfacePropertyDesc(InProperty);
     case CPT_Name:

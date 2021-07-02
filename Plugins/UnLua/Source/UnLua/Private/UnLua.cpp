@@ -140,56 +140,6 @@ namespace UnLua
         return FLuaValue(-1, Type);
     }
 
-    bool FLuaTable::Iterate(TFunction<void (const lua_Integer& Index, const FLuaValue& Value)> Func) const
-    {
-        // push table to stack
-        lua_pushvalue(*GLuaCxt, Index);
-
-        // get length of array
-        const auto Len = luaL_len(*GLuaCxt, -1);
-
-        // iterate array
-        for (lua_Integer i = 1; i <= Len; i++)
-        {
-            lua_pushinteger(*GLuaCxt, i);
-            lua_gettable(*GLuaCxt, -2);
-
-            Func(i, FLuaValue(-1));
-
-            // pop value from stack
-            lua_pop(*GLuaCxt, 1);
-        }
-
-        // pop table from stack
-        lua_pop(*GLuaCxt, 1);
-
-        return true;
-    }
-
-    bool FLuaTable::Iterate(TFunction<void (const FName& Key, const FLuaValue& Value)> Func) const
-    {
-        // push table to stack
-        lua_pushvalue(*GLuaCxt, Index);
-
-        // iterate table
-        lua_pushnil(*GLuaCxt);
-        while (lua_next(*GLuaCxt, -2) != 0)
-        {
-            FName Key(lua_tostring(*GLuaCxt, -2));
-            FLuaValue Value(-1);
-
-            Func(Key, Value);
-
-            // pop value from stack, keep key in stack to continue iterate
-            lua_pop(*GLuaCxt, 1);
-        }
-
-        // pop table from stack
-        lua_pop(*GLuaCxt, 1);
-
-        return true;
-    }
-
     /**
      * Lua function wrapper
      */
@@ -209,7 +159,7 @@ namespace UnLua
         }
         else
         {
-            UE_LOG(LogUnLua, Verbose, TEXT("Global function %s doesn't exist!"), ANSI_TO_TCHAR(GlobalFuncName));
+            UE_LOG(LogUnLua, Verbose, TEXT("Global function %s doesn't exist!"), UTF8_TO_TCHAR(GlobalFuncName));
             lua_pop(*GLuaCxt, 1);
         }
     }
@@ -234,13 +184,13 @@ namespace UnLua
             }
             else
             {
-                UE_LOG(LogUnLua, Verbose, TEXT("Function %s of global table %s doesn't exist!"), ANSI_TO_TCHAR(FuncName), ANSI_TO_TCHAR(GlobalTableName));
+                UE_LOG(LogUnLua, Verbose, TEXT("Function %s of global table %s doesn't exist!"), UTF8_TO_TCHAR(FuncName), UTF8_TO_TCHAR(GlobalTableName));
                 lua_pop(*GLuaCxt, 2);
             }
         }
         else
         {
-            UE_LOG(LogUnLua, Verbose, TEXT("Global table %s doesn't exist!"), ANSI_TO_TCHAR(GlobalTableName));
+            UE_LOG(LogUnLua, Verbose, TEXT("Global table %s doesn't exist!"), UTF8_TO_TCHAR(GlobalTableName));
             lua_pop(*GLuaCxt, 1);
         }
     }
@@ -257,7 +207,7 @@ namespace UnLua
         }
         else
         {
-            UE_LOG(LogUnLua, Verbose, TEXT("Function %s doesn't exist!"), ANSI_TO_TCHAR(FuncName));
+            UE_LOG(LogUnLua, Verbose, TEXT("Function %s doesn't exist!"), UTF8_TO_TCHAR(FuncName));
             lua_pop(*GLuaCxt, 1);
         }
     }
@@ -353,19 +303,6 @@ namespace UnLua
 #endif
 
     /**
-     * Helper to recover Lua stack automatically
-     */
-    FAutoStack::FAutoStack()
-    {
-        OldTop = lua_gettop(*GLuaCxt);
-    }
-
-    FAutoStack::~FAutoStack()
-    {
-        lua_settop(*GLuaCxt, OldTop);
-    }
-
-    /**
      * Exported enum
      */
     void FExportedEnum::Register(lua_State *L)
@@ -383,7 +320,7 @@ namespace UnLua
 
         for (TMap<FString, int32>::TIterator It(NameValues); It; ++It)
         {
-            lua_pushstring(L, TCHAR_TO_ANSI(*It.Key()));
+            lua_pushstring(L, TCHAR_TO_UTF8(*It.Key()));
             lua_pushinteger(L, It.Value());
             lua_rawset(L, -3);
         }

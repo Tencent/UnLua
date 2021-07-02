@@ -39,13 +39,24 @@ struct lua_State;
 struct luaL_Reg;
 
 namespace UnLua
-{
+{   
+    //!!!Fix!!!
+    //GetField need double check when get from cache
+    struct ITypeOps;
+    static TMap<ITypeOps*, bool> ExportedPropertys;
+
+    static bool IsExportedPropertyValid(ITypeOps* ExportedProperty)
+    {
+        return ExportedProperty && ExportedPropertys.Contains(ExportedProperty);
+    }
 
     /**
      * Interface to manage Lua stack for a C++ type
      */
     struct ITypeOps
-    {
+    {   
+        ITypeOps() { };
+        
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const = 0;
         virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const = 0;
     };
@@ -55,6 +66,7 @@ namespace UnLua
      */
     struct ITypeInterface : public ITypeOps
     {
+        ITypeInterface() { }
         virtual ~ITypeInterface() {}
 
         virtual bool IsPODType() const = 0;
@@ -75,8 +87,16 @@ namespace UnLua
      * Exported property interface
      */
     struct IExportedProperty : public ITypeOps
-    {
-        virtual ~IExportedProperty() {}
+    {   
+        IExportedProperty()
+        {
+            ExportedPropertys.Add(this,0);
+        }
+        
+        virtual ~IExportedProperty() 
+        {
+            ExportedPropertys.Remove(this);
+        }
 
         virtual void Register(lua_State *L) = 0;
 
@@ -365,4 +385,16 @@ namespace UnLua
      */
     UNLUA_API FScriptMap* GetMap(lua_State *L, int32 Index);
 
+
+    /**
+     * Helper to recover Lua stack automatically
+     */
+    struct UNLUA_API FAutoStack
+    {
+        FAutoStack();
+        ~FAutoStack();
+
+    private:
+        int32 OldTop;
+    };
 } // namespace UnLua

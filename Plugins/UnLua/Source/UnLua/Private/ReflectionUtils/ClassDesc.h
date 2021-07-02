@@ -15,6 +15,7 @@
 #pragma once
 
 #include "CoreUObject.h"
+#include "LuaContext.h"
 
 class FPropertyDesc;
 class FFunctionDesc;
@@ -38,7 +39,7 @@ public:
     FClassDesc(UStruct *InStruct, const FString &InName, EType InType);
     ~FClassDesc();
 
-    FORCEINLINE bool IsValid() const { return Type != EType::UNKNOWN && Struct/* && Struct->IsValidLowLevel()*/; }
+    FORCEINLINE bool IsValid() const { return Type != EType::UNKNOWN && Struct && GLuaCxt->IsUObjectValid(Struct); }
 
     FORCEINLINE bool IsScriptStruct() const { return Type == EType::SCRIPTSTRUCT; }
 
@@ -54,13 +55,13 @@ public:
 
     FORCEINLINE UClass* AsClass() const { return Type == EType::CLASS ? Class : nullptr; }
 
-    FORCEINLINE FClassDesc* GetParent() const { return Parent; }
+    //FORCEINLINE FClassDesc* GetParent() const { return Parent; }
 
-    FORCEINLINE const FString& GetName() const { return ClassName; }
+    //FORCEINLINE const FString& GetName() const { return ClassFName.ToString(); }
 
-    FORCEINLINE FName GetFName() const { return ClassFName; }
+    FORCEINLINE FString GetName() const { return ClassName; }
 
-    FORCEINLINE const char* GetAnsiName() const { return ClassAnsiName.Get(); }
+    //FORCEINLINE const char* GetAnsiName() const { return ClassAnsiName.Get(); }
 
     FORCEINLINE int32 GetSize() const { return Size; }
 
@@ -68,44 +69,29 @@ public:
 
     FORCEINLINE int32 GetRefCount() const { return RefCount; }
 
-    FORCEINLINE void AddRef() { ++RefCount; }
-
     FORCEINLINE FPropertyDesc* GetProperty(int32 Index) { return Index > INDEX_NONE && Index < Properties.Num() ? Properties[Index] : nullptr; }
 
     FORCEINLINE FFunctionDesc* GetFunction(int32 Index) { return Index > INDEX_NONE && Index < Functions.Num() ? Functions[Index] : nullptr; }
 
-    bool Release(bool bKeepAlive = false);
+    void AddRef();
 
-    void Reset();
+    void SubRef();
 
-    template <typename CharType>
-    FFieldDesc* RegisterField(const CharType *FieldName)
-    {
-        return RegisterField(FName(FieldName), this);
-    }
+    void AddLock();
 
-    FFieldDesc* RegisterField(FName FieldName, FClassDesc *QueryClass);
+    void ReleaseLock();
 
-    void GetInheritanceChain(TArray<FString> &NameChain, TArray<UStruct*> &StructChain) const;
+    bool IsLocked();
 
-    static EType GetType(UStruct *InStruct)
-    {
-        EType Type = EType::UNKNOWN;
-        UScriptStruct *ScriptStruct = Cast<UScriptStruct>(InStruct);
-        if (ScriptStruct)
-        {
-            Type = EType::SCRIPTSTRUCT;
-        }
-        else
-        {
-            UClass *Class = Cast<UClass>(InStruct);
-            if (Class)
-            {
-                Type = EType::CLASS;
-            }
-        }
-        return Type;
-    }
+    FFieldDesc* FindField(const char* FieldName);
+
+    FFieldDesc* RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
+
+    void GetInheritanceChain(TArray<FString> &InNameChain, TArray<UStruct*> &InStructChain);
+
+    void GetInheritanceChain(TArray<FClassDesc*>& Chain);
+
+    static EType GetType(UStruct* InStruct);
 
 private:
     union
@@ -116,20 +102,22 @@ private:
     };
 
     FString ClassName;
-    FName ClassFName;
-    TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ClassAnsiName;
 
     EType Type;
-    uint8 UserdataPadding;            // only used for UScriptStruct
-    int32 Size;
+    int32 UserdataPadding : 8;            // only used for UScriptStruct
+    int32 Size : 24;
     int32 RefCount;
+    bool  Locked;
 
-    FClassDesc *Parent;
+    //FClassDesc *Parent;
     TArray<FClassDesc*> Interfaces;
 
     TMap<FName, FFieldDesc*> Fields;
     TArray<FPropertyDesc*> Properties;
     TArray<FFunctionDesc*> Functions;
+
+    TArray<FString> NameChain;
+    TArray<UStruct*> StructChain;
 
     struct FFunctionCollection *FunctionCollection;
 };
@@ -141,35 +129,19 @@ class FScopedSafeClass
 {
 public:
     explicit FScopedSafeClass(FClassDesc *InClass)
-    {
-        AddClass(InClass);
-    }
-
-    explicit FScopedSafeClass(const TArray<FClassDesc*> &InClasses)
-    {
-        for (FClassDesc *InClass : InClasses)
-        {
-            AddClass(InClass);
-        }
+    {  
+        Class = InClass;
+        Class->AddLock();
     }
 
     ~FScopedSafeClass()
-    {
-        for (FClassDesc *Class : Classes)
+    {   
+        if (Class)
         {
-            Class->Release(true);
+            Class->ReleaseLock();
         }
     }
 
 private:
-    void AddClass(FClassDesc *InClass)
-    {
-        if (InClass)
-        {
-            InClass->AddRef();
-            Classes.Add(InClass);
-        }
-    }
-
-    TArray<FClassDesc*> Classes;
+    FClassDesc* Class;
 };

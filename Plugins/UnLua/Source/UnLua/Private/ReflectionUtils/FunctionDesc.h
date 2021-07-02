@@ -15,6 +15,7 @@
 #pragma once
 
 #include "UnLuaBase.h"
+#include "LuaContext.h"
 
 #define ENABLE_PERSISTENT_PARAM_BUFFER 1            // option to allocate persistent buffer for UFunction's parameters
 
@@ -38,7 +39,7 @@ public:
      *
      * @return - true if the function is valid, false otherwise
      */
-    FORCEINLINE bool IsValid() const { return Function != nullptr; }
+    FORCEINLINE bool IsValid() const { return Function && GLuaCxt->IsUObjectValid(Function); }
 
     /**
      * Test if this function has return property

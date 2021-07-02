@@ -50,6 +50,10 @@ static bool GetMulticastDelegateInfo(lua_State *L, T* &Delegate, UObject* &Objec
         return false;
     }
 
+#if ENABLE_DEBUG != 0
+    UE_LOG(LogUnLua, Log, TEXT("GetMulticastDelegateInfo : %p,%p,%s"), Delegate, Object, *Object->GetName());
+#endif
+    
     return true;
 }
 
@@ -82,7 +86,7 @@ struct TMulticastDelegateLib
         {
             FScriptDelegate DynamicDelegate;
             DynamicDelegate.BindUFunction(Object, FuncName);
-            FDelegateHelper::AddDelegate(Delegate, DynamicDelegate);
+            FDelegateHelper::AddDelegate(Delegate, Object, Callback, DynamicDelegate);
         }
         return 0;
     }
