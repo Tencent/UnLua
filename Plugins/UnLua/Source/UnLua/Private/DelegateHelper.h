@@ -65,7 +65,7 @@ struct FSignatureDesc
 
 struct lua_State;
 
-#if ENGINE_MINOR_VERSION < 23
+#if UNLUA_UE_VER < 423
 typedef FMulticastScriptDelegate FMulticastDelegateType;
 #else
 typedef void FMulticastDelegateType;

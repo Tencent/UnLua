@@ -1020,7 +1020,7 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
         return new FDelegatePropertyDesc(InProperty);
     case CPT_MulticastDelegate:
         return new TMulticastDelegatePropertyDesc<FMulticastScriptDelegate>(InProperty);
-#if ENGINE_MINOR_VERSION > 22
+#if UNLUA_UE_VER > 422
     case CPT_MulticastSparseDelegate:
         return new TMulticastDelegatePropertyDesc<FSparseDelegate>(InProperty);
 #endif
@@ -1138,7 +1138,7 @@ int32 GetPropertyType(const FProperty *Property)
         {
             Type = CPT_Delegate;
         }
-#if ENGINE_MINOR_VERSION < 23
+#if UNLUA_UE_VER < 423
         else if (const FMulticastDelegateProperty *TempMulticastDelegateProperty = CastField<FMulticastDelegateProperty>(Property))
         {
             Type = CPT_MulticastDelegate;

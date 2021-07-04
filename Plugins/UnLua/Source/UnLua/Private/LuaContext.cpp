@@ -444,7 +444,7 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
 /**
  * Callback for FWorldDelegates::OnWorldTickStart
  */
-#if ENGINE_MINOR_VERSION > 23
+#if UNLUA_UE_VER > 423
 void FLuaContext::OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime)
 #else
 void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
@@ -494,7 +494,7 @@ void FLuaContext::OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanu
     {
         bIsInSeamlessTravel = World->IsInSeamlessTravel();
     }
-#if ENGINE_MINOR_VERSION > 23
+#if UNLUA_UE_VER > 423
     Cleanup(IsEngineExitRequested(), World);                    // clean up
 #else
     Cleanup(GIsRequestingExit, World);                          // clean up

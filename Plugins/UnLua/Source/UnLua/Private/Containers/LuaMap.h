@@ -288,7 +288,7 @@ public:
                 if (IsValidIndex(++i))
                 {
                     int32 KeyOffset = 0;
-#if ENGINE_MINOR_VERSION < 22
+#if UNLUA_UE_VER < 422
                     KeyOffset = MapLayout.KeyOffset;
 #endif
                     LuaArray->Add((uint8*)Map->GetData(i, MapLayout) + KeyOffset);

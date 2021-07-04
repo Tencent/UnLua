@@ -268,7 +268,7 @@ bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, FMulticastDele
 void FDelegateHelper::Remove(FMulticastDelegateType *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback)
 {
     check(ScriptDelegate && Object);
-#if ENGINE_MINOR_VERSION < 23           // todo: how to check it for 4.23.x and above...
+#if UNLUA_UE_VER < 423           // todo: how to check it for 4.23.x and above...
     if (!ScriptDelegate->IsBound())
     {
         UE_LOG(LogUnLua, Warning, TEXT("%s, multicast delegate is not bound!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -316,7 +316,7 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
     }
 
     FMulticastDelegateProperty *Property = nullptr;
-#if ENGINE_MINOR_VERSION > 22
+#if UNLUA_UE_VER > 422
     FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {
@@ -354,7 +354,7 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
 void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDelegate, int32 NumParams, int32 FirstParamIndex)
 {
     check(InScriptDelegate);
-#if ENGINE_MINOR_VERSION < 23           // todo: how to check it for 4.23.x and above...
+#if UNLUA_UE_VER < 423           // todo: how to check it for 4.23.x and above...
     if (!InScriptDelegate->IsBound())
     {
         UE_LOG(LogUnLua, Warning, TEXT("%s: multicast delegate is not bound!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -395,7 +395,7 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
 void FDelegateHelper::AddDelegate(FMulticastDelegateType *ScriptDelegate, FScriptDelegate DynamicDelegate)
 {
     FMulticastDelegateProperty *Property = nullptr;
-#if ENGINE_MINOR_VERSION > 22
+#if UNLUA_UE_VER > 422
     FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {

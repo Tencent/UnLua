@@ -45,7 +45,7 @@ public:
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
     void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
 
-#if ENGINE_MINOR_VERSION > 23
+#if UNLUA_UE_VER > 423
     void OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime);
 #else
     void OnWorldTickStart(ELevelTick TickType, float DeltaTime);
@@ -89,7 +89,7 @@ public:
     // interfaces of FUObjectArray::FUObjectCreateListener and FUObjectArray::FUObjectDeleteListener
     virtual void NotifyUObjectCreated(const class UObjectBase *InObject, int32 Index) override;
     virtual void NotifyUObjectDeleted(const class UObjectBase *InObject, int32 Index) override;
-#if ENGINE_MINOR_VERSION > 22
+#if UNLUA_UE_VER > 422
     virtual void OnUObjectArrayShutdown() override {}
 #endif
 
