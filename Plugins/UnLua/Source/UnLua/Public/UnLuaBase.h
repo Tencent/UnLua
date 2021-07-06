@@ -16,6 +16,7 @@
 
 #include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "UnLuaCompatibility.h"
 
 #ifndef AUTO_UNLUA_STARTUP
 #define AUTO_UNLUA_STARTUP 0
@@ -30,9 +31,6 @@
 #endif
 
 
-//RPG3D MOD
-#define UNLUA_UE_VER (ENGINE_MAJOR_VERSION * 100 + ENGINE_MINOR_VERSION)
-//RPG3D
 
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
 

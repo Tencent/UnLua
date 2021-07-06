@@ -788,7 +788,7 @@ void FLuaContext::PostPIEStarted(bool bIsSimulating)
     if (EditorEngine)
     {
         //Manager->OnMapLoaded(EditorEngine->PlayWorld);
-        UWorld *World = ServerWorld ? ServerWorld : EditorEngine->PlayWorld;
+        UWorld *World = ServerWorld ? ServerWorld : EditorEngine->PlayWorld.Get();
         if (World)
         {
             UGameInstance *GameInstance = World->GetGameInstance();

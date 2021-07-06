@@ -17,8 +17,9 @@
 #include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
 
+
 //RPG3D MOD
-#include "UnLuaBase.h"
+#define UNLUA_UE_VER (ENGINE_MAJOR_VERSION * 100 + ENGINE_MINOR_VERSION)
 //RPG3D
 
 #if UNLUA_UE_VER < 419
