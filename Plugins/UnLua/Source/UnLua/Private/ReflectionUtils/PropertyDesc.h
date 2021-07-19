@@ -139,7 +139,7 @@ public:
      * @param DestContainerPtr - the destination address of the container for this property
      * @return - true if the operation succeed, false otherwise
      */
-    virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) { return true; }
+    virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) { return false; }
 
     /**
      * Copy the value of this property to an element at the given Lua index
@@ -150,7 +150,7 @@ public:
      */
     virtual bool CopyBack(lua_State *L, void *SrcContainerPtr, int32 DestIndexInStack) { return false; }
 
-    virtual bool CopyBack(void *Dest, const void *Src) { return true; }
+    virtual bool CopyBack(void *Dest, const void *Src) { return false; }
 
     // interfaces of UnLua::ITypeInterface
     virtual bool IsPODType() const override { return (Property->PropertyFlags & CPF_IsPlainOldData) != 0; }
