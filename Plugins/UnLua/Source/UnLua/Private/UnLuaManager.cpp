@@ -91,10 +91,24 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
 
     // try bind lua if not bind or use a copyed table
     UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_UTF8(InModuleName));    // require Lua module
-    bSuccess = RetValues.IsValid();
-    if (bSuccess)
+    FString Error;
+    if (!RetValues.IsValid() || RetValues.Num() == 0)
     {
-        bSuccess = BindInternal(Object, Class, InModuleName, true, bMutipleLuaBind);                             // bind!!!
+        Error = "invalid return value of require()";
+        bSuccess = false;
+    }
+    else if (RetValues[0].GetType() != LUA_TTABLE)
+    {
+        Error = FString("table needed but got ");
+        if(RetValues[0].GetType() == LUA_TSTRING)
+            Error += UTF8_TO_TCHAR(RetValues[0].Value<const char*>());
+        else
+            Error += UTF8_TO_TCHAR(lua_typename(L, RetValues[0].GetType()));
+        bSuccess = false;
+    }
+    else
+    {
+        bSuccess = BindInternal(Object, Class, InModuleName, true, bMutipleLuaBind, Error);                             // bind!!!
     }
 
     if (bSuccess)
@@ -138,7 +152,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     }
     else
     {
-        UE_LOG(LogUnLua, Warning, TEXT("Failed to attach %s module for object %s,%p!"), InModuleName, *Object->GetName(), Object);
+        UE_LOG(LogUnLua, Warning, TEXT("Failed to attach %s module for object %s,%p!\n%s"), InModuleName, *Object->GetName(), Object, *Error);
     }
 
     return bSuccess;
@@ -577,18 +591,25 @@ UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFu
 /**
  * Bind a Lua module for a UObject
  */
-bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, const FString& InModuleName, bool bNewCreated, bool bMutipleLuaBind)
+bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, const FString& InModuleName, bool bNewCreated, bool bMutipleLuaBind, FString& Error)
 {
     if (!Object || !Class)
     {
         return false;
     }
 
-
     // module may be already loaded for other class,etc muti bp bind to same lua
     FString RealModuleName = InModuleName;
     if (bMutipleLuaBind)
     {
+        lua_State* L = UnLua::GetState();
+        const int32 Type = GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
+        if (Type != LUA_TTABLE) 
+        {
+            Error = FString::Printf(TEXT("table needed got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+            return false;
+        }
+
         // generate new module for this module
         int16* NameIdx = RealModuleNames.Find(InModuleName);
         if (!NameIdx)
@@ -601,13 +622,9 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
             *NameIdx = *NameIdx + 1;
             RealModuleName = FString::Printf(TEXT("%s_#%d"), *InModuleName, *NameIdx);
         }
-        
 
         // make a copy of lua module
-        lua_State* L = UnLua::GetState();
         lua_newtable(L);
-
-        GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
         lua_pushnil(L);
         while (lua_next(L, -2) != 0)
         {
