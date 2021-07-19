@@ -41,24 +41,18 @@ struct luaL_Reg;
 namespace UnLua
 {   
     //!!!Fix!!!
-    //GetField need double check when get from cache
-    struct ITypeOps;
-    static TMap<ITypeOps*, bool> ExportedPropertys;
-
-    static bool IsExportedPropertyValid(ITypeOps* ExportedProperty)
-    {
-        return ExportedProperty && ExportedPropertys.Contains(ExportedProperty);
-    }
 
     /**
      * Interface to manage Lua stack for a C++ type
      */
     struct ITypeOps
     {   
-        ITypeOps() { };
+        ITypeOps() { StaticExported = false; };
         
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const = 0;
         virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const = 0;
+
+        bool StaticExported;
     };
 
     /**
@@ -88,15 +82,9 @@ namespace UnLua
      */
     struct IExportedProperty : public ITypeOps
     {   
-        IExportedProperty()
-        {
-            ExportedPropertys.Add(this,0);
-        }
-        
-        virtual ~IExportedProperty() 
-        {
-            ExportedPropertys.Remove(this);
-        }
+        IExportedProperty() { StaticExported = true;}
+		virtual ~IExportedProperty() {}
+       
 
         virtual void Register(lua_State *L) = 0;
 

@@ -2031,13 +2031,13 @@ int32 Global_GetUProperty(lua_State *L)
         UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
         if (Property)
         {
-            if (UnLua::IsExportedPropertyValid(Property))
+            if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
             {
                 bValid = true;
             }
 
             if ((!bValid)
-                && (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY)))
+                && (Property->StaticExported))
             {
                 bValid = true;
             }
@@ -2064,13 +2064,13 @@ int32 Global_SetUProperty(lua_State *L)
         UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
         if (Property)
         {
-            if (UnLua::IsExportedPropertyValid(Property))
+            if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
             {
                 bValid = true;
             }
 
             if ((!bValid)
-                && (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY)))
+                && (Property->StaticExported))
             {
                 bValid = true;
             }
@@ -2400,24 +2400,27 @@ int32 Class_Index(lua_State *L)
     {   
         bool bValid = false;
 		UnLua::ITypeOps *Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
-        if (UnLua::IsExportedPropertyValid(Property))
+        if (Property)
         {
-            bValid = true;
-        }
+			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
+			{
+				bValid = true;
+			}
 
-        if ((!bValid)
-            && (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY)))
-        {
-            bValid = true;
-        }
+			if ((!bValid)
+				&& (Property->StaticExported))
+			{
+				bValid = true;
+			}
 
-        void* ContainerPtr = GetCppInstance(L, 1);
+			void* ContainerPtr = GetCppInstance(L, 1);
 
-        if ((bValid)
-            &&(ContainerPtr))
-        {
-            Property->Read(L, ContainerPtr, false);
-            lua_remove(L, -2);
+			if ((bValid)
+				&& (ContainerPtr))
+			{
+				Property->Read(L, ContainerPtr, false);
+				lua_remove(L, -2);
+			}
         }
     }
     return 1;
@@ -2433,23 +2436,26 @@ int32 Class_NewIndex(lua_State *L)
     {
         bool bValid = false;
         UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
-        if (UnLua::IsExportedPropertyValid(Property))
+        if (Property)
         {
-            bValid = true;
-        }
+			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
+			{
+				bValid = true;
+			}
 
-        if ((!bValid)
-            && (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY)))
-        {
-            bValid = true;
-        }
+			if ((!bValid)
+				&& (Property->StaticExported))
+			{
+				bValid = true;
+			}
 
-        void* ContainerPtr = GetCppInstance(L, 1);
+			void* ContainerPtr = GetCppInstance(L, 1);
 
-        if ((bValid)
-            &&(ContainerPtr))
-        {   
-            Property->Write(L, ContainerPtr, 3);
+			if ((bValid)
+				&& (ContainerPtr))
+			{
+				Property->Write(L, ContainerPtr, 3);
+			}
         }
     }
     else
