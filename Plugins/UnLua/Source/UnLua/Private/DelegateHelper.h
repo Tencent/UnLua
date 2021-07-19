@@ -83,20 +83,26 @@ public:
     static bool Bind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static void Unbind(const FCallbackDesc &Callback);
     static void Unbind(FScriptDelegate *ScriptDelegate);
+    static void Unbind(FMulticastScriptDelegate* ScriptDelegate);
     static int32 Execute(lua_State *L, FScriptDelegate *ScriptDelegate, int32 NumParams, int32 FirstParamIndex);
 
     static void PreAdd(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property);
     static bool Add(FMulticastDelegateType *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static bool Add(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static void Remove(FMulticastDelegateType *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback);
+    static void Remove(UObject* Object);
     static void Clear(FMulticastDelegateType *InScriptDelegate);
     static void Broadcast(lua_State *L, FMulticastDelegateType *InScriptDelegate, int32 NumParams, int32 FirstParamIndex);
 
-    static void AddDelegate(FMulticastDelegateType *ScriptDelegate, FScriptDelegate DynamicDelegate);
+    static void AddDelegate(FMulticastDelegateType *ScriptDelegate, UObject* Object, const FCallbackDesc& Callback,FScriptDelegate DynamicDelegate);
 
     static void CleanUpByFunction(UFunction *Function);
     static void CleanUpByClass(UClass *Class);
     static void Cleanup(bool bFullCleanup);
+
+    static void NotifyUObjectDeleted(const UObject* InObject);
+    static void AddDelegateOwnerObject(void* Delegate, UObject* Object);
+    static void AddMulticastDelegateOwnerObject(void* Delegate, UObject* Object);
 
 private:
     static void CreateSignature(UFunction *TemplateFunction, FName FuncName, const FCallbackDesc &Callback, int32 CallbackRef);
@@ -109,4 +115,12 @@ private:
     static TMap<FCallbackDesc, UFunction*> Callbacks;
     static TMap<UFunction*, FCallbackDesc> Function2Callback;
     static TMap<UClass*, TArray<UFunction*>> Class2Functions;
+
+    // void* {FScriptDelegate*/FMulticastDelegateType*}
+    static TMap<UObject*, TArray<void*>> Object2Delegates;
+    static TMap<FMulticastDelegateType*, TArray<FCallbackDesc>> MutiDelegates2Callback;
+
+    static TMap<UObject*, TArray<void*>> OwnerObject2Delegates;
+    static TMap<UObject*, TArray<void*>> OwnerObject2MulticastDelegates;
+    static TMap<void*, TArray<UObject*>> MulticastDelegates2BindObjects;
 };

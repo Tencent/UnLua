@@ -110,7 +110,7 @@ namespace UnLua
         virtual void Register(lua_State *L) override
         {
             // make sure the meta table is on the top of the stack
-            lua_pushstring(L, TCHAR_TO_ANSI(*Name));
+            lua_pushstring(L, TCHAR_TO_UTF8(*Name));
             lua_pushcfunction(L, Func);
             lua_rawset(L, -3);
         }
@@ -205,7 +205,7 @@ namespace UnLua
         virtual void Register(lua_State *L) override
         {
             // make sure the meta table is on the top of the stack
-            lua_pushstring(L, TCHAR_TO_ANSI(*Name));
+            lua_pushstring(L, TCHAR_TO_UTF8(*Name));
             lua_pushlightuserdata(L, this);
             lua_rawset(L, -3);
         }

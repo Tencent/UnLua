@@ -22,7 +22,7 @@ class FUnLuaModule : public IModuleInterface
 public:
     virtual void StartupModule() override
     {
-        FLuaContext::Create();
+    	FLuaContext::Create();
         GLuaCxt->RegisterDelegates();
     }
 
