@@ -103,7 +103,7 @@ void FReflectionRegistry::TryUnRegisterClass(FClassDesc* ClassDesc)
                 bool bNeedClean = false;
                 if (IsInClassWhiteSet(ClassDesc->GetName()))
                 {
-                    bNeedClean = true;
+                    bNeedClean = false;
                 }
                 else
                 {
