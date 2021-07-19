@@ -44,6 +44,7 @@ void SetTableForClass(lua_State *L, const char *Name);
  * Set metatable for the userdata/table on the top of the stack
  */
 bool TryToSetMetatable(lua_State *L, const char *MetatableName, UObject* Object = nullptr);
+FString GetMetatableName(const UObjectBaseUtility* Object);
 
 /**
  * Functions to handle Lua userdata

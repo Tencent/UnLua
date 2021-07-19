@@ -236,7 +236,8 @@ namespace UnLua
      */
     int32 PushPointer(lua_State *L, void *Value, const char *MetatableName, bool bAlwaysCreate)
     {
-        if (!Value)
+        if (!Value
+            || !MetatableName)
         {
             lua_pushnil(L);
             return 1;
@@ -252,12 +253,41 @@ namespace UnLua
             if (Type == LUA_TUSERDATA)
             {
                 lua_remove(L, -2);
-                if (MetatableName)
+
+                // check metatable is same?
+                bool bMTSame = false;
+                if (lua_getmetatable(L, -1))
+                {   
+                    luaL_getmetatable(L, MetatableName);
+                    if (lua_rawequal(L,-1,-2))
+                    {   
+                        bMTSame = true;
+                    }
+
+                    lua_pop(L, 2);
+                }
+
+				if (!bMTSame)
                 {
+#if ENABLE_DEBUG != 0
+                    FString CurMetatableName;
+                    if (lua_getmetatable(L, -1))
+                    {
+                        lua_pushstring(L, "__name");
+                        Type = lua_rawget(L,-2);
+                        if (LUA_TSTRING == Type)
+                        {
+                            CurMetatableName = UTF8_TO_TCHAR(lua_tostring(L,-1));
+                        }
+                        lua_pop(L, 2);
+                    }
+					UE_LOG(LogTemp, Log, TEXT("%s : userdata with difference metatable finded! need %s,get %s,may be local or stack variable pushed to lua..."),
+                        ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName), *CurMetatableName);
+#endif
                     bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
                     if (!bSuccess)
                     {
-                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"),  UTF8_TO_TCHAR(MetatableName));
                         return 1;
                     }
                 }

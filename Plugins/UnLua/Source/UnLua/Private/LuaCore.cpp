@@ -485,6 +485,55 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
     }
 }
 
+
+FString GetMetatableName(const UObjectBaseUtility* Object)
+{   
+    static TMap<FString, FString> Class2Metatable;
+
+	if (!GLuaCxt->IsUObjectValid((UObjectBase*)Object))
+	{
+		return "";
+	}
+
+	UClass* Class = Object->GetClass();
+	const TCHAR* PrefixCPP = Class->GetPrefixCPP();
+	FString ClassName = "";
+	if (Class->IsChildOf<UClass>()
+		|| Class->IsChildOf<UScriptStruct>()
+		|| Class->IsChildOf<UEnum>())
+	{
+		ClassName = Object->GetName();
+	}
+	else
+	{
+		ClassName = Class->GetName();
+	}
+    
+    FString MetatableName = "";
+
+    FString *MetatableNamePtr = Class2Metatable.Find(ClassName);
+    if (MetatableNamePtr)
+    {
+        MetatableName = *MetatableNamePtr;
+    }
+    else
+    {
+		if (PrefixCPP
+			&& (PrefixCPP[0] == 'U' || PrefixCPP[0] == 'A' || PrefixCPP[0] == 'F' || PrefixCPP[0] == 'E'))
+		{
+			UStruct* Struct = FindObject<UStruct>(ANY_PACKAGE, *ClassName);       // find first
+			if (Struct)
+			{   
+                MetatableName = FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
+                Class2Metatable.Add(ClassName, MetatableName);
+			}
+		}
+    }
+
+	return MetatableName;
+}
+
+
 /**
  * Create a new userdata with padding size
  */
@@ -640,50 +689,25 @@ void RemoveCachedScriptContainer(lua_State *L, void *Key)
  */
 void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 {
-    if (!GLuaCxt->IsUObjectValid(Object))
+    FString MetatableName = GetMetatableName(Object);
+    if (MetatableName.IsEmpty())
     {
-        lua_pushnil(L);
-        return;
+		lua_pushnil(L);
+		return;
     }
+    
+#if ENABLE_DEBUG != 0
+	UE_LOG(LogUnLua, Log, TEXT("%s : %p,%s,%s"), ANSI_TO_TCHAR(__FUNCTION__), Object,*Object->GetName(), *MetatableName);
+#endif
 
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), Object);  // create a userdata and store the UObject address
-
-    UClass* Class = Object->GetClass();
-
-#if ENABLE_DEBUG != 0
-    UE_LOG(LogUnLua, Log, TEXT("PushObjectCore : %p,%s,%d,%d"), Object, *Object->GetName(), Class->IsChildOf(UScriptStruct::StaticClass()), Class->IsChildOf(UClass::StaticClass()));
-#endif
-    
-    // !!!Fix!!!
-    // why uscriptstruct use uboject as metatable...
-    // uobject ref should be add here
-    if (Class->IsChildOf(UScriptStruct::StaticClass()))
-    {   
-        // the UObject is 'UScriptStruct'
-        int32 Type = luaL_getmetatable(L, "UObject");
-        check(Type != LUA_TNIL);
-        lua_setmetatable(L, -2);
-    }
-    else
-    {
-        bool bSuccess = false;
-        if (Class->IsChildOf(UClass::StaticClass()))
-        {
-            // the UObject is 'UClass'
-            bSuccess = TryToSetMetatable(L, "UClass", (UObject*)Object);
-        }
-        else
-        {
-            // the UObject is object instance
-            FString ClassName(*FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName()));
-            bSuccess = TryToSetMetatable(L, TCHAR_TO_UTF8(*ClassName), (UObject*)Object);
-        }
-        if (!bSuccess)
-        {
-            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable!"), ANSI_TO_TCHAR(__FUNCTION__));
-        }
-    }
+    bool bSuccess = TryToSetMetatable(L, TCHAR_TO_UTF8(*MetatableName), (UObject*)Object);
+	if (!bSuccess)
+	{
+		UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable,Name %s, Object %s,%p!"), ANSI_TO_TCHAR(__FUNCTION__), *MetatableName, *Object->GetName(), Object);
+	}
 }
+
 
 /**
  * Push a integer
