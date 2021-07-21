@@ -12,23 +12,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#pragma once
-
-#include "Framework/Commands/Commands.h"
-
-class FUnLuaEditorCommands : public TCommands<FUnLuaEditorCommands>
+/* 描述对象的Lua绑定状态 */
+enum class ELuaBindingStatus
 {
-public:
-    FUnLuaEditorCommands()
-        : TCommands<FUnLuaEditorCommands>(TEXT("UnLuaEditor"), NSLOCTEXT("Contexts", "UnLuaEditor", "UnLua Editor"), NAME_None, "UnLuaEditorStyle")
-    {
-    }
+    // 未绑定
+    NotBound,
 
-    virtual void RegisterCommands() override;
+    // 已绑定
+    Bound,
 
-    TSharedPtr<FUICommandInfo> CreateLuaTemplate;
-    TSharedPtr<FUICommandInfo> CopyAsRelativePath;
-    TSharedPtr<FUICommandInfo> BindToLua;
-    TSharedPtr<FUICommandInfo> UnbindFromLua;
-    TSharedPtr<FUICommandInfo> HotfixLua;
+    // 已绑定，但没有找到对应的模块
+    BoundButInvalid
 };
+
+/* 获取指定蓝图对象上的Lua绑定状态 */
+ELuaBindingStatus GetBindingStatus(const UBlueprint* Blueprint);
