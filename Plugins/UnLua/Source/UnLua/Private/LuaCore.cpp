@@ -1699,6 +1699,15 @@ static bool RegisterEnumInternal(lua_State *L, FEnumDesc *EnumDesc)
             lua_rawset(L, -3);
 
             // add other members here
+            lua_pushstring(L, "GetMaxValue");
+			lua_pushvalue(L, -2);                               // EnumTable
+			lua_pushcclosure(L, Enum_GetMaxValue, 1);          // closure
+			lua_rawset(L, -3);
+
+			lua_pushstring(L, "GetNameByValue");
+			lua_pushvalue(L, -2);                     
+			lua_pushcclosure(L, Enum_GetNameByValue, 1);       
+			lua_rawset(L, -3);
 
             lua_pushvalue(L, -1);               // set metatable to self
             lua_setmetatable(L, -2);
@@ -2031,16 +2040,16 @@ int32 Global_GetUProperty(lua_State *L)
         UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
         if (Property)
         {
-            if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-            {
-                bValid = true;
-            }
+			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
+			{
+				bValid = true;
+			}
 
-            if ((!bValid)
-                && (Property->StaticExported))
-            {
-                bValid = true;
-            }
+			if ((!bValid)
+				&& (Property->StaticExported))
+			{
+				bValid = true;
+			}
 
             UObject* Object = UnLua::GetUObject(L, 1);
             if ((bValid)
@@ -2063,11 +2072,11 @@ int32 Global_SetUProperty(lua_State *L)
         bool bValid = false;
         UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
         if (Property)
-        {
-            if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-            {
-                bValid = true;
-            }
+        {   
+			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
+			{
+				bValid = true;
+			}
 
             if ((!bValid)
                 && (Property->StaticExported))
@@ -2388,6 +2397,75 @@ int32 Enum_Delete(lua_State *L)
     }
     lua_pop(L, 1);
     return 0;
+}
+
+int32 Enum_GetMaxValue(lua_State* L)
+{   
+    int32 MaxValue = 0;
+    
+    lua_pushvalue(L, lua_upvalueindex(1));
+    if (lua_type(L,-1) == LUA_TTABLE)
+    {
+		lua_pushstring(L, "__name");
+		int32 Type = lua_rawget(L, -2);
+		if (Type == LUA_TSTRING)
+		{
+			const char* EnumName = lua_tostring(L, -1);
+			const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+			if (EnumDesc)
+			{
+				UEnum* Enum = EnumDesc->GetEnum();
+				if (Enum)
+				{
+					MaxValue = Enum->GetMaxEnumValue();
+				}
+			}
+		}
+		lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    lua_pushinteger(L, MaxValue);
+    return 1;
+}
+
+int32 Enum_GetNameByValue(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        return 0;
+    }
+
+    FText ValueName;
+
+    lua_pushvalue(L, lua_upvalueindex(1));
+    if (lua_type(L, -1) == LUA_TTABLE)
+    {
+		// enum value
+		int64 Value = lua_tointegerx(L, -2, nullptr);
+
+		lua_pushstring(L, "__name");
+		int32 Type = lua_rawget(L, -2);
+		if (Type == LUA_TSTRING)
+		{
+			const char* EnumName = lua_tostring(L, -1);
+			const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+			if (EnumDesc)
+			{
+				UEnum* Enum = EnumDesc->GetEnum();
+				if (Enum)
+				{   
+					ValueName = Enum->GetDisplayNameTextByValue(Value);
+				}
+			}
+		}
+		lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    UnLua::Push(L, ValueName);
+
+    return 1;
 }
 
 /**
