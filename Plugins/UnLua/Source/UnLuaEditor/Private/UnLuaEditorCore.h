@@ -13,7 +13,10 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 /* 描述对象的Lua绑定状态 */
-enum class ELuaBindingStatus
+
+#pragma once
+
+enum ELuaBindingStatus
 {
     // 未绑定
     NotBound,
