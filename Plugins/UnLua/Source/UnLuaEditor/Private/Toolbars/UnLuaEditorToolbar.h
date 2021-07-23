@@ -1,11 +1,11 @@
 ﻿#pragma once
 #include "BlueprintEditor.h"
 
-class FUnLuaEditorToolbar
+class FUnLuaEditorToolbar : public TSharedFromThis<FUnLuaEditorToolbar>
 {
 public:
-	virtual ~FUnLuaEditorToolbar() = default;
 	FUnLuaEditorToolbar();
+	virtual ~FUnLuaEditorToolbar() = default;
 
 	TSharedRef<FUICommandList> GetCommandList() const
 	{
@@ -22,6 +22,7 @@ public:
 
 	void UnbindFromLua_Executed() const;
 
+	FSlateIcon GetStatusImage() const;
 protected:
 	virtual void BindCommands();
 

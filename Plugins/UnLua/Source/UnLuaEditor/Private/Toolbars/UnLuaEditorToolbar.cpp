@@ -36,31 +36,14 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
 {
 	ToolbarBuilder.BeginSection(NAME_None);
 
-	const auto Blueprint = Cast<UBlueprint>(ContextObject);
-	const auto BindingStatus = GetBindingStatus(Blueprint);
-	FString InStyleName;
-	switch (BindingStatus)
-	{
-	case ELuaBindingStatus::NotBound:
-		InStyleName = "UnLuaEditor.Status_NotBound";
-		break;
-	case ELuaBindingStatus::Bound:
-		InStyleName = "UnLuaEditor.Status_Bound";
-		break;
-	case ELuaBindingStatus::BoundButInvalid:
-		InStyleName = "UnLuaEditor.Status_BoundButInvalid";
-		break;
-	default:
-		check(false);
-	}
-	UE_LOG(LogUnLua, Log, TEXT("InStyleName=%s"), *InStyleName);
-
 	ToolbarBuilder.AddComboButton(
 		FUIAction(),
-		FOnGetContent::CreateLambda([&, BindingStatus]()
+		FOnGetContent::CreateLambda([&]()
 		{
 			const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
 			FMenuBuilder MenuBuilder(true, CommandList);
+			const auto Blueprint = Cast<UBlueprint>(ContextObject);
+			const auto BindingStatus = GetBindingStatus(Blueprint);
 			if (BindingStatus == ELuaBindingStatus::NotBound)
 			{
 				MenuBuilder.AddMenuEntry(Commands.BindToLua);
@@ -75,10 +58,29 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
 		}),
 		LOCTEXT("UnLua_Label", "UnLua"),
 		LOCTEXT("UnLua_ToolTip", "UnLua"),
-		FSlateIcon("UnLuaEditorStyle", *InStyleName)
+		TAttribute<FSlateIcon>(SharedThis(this), &FUnLuaEditorToolbar::GetStatusImage)
 	);
 
 	ToolbarBuilder.EndSection();
+}
+
+FSlateIcon FUnLuaEditorToolbar::GetStatusImage() const
+{
+	const auto Blueprint = Cast<UBlueprint>(ContextObject);
+	const auto BindingStatus = GetBindingStatus(Blueprint);
+	FString InStyleName;
+	switch (BindingStatus)
+	{
+	case ELuaBindingStatus::NotBound:
+		return FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.Status_NotBound");
+	case ELuaBindingStatus::Bound:
+		return FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.Status_Bound");
+	case ELuaBindingStatus::BoundButInvalid:
+		return FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.Status_BoundButInvalid");
+	default:
+		check(false);
+	}
+	return FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.Status_BoundButInvalid");
 }
 
 TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender()

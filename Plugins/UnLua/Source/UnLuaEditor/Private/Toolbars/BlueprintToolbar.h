@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "UnLuaEditorToolbar.h"
 
-class FBlueprintToolbar : FUnLuaEditorToolbar
+class FBlueprintToolbar : public FUnLuaEditorToolbar
 {
 public:
 	virtual void Initialize() override;
