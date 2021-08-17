@@ -61,6 +61,7 @@ public:
 
         if (ScriptMapFlag == OwnedBySelf)
         {
+            Clear();
             delete Map;
         }
         FMemory::Free(ElementCache);
