@@ -301,15 +301,22 @@ int32 UObject_Delete(lua_State *L)
     if (bClassMetatable)
     {
         FClassDesc* ClassDesc = (FClassDesc*)Userdata;
-        if (GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS))
+
+        lua_pushstring(L, "__name");
+        int32 Type = lua_rawget(L, 1);
+        FString MetaTableName = UTF8_TO_TCHAR(lua_tostring(L, -1));
+        lua_pop(L, 1);
+
+        if (GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)
+            && ClassDesc->GetName().Equals(MetaTableName))
         {
             // remove class ref 
             if ((ClassDesc->IsValid())
-                &&(!ClassDesc->IsNative()))
+                && (!ClassDesc->IsNative()))
             {
                 GObjectReferencer.RemoveObjectRef(ClassDesc->AsStruct());
             }
-            
+
             // class,ignore ref count
             GReflectionRegistry.UnRegisterClass(ClassDesc);
         }
