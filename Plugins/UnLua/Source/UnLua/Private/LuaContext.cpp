@@ -34,20 +34,6 @@
 #include "GameDelegates.h"
 #endif
 
-#if UE_BUILD_TEST
-    #include "Tests/UnLuaPerformanceTestProxy.h"
-
-    void RunPerformanceTest(UWorld *World)
-    {
-        if (!World)
-        {
-            return;
-        }
-        static AActor *PerformanceTestProxy = World->SpawnActor(AUnLuaPerformanceTestProxy::StaticClass());
-    }
-
-    EXPORT_FUNCTION(void, RunPerformanceTest, UWorld *)
-#endif
 
 /**
  * Statically exported callback for 'Hotfix'
@@ -379,7 +365,7 @@ void FLuaContext::OnDelayBindObject(UObject* Object)
 {
     if (GLuaCxt->IsUObjectValid(Object))
     {
-        if (!Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
+        if (!FUObjectThreadContext::Get().IsRoutingPostLoad && !Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
         {
             UE_LOG(LogUnLua, Log, TEXT("%s[%llu]: Delay bind object %s,%p"), ANSI_TO_TCHAR(__FUNCTION__), GFrameCounter, *Object->GetName(), Object);
             TryToBindLua(Object);
@@ -419,12 +405,22 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
         if (Class->ImplementsInterface(InterfaceClass))                             // static binding
         {
             // fliter some object in bp nest case
-            // RF_WasLoaded & RF_NeedPostLoad?
-            UObject* Outer = Object->GetOuter();
-            if((Outer)
-                && (Outer->GetFName().IsEqual("WidgetTree")) && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
+            // skip objects during asset loding 
+            if (Object->HasAnyFlags(RF_NeedLoad) && Object->HasAnyFlags(RF_Load) && Object->GetFName().GetNumber() < 1 && Object->GetClass()->GetName().Contains(Object->GetName()))
             {
+                UE_LOG(LogUnLua, Log, TEXT("%s : Skip internal object (%s,%p,%s) during asset loading"), ANSI_TO_TCHAR(__FUNCTION__), *Object->GetFullName(), Object, *Class->GetName());
                 return false;
+            }
+
+            if (GWorld)
+            {
+                FString ObjectName;
+                Object->GetFullName(GWorld, ObjectName);
+                if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
+                {
+                    UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
+                    return false;
+                }
             }
 
             UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
