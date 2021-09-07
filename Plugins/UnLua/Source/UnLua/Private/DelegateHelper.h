@@ -20,25 +20,29 @@
 struct FCallbackDesc
 {
     FCallbackDesc()
-        : Class(nullptr), CallbackFunction(nullptr), Hash(0)
-    {}
+        : Class(nullptr), CallbackFunction(nullptr), Hash(0), Object(0)
+    {
+    }
 
-    FCallbackDesc(UClass *InClass, const void *InCallbackFunction)
-        : Class(InClass), CallbackFunction(InCallbackFunction)
+    FCallbackDesc(UClass* InClass, const void* InCallbackFunction, UObject* InObject)
+        : Class(InClass), CallbackFunction(InCallbackFunction), Object(InObject)
     {
         uint32 A = PointerHash(Class);
         uint32 B = PointerHash(InCallbackFunction);
+        uint32 C = PointerHash(Object);
         Hash = HashCombine(A, B);
+        Hash = HashCombine(Hash, C);
     }
 
-    FORCEINLINE bool operator==(const FCallbackDesc &Callback) const
+    FORCEINLINE bool operator==(const FCallbackDesc& Callback) const
     {
-        return Class == Callback.Class && CallbackFunction == Callback.CallbackFunction;
+        return Class == Callback.Class && CallbackFunction == Callback.CallbackFunction && Object == Callback.Object;
     }
 
-    UClass *Class;
-    void const *CallbackFunction;
+    UClass* Class;
+    void const* CallbackFunction;
     uint32 Hash;
+    UObject* Object;
 };
 
 FORCEINLINE uint32 GetTypeHash(const FCallbackDesc &Callback)

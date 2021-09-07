@@ -1362,7 +1362,7 @@ public:
         if (FuncIdxInTable != INDEX_NONE)
         {
             FScriptDelegate *ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
-            FCallbackDesc Callback(Object->GetClass(), CallbackFunction);
+            FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
             FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
             if (FuncName == NAME_None)
             {
@@ -1435,7 +1435,7 @@ public:
         if (FuncIdxInTable != INDEX_NONE)
         {
             T *ScriptDelegate = (T*)ValuePtr;
-            FCallbackDesc Callback(Object->GetClass(), CallbackFunction);
+            FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
             FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
             if (FuncName == NAME_None)
             {

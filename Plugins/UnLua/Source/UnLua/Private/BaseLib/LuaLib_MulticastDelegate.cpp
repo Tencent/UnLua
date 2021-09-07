@@ -74,7 +74,7 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FCallbackDesc Callback(Object->GetClass(), CallbackFunction);
+        FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
         FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
         if (FuncName == NAME_None)
         {
@@ -105,7 +105,7 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Remove(Delegate, Object, FCallbackDesc(Object->GetClass(), CallbackFunction));;
+        FDelegateHelper::Remove(Delegate, Object, FCallbackDesc(Object->GetClass(), CallbackFunction, Object));;
         return 0;
     }
 
