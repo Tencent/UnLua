@@ -84,22 +84,26 @@ int32 UObject_Load(lua_State *L)
 static int32 UObject_IsValid(lua_State *L)
 {
     int32 NumParams = lua_gettop(L);
+    bool bValid = false;
     if (NumParams != 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
     }
-
-    UObject *Object = UnLua::GetUObject(L, 1);
-    if (!Object)
+    else
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
+        UObject* Object = UnLua::GetUObject(L, 1);
+        if (!Object)
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
+        }
+        else
+        {
+            bValid = GLuaCxt->IsUObjectValid(Object);
+        }
     }
 
-    bool bValid = ::IsValid(Object);
     lua_pushboolean(L, bValid);
-    return 1;
+    return bValid ? 1 : 0;
 }
 
 /**
@@ -312,11 +316,11 @@ int32 UObject_Delete(lua_State *L)
         {
             // remove class ref 
             if ((ClassDesc->IsValid())
-                && (!ClassDesc->IsNative()))
+                &&(!ClassDesc->IsNative()))
             {
                 GObjectReferencer.RemoveObjectRef(ClassDesc->AsStruct());
             }
-
+            
             // class,ignore ref count
             GReflectionRegistry.UnRegisterClass(ClassDesc);
         }
