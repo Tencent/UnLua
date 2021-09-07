@@ -212,7 +212,7 @@ namespace UnLua
             const char *ErrorString = lua_tostring(L, -1);
             luaL_traceback(L, L, ErrorString, 1);
             ErrorString = lua_tostring(L, -1);
-            UE_LOG(LogUnLua, Warning, TEXT("Lua error message: %s"), UTF8_TO_TCHAR(ErrorString));
+            UE_LOG(LogUnLua, Error, TEXT("Lua error message: %s"), UTF8_TO_TCHAR(ErrorString));
         }
         else if (Type == LUA_TTABLE)
         {
@@ -222,7 +222,7 @@ namespace UnLua
             while (lua_next(L, -2) != 0)
             {
                 const char *ErrorString = lua_tostring(L, -1);
-                UE_LOG(LogUnLua, Warning, TEXT("Lua error message %d : %s"), MessageIndex++, UTF8_TO_TCHAR(ErrorString));
+                UE_LOG(LogUnLua, Error, TEXT("Lua error message %d : %s"), MessageIndex++, UTF8_TO_TCHAR(ErrorString));
                 lua_pop(L, 1);
             }
         }
