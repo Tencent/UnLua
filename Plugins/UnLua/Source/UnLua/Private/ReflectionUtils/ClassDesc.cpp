@@ -58,7 +58,7 @@ FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName, EType InType)
  */
 FClassDesc::~FClassDesc()
 {   
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("~FClassDesc : %s,%p,%d"), *GetName(), this, RefCount);
 #endif
     

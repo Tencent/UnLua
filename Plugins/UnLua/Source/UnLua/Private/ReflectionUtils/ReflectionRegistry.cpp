@@ -84,7 +84,7 @@ void FReflectionRegistry::TryUnRegisterClass(FClassDesc* ClassDesc)
     {
         if (!ClassDesc->IsValid())
         {
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
             UE_LOG(LogTemp, Log, TEXT("TryUnRegisterClass : remove empty class desc %s"),*ClassDesc->GetName());
 #endif
             // remove empty desc
@@ -92,7 +92,7 @@ void FReflectionRegistry::TryUnRegisterClass(FClassDesc* ClassDesc)
         }
         else
         {
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
             UE_LOG(LogTemp, Log, TEXT("TryUnRegisterClass : %s,%d,%d,%d,%d"),
                 *ClassDesc->GetName(), ClassDesc->GetRefCount(), ClassDesc->IsLocked(), IsInClassWhiteSet(ClassDesc->GetName()), ClassDesc->IsNative());
 #endif
@@ -368,7 +368,7 @@ bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
     FClassDesc* ClassDesc = nullptr;
     if (Struct2Classes.RemoveAndCopyValue((UStruct*)InObject, ClassDesc))
     {   
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UE_LOG(LogUnLua, Log, TEXT("FReflectionRegistry::NotifyUObjectDeleted: Class was gced by UE,so cleanup class %s"),*ClassDesc->GetName());
 #endif
         // class,ignore ref count
@@ -411,7 +411,7 @@ bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
                 {
                     ClassDesc->SubRef();
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
                     UE_LOG(LogUnLua, Log, TEXT("FReflectionRegistry::NotifyUObjectDeleted:%p,%s"),Object, *ClassName);
 #endif
                     TryUnRegisterClass(ClassDesc);
@@ -551,7 +551,7 @@ FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName,
         }
     }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("RegisterClass : %s,%p"), *ClassName, ClassDesc);
 #endif
 

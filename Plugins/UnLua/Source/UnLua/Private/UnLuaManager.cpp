@@ -69,7 +69,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
         return false;
     }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("UUnLuaManager::Bind : %p,%s,%s"), Object, *Object->GetName(),InModuleName);
 #endif
     
@@ -1045,7 +1045,7 @@ void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
     if ((ObjectLuaRef)
         &&(*ObjectLuaRef != LUA_REFNIL))
     {   
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UE_LOG(LogUnLua, Log, TEXT("ReleaseAttachedObjectLuaRef : %s,%p,%d"), *Object->GetName(), Object, *ObjectLuaRef);
 #endif
         luaL_unref(UnLua::GetState(), LUA_REGISTRYINDEX, *ObjectLuaRef);

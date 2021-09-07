@@ -269,7 +269,7 @@ namespace UnLua
 
 				if (!bMTSame)
                 {
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
                     FString CurMetatableName;
                     if (lua_getmetatable(L, -1))
                     {

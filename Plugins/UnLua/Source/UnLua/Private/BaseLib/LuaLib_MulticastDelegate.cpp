@@ -50,7 +50,7 @@ static bool GetMulticastDelegateInfo(lua_State *L, T* &Delegate, UObject* &Objec
         return false;
     }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("GetMulticastDelegateInfo : %p,%p,%s"), Delegate, Object, *Object->GetName());
 #endif
     

@@ -133,7 +133,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
  */
 FFunctionDesc::~FFunctionDesc()
 {
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("~FFunctionDesc : %s,%p"), *FuncName, this);
 #endif
 

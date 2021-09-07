@@ -254,7 +254,25 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
  */
 void RemoveUFunction(UFunction *Function, UClass *OuterClass)
 {
-    OuterClass->RemoveFunctionFromFunctionMap(Function);
+    if (OuterClass->IsValidLowLevel() && OuterClass->FindFunctionByName(Function->GetFName()))
+    {
+#if UNLUA_ENABLE_DEBUG != 0
+        UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s]"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName());
+#endif
+        OuterClass->RemoveFunctionFromFunctionMap(Function);
+    }
+    else
+    {
+        if (OuterClass->IsValidLowLevel())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("RemoveUFunction: [%p], [%s] of Class : [%p] failed for class invalid"), Function, *Function->GetName(), OuterClass);
+        }
+        else
+        {
+            UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s] for Class has no that function"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName());
+        }
+    }
+
     GReflectionRegistry.UnRegisterFunction(Function);
     if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())
     {

@@ -38,7 +38,7 @@
 /**
  * Statically exported callback for 'Hotfix'
  */
-bool OnModuleHotfixed(const char *ModuleName)
+bool OnModuleHotfixed(const char* ModuleName)
 {
     if (!GLuaCxt->IsEnable() || !ModuleName)
     {
@@ -59,7 +59,7 @@ bool OnModuleHotfixed(const char *ModuleName)
 EXPORT_FUNCTION(bool, OnModuleHotfixed, const char*)
 
 
-FLuaContext *GLuaCxt = nullptr;
+FLuaContext* GLuaCxt = nullptr;
 
 /**
  * Create GLuaCxt
@@ -221,13 +221,13 @@ void FLuaContext::CreateState()
         }
 
         // register statically exported global functions
-        for (UnLua::IExportedFunction *Function : ExportedFunctions)
+        for (UnLua::IExportedFunction* Function : ExportedFunctions)
         {
             Function->Register(L);
         }
 
         // register statically exported enums
-        for (UnLua::IExportedEnum *Enum : ExportedEnums)
+        for (UnLua::IExportedEnum* Enum : ExportedEnums)
         {
             Enum->Register(L);
         }
@@ -262,7 +262,7 @@ bool FLuaContext::IsEnable() const
 /**
  * Statically export a global functions
  */
-bool FLuaContext::ExportFunction(UnLua::IExportedFunction *Function)
+bool FLuaContext::ExportFunction(UnLua::IExportedFunction* Function)
 {
     if (Function)
     {
@@ -275,7 +275,7 @@ bool FLuaContext::ExportFunction(UnLua::IExportedFunction *Function)
 /**
  * Statically export an enum
  */
-bool FLuaContext::ExportEnum(UnLua::IExportedEnum *Enum)
+bool FLuaContext::ExportEnum(UnLua::IExportedEnum* Enum)
 {
     if (Enum)
     {
@@ -288,11 +288,11 @@ bool FLuaContext::ExportEnum(UnLua::IExportedEnum *Enum)
 /**
  * Statically export a class
  */
-bool FLuaContext::ExportClass(UnLua::IExportedClass *Class)
+bool FLuaContext::ExportClass(UnLua::IExportedClass* Class)
 {
     if (Class)
     {
-        TMap<FName, UnLua::IExportedClass*> &ExportedClasses = Class->IsReflected() ? ExportedReflectedClasses : ExportedNonReflectedClasses;
+        TMap<FName, UnLua::IExportedClass*>& ExportedClasses = Class->IsReflected() ? ExportedReflectedClasses : ExportedNonReflectedClasses;
         ExportedClasses.Add(Class->GetName(), Class);
         return true;
     }
@@ -304,7 +304,7 @@ bool FLuaContext::ExportClass(UnLua::IExportedClass *Class)
  */
 UnLua::IExportedClass* FLuaContext::FindExportedClass(FName Name)
 {
-    UnLua::IExportedClass **Class = ExportedReflectedClasses.Find(Name);
+    UnLua::IExportedClass** Class = ExportedReflectedClasses.Find(Name);
     if (Class)
     {
         return *Class;
@@ -318,7 +318,7 @@ UnLua::IExportedClass* FLuaContext::FindExportedClass(FName Name)
  */
 UnLua::IExportedClass* FLuaContext::FindExportedReflectedClass(FName Name)
 {
-    UnLua::IExportedClass **Class = ExportedReflectedClasses.Find(Name);
+    UnLua::IExportedClass** Class = ExportedReflectedClasses.Find(Name);
     return Class ? *Class : nullptr;
 }
 
@@ -341,7 +341,7 @@ bool FLuaContext::AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface>
         return false;
     }
 
-    TSharedPtr<UnLua::ITypeInterface> *TypeInterfacePtr = TypeInterfaces.Find(Name);
+    TSharedPtr<UnLua::ITypeInterface>* TypeInterfacePtr = TypeInterfaces.Find(Name);
     if (!TypeInterfacePtr)
     {
         TypeInterfaces.Add(Name, TypeInterface);
@@ -354,7 +354,7 @@ bool FLuaContext::AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface>
  */
 TSharedPtr<UnLua::ITypeInterface> FLuaContext::FindTypeInterface(FName Name)
 {
-    TSharedPtr<UnLua::ITypeInterface> *TypeInterfacePtr = TypeInterfaces.Find(Name);
+    TSharedPtr<UnLua::ITypeInterface>* TypeInterfacePtr = TypeInterfaces.Find(Name);
     return TypeInterfacePtr ? *TypeInterfacePtr : TSharedPtr<UnLua::ITypeInterface>();
 }
 
@@ -383,7 +383,7 @@ void FLuaContext::OnDelayBindObject(UObject* Object)
 /**
  * Try to bind Lua module for a UObject
  */
-bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
+bool FLuaContext::TryToBindLua(UObjectBaseUtility* Object)
 {
     if (!bEnable || !IsUObjectValid(Object))
     {
@@ -423,9 +423,9 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
                 }
             }
 
-            UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
+            UFunction* Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
             if (Func)
-            {   
+            {
                 // native func may not be bind in level bp
                 if (!Func->GetNativeFunc())
                 {
@@ -438,7 +438,7 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
                 }
 
                 if (IsInGameThread())
-                {   
+                {
                     FString ModuleName;
                     UObject* DefaultObject = Class->GetDefaultObject();             // get CDO
                     DefaultObject->UObject::ProcessEvent(Func, &ModuleName);        // force to invoke UObject::ProcessEvent(...)
@@ -452,7 +452,7 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
                         return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);   // bind!!!
                     }
                     else
-                    {   
+                    {
                         // PostLoadObjects.Add((UObject*)Object);
                         OnDelayBindObject((UObject*)Object);
                     }
@@ -480,7 +480,7 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
  * Callback for FWorldDelegates::OnWorldTickStart
  */
 #if ENGINE_MINOR_VERSION > 23
-void FLuaContext::OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime)
+void FLuaContext::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)
 #else
 void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
 #endif
@@ -490,14 +490,14 @@ void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
         return;
     }
 
-    for (UInputComponent *InputComponent : CandidateInputComponents)
+    for (UInputComponent* InputComponent : CandidateInputComponents)
     {
         if (!InputComponent->IsRegistered() || InputComponent->IsPendingKill())
         {
             continue;
         }
 
-        AActor *Actor = Cast<AActor>(InputComponent->GetOuter());
+        AActor* Actor = Cast<AActor>(InputComponent->GetOuter());
         Manager->ReplaceInputs(Actor, InputComponent);                              // try to replace/override input events
     }
 
@@ -508,7 +508,7 @@ void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
 /**
  * Callback for FWorldDelegates::OnWorldCleanup
  */
-void FLuaContext::OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources)
+void FLuaContext::OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources)
 {
     if (!World || !bEnable)
     {
@@ -528,7 +528,7 @@ void FLuaContext::OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanu
 void FLuaContext::OnBeginFrame()
 {
     for (int i = PostLoadObjects.Num() - 1; 0 <= i; --i)
-    {   
+    {
         UObject* Object = PostLoadObjects[i];
         if (!IsUObjectValid(Object))
         {
@@ -536,7 +536,7 @@ void FLuaContext::OnBeginFrame()
         }
         else if (!Object->HasAnyFlags(RF_NeedPostLoad))
         {
-            UE_LOG(LogUnLua, Log, TEXT("TryToBindLua[%llu]: Bind object %s,%p"),GFrameCounter, *Object->GetName(), Object);
+            UE_LOG(LogUnLua, Log, TEXT("TryToBindLua[%llu]: Bind object %s,%p"), GFrameCounter, *Object->GetName(), Object);
             TryToBindLua(Object);
             PostLoadObjects.RemoveAt(i);
         }
@@ -555,7 +555,7 @@ void FLuaContext::OnPostEngineInit()
     CreateDefaultParamCollection();                 // create data for default parameters of UFunctions
 
 #if WITH_EDITOR
-    UGameViewportClient *GameViewportClient = GEngine->GameViewport;
+    UGameViewportClient* GameViewportClient = GEngine->GameViewport;
     if (GameViewportClient)
     {
         GameViewportClient->OnGameViewportInputKey().BindRaw(this, &FLuaContext::OnGameViewportInputKey);   // bind a default input event
@@ -583,7 +583,7 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
         return;
     }
 
-    static UClass *InterfaceClass = UUnLuaInterface::StaticClass();
+    static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
 
     {
         TArray<UObject*> LocalCandidates;
@@ -598,9 +598,9 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
             {
                 UObject* Object = Candidates[i];
                 if ((GLuaCxt->IsUObjectValid(Object))
-                    &&(!Object->HasAnyFlags(RF_NeedPostLoad))
-                    &&(!Object->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading))
-                    &&(!Object->GetClass()->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading)))
+                    && (!Object->HasAnyFlags(RF_NeedPostLoad))
+                    && (!Object->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading))
+                    && (!Object->GetClass()->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading)))
                 {
                     LocalCandidates.Add(Object);
                     Candidates.RemoveAt(i);
@@ -610,10 +610,10 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
 
         for (int32 i = 0; i < LocalCandidates.Num(); ++i)
         {
-            UObject *Object = LocalCandidates[i];
+            UObject* Object = LocalCandidates[i];
             if (Object)
             {
-                UFunction *Func = Object->FindFunction(FName("GetModuleName"));
+                UFunction* Func = Object->FindFunction(FName("GetModuleName"));
                 if (!Func || !Func->GetNativeFunc())
                 {
                     continue;
@@ -646,7 +646,7 @@ void FLuaContext::OnCrash()
 /**
  * Callback for FCoreUObjectDelegates::PostLoadMapWithWorld
  */
-void FLuaContext::PostLoadMapWithWorld(UWorld *World)
+void FLuaContext::PostLoadMapWithWorld(UWorld* World)
 {
     if (!World || !bEnable)
     {
@@ -655,9 +655,9 @@ void FLuaContext::PostLoadMapWithWorld(UWorld *World)
 
     // !!!Fix!!!
     // gameinstance delay bind, muti lua state support
-    UGameInstance *GameInstance = World->GetGameInstance();
-    if (GameInstance 
-        &&(!GameInstances.Contains(GameInstance)))
+    UGameInstance* GameInstance = World->GetGameInstance();
+    if (GameInstance
+        && (!GameInstances.Contains(GameInstance)))
     {
         TryToBindLua(GameInstance);                     // try to bind Lua module for GameInstance
         GameInstances.Add(GameInstance);
@@ -704,7 +704,7 @@ void FLuaContext::PostPIEStarted(bool bIsSimulating)
  * Callback for FEditorDelegates::PrePIEEnded
  */
 void FLuaContext::PrePIEEnded(bool bIsSimulating)
-{  
+{
     // close lua env alwaylls
     SetEnable(false);
 }
@@ -714,7 +714,7 @@ void FLuaContext::PrePIEEnded(bool bIsSimulating)
 /**
  * Add a Lua coroutine and its reference in Lua registry
  */
-void FLuaContext::AddThread(lua_State *Thread, int32 ThreadRef)
+void FLuaContext::AddThread(lua_State* Thread, int32 ThreadRef)
 {
     ThreadToRef.Add(Thread, ThreadRef);
     RefToThread.Add(ThreadRef, Thread);
@@ -725,10 +725,10 @@ void FLuaContext::AddThread(lua_State *Thread, int32 ThreadRef)
  */
 void FLuaContext::ResumeThread(int32 ThreadRef)
 {
-    lua_State **ThreadPtr = RefToThread.Find(ThreadRef);
+    lua_State** ThreadPtr = RefToThread.Find(ThreadRef);
     if (ThreadPtr)
     {
-        lua_State *Thread = *ThreadPtr;
+        lua_State* Thread = *ThreadPtr;
 #if 504 == LUA_VERSION_NUM
         int NResults = 0;
         int32 State = lua_resume(Thread, L, 0, &NResults);
@@ -756,21 +756,21 @@ void FLuaContext::CleanupThreads()
 /**
  * Find a Lua coroutine
  */
-int32 FLuaContext::FindThread(lua_State *Thread)
+int32 FLuaContext::FindThread(lua_State* Thread)
 {
-    int32 *ThreadRefPtr = ThreadToRef.Find(Thread);
+    int32* ThreadRefPtr = ThreadToRef.Find(Thread);
     return ThreadRefPtr ? *ThreadRefPtr : LUA_REFNIL;
 }
 
 /**
  * Callback when a UObjectBase (not full UObject) is created
  */
-void FLuaContext::NotifyUObjectCreated(const UObjectBase *InObject, int32 Index)
+void FLuaContext::NotifyUObjectCreated(const UObjectBase* InObject, int32 Index)
 {
     {
         FScopeLock Lock(&Async2MainCS);
         UObjPtr2Idx.Add(const_cast<UObjectBase*>(InObject), Index);
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UObjPtr2Name.Add(const_cast<UObjectBase*>(InObject), InObject->GetFName().ToString());
 #endif
     }
@@ -789,19 +789,19 @@ void FLuaContext::NotifyUObjectCreated(const UObjectBase *InObject, int32 Index)
 #endif
 
     // try to bind a Lua module for the object
-    UObjectBaseUtility *Object = (UObjectBaseUtility*)InObject;
-    TryToBindLua(Object);               
+    UObjectBaseUtility* Object = (UObjectBaseUtility*)InObject;
+    TryToBindLua(Object);
 
     // special handling for UInputComponent
     if (!Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject) && Object->IsA<UInputComponent>())
     {
-        AActor *Actor = Cast<APlayerController>(Object->GetOuter());
+        AActor* Actor = Cast<APlayerController>(Object->GetOuter());
         if (!Actor)
         {
             Actor = Cast<APawn>(Object->GetOuter());
         }
         if (Actor && Actor->GetLocalRole() >= ROLE_AutonomousProxy)
-        {   
+        {
             //!!!Fix!!!
             // when tick start processing, inputcomponent may be invald or changeing
             CandidateInputComponents.AddUnique((UInputComponent*)InObject);
@@ -817,21 +817,21 @@ void FLuaContext::NotifyUObjectCreated(const UObjectBase *InObject, int32 Index)
 /**
  * Callback when a UObjectBase (not full UObject) is deleted
  */
-void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
-{   
+void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
+{
     if (!bEnable)
     {
         FScopeLock Lock(&Async2MainCS);
         UObjPtr2Idx.Remove(InObject);
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UObjPtr2Name.Remove(InObject);
 #endif
 
         return;
     }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("NotifyUObjectDeleted : %s,%p"), *UObjPtr2Name[InObject], InObject);
 #endif
 
@@ -859,7 +859,7 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
  */
 #if ENGINE_MINOR_VERSION > 22
 void FLuaContext::OnUObjectArrayShutdown()
-{   
+{
     bool bEngineExit = false;
 #if ENGINE_MINOR_VERSION > 23
     bEngineExit = IsEngineExitRequested();
@@ -895,24 +895,24 @@ bool FLuaContext::IsUObjectValid(UObjectBase* UObjPtr)
         }
     }
 
-	if (-1 != UObjIdx)
-	{
-		FUObjectItem* UObjectItem = GUObjectArray.IndexToObject(UObjIdx);
-		if (!UObjectItem)
-		{
-			return false;
-		}
-		else
-		{
-			return (UObjPtr == UObjectItem->Object) && ((UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0);
-		}
-	}
-	else
-	{
+    if (-1 != UObjIdx)
+    {
+        FUObjectItem* UObjectItem = GUObjectArray.IndexToObject(UObjIdx);
+        if (!UObjectItem)
+        {
+            return false;
+        }
+        else
+        {
+            return (UObjPtr == UObjectItem->Object) && ((UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0);
+        }
+    }
+    else
+    {
         //!!!Fix!!!
         //all should be false here?
         return false;
-	}
+    }
 }
 
 UUnLuaManager* FLuaContext::GetUnLuaManager()
@@ -953,7 +953,7 @@ FLuaContext::~FLuaContext()
     FScopeLock Lock(&Async2MainCS);
     UObjPtr2Idx.Empty();
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UObjPtr2Name.Empty();
 #endif
 }
@@ -961,7 +961,7 @@ FLuaContext::~FLuaContext()
 /**
  * Allocator for Lua VM
  */
-void* FLuaContext::LuaAllocator(void *ud, void *ptr, size_t osize, size_t nsize)
+void* FLuaContext::LuaAllocator(void* ud, void* ptr, size_t osize, size_t nsize)
 {
     if (nsize == 0)
     {
@@ -973,7 +973,7 @@ void* FLuaContext::LuaAllocator(void *ud, void *ptr, size_t osize, size_t nsize)
         return nullptr;
     }
 
-    void *Buffer = nullptr;
+    void* Buffer = nullptr;
     if (!ptr)
     {
         Buffer = FMemory::Malloc(nsize);
@@ -1007,7 +1007,7 @@ void* FLuaContext::LuaAllocator(void *ud, void *ptr, size_t osize, size_t nsize)
  * Initialize UnLua
  */
 void FLuaContext::Initialize()
-{   
+{
     if (!bEnable)
     {
         CreateState();  // create Lua main thread
@@ -1021,13 +1021,13 @@ void FLuaContext::Initialize()
             bEnable = true;
             FUnLuaDelegates::OnLuaContextInitialized.Broadcast();
         }
-    }               
+    }
 }
 
 /**
  * Clean up UnLua
  */
-void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
+void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
 {
     if (!bEnable)
     {
@@ -1095,7 +1095,7 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
                 LuaHandle = nullptr;
             }
 #endif
-			
+
         }
 
         FUnLuaDelegates::OnPostLuaContextCleanup.Broadcast(bFullCleanup);

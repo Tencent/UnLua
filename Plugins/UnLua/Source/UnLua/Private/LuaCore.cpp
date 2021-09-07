@@ -696,7 +696,7 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 		return;
     }
     
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
 	UE_LOG(LogUnLua, Log, TEXT("%s : %p,%s,%s"), ANSI_TO_TCHAR(__FUNCTION__), Object,*Object->GetName(), *MetatableName);
 #endif
 
@@ -1041,7 +1041,7 @@ void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object)
 {
     if (GLuaCxt->IsUObjectValid(Object))
     {   
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UE_LOG(LogUnLua, Log, TEXT("UObject_Delete : %s,%p!"), *Object->GetName(), Object);
 #endif
         // unlua ref
@@ -2748,7 +2748,7 @@ int32 ScriptStruct_Delete(lua_State *L)
             
         ClassDesc->SubRef();
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UE_LOG(LogTemp, Log, TEXT("ScriptStruct_Delete : %s"), *ClassDesc->GetName());
 #endif
         GReflectionRegistry.TryUnRegisterClass(ClassDesc);

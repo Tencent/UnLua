@@ -138,11 +138,11 @@ public class UnLua : ModuleRules
         bool bEnableDebug = false;
         if (bEnableDebug)
         {
-            PublicDefinitions.Add("ENABLE_DEBUG=1");
+            PublicDefinitions.Add("UNLUA_ENABLE_DEBUG=1");
         }
         else
         {
-            PublicDefinitions.Add("ENABLE_DEBUG=0");
+            PublicDefinitions.Add("UNLUA_ENABLE_DEBUG=0");
         }
 
     }
