@@ -179,6 +179,9 @@ public:
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData = nullptr) { return true; };
 #endif
 
+    void SetPropertyType(int8 Type);
+    int8 GetPropertyType();
+	
 protected:
     explicit FPropertyDesc(FProperty *InProperty);
 
@@ -202,6 +205,7 @@ protected:
         FMulticastDelegateProperty *MulticastDelegateProperty;
     };
 
+    int8 PropertyType;
 public:
     static TMap<FProperty*,FPropertyDesc*> Property2Desc;
 };

@@ -41,6 +41,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         bInterfaceFunc = true;                                          // a function in interface?
     }
 
+    bHasDelegateParams = false;
     // create persistent parameter buffer. memory for speed
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     Buffer = nullptr;
@@ -65,8 +66,9 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     for (TFieldIterator<FProperty> It(InFunction); It && (It->PropertyFlags & CPF_Parm); ++It)
     {
         FProperty *Property = *It;
-        int32 Index = Properties.Add(FPropertyDesc::Create(Property));
-        if (Property->HasAnyPropertyFlags(CPF_ReturnParm))
+        FPropertyDesc* PropertyDesc = FPropertyDesc::Create(Property);
+        int32 Index = Properties.Add(PropertyDesc);
+        if (PropertyDesc->IsReturnParameter())
         {
             ReturnPropertyIndex = Index;                                // return property
         }
@@ -74,9 +76,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         {
             LatentPropertyIndex = Index;                                // 'LatentInfo' property for latent function
         }
-        else 
-        if (Property->HasAnyPropertyFlags(CPF_OutParm) 
-            || Property->HasAnyPropertyFlags(CPF_ReferenceParm))
+        else if (Property->HasAnyPropertyFlags(CPF_OutParm | CPF_ReferenceParm))
         {
             ++NumRefProperties;
 
@@ -106,6 +106,18 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
                 OutPropertyIndices.Add(Index);                          // non-const reference property
             }
         }
+
+        if (!bHasDelegateParams && !PropertyDesc->IsReturnParameter())
+        {
+			int8 PropertyType = PropertyDesc->GetPropertyType();
+			if (PropertyType == CPT_Delegate
+				|| PropertyType == CPT_MulticastDelegate
+				|| PropertyType == CPT_MulticastSparseDelegate)
+			{
+				bHasDelegateParams = true;
+			}
+        }
+
     }
 
 #if !SUPPORTS_RPC_CALL
@@ -193,11 +205,17 @@ bool FFunctionDesc::CallLua(UObject *Context, FFrame &Stack, void *RetValueAddre
     {
         if (bUnpackParams)
         {
+            void* Params = nullptr;
 #if ENABLE_PERSISTENT_PARAM_BUFFER
-            void *Params = Buffer;
-#else
-            void *Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
-#endif
+            if (!bHasDelegateParams)
+            {
+                Params = Buffer;
+            }
+#endif      
+            if (!Params)
+            {
+                Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
+            }
 
             for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
             {
@@ -208,9 +226,14 @@ bool FFunctionDesc::CallLua(UObject *Context, FFrame &Stack, void *RetValueAddre
 
             bSuccess = CallLuaInternal(L, Params, Stack.OutParms, RetValueAddress);             // call Lua function...
 
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
-            FMemory::Free(Params);
+            if (Params)
+            {
+#if ENABLE_PERSISTENT_PARAM_BUFFER
+                if (bHasDelegateParams)
 #endif
+                FMemory::Free(Params);
+            }
+
         }
         else
         {
@@ -273,6 +296,15 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         if (!FinalFunction)
         {
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("ERROR! Can't find UFunction '%s' in target object!"), *FuncName);
+
+            if (Params)
+            {
+#if ENABLE_PERSISTENT_PARAM_BUFFER
+                if (NumCalls > 0 || bHasDelegateParams)
+#endif	
+                    FMemory::Free(Params);
+            }
+
             return 0;
         }
 #if UE_BUILD_DEBUG
@@ -370,7 +402,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
     // use simple pool
     void *Params = nullptr;
 #if ENABLE_PERSISTENT_PARAM_BUFFER
-    if (NumCalls < 1)
+    if (NumCalls < 1 && !bHasDelegateParams)
     {
         Params = Buffer;
     }
@@ -478,10 +510,13 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
 
     --NumCalls;
 
+    if (Params)
+    {
 #if ENABLE_PERSISTENT_PARAM_BUFFER
-    if (NumCalls > 0)
-#endif
-    FMemory::Free(Params);
+        if (NumCalls > 0 || bHasDelegateParams)
+#endif	
+        FMemory::Free(Params);
+    }
 
     return NumReturnValues;
 }

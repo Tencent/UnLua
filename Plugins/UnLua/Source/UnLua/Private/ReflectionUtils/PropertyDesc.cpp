@@ -28,6 +28,7 @@ FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty)
 { 
 	GReflectionRegistry.AddToDescSet(this, DESC_PROPERTY); 
     Property2Desc.Add(Property,this);
+    PropertyType = CPT_None;
 }
 
 FPropertyDesc::~FPropertyDesc()
@@ -46,8 +47,7 @@ bool FPropertyDesc::IsValid() const
     {
         bValid = true;
 
-        int32 type = GetPropertyType(Property);
-        switch (type)
+        switch (PropertyType)
         {
             case CPT_Interface:
             {
@@ -1155,16 +1155,27 @@ private:
     TSharedPtr<UnLua::ITypeInterface> InnerProperty;
 };
 
+void FPropertyDesc::SetPropertyType(int8 Type)
+{
+    PropertyType = Type;
+}
+
+int8 FPropertyDesc::GetPropertyType()
+{
+    return PropertyType;
+}
+
 class FStructPropertyDesc : public FPropertyDesc
 {
 public:
-    explicit FStructPropertyDesc(FProperty *InProperty)
-        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
-    {}
+	explicit FStructPropertyDesc(FProperty* InProperty)
+		: FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
+	{}
 
 protected:
-    bool bFirstPropOfScriptStruct;
+	bool bFirstPropOfScriptStruct;
 };
+
 
 /**
  * ScriptStruct property descriptor
@@ -1336,8 +1347,10 @@ public:
     virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
     {
         const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
-        FDelegateHelper::AddDelegateOwnerObject((void*)ValuePtr, (UObject*)ContainerPtr);
-        GetValueInternal(L, ValuePtr, bCreateCopy);
+        FScriptDelegate* ScriptDelegate = (FScriptDelegate*)DelegateProperty->GetPropertyValuePtr(ValuePtr);
+		FDelegateHelper::AddDelegateOwnerObject(ScriptDelegate, (UObject*)ContainerPtr);
+		GetValueInternal(L, ScriptDelegate, bCreateCopy);
+
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1409,8 +1422,10 @@ public:
     virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
     {
         const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
-        FDelegateHelper::AddMulticastDelegateOwnerObject((void*)ValuePtr, (UObject*)ContainerPtr);
-        GetValueInternal(L, ValuePtr, bCreateCopy);
+        T* ScriptDelegate = (T*)ValuePtr;
+		FDelegateHelper::AddDelegateOwnerObject(ScriptDelegate, (UObject*)ContainerPtr);
+		GetValueInternal(L, ScriptDelegate, bCreateCopy);
+
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1481,7 +1496,8 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
 {
     // #lizard forgives
 
-    int32 Type = GetPropertyType(InProperty);
+    FPropertyDesc* PropertyDesc = nullptr;
+    int32 Type = ::GetPropertyType(InProperty);
     switch (Type)
     {
     case CPT_Byte:
@@ -1492,47 +1508,106 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
     case CPT_UInt16:
     case CPT_UInt32:
     case CPT_UInt64:
-        return new FIntegerPropertyDesc(InProperty);
+        {
+		    PropertyDesc = new FIntegerPropertyDesc(InProperty);
+		    break;
+        }
     case CPT_Float:
     case CPT_Double:
-        return new FFloatPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FFloatPropertyDesc(InProperty);
+            break;
+        }
     case CPT_Enum:
-        return new FEnumPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FEnumPropertyDesc(InProperty);
+            break;
+        }
     case CPT_Bool:
-        return new FBoolPropertyDesc(InProperty);
+        {
+		    PropertyDesc = new FBoolPropertyDesc(InProperty);
+		    break;
+        }
     case CPT_ObjectReference:
     case CPT_WeakObjectReference:
     case CPT_LazyObjectReference:
-        return new FObjectPropertyDesc(InProperty, false);
+        {
+		    PropertyDesc = new FObjectPropertyDesc(InProperty, false);
+		    break;
+        }
     case CPT_SoftObjectReference:
-        return new FSoftObjectPropertyDesc(InProperty);
-        //return new FObjectPropertyDesc(InProperty, true);
-    case CPT_Interface:
-        return new FInterfacePropertyDesc(InProperty);
+        {
+            PropertyDesc = new FSoftObjectPropertyDesc(InProperty);
+			//PropertyDesc = new FObjectPropertyDesc(InProperty, true);
+            break;
+        }
+	case CPT_Interface:
+        {
+            PropertyDesc = new FInterfacePropertyDesc(InProperty);
+            break;
+        }
     case CPT_Name:
-        return new FNamePropertyDesc(InProperty);
+        {
+            PropertyDesc = new FNamePropertyDesc(InProperty);
+            break;
+        }
+
     case CPT_String:
-        return new FStringPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FStringPropertyDesc(InProperty);
+            break;
+        }
+
     case CPT_Text:
-        return new FTextPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FTextPropertyDesc(InProperty);
+            break;
+        }
+
     case CPT_Array:
-        return new FArrayPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FArrayPropertyDesc(InProperty);
+            break;
+        }
     case CPT_Map:
-        return new FMapPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FMapPropertyDesc(InProperty);
+            break;
+        }
     case CPT_Set:
-        return new FSetPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FSetPropertyDesc(InProperty);
+            break;
+        }
     case CPT_Struct:
-        return new FScriptStructPropertyDesc(InProperty);
+        {
+            PropertyDesc = new FScriptStructPropertyDesc(InProperty);
+            break;
+        }
     case CPT_Delegate:
-        return new FDelegatePropertyDesc(InProperty);
+        {
+            PropertyDesc = new FDelegatePropertyDesc(InProperty);
+            break;
+        }
     case CPT_MulticastDelegate:
-        return new TMulticastDelegatePropertyDesc<FMulticastScriptDelegate>(InProperty);
+        {
+            PropertyDesc = new TMulticastDelegatePropertyDesc<FMulticastScriptDelegate>(InProperty);
+            break;
+        }
 #if ENGINE_MINOR_VERSION > 22
     case CPT_MulticastSparseDelegate:
-        return new TMulticastDelegatePropertyDesc<FSparseDelegate>(InProperty);
+        {
+            PropertyDesc = new TMulticastDelegatePropertyDesc<FSparseDelegate>(InProperty);
+            break;
+        }
 #endif
     }
-    return nullptr;
+	
+    if (PropertyDesc)
+    {
+        PropertyDesc->SetPropertyType(Type);
+    }
+    return PropertyDesc;
 }
 
 /**
