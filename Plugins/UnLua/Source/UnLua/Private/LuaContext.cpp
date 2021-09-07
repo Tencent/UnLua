@@ -134,29 +134,29 @@ void FLuaContext::CreateState()
 
     if (!L)
     {
-#if WITH_EDITOR
-        // load Lua dynamic lib under 'WITH_EDITOR' mode
-        if (!LuaHandle)
-        {
-#if PLATFORM_WINDOWS
-            FString PlatformName(TEXT("Win64"));
-            FString LibName(TEXT("Lua.dll"));
-#elif PLATFORM_MAC
-            FString PlatformName(TEXT("Mac"));
-            FString LibName(TEXT("liblua.dylib"));
-#endif
-            FString LibPath = FString::Printf(TEXT("%s/Source/ThirdParty/Lua/binaries/%s/%s"), *IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir(), *PlatformName, *LibName);
-            if (FPaths::FileExists(LibPath))
-            {
-                LuaHandle = FPlatformProcess::GetDllHandle(*LibPath);
-                if (!LuaHandle)
-                {
-                    UE_LOG(LogUnLua, Log, TEXT("%s: failed to load %s!"), ANSI_TO_TCHAR(__FUNCTION__), *LibPath);
-                    return;
-                }
-            }
-        }
-#endif
+//#if WITH_EDITOR
+//        // load Lua dynamic lib under 'WITH_EDITOR' mode
+//        if (!LuaHandle)
+//        {
+//#if PLATFORM_WINDOWS
+//            FString PlatformName(TEXT("Win64"));
+//            FString LibName(TEXT("Lua.dll"));
+//#elif PLATFORM_MAC
+//            FString PlatformName(TEXT("Mac"));
+//            FString LibName(TEXT("liblua.dylib"));
+//#endif
+//            FString LibPath = FString::Printf(TEXT("%s/Source/ThirdParty/Lua/binaries/%s/%s"), *IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir(), *PlatformName, *LibName);
+//            if (FPaths::FileExists(LibPath))
+//            {
+//                LuaHandle = FPlatformProcess::GetDllHandle(*LibPath);
+//                if (!LuaHandle)
+//                {
+//                    UE_LOG(LogUnLua, Log, TEXT("%s: failed to load %s!"), ANSI_TO_TCHAR(__FUNCTION__), *LibPath);
+//                    return;
+//                }
+//            }
+//        }
+//#endif
 
         L = lua_newstate(FLuaContext::LuaAllocator, nullptr);       // create main Lua thread
         check(L);
@@ -379,7 +379,7 @@ void FLuaContext::OnDelayBindObject(UObject* Object)
 {
     if (GLuaCxt->IsUObjectValid(Object))
     {
-        if (!Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
+        if (!FUObjectThreadContext::Get().IsRoutingPostLoad && !Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
         {
             UE_LOG(LogUnLua, Log, TEXT("%s[%llu]: Delay bind object %s,%p"), ANSI_TO_TCHAR(__FUNCTION__), GFrameCounter, *Object->GetName(), Object);
             TryToBindLua(Object);
@@ -419,12 +419,22 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
         if (Class->ImplementsInterface(InterfaceClass))                             // static binding
         {
             // fliter some object in bp nest case
-            // RF_WasLoaded & RF_NeedPostLoad?
-            UObject* Outer = Object->GetOuter();
-            if((Outer)
-                && (Outer->GetFName().IsEqual("WidgetTree")) && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
+            // skip objects during asset loding 
+            if (Object->HasAnyFlags(RF_NeedLoad) && Object->HasAnyFlags(RF_Load) && Object->GetFName().GetNumber() < 1 && Object->GetClass()->GetName().Contains(Object->GetName()))
             {
+                UE_LOG(LogUnLua,Log,TEXT("%s : Skip internal object (%s,%p,%s) during asset loading"),ANSI_TO_TCHAR(__FUNCTION__), *Object->GetFullName(),Object, *Class->GetName());
                 return false;
+            }
+
+            if (GWorld)
+            {
+                FString ObjectName;
+                Object->GetFullName(GWorld, ObjectName);
+                if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
+                {
+                    UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
+                    return false;
+                }
             }
 
             UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
@@ -774,7 +784,7 @@ void FLuaContext::NotifyUObjectCreated(const UObjectBase *InObject, int32 Index)
     {
         FScopeLock Lock(&Async2MainCS);
         UObjPtr2Idx.Add(const_cast<UObjectBase*>(InObject), Index);
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UObjPtr2Name.Add(const_cast<UObjectBase*>(InObject), InObject->GetFName().ToString());
 #endif
     }
@@ -828,19 +838,20 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
         FScopeLock Lock(&Async2MainCS);
         UObjPtr2Idx.Remove(InObject);
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
         UObjPtr2Name.Remove(InObject);
 #endif
 
         return;
     }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("NotifyUObjectDeleted : %s,%p"), *UObjPtr2Name[InObject], InObject);
 #endif
 
     bool bClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
     Manager->NotifyUObjectDeleted(InObject, bClass);
+    FDelegateHelper::Remove((UObject*)InObject);
     FDelegateHelper::NotifyUObjectDeleted((const UObject*)InObject);
 
     if (CandidateInputComponents.Num() > 0)
@@ -957,7 +968,7 @@ FLuaContext::~FLuaContext()
     FScopeLock Lock(&Async2MainCS);
     UObjPtr2Idx.Empty();
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UObjPtr2Name.Empty();
 #endif
 }
