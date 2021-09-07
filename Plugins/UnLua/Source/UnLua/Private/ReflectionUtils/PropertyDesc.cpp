@@ -1501,6 +1501,13 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
     switch (Type)
     {
     case CPT_Byte:
+    {
+        const FByteProperty* TempByteProperty = CastField<FByteProperty>(InProperty);
+        if (TempByteProperty->Enum)
+        {
+            RegisterEnum(UnLua::GetState(), TempByteProperty->Enum);
+        }
+    }
     case CPT_Int8:
     case CPT_Int16:
     case CPT_Int:
