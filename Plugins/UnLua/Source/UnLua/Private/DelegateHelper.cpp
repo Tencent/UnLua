@@ -17,39 +17,6 @@
 #include "ReflectionUtils/ReflectionRegistry.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
-/**
- * archive used to get invocation list from a multicast delegate
- */
-class FInvocationListReader : public FArchive
-{
-public:
-    FInvocationListReader()
-    {
-        SetIsSaving(true);
-    }
-
-    /**
-     * Collect objects
-     */
-    virtual FArchive& operator<<(struct FWeakObjectPtr &Value) override
-    {
-        Objects.Add(Value.Get());
-        return *this;
-    }
-
-    /**
-     * Collect function names
-     */
-    virtual FArchive& operator<<(FName &Value) override
-    {
-        FunctionNames.Add(Value);
-        return *this;
-    }
-
-    TArray<UObject*> Objects;
-    TArray<FName> FunctionNames;
-};
-
 void FSignatureDesc::MarkForDelete(bool bIgnoreBindings)
 {
     if (!bIgnoreBindings && NumBindings > 1)
@@ -154,7 +121,21 @@ bool FDelegateHelper::Bind(FScriptDelegate *ScriptDelegate, FDelegateProperty *P
     UFunction **CallbackFuncPtr = Callbacks.Find(Callback);
     if (!CallbackFuncPtr)
     {
+#if ENABLE_DEBUG != 0
+        lua_State* L = UnLua::GetState();
+        lua_Debug ar;
+
+        lua_getstack(L, 1, &ar);
+        lua_getinfo(L, "nSl", &ar);
+        int line = ar.linedefined;
+        auto name = ar.source;
+
+        FName FuncName(*FString::Printf(TEXT("LuaFunc:[%s:%d]_CppDelegate:[%s.%s_%s]"), ANSI_TO_TCHAR(name), line, *Object->GetName(), *Property->SignatureFunction->GetName(), *FGuid::NewGuid().ToString()));
+
+        UE_LOG(LogUnLua, Log, TEXT("FDelegateHelper::Bind %s %s with FuncName %s, Callback hash %d"), *Object->GetName(), *Property->SignatureFunction->GetName(), *FuncName.ToString(), Callback.Hash);
+#else
         FName FuncName(*FString::Printf(TEXT("%s_%s"), *Property->GetName(), *FGuid::NewGuid().ToString()));
+#endif
         ScriptDelegate->BindUFunction(Object, FuncName);                                    // bind a callback to the delegate
         CreateSignature(Property->SignatureFunction, FuncName, Callback, CallbackRef);      // create the signature function for the callback
 
