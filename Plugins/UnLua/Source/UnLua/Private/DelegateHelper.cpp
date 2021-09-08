@@ -51,8 +51,14 @@ void FSignatureDesc::Execute(UObject* Context, FFrame& Stack, void* RetValueAddr
         --NumCalls;         // dec calls
         if (!NumCalls && bPendingKill)
         {
-            check(NumBindings == 1);
-            FDelegateHelper::CleanUpByFunction(SignatureFunctionDesc->GetFunction());       // clean up the delegate only if there is only one bindings.
+            if (NumBindings > 1) // NumBindings may increase when running CallLua
+            {
+                bPendingKill = false;
+            }
+            else
+            {
+                FDelegateHelper::CleanUpByFunction(SignatureFunctionDesc->GetFunction());       // clean up the delegate only if there is only one bindings.
+            }
         }
     }
 }
