@@ -56,7 +56,7 @@ struct FSignatureDesc
         : SignatureFunctionDesc(nullptr), CallbackRef(INDEX_NONE), NumCalls(0), NumBindings(1), bPendingKill(false)
     {}
 
-    void MarkForDelete(bool bIgnoreBindings = false);
+    void MarkForDelete(bool bIgnoreBindings = false, UObject* Object = nullptr);
 
     void Execute(UObject *Context, FFrame &Stack, void *RetValueAddress);
 
@@ -82,12 +82,13 @@ public:
 
     static FName GetBindedFunctionName(const FCallbackDesc &Callback);
 
+	static int32 GetNumBindings(const FCallbackDesc& Callback);
+
     static void PreBind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property);
     static bool Bind(FScriptDelegate *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static bool Bind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static void Unbind(const FCallbackDesc &Callback);
     static void Unbind(FScriptDelegate *ScriptDelegate);
-    static void Unbind(FMulticastScriptDelegate* ScriptDelegate);
     static int32 Execute(lua_State *L, FScriptDelegate *ScriptDelegate, int32 NumParams, int32 FirstParamIndex);
 
     static void PreAdd(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property);
@@ -104,27 +105,27 @@ public:
     static void CleanUpByClass(UClass *Class);
     static void Cleanup(bool bFullCleanup);
 
-    static void NotifyUObjectDeleted(const UObject* InObject);
-    static void AddDelegateOwnerObject(void* Delegate, UObject* Object);
-    static void AddMulticastDelegateOwnerObject(void* Delegate, UObject* Object);
+    static void NotifyUObjectDeleted(UObject* InObject);
 
 private:
     static void CreateSignature(UFunction *TemplateFunction, FName FuncName, const FCallbackDesc &Callback, int32 CallbackRef);
 
     static TMap<FScriptDelegate*, FDelegateProperty*> Delegate2Property;
     static TMap<FMulticastDelegateType*, FMulticastDelegateProperty*> MulticastDelegate2Property;
+
     static TMap<FScriptDelegate*, FFunctionDesc*> Delegate2Signatures;
     static TMap<FMulticastDelegateType*, FFunctionDesc*> MulticastDelegate2Signatures;
-    static TMap<UFunction*, FSignatureDesc*> Signatures;
-    static TMap<FCallbackDesc, UFunction*> Callbacks;
+
+    static TMap<UFunction*, FSignatureDesc*> Function2Signature;
+
+    static TMap<FCallbackDesc, UFunction*> Callback2Function;
     static TMap<UFunction*, FCallbackDesc> Function2Callback;
+
     static TMap<UClass*, TArray<UFunction*>> Class2Functions;
 
-    // void* {FScriptDelegate*/FMulticastDelegateType*}
-    static TMap<UObject*, TArray<void*>> Object2Delegates;
-    static TMap<FMulticastDelegateType*, TArray<FCallbackDesc>> MutiDelegates2Callback;
-
-    static TMap<UObject*, TArray<void*>> OwnerObject2Delegates;
-    static TMap<UObject*, TArray<void*>> OwnerObject2MulticastDelegates;
-    static TMap<void*, TArray<UObject*>> MulticastDelegates2BindObjects;
+	// this data structure is just for clear multi delegate function, cannot use for other purpose, 
+    // because multi delegate may be reused by buffer memory, 
+    // as word as two different delegates may use same memory, (see where is FDelegatePropertyDesc::SetValueInternal's ValuePtr from)
+    // as a result, delegate cannot be as a id. however, clear multi delegate will not use buffer memory
+	static TMap<FMulticastDelegateType*, TArray<FCallbackDesc>> MutiDelegates2Callback;
 };

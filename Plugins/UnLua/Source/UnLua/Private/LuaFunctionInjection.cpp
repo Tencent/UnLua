@@ -254,6 +254,8 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
  */
 void RemoveUFunction(UFunction *Function, UClass *OuterClass)
 {
+	UE_LOG(UnLuaDelegate, Verbose, TEXT("Clean %s"), *Function->GetName());
+
     if (OuterClass->IsValidLowLevel() && OuterClass->FindFunctionByName(Function->GetFName()))
     {
 #if UNLUA_ENABLE_DEBUG != 0

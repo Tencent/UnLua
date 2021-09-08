@@ -84,6 +84,8 @@ struct TMulticastDelegateLib
         }
         else
         {
+			UE_LOG(UnLuaDelegate, Verbose, TEXT("++ %d %s %p %s"), FDelegateHelper::GetNumBindings(Callback), *Object->GetName(), Object, *FuncName.ToString());
+
             FScriptDelegate DynamicDelegate;
             DynamicDelegate.BindUFunction(Object, FuncName);
             FDelegateHelper::AddDelegate(Delegate, Object, Callback, DynamicDelegate);

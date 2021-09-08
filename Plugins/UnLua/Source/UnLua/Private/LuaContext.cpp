@@ -837,7 +837,7 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
 
     bool bClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
     Manager->NotifyUObjectDeleted(InObject, bClass);
-    FDelegateHelper::NotifyUObjectDeleted((const UObject*)InObject);
+    FDelegateHelper::NotifyUObjectDeleted((UObject*)InObject);
 
     if (CandidateInputComponents.Num() > 0)
     {

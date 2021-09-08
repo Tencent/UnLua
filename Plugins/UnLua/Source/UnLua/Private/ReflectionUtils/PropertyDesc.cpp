@@ -1348,7 +1348,6 @@ public:
     {
         const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         FScriptDelegate* ScriptDelegate = (FScriptDelegate*)DelegateProperty->GetPropertyValuePtr(ValuePtr);
-		FDelegateHelper::AddDelegateOwnerObject(ScriptDelegate, (UObject*)ContainerPtr);
 		GetValueInternal(L, ScriptDelegate, bCreateCopy);
 
     }
@@ -1386,6 +1385,7 @@ public:
             }
             else
             {
+				UE_LOG(UnLuaDelegate, Verbose, TEXT("[BindUFunction FuncName:%s %p]"), *FuncName.ToString(), Callback.CallbackFunction);
                 ScriptDelegate->BindUFunction(Object, FuncName);        // a delegate function is created already
             }
         }
@@ -1423,7 +1423,6 @@ public:
     {
         const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         T* ScriptDelegate = (T*)ValuePtr;
-		FDelegateHelper::AddDelegateOwnerObject(ScriptDelegate, (UObject*)ContainerPtr);
 		GetValueInternal(L, ScriptDelegate, bCreateCopy);
 
     }
@@ -1461,6 +1460,7 @@ public:
             }
             else
             {
+				UE_LOG(UnLuaDelegate, Verbose, TEXT("++ %d %s %p %s"), FDelegateHelper::GetNumBindings(Callback), *Object->GetName(), Object, *FuncName.ToString());
                 // a delegate function is created already
                 FScriptDelegate DynamicDelegate;
                 DynamicDelegate.BindUFunction(Object, FuncName);
