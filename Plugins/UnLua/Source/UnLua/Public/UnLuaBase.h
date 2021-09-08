@@ -30,6 +30,7 @@
 #endif
 
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
+UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(UnLuaDelegate, Log, All);
 
 #if ENGINE_MINOR_VERSION < 25
 typedef UProperty FProperty;

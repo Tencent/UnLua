@@ -23,6 +23,7 @@
 #include "Misc/FileHelper.h"
 
 DEFINE_LOG_CATEGORY(LogUnLua);
+DEFINE_LOG_CATEGORY(UnLuaDelegate);
 
 namespace UnLua
 {
