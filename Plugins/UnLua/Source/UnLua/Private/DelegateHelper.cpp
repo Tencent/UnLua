@@ -262,7 +262,7 @@ bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, FMulticastDele
         return false;
     }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("FDelegateHelper::Add: %p,%p,%s"), ScriptDelegate, Object, *Object->GetName());
 #endif
     
@@ -317,7 +317,7 @@ void FDelegateHelper::Remove(FMulticastDelegateType *ScriptDelegate, UObject *Ob
                 return;
             }
 
-#if ENABLE_DEBUG != 0
+#if UNLUA_ENABLE_DEBUG != 0
             UE_LOG(LogUnLua, Log, TEXT("FDelegateHelper::Remove: %p,%p,%s"), ScriptDelegate, Object, *Object->GetName());
 #endif
 
