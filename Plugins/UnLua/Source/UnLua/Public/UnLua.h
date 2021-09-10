@@ -20,7 +20,6 @@
 
 namespace UnLua
 {
-
     /**
      * lstring wrapper
      */
@@ -117,16 +116,6 @@ namespace UnLua
         template <typename... T>
         FLuaRetValues Call(const char *FuncName, T&&... Args) const;
 
-        /**
-         * Iterate for Array
-         */
-        bool Iterate(TFunction<void (const lua_Integer& Index, const FLuaValue& Value)> Func) const;
-
-        /**
-         * Iterate for Table
-         */
-        bool Iterate(TFunction<void (const FName& Key, const FLuaValue& Value)> Func) const;
-
     private:
         mutable int32 PushedValues;
     };
@@ -166,19 +155,6 @@ namespace UnLua
         int32 ExpectedTopIncrease;
 #endif
     };
-
-    /**
-     * Helper to recover Lua stack automatically
-     */
-    struct UNLUA_API FAutoStack
-    {
-        FAutoStack();
-        ~FAutoStack();
-
-    private:
-        int32 OldTop;
-    };
-
 
     /**
      * Get instance of type interface
@@ -496,6 +472,116 @@ namespace UnLua
         lua_pushvalue(L, V.GetIndex());
         return 1;
     }
+
+    /**
+     * Check value type from stack
+     */
+
+    template <typename T> bool IsType(lua_State* L, int32 Index, TType<T>)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Unsupported Type Check"));
+        return false;
+    }
+    
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<int8>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<int16>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+    FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<int32>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<int64>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<long>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<uint8>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<uint16>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<uint32>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<uint64>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<unsigned long>)
+	{
+		return lua_isinteger(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<float>)
+	{
+		return lua_isnumber(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<double>)
+	{
+		return lua_isnumber(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<bool>)
+	{
+		return lua_isboolean(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<const char*>)
+	{
+		return lua_isstring(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<FString>)
+	{
+		return lua_isstring(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<FName>)
+	{
+		return lua_isstring(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<FText>)
+	{
+		return lua_isstring(L, Index) != 0;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<UObject*>)
+	{
+		return (UnLua::GetUObject(L, Index) != nullptr);
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<UClass*>)
+	{
+        return Cast<UClass>(UnLua::GetUObject(L, Index)) != nullptr;
+	}
+
+	FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<const UClass*>)
+	{
+        return Cast<UClass>(UnLua::GetUObject(L, Index)) != nullptr;
+	}
 
     /**
      * Get value from the stack.

@@ -49,7 +49,7 @@ static int32 FScriptDelegate_Bind(lua_State *L)
         return 0;
     }
 
-    FCallbackDesc Callback(Object->GetClass(), CallbackFunction);
+    FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
     FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
     if (FuncName == NAME_None)
     {
@@ -88,7 +88,7 @@ static int32 FScriptDelegate_Unbind(lua_State *L)
         int32 FuncIdx = GetDelegateInfo(L, 1, Object, CallbackFunction);     // get target UObject and Lua function
         if (FuncIdx != INDEX_NONE)
         {
-            FDelegateHelper::Unbind(FCallbackDesc(Object->GetClass(), CallbackFunction));
+            FDelegateHelper::Unbind(FCallbackDesc(Object->GetClass(), CallbackFunction, Object));
         }
     }
 

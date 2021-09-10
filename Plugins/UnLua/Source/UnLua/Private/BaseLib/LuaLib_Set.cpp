@@ -83,6 +83,7 @@ static int32 TSet_Add(lua_State *L)
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
     Set->Add(Set->ElementCache);
+    Set->ElementInterface->Destruct(Set->ElementCache);
     return 0;
 }
 
@@ -108,6 +109,7 @@ static int32 TSet_Remove(lua_State *L)
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
     bool bSuccess = Set->Remove(Set->ElementCache);
+    Set->ElementInterface->Destruct(Set->ElementCache);
     lua_pushboolean(L, bSuccess);
     return 1;
 }
@@ -134,6 +136,7 @@ static int32 TSet_Contains(lua_State *L)
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
     bool bSuccess = Set->Contains(Set->ElementCache);
+    Set->ElementInterface->Destruct(Set->ElementCache);
     lua_pushboolean(L, bSuccess);
     return 1;
 }
@@ -227,17 +230,18 @@ static int32 TSet_ToTable(lua_State *L)
         return 0;
     }
 
-    void* MemData = FMemory::Malloc(sizeof(FLuaArray), alignof(FLuaArray));
-    FLuaArray* Array = Set->ToArray(MemData);
+    void *MemData = FMemory::Malloc(sizeof(FLuaArray), alignof(FLuaArray));
+    FLuaArray *Array = Set->ToArray(MemData);
+    Array->Inner->Initialize(Array->ElementCache);
     lua_newtable(L);
     for (int32 i = 0; i < Array->Num(); ++i)
     {
         lua_pushinteger(L, i + 1);
-        Array->Inner->Initialize(Array->ElementCache);
         Array->Get(i, Array->ElementCache);
         Array->Inner->Read(L, Array->ElementCache, true);
         lua_rawset(L, -3);
     }
+    Array->Inner->Destruct(Array->ElementCache);
     FMemory::Free(MemData);
     return 1;
 }

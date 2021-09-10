@@ -22,7 +22,7 @@ namespace UnLua
     template <typename T>
     struct TTypeIntelliSense
     {
-        static FString GetName() { return ANSI_TO_TCHAR(TType<T>::GetName()); }
+        static FString GetName() { return UTF8_TO_TCHAR(TType<T>::GetName()); }
     };
 
     template <typename T> struct TTypeIntelliSense<T*> { static FString GetName() { return TTypeIntelliSense<T>::GetName(); } };
@@ -360,7 +360,7 @@ namespace UnLua
     template <typename ClassType, typename... ArgType>
     template <uint32... N> void TConstructor<ClassType, ArgType...>::Construct(lua_State *L, TTuple<typename TArgTypeTraits<ArgType>::Type...> &Args, TIndices<N...>)
     {
-        void *Userdata = UnLua::NewUserdata(L, sizeof(ClassType), TCHAR_TO_ANSI(*ClassName), alignof(ClassType));
+        void *Userdata = UnLua::NewUserdata(L, sizeof(ClassType), TCHAR_TO_UTF8(*ClassName), alignof(ClassType));
         if (Userdata)
         {
             new(Userdata) ClassType(Args.template Get<N>()...);
@@ -380,7 +380,7 @@ namespace UnLua
     void TSmartPtrConstructor<SmartPtrType, ClassType, ArgType...>::Register(lua_State *L)
     {
         // make sure the meta table is on the top of the stack
-        lua_pushstring(L, TCHAR_TO_ANSI(*FuncName));
+        lua_pushstring(L, TCHAR_TO_UTF8(*FuncName));
         lua_pushlightuserdata(L, this);
         lua_pushcclosure(L, InvokeFunction, 1);
         lua_rawset(L, -3);
@@ -498,7 +498,7 @@ namespace UnLua
     {
         lua_pushlightuserdata(L, this);
         lua_pushcclosure(L, InvokeFunction, 1);
-        lua_setglobal(L, TCHAR_TO_ANSI(*Name));
+        lua_setglobal(L, TCHAR_TO_UTF8(*Name));
     }
 
     template <typename RetType, typename... ArgType>
@@ -549,7 +549,7 @@ namespace UnLua
     void TExportedMemberFunction<ClassType, RetType, ArgType...>::Register(lua_State *L)
     {
         // make sure the meta table is on the top of the stack
-        lua_pushstring(L, TCHAR_TO_ANSI(*Name));
+        lua_pushstring(L, TCHAR_TO_UTF8(*Name));
         lua_pushlightuserdata(L, this);
         lua_pushcclosure(L, InvokeFunction, 1);
         lua_rawset(L, -3);
@@ -598,7 +598,7 @@ namespace UnLua
     void TExportedStaticMemberFunction<RetType, ArgType...>::Register(lua_State *L)
     {
         // make sure the meta table is on the top of the stack
-        lua_pushstring(L, TCHAR_TO_ANSI(*Super::Name));
+        lua_pushstring(L, TCHAR_TO_UTF8(*Super::Name));
         lua_pushlightuserdata(L, this);
         lua_pushcclosure(L, InvokeFunction, 1);
         lua_rawset(L, -3);
@@ -786,7 +786,7 @@ namespace UnLua
                 if (SuperClassName != NAME_None)
                 {
                     lua_pushstring(L, "Super");
-                    Type = luaL_getmetatable(L, TCHAR_TO_ANSI(*SuperClassName.ToString()));
+                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperClassName.ToString()));
                     check(Type == LUA_TTABLE);
                     lua_rawset(L, -3);
                 }
@@ -848,7 +848,7 @@ namespace UnLua
         {
             while (InLib->name && InLib->func)
             {
-                GlueFunctions.Add(new FGlueFunction(ANSI_TO_TCHAR(InLib->name), InLib->func));
+                GlueFunctions.Add(new FGlueFunction(UTF8_TO_TCHAR(InLib->name), InLib->func));
                 ++InLib;
             }
         }

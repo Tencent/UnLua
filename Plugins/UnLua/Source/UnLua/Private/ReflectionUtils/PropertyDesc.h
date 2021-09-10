@@ -39,14 +39,14 @@ class FPropertyDesc : public UnLua::ITypeInterface
 public:
     static FPropertyDesc* Create(FProperty *InProperty);
 
-    virtual ~FPropertyDesc() {}
+	virtual ~FPropertyDesc();
 
     /**
      * Check the validity of this property
      *
      * @return - true if the property is valid, false otherwise
      */
-    FORCEINLINE bool IsValid() const { return Property != nullptr; }
+    bool IsValid() const;
 
     /**
      * Test if this property is a const reference parameter.
@@ -77,6 +77,13 @@ public:
     FORCEINLINE bool IsReturnParameter() const { return Property->HasAnyPropertyFlags(CPF_ReturnParm); }
 
     /**
+     * Test if this property is the reference parameter
+     *
+     * @return - true if the property is the return parameter, false otherwise
+     */
+    FORCEINLINE bool IsReferenceParameter() const { return Property->HasAnyPropertyFlags(CPF_ReferenceParm); }
+
+    /**
      * Get the 'true' property
      *
      * @return - the FProperty
@@ -104,7 +111,10 @@ public:
      * @param ContainerPtr - the address of the container for this property
      * @param bCreateCopy (Optional) - whether to create a copy for the value
      */
-    FORCEINLINE void GetValue(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const { GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy); }
+    FORCEINLINE void GetValue(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const 
+    {   
+        GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy);
+    }
 
     /**
      * Set the value of this property as an element at the given Lua index
@@ -155,11 +165,25 @@ public:
     virtual bool Identical(const void *A, const void *B) const override { return Property->Identical(A, B); }
     virtual FString GetName() const override { return TEXT(""); }
     virtual FProperty* GetUProperty() const override { return Property; }
-    virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override { GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy); }
-    virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override { SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, true); }
 
+    virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override 
+    { 
+        GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy);
+    }
+    virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override 
+    { 
+        SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, true); 
+    }
+
+#if ENABLE_TYPE_CHECK == 1
+    virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData = nullptr) { return true; };
+#endif
+
+    void SetPropertyType(int8 Type);
+    int8 GetPropertyType();
+	
 protected:
-    explicit FPropertyDesc(FProperty *InProperty) : Property(InProperty) {}
+    explicit FPropertyDesc(FProperty *InProperty);
 
     union
     {
@@ -180,6 +204,10 @@ protected:
         FDelegateProperty *DelegateProperty;
         FMulticastDelegateProperty *MulticastDelegateProperty;
     };
+
+    int8 PropertyType;
+public:
+    static TMap<FProperty*,FPropertyDesc*> Property2Desc;
 };
 
 UNLUA_API int32 GetPropertyType(const FProperty *Property);

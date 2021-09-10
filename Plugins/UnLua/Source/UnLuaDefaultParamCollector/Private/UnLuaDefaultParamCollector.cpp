@@ -22,16 +22,18 @@
 class FUnLuaDefaultParamCollectorModule : public IScriptGeneratorPluginInterface
 {
 public:
-    virtual void StartupModule() override { IModularFeatures::Get().RegisterModularFeature(TEXT("ScriptGenerator"), this); }
+    virtual void StartupModule() override { IModularFeatures::Get().RegisterModularFeature(TEXT("ScriptGenerator"), this); HasGameRuntime = false; }
     virtual void ShutdownModule() override { IModularFeatures::Get().UnregisterModularFeature(TEXT("ScriptGenerator"), this); }
     virtual FString GetGeneratedCodeModuleName() const override { return TEXT("UnLua"); }
     virtual bool SupportsTarget(const FString& TargetName) const override { return true; }
 
     virtual bool ShouldExportClassesForModule(const FString& ModuleName, EBuildModuleType::Type ModuleType, const FString& ModuleGeneratedIncludeDirectory) const override
     {
+        FUnLuaDefaultParamCollectorModule* NonConstPtr = const_cast<FUnLuaDefaultParamCollectorModule*>(this);
+        NonConstPtr->ParseModule(ModuleName, ModuleType, ModuleGeneratedIncludeDirectory);
         return ModuleType == EBuildModuleType::EngineRuntime || ModuleType == EBuildModuleType::GameRuntime;    // only 'EngineRuntime' and 'GameRuntime' are valid
     }
-    
+
     virtual void Initialize(const FString& RootLocalPath, const FString& RootBuildPath, const FString& OutputDirectory, const FString& IncludeBase) override
     {
         GeneratedFileContent.Empty();
@@ -53,11 +55,11 @@ public:
 
         for (TFieldIterator<UFunction> FuncIt(Class, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); FuncIt; ++FuncIt)
         {
-            UFunction *Function = *FuncIt;
+            UFunction* Function = *FuncIt;
             CurrentFunctionName.Empty();
 
             // filter out functions without meta data
-            TMap<FName, FString> *MetaMap = UMetaData::GetMapForObject(Function);
+            TMap<FName, FString>* MetaMap = UMetaData::GetMapForObject(Function);
             if (!MetaMap)
             {
                 continue;
@@ -66,17 +68,17 @@ public:
             // parameters
             for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & CPF_Parm); ++It)
             {
-                FProperty *Property = *It;
+                FProperty* Property = *It;
 
                 // filter out properties without default value
                 FName KeyName = FName(*FString::Printf(TEXT("CPP_Default_%s"), *Property->GetName()));
-                FString *ValuePtr = MetaMap->Find(KeyName);
+                FString* ValuePtr = MetaMap->Find(KeyName);
                 if (!ValuePtr)
                 {
                     continue;
                 }
 
-                const FString &ValueStr = *ValuePtr;
+                const FString& ValueStr = *ValuePtr;
                 if (Property->IsA(FStructProperty::StaticClass()))
                 {
                     // get all possible script structs
@@ -87,7 +89,7 @@ public:
                     static const UScriptStruct* LinearColorStruct = FindObjectChecked<UScriptStruct>(CoreUObjectPackage, TEXT("LinearColor"));
                     static const UScriptStruct* ColorStruct = FindObjectChecked<UScriptStruct>(CoreUObjectPackage, TEXT("Color"));
 
-                    const FStructProperty *StructProperty = CastField<FStructProperty>(Property);
+                    const FStructProperty* StructProperty = CastField<FStructProperty>(Property);
                     if (StructProperty->Struct == VectorStruct)                     // FVector
                     {
                         TArray<FString> Values;
@@ -172,7 +174,7 @@ public:
                     }
                     else if (Property->IsA(FByteProperty::StaticClass()))           // byte
                     {
-                        const UEnum *Enum = CastField<FByteProperty>(Property)->Enum;
+                        const UEnum* Enum = CastField<FByteProperty>(Property)->Enum;
                         int32 Value = Enum ? (int32)Enum->GetValueByNameString(ValueStr) : TCString<TCHAR>::Atoi(*ValueStr);
                         check(Value >= 0 && Value <= 255);
                         if (Value == 0)
@@ -184,7 +186,7 @@ public:
                     }
                     else if (Property->IsA(FEnumProperty::StaticClass()))           // enum
                     {
-                        const UEnum *Enum = CastField<FEnumProperty>(Property)->GetEnum();
+                        const UEnum* Enum = CastField<FEnumProperty>(Property)->GetEnum();
                         int64 Value = Enum ? Enum->GetValueByNameString(ValueStr) : TCString<TCHAR>::Atoi64(*ValueStr);
                         if (Value == 0)
                         {
@@ -274,10 +276,25 @@ public:
         const FString FilePath = FString::Printf(TEXT("%s%s"), *OutputDir, TEXT("DefaultParamCollection.inl"));
         FString FileContent;
         FFileHelper::LoadFileToString(FileContent, *FilePath);
-        if (FileContent != GeneratedFileContent)
+
+        // If Current build Game Project, try to update DefaultParamCollection.inl file for project
+        if (HasGameRuntime)
         {
-            bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
-            check(bResult);
+            if (GeneratedFileContent != FileContent)
+            {
+                bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
+                check(bResult);
+            }
+        }
+        else
+        {
+            // If Current build Engine Project, try create new file if has no DefaultParamCollection.inl to fix compile error
+            // or do not update DefaultParamCollection.inl file if exists
+            if (!FPaths::FileExists(FilePath) || FileContent.Len() == 0)
+            {
+                bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
+                check(bResult);
+            }
         }
     }
 
@@ -287,7 +304,7 @@ public:
     }
 
 private:
-    void PreAddProperty(UClass *Class, UFunction *Function)
+    void PreAddProperty(UClass* Class, UFunction* Function)
     {
         if (CurrentClassName.Len() < 1)
         {
@@ -301,6 +318,17 @@ private:
         }
     }
 
+    void ParseModule(const FString& ModuleName, EBuildModuleType::Type ModuleType, const FString& ModuleGeneratedIncludeDirectory)
+    {
+        GeneratedFileContent += FString::Printf(TEXT("// ModuleName %s Type %d  ModuleGeneratedIncludeDirectory %s \r\n"), *ModuleName, ModuleType, *ModuleGeneratedIncludeDirectory);
+        if (ModuleType == EBuildModuleType::GameRuntime)
+        {
+            // For Only Game Project has GameRuntime Module, this should be Game Project
+            HasGameRuntime = true;
+        }
+    }
+
+    bool HasGameRuntime; // Flag for if current uht has GameRuntime module or not
     FString OutputDir;
     FString CurrentClassName;
     FString CurrentFunctionName;

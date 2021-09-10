@@ -22,15 +22,27 @@ static int32 FTransform_New(lua_State *L)
     FTransform *V = new(Userdata) FTransform;
     if (NumParams > 1)
     {
-        V->SetRotation(*((FQuat*)GetCppInstanceFast(L, 2)));
+        FQuat* Quat = (FQuat*)GetCppInstanceFast(L, 2);
+        if (Quat)
+        {
+            V->SetRotation(*Quat);
+        }
     }
     if (NumParams > 2)
     {
-        V->SetTranslation(*((FVector*)GetCppInstanceFast(L, 3)));
+        FVector* Vector = (FVector*)GetCppInstanceFast(L, 3);
+        if (Vector)
+        {
+            V->SetTranslation(*Vector);
+        }
     }
     if (NumParams > 3)
     {
-        V->SetScale3D(*((FVector*)GetCppInstanceFast(L, 4)));
+        FVector* Vector = (FVector*)GetCppInstanceFast(L, 4);
+        if (Vector)
+        {
+            V->SetScale3D(*Vector);
+        }
     }
     return 1;
 }

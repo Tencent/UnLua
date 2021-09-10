@@ -19,7 +19,7 @@
 /**
  * Load a class. for example: UClass.Load("/Game/Core/Blueprints/AICharacter.AICharacter_C")
  */
-int32 UClass_Load(lua_State *L)
+int32 UClass_Load(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
@@ -28,14 +28,14 @@ int32 UClass_Load(lua_State *L)
         return 0;
     }
 
-    const char *ClassName = lua_tostring(L, 1);
+    const char* ClassName = lua_tostring(L, 1);
     if (!ClassName)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid class name!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    const TCHAR *Suffix = TEXT("_C");
+    const TCHAR* Suffix = TEXT("_C");
     FString ClassPath(ClassName);
     int32 Index = INDEX_NONE;
     ClassPath.FindChar(TCHAR('.'), Index);
@@ -58,7 +58,7 @@ int32 UClass_Load(lua_State *L)
         }
     }
 
-    FClassDesc *ClassDesc = RegisterClass(L, TCHAR_TO_ANSI(*ClassPath));
+    FClassDesc* ClassDesc = RegisterClass(L, TCHAR_TO_UTF8(*ClassPath));
     if (ClassDesc && ClassDesc->AsClass())
     {
         UnLua::PushUObject(L, ClassDesc->AsClass());
@@ -74,7 +74,7 @@ int32 UClass_Load(lua_State *L)
 /**
  * Test whether this class is a child of another class
  */
-static int32 UClass_IsChildOf(lua_State *L)
+static int32 UClass_IsChildOf(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
@@ -83,14 +83,14 @@ static int32 UClass_IsChildOf(lua_State *L)
         return 0;
     }
 
-    UClass *SrcClass = Cast<UClass>(UnLua::GetUObject(L, 1));
+    UClass* SrcClass = Cast<UClass>(UnLua::GetUObject(L, 1));
     if (!SrcClass)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid source class!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    UClass *TargetClass = Cast<UClass>(UnLua::GetUObject(L, 2));
+    UClass* TargetClass = Cast<UClass>(UnLua::GetUObject(L, 2));
     if (!TargetClass)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid target class!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -102,14 +102,50 @@ static int32 UClass_IsChildOf(lua_State *L)
     return 1;
 }
 
+
+/**
+ * Get the default object of UClass.
+ */
+static int32 UClass_GetDefaultObject(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+    if (NumParams != 1)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    UClass* SrcClass = Cast<UClass>(UnLua::GetUObject(L, 1));
+    if (!SrcClass)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid source class!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    UObject* Ret = SrcClass->GetDefaultObject();
+    if (Ret)
+    {
+        UnLua::PushUObject(L, Ret);
+    }
+    else
+    {
+        lua_pushnil(L);
+    }
+
+
+    return 1;
+}
+
+
 static const luaL_Reg UClassLib[] =
 {
     { "Load", UClass_Load },
     { "IsChildOf", UClass_IsChildOf },
+    { "GetDefaultObject", UClass_GetDefaultObject },
     { nullptr, nullptr }
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(UClass)
-    ADD_LIB(UClassLib)
+ADD_LIB(UClassLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(UClass)
