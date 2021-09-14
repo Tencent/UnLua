@@ -2208,7 +2208,7 @@ void FindLuaLoader(lua_State *L, const char *name) {
         luaL_error(L, "'package.searchers' must be a table");
     /*  iterate over available searchers to find a loader */
     for (i = 1; ; i++) {
-        if (lua_rawgeti(L, 3, i) == LUA_TNIL) {  /* no more searchers? */
+        if (lua_rawgeti(L, -1, i) == LUA_TNIL) {  /* no more searchers? */
             lua_pop(L, 1);  /* remove nil */
             luaL_pushresult(&msg);  /* create error message */
             luaL_error(L, "module '%s' not found:%s", name, lua_tostring(L, -1));
