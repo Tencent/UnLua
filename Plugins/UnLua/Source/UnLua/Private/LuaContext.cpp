@@ -120,29 +120,6 @@ void FLuaContext::CreateState()
 
     if (!L)
     {
-#if WITH_EDITOR
-        // load Lua dynamic lib under 'WITH_EDITOR' mode
-        if (!LuaHandle)
-        {
-#if PLATFORM_WINDOWS
-            FString PlatformName(TEXT("Win64"));
-            FString LibName(TEXT("Lua.dll"));
-#elif PLATFORM_MAC
-            FString PlatformName(TEXT("Mac"));
-            FString LibName(TEXT("liblua.dylib"));
-#endif
-            FString LibPath = FString::Printf(TEXT("%s/Source/ThirdParty/Lua/binaries/%s/%s"), *IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir(), *PlatformName, *LibName);
-            if (FPaths::FileExists(LibPath))
-            {
-                LuaHandle = FPlatformProcess::GetDllHandle(*LibPath);
-                if (!LuaHandle)
-                {
-                    UE_LOG(LogUnLua, Log, TEXT("%s: failed to load %s!"), ANSI_TO_TCHAR(__FUNCTION__), *LibPath);
-                    return;
-                }
-            }
-        }
-#endif
 
         L = lua_newstate(FLuaContext::LuaAllocator, nullptr);       // create main Lua thread
         check(L);
