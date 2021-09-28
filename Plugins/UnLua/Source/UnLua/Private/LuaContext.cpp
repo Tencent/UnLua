@@ -881,7 +881,8 @@ bool FLuaContext::IsUObjectValid(UObjectBase* UObjPtr)
         }
         else
         {
-            return (UObjPtr == UObjectItem->Object) && ((UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0);
+            return (UObjPtr == UObjectItem->Object) && ((UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0)
+                    && !UObjectItem->IsUnreachable();
         }
     }
     else
