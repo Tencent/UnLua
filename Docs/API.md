@@ -139,4 +139,4 @@ FUnLuaDelegates
 
 * ENABLE_TYPE_CHECK 是否启用类型检测，帮助在 `UFunction` 调用时进行参数类型合法性检测，默认**启用**。
 
-* ENABLE_DEBUG 是否输出UnLua详细的调试日志，默认**禁用**。
+* UNLUA_ENABLE_DEBUG 是否输出UnLua详细的调试日志，默认**禁用**。
