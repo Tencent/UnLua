@@ -22,7 +22,7 @@
  */
 enum
 {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
     CPT_MulticastSparseDelegate = CPT_Unused_Index_19,
 #endif
     CPT_Enum = CPT_Unused_Index_21,

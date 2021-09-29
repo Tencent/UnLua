@@ -360,7 +360,7 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
     }
 
     FMulticastDelegateProperty *Property = nullptr;
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
     FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(InScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {
@@ -394,7 +394,7 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
 void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDelegate, int32 NumParams, int32 FirstParamIndex)
 {
     check(InScriptDelegate);
-#if ENGINE_MINOR_VERSION < 23           // todo: how to check it for 4.23.x and above...
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 23           // todo: how to check it for 4.23.x and above...
     if (!InScriptDelegate->IsBound())
     {
         return;
@@ -434,7 +434,7 @@ void FDelegateHelper::Broadcast(lua_State *L, FMulticastDelegateType *InScriptDe
 void FDelegateHelper::AddDelegate(FMulticastDelegateType *ScriptDelegate, UObject* Object, const FCallbackDesc& Callback,FScriptDelegate DynamicDelegate)
 {
     FMulticastDelegateProperty *Property = nullptr;
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
     FMulticastDelegateProperty **PropertyPtr = MulticastDelegate2Property.Find(ScriptDelegate);
     if (!PropertyPtr || !(*PropertyPtr))
     {

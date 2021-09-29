@@ -17,12 +17,12 @@
 #include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-#if ENGINE_MINOR_VERSION < 19
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 19
 #define DEFINE_FUNCTION(func) void func( FFrame& Stack, RESULT_DECL )
 #define FNativeFuncPtr Native
 #endif
 
-#if ENGINE_MINOR_VERSION < 20
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 20
 #define EPropertyFlags uint64
 #define GET_INPUT_ACTION_NAME(IAB) IAB.ActionName
 #define IS_INPUT_ACTION_PAIRED(IAB) IAB.bPaired
@@ -31,7 +31,7 @@
 #define IS_INPUT_ACTION_PAIRED(IAB) IAB.IsPaired()
 #endif
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
 #define CastField Cast
 #define GetPropertyOuter(Property) (Property)->GetOuter()
 #define GetChildProperties(Function) (Function)->Children
@@ -67,7 +67,7 @@ typedef USetProperty FSetProperty;
 typedef UStructProperty FStructProperty;
 typedef UDelegateProperty FDelegateProperty;
 typedef UMulticastDelegateProperty FMulticastDelegateProperty;
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
 typedef UMulticastInlineDelegateProperty FMulticastInlineDelegateProperty;
 typedef UMulticastSparseDelegateProperty FMulticastSparseDelegateProperty;
 #endif
@@ -84,28 +84,28 @@ struct TMulticastDelegateTraits
 
     static void AddDelegate(FMulticastDelegateProperty *Property, FScriptDelegate Delegate, void *PropertyValue)
     {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
         Property->AddDelegate(Delegate, nullptr, PropertyValue);
 #endif
     }
 
     static void RemoveDelegate(FMulticastDelegateProperty *Property, FScriptDelegate Delegate, void *PropertyValue)
     {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
         Property->RemoveDelegate(Delegate, nullptr, PropertyValue);
 #endif
     }
 
     static void ClearDelegate(FMulticastDelegateProperty *Property, void *PropertyValue)
     {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
         Property->ClearDelegate(nullptr, PropertyValue);
 #endif
     }
 
     static FMulticastScriptDelegate* GetMulticastDelegate(FMulticastDelegateProperty *Property, void *PropertyValue)
     {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
         return (FMulticastScriptDelegate*)Property->GetMulticastDelegate(PropertyValue);
 #else
         return nullptr;

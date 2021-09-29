@@ -70,7 +70,7 @@ public:
     {
         if (!BoolPropertyDesc)
         {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UBoolProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UBoolProperty(FObjectInitializer(), EC_CppProperty, 0, (EPropertyFlags)0, 0xFF, 1, true);
 #else
@@ -85,7 +85,7 @@ public:
     {
         if (!IntPropertyDesc)
         {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UIntProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UIntProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
 #else
@@ -100,7 +100,7 @@ public:
     {
         if (!FloatPropertyDesc)
         {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UFloatProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UFloatProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
 #else
@@ -115,7 +115,7 @@ public:
     {
         if (!StringPropertyDesc)
         {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UStrProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStrProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
 #else
@@ -130,7 +130,7 @@ public:
     {
         if (!NamePropertyDesc)
         {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UNameProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UNameProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
 #else
@@ -145,7 +145,7 @@ public:
     {
         if (!TextPropertyDesc)
         {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
             // see overloaded operator new that defined in DECLARE_CLASS(...)
             UTextProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UTextProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash);
 #else
@@ -164,7 +164,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UEnumProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UEnumProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Enum);
         UNumericProperty *UnderlyingProp = NewObject<UByteProperty>(Property, TEXT("UnderlyingType"));
@@ -189,7 +189,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSubclassOf<...>
         UClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class, nullptr);
 #else
@@ -206,7 +206,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Class);
 #else
@@ -223,7 +223,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftClassPtr<...>
         USoftClassProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftClassProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
 #else
@@ -240,7 +240,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TSoftObjectPtr<...>
         USoftObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) USoftObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
 #else
@@ -257,7 +257,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TWeakObjectPtr<...>
         UWeakObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UWeakObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
 #else
@@ -274,7 +274,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TLazyObjectPtr<...>
         ULazyObjectProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) ULazyObjectProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
 #else
@@ -291,7 +291,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...). TScriptInterface<...>
         UInterfaceProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UInterfaceProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash | CPF_UObjectWrapper, Class);
 #else
@@ -308,7 +308,7 @@ public:
             return *PropertyDescPtr;
         }
 
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         // see overloaded operator new that defined in DECLARE_CLASS(...)
         UStructProperty *Property = new (EC_InternalUseOnlyConstructor, ScriptStruct, NAME_None, RF_Transient) UStructProperty(FObjectInitializer(), EC_CppProperty, 0, CPF_HasGetValueTypeHash, Struct);
 #else
@@ -447,7 +447,7 @@ private:
     template <typename KeyType>
     TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(FProperty *Property, KeyType *Key, TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
     {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         Property->AddToCluster(ScriptStruct);
 #endif
         Properties.Add(Property);
@@ -465,7 +465,7 @@ private:
      */
     TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(FProperty *Property)
     {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
         Property->AddToCluster(ScriptStruct);
 #endif
         Properties.Add(Property);
