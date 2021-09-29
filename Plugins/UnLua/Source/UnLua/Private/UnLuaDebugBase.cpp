@@ -664,7 +664,7 @@ namespace UnLua
     {
         if (!L)
         {
-            return TEXT("Lua state is not created!!!");
+            return FString();
         }
 
         int32 Depth = 0;

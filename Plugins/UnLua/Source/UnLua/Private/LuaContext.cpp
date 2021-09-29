@@ -612,9 +612,16 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
  */
 void FLuaContext::OnCrash()
 {
-    FString LogStr = UnLua::GetLuaCallStack(L);         // get lua call stack...
+    const FString LogStr = UnLua::GetLuaCallStack(L);         // get lua call stack...
 
-    UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
+    if (!LogStr.IsEmpty())
+    {
+        UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
+    }
+    else
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("Lua state is not created."));
+    }
 
     GLog->Flush();
 }
