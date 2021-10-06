@@ -27,39 +27,26 @@
 #include "DefaultParamCollection.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 #include "Interfaces/IPluginManager.h"
+#include "DelegateHelper.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
 #include "GameDelegates.h"
 #endif
 
-#if UE_BUILD_TEST
-#include "Tests/UnLuaPerformanceTestProxy.h"
-
-void RunPerformanceTest(UWorld *World)
-{
-    if (!World)
-    {
-        return;
-    }
-    static AActor *PerformanceTestProxy = World->SpawnActor(AUnLuaPerformanceTestProxy::StaticClass());
-}
-#endif
-
-static UUnLuaManager *SManager = nullptr;
 
 /**
  * Statically exported callback for 'Hotfix'
  */
-bool OnModuleHotfixed(const char *ModuleName)
+bool OnModuleHotfixed(const char* ModuleName)
 {
-    if (!SManager || !ModuleName)
+    if (!GLuaCxt->IsEnable() || !ModuleName)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
         return false;
     }
 
-    bool bSuccess = SManager->OnModuleHotfixed(ANSI_TO_TCHAR(ModuleName));
+    bool bSuccess = GLuaCxt->GetUnLuaManager()->OnModuleHotfixed(UTF8_TO_TCHAR(ModuleName));
 #if !UE_BUILD_SHIPPING
     if (!bSuccess)
     {
@@ -72,7 +59,7 @@ bool OnModuleHotfixed(const char *ModuleName)
 EXPORT_FUNCTION(bool, OnModuleHotfixed, const char*)
 
 
-FLuaContext *GLuaCxt = nullptr;
+FLuaContext* GLuaCxt = nullptr;
 
 /**
  * Create GLuaCxt
@@ -92,39 +79,31 @@ FLuaContext* FLuaContext::Create()
  */
 void FLuaContext::RegisterDelegates()
 {
+#if SUPPORTS_COMMANDLET == 0
     if (IsRunningCommandlet())
     {
         return;
     }
+#endif
 
-    if (bDelegatesRegistered)
-    {
-        return;
-    }
-
-    bDelegatesRegistered = true;
-
-    FWorldDelegates::OnWorldCleanup.AddRaw(GLuaCxt, &FLuaContext::OnWorldCleanup);
-    FWorldDelegates::OnPostWorldCleanup.AddRaw(GLuaCxt, &FLuaContext::OnPostWorldCleanup);
-    FWorldDelegates::OnPreWorldInitialization.AddRaw(GLuaCxt, &FLuaContext::OnPreWorldInitialization);
-    FWorldDelegates::OnPostWorldInitialization.AddRaw(GLuaCxt, &FLuaContext::OnPostWorldInitialization);
-    FCoreDelegates::OnPostEngineInit.AddRaw(GLuaCxt, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
-    FCoreDelegates::OnPreExit.AddRaw(GLuaCxt, &FLuaContext::OnPreExit);                 // called before StaticExit()
-    FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(GLuaCxt, &FLuaContext::OnAsyncLoadingFlushUpdate);
-    FCoreDelegates::OnHandleSystemError.AddRaw(GLuaCxt, &FLuaContext::OnCrash);
-    FCoreDelegates::OnHandleSystemEnsure.AddRaw(GLuaCxt, &FLuaContext::OnCrash);
-    FCoreUObjectDelegates::PreLoadMap.AddRaw(GLuaCxt, &FLuaContext::PreLoadMap);
-    FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(GLuaCxt, &FLuaContext::PostLoadMapWithWorld);
+    FWorldDelegates::OnWorldCleanup.AddRaw(this, &FLuaContext::OnWorldCleanup);
+    FCoreDelegates::OnBeginFrame.AddRaw(this, &FLuaContext::OnBeginFrame);
+    FCoreDelegates::OnPostEngineInit.AddRaw(this, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
+    FCoreDelegates::OnPreExit.AddRaw(this, &FLuaContext::OnPreExit);                 // called before StaticExit()
+    FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaContext::OnAsyncLoadingFlushUpdate);
+    FCoreDelegates::OnHandleSystemError.AddRaw(this, &FLuaContext::OnCrash);
+    FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FLuaContext::OnCrash);
+    FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FLuaContext::PostLoadMapWithWorld);
+    //FCoreUObjectDelegates::GetPreGarbageCollectDelegate().AddRaw(this, &FLuaContext::OnPreGarbageCollect);
 
 #if WITH_EDITOR
-    // delegates for PIE
-    FEditorDelegates::PreBeginPIE.AddRaw(GLuaCxt, &FLuaContext::PreBeginPIE);
-    FEditorDelegates::BeginPIE.AddRaw(GLuaCxt, &FLuaContext::BeginPIE);
-    FEditorDelegates::PostPIEStarted.AddRaw(GLuaCxt, &FLuaContext::PostPIEStarted);
-    FEditorDelegates::PrePIEEnded.AddRaw(GLuaCxt, &FLuaContext::PrePIEEnded);
-    FEditorDelegates::EndPIE.AddRaw(GLuaCxt, &FLuaContext::EndPIE);
-    FGameDelegates::Get().GetEndPlayMapDelegate().AddRaw(GLuaCxt, &FLuaContext::OnEndPlayMap);
+    FEditorDelegates::PreBeginPIE.AddRaw(this, &FLuaContext::PreBeginPIE);
+    FEditorDelegates::PostPIEStarted.AddRaw(this, &FLuaContext::PostPIEStarted);
+    FEditorDelegates::PrePIEEnded.AddRaw(this, &FLuaContext::PrePIEEnded);
 #endif
+
+    GUObjectArray.AddUObjectCreateListener(this);    // add listener for creating UObject
+    GUObjectArray.AddUObjectDeleteListener(this);    // add listener for deleting UObject
 }
 
 /**
@@ -132,36 +111,15 @@ void FLuaContext::RegisterDelegates()
  */
 void FLuaContext::CreateState()
 {
+#if SUPPORTS_COMMANDLET == 0
     if (IsRunningCommandlet())
     {
         return;
     }
+#endif
 
     if (!L)
     {
-#if WITH_EDITOR
-        // load Lua dynamic lib under 'WITH_EDITOR' mode
-        if (!LuaHandle)
-        {
-#if PLATFORM_WINDOWS
-            FString PlatformName(TEXT("Win64"));
-            FString LibName(TEXT("Lua.dll"));
-#elif PLATFORM_MAC
-            FString PlatformName(TEXT("Mac"));
-            FString LibName(TEXT("liblua.dylib"));
-#endif
-            FString LibPath = FString::Printf(TEXT("%s/Source/ThirdParty/Lua/binaries/%s/%s"), *IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir(), *PlatformName, *LibName);
-            if (FPaths::FileExists(LibPath))
-            {
-                LuaHandle = FPlatformProcess::GetDllHandle(*LibPath);
-                if (!LuaHandle)
-                {
-                    UE_LOG(LogUnLua, Log, TEXT("%s: failed to load %s!"), ANSI_TO_TCHAR(__FUNCTION__), *LibPath);
-                    return;
-                }
-            }
-        }
-#endif
 
         L = lua_newstate(FLuaContext::LuaAllocator, nullptr);       // create main Lua thread
         check(L);
@@ -193,32 +151,37 @@ void FLuaContext::CreateState()
         lua_register(L, "LoadObject", Global_LoadObject);
         lua_register(L, "LoadClass", Global_LoadClass);
         lua_register(L, "NewObject", Global_NewObject);
+        lua_register(L, "UnLua_AddToClassWhiteSet", Global_AddToClassWhiteSet);
+        lua_register(L, "UnLua_RemoveFromClassWhiteSet", Global_RemoveFromClassWhiteSet);
+        lua_register(L, "UnLua_UnRegisterClass", Global_UnRegisterClass);
 
         lua_register(L, "UEPrint", Global_Print);
-        if (FPlatformProperties::RequiresCookedData())
+        //if (FPlatformProperties::RequiresCookedData())
         {
             lua_register(L, "require", Global_Require);             // override 'require' when running with cooked data
         }
 
         // register collision related enums
+        FCollisionHelper::Initialize();     // initialize collision helper stuff
         RegisterECollisionChannel(L);
         RegisterEObjectTypeQuery(L);
         RegisterETraceTypeQuery(L);
 
-#if UE_BUILD_TEST
-        lua_gc(L, LUA_GCSTOP, 0);
-#else
+
         if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
         {
             FUnLuaDelegates::ConfigureLuaGC.Execute(L);
         }
         else
         {
+#if 504 == LUA_VERSION_NUM
+            lua_gc(L, LUA_GCGEN);
+#else
             // default Lua GC config in UnLua
             lua_gc(L, LUA_GCSETPAUSE, 100);
             lua_gc(L, LUA_GCSETSTEPMUL, 5000);
-        }
 #endif
+        }
 
         // add new package path
         FString LuaSrcPath = GLuaSrcFullPath + TEXT("?.lua");
@@ -235,13 +198,13 @@ void FLuaContext::CreateState()
         }
 
         // register statically exported global functions
-        for (UnLua::IExportedFunction *Function : ExportedFunctions)
+        for (UnLua::IExportedFunction* Function : ExportedFunctions)
         {
             Function->Register(L);
         }
 
         // register statically exported enums
-        for (UnLua::IExportedEnum *Enum : ExportedEnums)
+        for (UnLua::IExportedEnum* Enum : ExportedEnums)
         {
             Enum->Register(L);
         }
@@ -257,16 +220,11 @@ void FLuaContext::SetEnable(bool InEnable)
 {
     if (InEnable)
     {
-        CreateState();
+        Initialize();
     }
     else
     {
         Cleanup(true);
-    }
-    bEnable = InEnable;
-    if (bEnable)
-    {
-        Initialize();
     }
 }
 
@@ -275,13 +233,13 @@ void FLuaContext::SetEnable(bool InEnable)
  */
 bool FLuaContext::IsEnable() const
 {
-    return L && bEnable && bInitialized;
+    return L && bEnable;
 }
 
 /**
  * Statically export a global functions
  */
-bool FLuaContext::ExportFunction(UnLua::IExportedFunction *Function)
+bool FLuaContext::ExportFunction(UnLua::IExportedFunction* Function)
 {
     if (Function)
     {
@@ -294,7 +252,7 @@ bool FLuaContext::ExportFunction(UnLua::IExportedFunction *Function)
 /**
  * Statically export an enum
  */
-bool FLuaContext::ExportEnum(UnLua::IExportedEnum *Enum)
+bool FLuaContext::ExportEnum(UnLua::IExportedEnum* Enum)
 {
     if (Enum)
     {
@@ -307,11 +265,11 @@ bool FLuaContext::ExportEnum(UnLua::IExportedEnum *Enum)
 /**
  * Statically export a class
  */
-bool FLuaContext::ExportClass(UnLua::IExportedClass *Class)
+bool FLuaContext::ExportClass(UnLua::IExportedClass* Class)
 {
     if (Class)
     {
-        TMap<FName, UnLua::IExportedClass*> &ExportedClasses = Class->IsReflected() ? ExportedReflectedClasses : ExportedNonReflectedClasses;
+        TMap<FName, UnLua::IExportedClass*>& ExportedClasses = Class->IsReflected() ? ExportedReflectedClasses : ExportedNonReflectedClasses;
         ExportedClasses.Add(Class->GetName(), Class);
         return true;
     }
@@ -323,7 +281,7 @@ bool FLuaContext::ExportClass(UnLua::IExportedClass *Class)
  */
 UnLua::IExportedClass* FLuaContext::FindExportedClass(FName Name)
 {
-    UnLua::IExportedClass **Class = ExportedReflectedClasses.Find(Name);
+    UnLua::IExportedClass** Class = ExportedReflectedClasses.Find(Name);
     if (Class)
     {
         return *Class;
@@ -337,7 +295,16 @@ UnLua::IExportedClass* FLuaContext::FindExportedClass(FName Name)
  */
 UnLua::IExportedClass* FLuaContext::FindExportedReflectedClass(FName Name)
 {
-    UnLua::IExportedClass **Class = ExportedReflectedClasses.Find(Name);
+    UnLua::IExportedClass** Class = ExportedReflectedClasses.Find(Name);
+    return Class ? *Class : nullptr;
+}
+
+/**
+ * Find a statically exported non reflected class
+ */
+UnLua::IExportedClass* FLuaContext::FindExportedNonReflectedClass(FName Name)
+{
+    UnLua::IExportedClass** Class = ExportedNonReflectedClasses.Find(Name);
     return Class ? *Class : nullptr;
 }
 
@@ -351,7 +318,7 @@ bool FLuaContext::AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface>
         return false;
     }
 
-    TSharedPtr<UnLua::ITypeInterface> *TypeInterfacePtr = TypeInterfaces.Find(Name);
+    TSharedPtr<UnLua::ITypeInterface>* TypeInterfacePtr = TypeInterfaces.Find(Name);
     if (!TypeInterfacePtr)
     {
         TypeInterfaces.Add(Name, TypeInterface);
@@ -364,70 +331,115 @@ bool FLuaContext::AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface>
  */
 TSharedPtr<UnLua::ITypeInterface> FLuaContext::FindTypeInterface(FName Name)
 {
-    TSharedPtr<UnLua::ITypeInterface> *TypeInterfacePtr = TypeInterfaces.Find(Name);
+    TSharedPtr<UnLua::ITypeInterface>* TypeInterfacePtr = TypeInterfaces.Find(Name);
     return TypeInterfacePtr ? *TypeInterfacePtr : TSharedPtr<UnLua::ITypeInterface>();
+}
+
+/**
+* Delay Bind RF_NeedPostLoad Object
+**/
+void FLuaContext::OnDelayBindObject(UObject* Object)
+{
+    if (GLuaCxt->IsUObjectValid(Object))
+    {
+        if (!FUObjectThreadContext::Get().IsRoutingPostLoad && !Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s[%llu]: Delay bind object %s,%p"), ANSI_TO_TCHAR(__FUNCTION__), GFrameCounter, *Object->GetName(), Object);
+            TryToBindLua(Object);
+        }
+        else
+        {
+            AsyncTask(ENamedThreads::GameThread, [this, Object]()
+                {
+                    this->OnDelayBindObject(Object);
+                });
+        }
+    }
 }
 
 /**
  * Try to bind Lua module for a UObject
  */
-bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
+bool FLuaContext::TryToBindLua(UObjectBaseUtility* Object)
 {
-    if (!bEnable || !Object || !Manager)
+    if (!bEnable || !IsUObjectValid(Object))
     {
         return false;
     }
 
-#if WITH_EDITOR
-    if (GIsEditor && !bIsPIE)
-    {
-        return false;
-    }
-#endif
-
-    static UClass *InterfaceClass = UUnLuaInterface::StaticClass();
     if (!Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))           // filter out CDO and ArchetypeObjects
     {
-        check(!Object->IsPendingKill());
-        UClass *Class = Object->GetClass();
+        UClass* Class = Object->GetClass();
         if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>())             // filter out UPackage and UClass
         {
             return false;
         }
+
+        static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
+
+        //!!!Fix!!!
+        //all bind operation should be in gamethread,include dynamic bind
         if (Class->ImplementsInterface(InterfaceClass))                             // static binding
         {
-#if WITH_EDITOR
-            if (GIsEditor && Object->GetOuter())
+            // fliter some object in bp nest case
+            // skip objects during asset loding 
+            if (Object->HasAnyFlags(RF_NeedLoad) && Object->HasAnyFlags(RF_Load) && Object->GetFName().GetNumber() < 1 && Object->GetClass()->GetName().Contains(Object->GetName()))
             {
-                UWorld *World = Object->GetOuter()->GetWorld();
-                if (World && !World->IsGameWorld())
+                UE_LOG(LogUnLua, Log, TEXT("%s : Skip internal object (%s,%p,%s) during asset loading"), ANSI_TO_TCHAR(__FUNCTION__), *Object->GetFullName(), Object, *Class->GetName());
+                return false;
+            }
+
+            if (GWorld)
+            {
+                FString ObjectName;
+                Object->GetFullName(GWorld, ObjectName);
+                if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
                 {
+                    UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
                     return false;
                 }
             }
-#endif
-            UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
+
+            UFunction* Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
             if (Func)
             {
-                if (Func->GetNativeFunc() && IsInGameThread())
+                // native func may not be bind in level bp
+                if (!Func->GetNativeFunc())
+                {
+                    Func->Bind();
+                    if (!Func->GetNativeFunc())
+                    {
+                        UE_LOG(LogUnLua, Warning, TEXT("TryToBindLua: bind native function failed for GetModuleName in object %s"), *Object->GetName());
+                        return false;
+                    }
+                }
+
+                if (IsInGameThread())
                 {
                     FString ModuleName;
-                    UObject *DefaultObject = Class->GetDefaultObject();             // get CDO
+                    UObject* DefaultObject = Class->GetDefaultObject();             // get CDO
                     DefaultObject->UObject::ProcessEvent(Func, &ModuleName);        // force to invoke UObject::ProcessEvent(...)
-                    UClass *OuterClass = Func->GetOuterUClass();                    // get UFunction's outer class
-                    Class = OuterClass == InterfaceClass ? Class : OuterClass;      // select the target UClass to bind Lua module
                     if (ModuleName.Len() < 1)
                     {
-                        ModuleName = Class->GetName();
+                        return false;
                     }
-                    return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);   // bind!!!
+
+                    if (!Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
+                    {
+                        return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);   // bind!!!
+                    }
+                    else
+                    {
+                        // PostLoadObjects.Add((UObject*)Object);
+                        OnDelayBindObject((UObject*)Object);
+                    }
                 }
                 else
                 {
                     if (IsAsyncLoading())
                     {
                         // check FAsyncLoadingThread::IsMultithreaded()?
-                        FScopeLock Lock(&CandidatesCS);
+                        FScopeLock Lock(&Async2MainCS);
                         Candidates.Add((UObject*)Object);                           // mark the UObject as a candidate
                     }
                 }
@@ -445,7 +457,7 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility *Object)
  * Callback for FWorldDelegates::OnWorldTickStart
  */
 #if ENGINE_MINOR_VERSION > 23
-void FLuaContext::OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime)
+void FLuaContext::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)
 #else
 void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
 #endif
@@ -455,14 +467,14 @@ void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
         return;
     }
 
-    for (UInputComponent *InputComponent : CandidateInputComponents)
+    for (UInputComponent* InputComponent : CandidateInputComponents)
     {
         if (!InputComponent->IsRegistered() || InputComponent->IsPendingKill())
         {
             continue;
         }
 
-        AActor *Actor = Cast<AActor>(InputComponent->GetOuter());
+        AActor* Actor = Cast<AActor>(InputComponent->GetOuter());
         Manager->ReplaceInputs(Actor, InputComponent);                              // try to replace/override input events
     }
 
@@ -473,100 +485,38 @@ void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
 /**
  * Callback for FWorldDelegates::OnWorldCleanup
  */
-void FLuaContext::OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources)
+void FLuaContext::OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanupResources)
 {
-    if (!World || (GIsEditor ? !World->IsGameWorld() : (!GWorld || GWorld != World)) || !bEnable)
+    if (!World || !bEnable)
     {
         return;
     }
-
-#if WITH_EDITOR
-    UGameInstance *OwningGameInstance = World->GetGameInstance();
-    if (OwningGameInstance && OwningGameInstance->GetWorldContext() && OwningGameInstance->GetWorldContext()->PendingNetGame)
-    {
-        return;
-    }
-#endif
 
     World->RemoveOnActorSpawnedHandler(OnActorSpawnedHandle);
 
-    if (World->PersistentLevel && World->PersistentLevel->OwningWorld == World)
-    {
-        bIsInSeamlessTravel = World->IsInSeamlessTravel();
-    }
 #if ENGINE_MINOR_VERSION > 23
     Cleanup(IsEngineExitRequested(), World);                    // clean up
 #else
     Cleanup(GIsRequestingExit, World);                          // clean up
 #endif
-
-#if WITH_EDITOR
-    int32 Index = LoadedWorlds.Find(World);
-    if (Index != INDEX_NONE)
-    {
-        LoadedWorlds.RemoveAt(Index);
-    }
-#endif
 }
 
-/**
- * Callback for FWorldDelegates::OnPostWorldCleanup
- */
-void FLuaContext::OnPostWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources)
+
+void FLuaContext::OnBeginFrame()
 {
-    if (!World || (GIsEditor ? !World->IsGameWorld() : (!GWorld || GWorld != World)) || !bEnable)
+    for (int i = PostLoadObjects.Num() - 1; 0 <= i; --i)
     {
-        return;
-    }
-
-#if WITH_EDITOR
-    UGameInstance *OwningGameInstance = World->GetGameInstance();
-    if (OwningGameInstance && OwningGameInstance->GetWorldContext() && OwningGameInstance->GetWorldContext()->PendingNetGame)
-    {
-        return;
-    }
-#endif
-
-    if (NextMap.Len() > 0)
-    {
-        Initialize();
-    }
-}
-
-/**
- * Callback for FWorldDelegates::OnPreWorldInitialization
- */
-void FLuaContext::OnPreWorldInitialization(UWorld *World, const UWorld::InitializationValues)
-{
-#if WITH_EDITOR
-    if (!World || !World->IsGameWorld() || !bEnable)
-    {
-        return;
-    }
-
-    ENetMode NetMode = World->GetNetMode();
-    if (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer)
-    {
-        ServerWorld = World;
-    }
-#endif
-}
-
-/**
- * Callback for FWorldDelegates::OnPostWorldInitialization
- */
-void FLuaContext::OnPostWorldInitialization(UWorld *World, const UWorld::InitializationValues)
-{
-    if (!World || GIsEditor ? !World->IsGameWorld() : (!GWorld || GWorld != World))
-    {
-        return;
-    }
-
-    NextMap.Empty();
-
-    if (!bEnable)
-    {
-        return;
+        UObject* Object = PostLoadObjects[i];
+        if (!IsUObjectValid(Object))
+        {
+            PostLoadObjects.RemoveAt(i);
+        }
+        else if (!Object->HasAnyFlags(RF_NeedPostLoad))
+        {
+            UE_LOG(LogUnLua, Log, TEXT("TryToBindLua[%llu]: Bind object %s,%p"), GFrameCounter, *Object->GetName(), Object);
+            TryToBindLua(Object);
+            PostLoadObjects.RemoveAt(i);
+        }
     }
 }
 
@@ -575,28 +525,17 @@ void FLuaContext::OnPostWorldInitialization(UWorld *World, const UWorld::Initial
  */
 void FLuaContext::OnPostEngineInit()
 {
-#if AUTO_UNLUA_STARTUP
-    if (!GIsEditor)
-    {
-        SetEnable(true);
-    }
+#if AUTO_UNLUA_STARTUP && !WITH_EDITOR
+    SetEnable(true);
 #endif
-
-    // create UnLuaManager and add it to root
-    Manager = NewObject<UUnLuaManager>();
-    Manager->AddToRoot();
-    SManager = Manager;
 
     CreateDefaultParamCollection();                 // create data for default parameters of UFunctions
 
 #if WITH_EDITOR
-    if (!GIsEditor)
+    UGameViewportClient* GameViewportClient = GEngine->GameViewport;
+    if (GameViewportClient)
     {
-        UGameViewportClient *GameViewportClient = GEngine->GameViewport;
-        if (GameViewportClient)
-        {
-            GameViewportClient->OnGameViewportInputKey().BindRaw(this, &FLuaContext::OnGameViewportInputKey);   // bind a default input event
-        }
+        GameViewportClient->OnGameViewportInputKey().BindRaw(this, &FLuaContext::OnGameViewportInputKey);   // bind a default input event
     }
 #endif
 }
@@ -607,13 +546,6 @@ void FLuaContext::OnPostEngineInit()
 void FLuaContext::OnPreExit()
 {
     Cleanup(true);                                  // full clean up
-
-    if (Manager)
-    {
-        Manager->RemoveFromRoot();                  // remove UnLuaManager from root
-        Manager = nullptr;
-        SManager = nullptr;
-    }
 
     DestroyDefaultParamCollection();                // destroy data of default parameters of UFunctions
 }
@@ -628,32 +560,48 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
         return;
     }
 
-    static UClass *InterfaceClass = UUnLuaInterface::StaticClass();
+    static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
 
     {
-        FScopeLock Lock(&CandidatesCS);
+        TArray<UObject*> LocalCandidates;
 
-        for (int32 i = Candidates.Num() - 1; i >= 0; --i)
         {
-            UObject *Object = Candidates[i];
-            if (Object && !Object->HasAnyFlags(RF_NeedPostLoad))
+            FScopeLock Lock(&Async2MainCS);
+
+            //!!!Fix!!!
+            // check object is load completed?
+            // copy fully loaded object to local cache for bind
+            for (int32 i = Candidates.Num() - 1; i >= 0; --i)
             {
-                // see FLuaContext::TryToBindLua
-                UFunction *Func = Object->FindFunction(FName("GetModuleName"));
+                UObject* Object = Candidates[i];
+                if ((GLuaCxt->IsUObjectValid(Object))
+                    && (!Object->HasAnyFlags(RF_NeedPostLoad))
+                    && (!Object->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading))
+                    && (!Object->GetClass()->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading)))
+                {
+                    LocalCandidates.Add(Object);
+                    Candidates.RemoveAt(i);
+                }
+            }
+        }
+
+        for (int32 i = 0; i < LocalCandidates.Num(); ++i)
+        {
+            UObject* Object = LocalCandidates[i];
+            if (Object)
+            {
+                UFunction* Func = Object->FindFunction(FName("GetModuleName"));
                 if (!Func || !Func->GetNativeFunc())
                 {
                     continue;
                 }
                 FString ModuleName;
                 Object->UObject::ProcessEvent(Func, &ModuleName);    // force to invoke UObject::ProcessEvent(...)
-                UClass *Class = Func->GetOuterUClass();
-                Class = Class == InterfaceClass ? Object->GetClass() : Class;
                 if (ModuleName.Len() < 1)
                 {
-                    ModuleName = Class->GetName();
+                    continue;
                 }
-                Manager->Bind(Object, Class, *ModuleName);
-                Candidates.RemoveAt(i);
+                Manager->Bind(Object, Object->GetClass(), *ModuleName);
             }
         }
     }
@@ -664,91 +612,47 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
  */
 void FLuaContext::OnCrash()
 {
-    FString LogStr = UnLua::GetLuaCallStack(L);         // get lua call stack...
+    const FString LogStr = UnLua::GetLuaCallStack(L);         // get lua call stack...
 
-    UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
+    if (!LogStr.IsEmpty())
+    {
+        UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
+    }
+    else
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("Lua state is not created."));
+    }
 
     GLog->Flush();
 }
 
-/**
- * Callback for FCoreUObjectDelegates::PreLoadMap
- */
-void FLuaContext::PreLoadMap(const FString &MapName)
-{
-    int32 Loc = INDEX_NONE;
-    MapName.FindLastChar('/', Loc);
-    NextMap = Loc > INDEX_NONE ? MapName.Right(MapName.Len() - Loc - 1) : MapName;
-    Initialize();
-}
 
 /**
  * Callback for FCoreUObjectDelegates::PostLoadMapWithWorld
  */
-void FLuaContext::PostLoadMapWithWorld(UWorld *World)
+void FLuaContext::PostLoadMapWithWorld(UWorld* World)
 {
-    if (!World || !bEnable || !bInitialized || !Manager)
+    if (!World || !bEnable)
     {
         return;
     }
 
-    static bool bGameInstanceBinded = false;
-    UGameInstance *GameInstance = World->GetGameInstance();
-    if (!bGameInstanceBinded && GameInstance)
+    // !!!Fix!!!
+    // gameinstance delay bind, muti lua state support
+    UGameInstance* GameInstance = World->GetGameInstance();
+    if (GameInstance
+        && (!GameInstances.Contains(GameInstance)))
     {
         TryToBindLua(GameInstance);                     // try to bind Lua module for GameInstance
-        bGameInstanceBinded = true;
+        GameInstances.Add(GameInstance);
     }
 
     Manager->OnMapLoaded(World);
 
-#if WITH_EDITOR
-    LoadedWorlds.Add(World);
-#endif
-
+    // !!!Fix!!!
+    // when world is cleanup, this need to remove
     // register callback for spawning an actor
     OnActorSpawnedHandle = World->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(Manager, &UUnLuaManager::OnActorSpawned));
-
-#if UE_BUILD_TEST
-    RunPerformanceTest(World);
-#endif
-}
-
-/**
- * Callback for FCoreUObjectDelegates::GetPostGarbageCollect()
- */
-void FLuaContext::OnPostGarbageCollect()
-{
-    if (L)
-    {
-        // check memory leaks under DEBUG build
-#if UE_BUILD_DEBUG
-        lua_getfield(L, LUA_REGISTRYINDEX, "StructMap");
-        int32 N = TraverseTable(L, -1, nullptr, PeekTableElement);
-        lua_pop(L, 1);
-        if (N > 0)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("!!! %d structs are still alive !!!"), N);
-        }
-        lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-        N = TraverseTable(L, -1, nullptr, PeekTableElement);
-        lua_pop(L, 1);
-        if (N > 0)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("!!! %d objects are still alive !!!"), N);
-        }
-#endif
-
-        Manager->PostCleanup();
-    }
-
-    FCoreUObjectDelegates::GetPostGarbageCollect().Remove(OnPostGarbageCollectHandle);
-
-    if (bIsInSeamlessTravel)
-    {
-        bIsInSeamlessTravel = false;
-        Initialize();
-    }
 }
 
 #if WITH_EDITOR
@@ -757,19 +661,15 @@ void FLuaContext::OnPostGarbageCollect()
  */
 void FLuaContext::PreBeginPIE(bool bIsSimulating)
 {
-    bIsPIE = true;
 #if AUTO_UNLUA_STARTUP
     SetEnable(true);
-#else
-    Initialize();
 #endif
-}
 
-/**
- * Callback for FEditorDelegates::BeginPIE
- */
-void FLuaContext::BeginPIE(bool bIsSimulating)
-{
+    UGameViewportClient* GameViewportClient = GEngine->GameViewport;
+    if (GameViewportClient)
+    {
+        GameViewportClient->OnGameViewportInputKey().BindRaw(this, &FLuaContext::OnGameViewportInputKey);   // bind a default input event
+    }
 }
 
 /**
@@ -777,27 +677,10 @@ void FLuaContext::BeginPIE(bool bIsSimulating)
  */
 void FLuaContext::PostPIEStarted(bool bIsSimulating)
 {
-    if (!Manager)
-    {
-        return;
-    }
-
-    Manager->GetDefaultInputs();
-
-    UEditorEngine *EditorEngine = Cast<UEditorEngine>(GEngine);
+    UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
     if (EditorEngine)
     {
-        //Manager->OnMapLoaded(EditorEngine->PlayWorld);
-        UWorld *World = ServerWorld ? ServerWorld : EditorEngine->PlayWorld;
-        if (World)
-        {
-            UGameInstance *GameInstance = World->GetGameInstance();
-            TryToBindLua(GameInstance);
-
-            Manager->OnMapLoaded(World);
-
-            LoadedWorlds.Add(World);
-        }
+        PostLoadMapWithWorld(EditorEngine->PlayWorld);
     }
 }
 
@@ -806,35 +689,16 @@ void FLuaContext::PostPIEStarted(bool bIsSimulating)
  */
 void FLuaContext::PrePIEEnded(bool bIsSimulating)
 {
-    //bIsPIE = false;
+    // close lua env alwaylls
+    SetEnable(false);
 }
 
-/**
- * Callback for FEditorDelegates::EndPIE
- */
-void FLuaContext::EndPIE(bool bIsSimulating)
-{
-}
-
-/**
- * Callback for FGameDelegates::EndPlayMapDelegate
- */
-void FLuaContext::OnEndPlayMap()
-{
-    bIsPIE = false;
-    Cleanup(true);
-    Manager->CleanupDefaultInputs();
-    ServerWorld = nullptr;
-    LoadedWorlds.Empty();
-    CandidateInputComponents.Empty();
-    FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
-}
 #endif
 
 /**
  * Add a Lua coroutine and its reference in Lua registry
  */
-void FLuaContext::AddThread(lua_State *Thread, int32 ThreadRef)
+void FLuaContext::AddThread(lua_State* Thread, int32 ThreadRef)
 {
     ThreadToRef.Add(Thread, ThreadRef);
     RefToThread.Add(ThreadRef, Thread);
@@ -845,11 +709,16 @@ void FLuaContext::AddThread(lua_State *Thread, int32 ThreadRef)
  */
 void FLuaContext::ResumeThread(int32 ThreadRef)
 {
-    lua_State **ThreadPtr = RefToThread.Find(ThreadRef);
+    lua_State** ThreadPtr = RefToThread.Find(ThreadRef);
     if (ThreadPtr)
     {
-        lua_State *Thread = *ThreadPtr;
+        lua_State* Thread = *ThreadPtr;
+#if 504 == LUA_VERSION_NUM
+        int NResults = 0;
+        int32 State = lua_resume(Thread, L, 0, &NResults);
+#else
         int32 State = lua_resume(Thread, L, 0);
+#endif
         if (State == LUA_OK)
         {
             ThreadToRef.Remove(Thread);
@@ -864,15 +733,6 @@ void FLuaContext::ResumeThread(int32 ThreadRef)
  */
 void FLuaContext::CleanupThreads()
 {
-    for (TMap<lua_State*, int32>::TIterator It(ThreadToRef); It; ++It)
-    {
-        lua_State *Thread = It.Key();
-        int32 ThreadRef = It.Value();
-        if (ThreadRef != LUA_REFNIL)
-        {
-            luaL_unref(L, LUA_REGISTRYINDEX, ThreadRef);
-        }
-    }
     ThreadToRef.Empty();
     RefToThread.Empty();
 }
@@ -880,35 +740,60 @@ void FLuaContext::CleanupThreads()
 /**
  * Find a Lua coroutine
  */
-int32 FLuaContext::FindThread(lua_State *Thread)
+int32 FLuaContext::FindThread(lua_State* Thread)
 {
-    int32 *ThreadRefPtr = ThreadToRef.Find(Thread);
+    int32* ThreadRefPtr = ThreadToRef.Find(Thread);
     return ThreadRefPtr ? *ThreadRefPtr : LUA_REFNIL;
 }
 
 /**
  * Callback when a UObjectBase (not full UObject) is created
  */
-void FLuaContext::NotifyUObjectCreated(const UObjectBase *InObject, int32 Index)
+void FLuaContext::NotifyUObjectCreated(const UObjectBase* InObject, int32 Index)
 {
-    UObjectBaseUtility *Object = (UObjectBaseUtility*)InObject;
-    TryToBindLua(Object);               // try to bind a Lua module for the object
+    {
+        FScopeLock Lock(&Async2MainCS);
+        UObjPtr2Idx.Add(const_cast<UObjectBase*>(InObject), Index);
+#if UNLUA_ENABLE_DEBUG != 0
+        UObjPtr2Name.Add(const_cast<UObjectBase*>(InObject), InObject->GetFName().ToString());
+#endif
+    }
+
+    if (!bEnable)
+    {
+        return;
+    }
+
+#if WITH_EDITOR
+    // Don't bind during cook
+    if (GIsCookerLoadingPackage)
+    {
+        return;
+    }
+#endif
+
+    // try to bind a Lua module for the object
+    UObjectBaseUtility* Object = (UObjectBaseUtility*)InObject;
+    TryToBindLua(Object);
 
     // special handling for UInputComponent
     if (!Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject) && Object->IsA<UInputComponent>())
     {
-        AActor *Actor = Cast<APlayerController>(Object->GetOuter());
+        AActor* Actor = Cast<APlayerController>(Object->GetOuter());
         if (!Actor)
         {
             Actor = Cast<APawn>(Object->GetOuter());
         }
         if (Actor && Actor->GetLocalRole() >= ROLE_AutonomousProxy)
         {
+            //!!!Fix!!!
+            // when tick start processing, inputcomponent may be invald or changeing
             CandidateInputComponents.AddUnique((UInputComponent*)InObject);
-            if (!FWorldDelegates::OnWorldTickStart.IsBoundToObject(this))
+            if (OnWorldTickStartHandle.IsValid())
             {
-                OnWorldTickStartHandle = FWorldDelegates::OnWorldTickStart.AddRaw(this, &FLuaContext::OnWorldTickStart);
+                FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
             }
+            OnWorldTickStartHandle = FWorldDelegates::OnWorldTickStart.AddRaw(this, &FLuaContext::OnWorldTickStart);
         }
     }
 }
@@ -916,15 +801,27 @@ void FLuaContext::NotifyUObjectCreated(const UObjectBase *InObject, int32 Index)
 /**
  * Callback when a UObjectBase (not full UObject) is deleted
  */
-void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
+void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
 {
-    if (!bEnable || !Manager)
+    if (!bEnable)
     {
+        FScopeLock Lock(&Async2MainCS);
+        UObjPtr2Idx.Remove(InObject);
+
+#if UNLUA_ENABLE_DEBUG != 0
+        UObjPtr2Name.Remove(InObject);
+#endif
+
         return;
     }
 
+#if UNLUA_ENABLE_DEBUG != 0
+    UE_LOG(LogUnLua, Log, TEXT("NotifyUObjectDeleted : %s,%p"), *UObjPtr2Name[InObject], InObject);
+#endif
+
     bool bClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
     Manager->NotifyUObjectDeleted(InObject, bClass);
+    FDelegateHelper::NotifyUObjectDeleted((UObject*)InObject);
 
     if (CandidateInputComponents.Num() > 0)
     {
@@ -934,13 +831,85 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase *InObject, int32 Index)
             FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
         }
     }
+
+    FScopeLock Lock(&Async2MainCS);
+    UObjPtr2Idx.Remove(InObject);
+    UObjPtr2Name.Remove(InObject);
 }
 
+
+/**
+ * Callback when a GUObjectArray is deleted
+ */
+#if ENGINE_MINOR_VERSION > 22
+void FLuaContext::OnUObjectArrayShutdown()
+{
+    bool bEngineExit = false;
+#if ENGINE_MINOR_VERSION > 23
+    bEngineExit = IsEngineExitRequested();
+#else
+    bEngineExit = GIsRequestingExit;
+#endif
+
+    if (bEngineExit)
+    {
+        // when exiting, remove listeners for creating/deleting UObject
+        GUObjectArray.RemoveUObjectCreateListener(GLuaCxt);
+        GUObjectArray.RemoveUObjectDeleteListener(GLuaCxt);
+    }
+}
+#endif
+
+/**
+ * Robust method to verify uobject
+ */
+bool FLuaContext::IsUObjectValid(UObjectBase* UObjPtr)
+{
+    if (!UObjPtr)
+    {
+        return false;
+    }
+
+    int32 UObjIdx = -1;
+    {
+        FScopeLock Lock(&Async2MainCS);
+        if (UObjPtr2Idx.Contains(UObjPtr))
+        {
+            UObjIdx = UObjPtr2Idx[UObjPtr];
+        }
+    }
+
+    if (-1 != UObjIdx)
+    {
+        FUObjectItem* UObjectItem = GUObjectArray.IndexToObject(UObjIdx);
+        if (!UObjectItem)
+        {
+            return false;
+        }
+        else
+        {
+            return (UObjPtr == UObjectItem->Object) && ((UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0)
+                    && !UObjectItem->IsUnreachable();
+        }
+    }
+    else
+    {
+        //!!!Fix!!!
+        //all should be false here?
+        return false;
+    }
+}
+
+UUnLuaManager* FLuaContext::GetUnLuaManager()
+{
+    return Manager;
+}
+
+
 FLuaContext::FLuaContext()
-    : L(nullptr), Manager(nullptr), bEnable(false), bInitialized(false), bIsPIE(false), bAddUObjectNotify(false), bDelegatesRegistered(false), bIsInSeamlessTravel(false)
+    : L(nullptr), Manager(nullptr), bEnable(false)
 {
 #if WITH_EDITOR
-    ServerWorld = nullptr;
     LuaHandle = nullptr;
 #endif
 }
@@ -954,12 +923,30 @@ FLuaContext::~FLuaContext()
         Manager->RemoveFromRoot();
         Manager = nullptr;
     }
+
+    if (L)
+    {
+        L = NULL;
+    }
+
+#if ENGINE_MINOR_VERSION <= 22
+    // when exiting, remove listeners for creating/deleting UObject
+    GUObjectArray.RemoveUObjectCreateListener(GLuaCxt);
+    GUObjectArray.RemoveUObjectDeleteListener(GLuaCxt);
+#endif
+
+    FScopeLock Lock(&Async2MainCS);
+    UObjPtr2Idx.Empty();
+
+#if UNLUA_ENABLE_DEBUG != 0
+    UObjPtr2Name.Empty();
+#endif
 }
 
 /**
  * Allocator for Lua VM
  */
-void* FLuaContext::LuaAllocator(void *ud, void *ptr, size_t osize, size_t nsize)
+void* FLuaContext::LuaAllocator(void* ud, void* ptr, size_t osize, size_t nsize)
 {
     if (nsize == 0)
     {
@@ -971,7 +958,7 @@ void* FLuaContext::LuaAllocator(void *ud, void *ptr, size_t osize, size_t nsize)
         return nullptr;
     }
 
-    void *Buffer = nullptr;
+    void* Buffer = nullptr;
     if (!ptr)
     {
         Buffer = FMemory::Malloc(nsize);
@@ -1006,36 +993,28 @@ void* FLuaContext::LuaAllocator(void *ud, void *ptr, size_t osize, size_t nsize)
  */
 void FLuaContext::Initialize()
 {
-    if (!bEnable || bInitialized)
+    if (!bEnable)
     {
-        return;
-    }
+        CreateState();  // create Lua main thread
 
-    FCollisionHelper::Initialize();     // initialize collision helper stuff
+        // create UnLuaManager and add it to root
+        Manager = NewObject<UUnLuaManager>();
+        Manager->AddToRoot();
 
-    CreateState();                      // create Lua main thread
-
-    if (L)
-    {
-        if (!bAddUObjectNotify)
+        if (L)
         {
-            GUObjectArray.AddUObjectCreateListener(GLuaCxt);    // add listener for creating UObject
-            GUObjectArray.AddUObjectDeleteListener(GLuaCxt);    // add listener for deleting UObject
-            bAddUObjectNotify = true;
+            bEnable = true;
+            FUnLuaDelegates::OnLuaContextInitialized.Broadcast();
         }
-
-        bInitialized = true;
-
-        FUnLuaDelegates::OnLuaContextInitialized.Broadcast();
     }
 }
 
 /**
  * Clean up UnLua
  */
-void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
+void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
 {
-    if (!bEnable || !Manager)
+    if (!bEnable)
     {
         return;
     }
@@ -1044,33 +1023,55 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
     {
         FUnLuaDelegates::OnPreLuaContextCleanup.Broadcast(bFullCleanup);
 
-        CleanupThreads();                                       // clean up coroutines
-
-        FDelegateHelper::Cleanup(bFullCleanup);                 // clean up delegates
-
-        Manager->Cleanup(World, bFullCleanup);                  // clean up UnLuaManager
-
-        GPropertyCreator.Cleanup();                             // clean up dynamically created UProperties
-
-        for (const FString &Name : LibraryNames)
+        if (!bFullCleanup)
         {
-            ClearLibrary(L, TCHAR_TO_ANSI(*Name));              // clean up Lua meta tables
+            // force full lua gc
+            lua_gc(L, LUA_GCCOLLECT, 0);
+            lua_gc(L, LUA_GCCOLLECT, 0);
+
+            //!!!Fix!!!
+            // do some check work here
         }
-        LibraryNames.Empty();
-
-        for (const FString &Name : ModuleNames)
+        else
         {
-            ClearLoadedModule(L, TCHAR_TO_ANSI(*Name));         // clean up required Lua modules
-        }
-        ModuleNames.Empty();
+            bEnable = false;
 
-        if (bFullCleanup)
-        {
+            // close lua state first
             lua_close(L);
             L = nullptr;
 
+            // clean ue side modules,es static data structes
+            FCollisionHelper::Cleanup();                        // clean up collision helper stuff
+
             GObjectReferencer.Cleanup();                        // clean up object referencer
+
+            //!!!Fix!!!
+            //thread need refine
+            CleanupThreads();                                   // lua thread
+
+            LibraryNames.Empty();                               // metatables and lua module
+            ModuleNames.Empty();
+
+            FDelegateHelper::Cleanup(bFullCleanup);                 // clean up delegates
+
+            Manager->Cleanup(NULL, bFullCleanup);                  // clean up UnLuaManager
+
+            GPropertyCreator.Cleanup();                             // clean up dynamically created UProperties
+
             GReflectionRegistry.Cleanup();                      // clean up reflection registry
+
+            PostLoadObjects.Empty();
+            GameInstances.Empty();
+            CandidateInputComponents.Empty();
+            FCoreUObjectDelegates::GetPostGarbageCollect().Remove(OnPostGarbageCollectHandle);
+            FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+
+            // old manager
+            if (Manager)
+            {
+                Manager->RemoveFromRoot();
+                Manager = nullptr;
+            }
 
 #if WITH_EDITOR
             if (LuaHandle)
@@ -1080,31 +1081,7 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
             }
 #endif
 
-            FCollisionHelper::Cleanup();                        // clean up collision helper stuff
-
-            if (bAddUObjectNotify)
-            {
-                // remove listeners for creating/deleting UObject
-                GUObjectArray.RemoveUObjectCreateListener(GLuaCxt);
-                GUObjectArray.RemoveUObjectDeleteListener(GLuaCxt);
-                bAddUObjectNotify = false;
-            }
-
-            bEnable = false;
         }
-        else
-        {
-            lua_gc(L, LUA_GCCOLLECT, 0);
-
-            OnPostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddRaw(this, &FLuaContext::OnPostGarbageCollect);
-
-#if UE_BUILD_DEBUG
-            GObjectReferencer.Debug();
-            GReflectionRegistry.Debug();
-#endif
-        }
-
-        bInitialized = false;
 
         FUnLuaDelegates::OnPostLuaContextCleanup.Broadcast(bFullCleanup);
     }
@@ -1115,6 +1092,10 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld *World)
  */
 bool FLuaContext::OnGameViewportInputKey(FKey InKey, FModifierKeysState ModifierKeyState, EInputEvent EventType)
 {
+    if (!bEnable)
+    {
+        return false;
+    }
     if (InKey == EKeys::L && ModifierKeyState.IsControlDown() && EventType == IE_Released)
     {
         return HotfixLua();

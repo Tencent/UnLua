@@ -20,13 +20,17 @@
 #include "LuaCore.h"
 #include "LuaContext.h"
 #include "DefaultParamCollection.h"
+#include "UnLuaManager.h"
+#include "UnLua.h"
 
 /**
  * Class descriptor constructor
  */
 FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName, EType InType)
-    : Struct(InStruct), ClassName(InName), ClassFName(*InName), ClassAnsiName(*InName), Type(InType), UserdataPadding(0), Size(0), RefCount(0), Parent(nullptr), FunctionCollection(nullptr)
-{
+    : Struct(InStruct), ClassName(InName), Type(InType), UserdataPadding(0), Size(0), RefCount(0), Locked(false),FunctionCollection(nullptr)
+{   
+	GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
+
     if (InType == EType::CLASS)
     {
         Size = Struct->GetStructureSize();
@@ -38,7 +42,7 @@ FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName, EType InType)
             RegisterClass(*GLuaCxt, Interface.Class);
         }
 
-        FunctionCollection = GDefaultParamCollection.Find(ClassFName);
+        FunctionCollection = GDefaultParamCollection.Find(*ClassName);
     }
     else if (InType == EType::SCRIPTSTRUCT)
     {
@@ -53,48 +57,113 @@ FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName, EType InType)
  * Class descriptor destructor
  */
 FClassDesc::~FClassDesc()
-{
+{   
+#if UNLUA_ENABLE_DEBUG != 0
+    UE_LOG(LogUnLua, Log, TEXT("~FClassDesc : %s,%p,%d"), *GetName(), this, RefCount);
+#endif
+    
+    UnLua::FAutoStack  AutoStack;              // make sure lua stack is cleaned
+
+	GReflectionRegistry.RemoveFromDescSet(this);
+
+    // remove refs to class,etc ufunction/delegate
+    if (GLuaCxt->IsUObjectValid((UClass*)Struct))
+    {
+        UUnLuaManager* UnLuaManager = GLuaCxt->GetManager();
+        if (UnLuaManager)
+        {
+            UnLuaManager->CleanUpByClass((UClass*)Struct);
+        }
+    }
+
+    // remove lua side class tables
+    FTCHARToUTF8 Utf8ClassName(*ClassName);
+    ClearLibrary(*GLuaCxt, Utf8ClassName.Get());            // clean up related Lua meta table
+    ClearLoadedModule(*GLuaCxt, Utf8ClassName.Get());       // clean up required Lua module
+
+    // remove descs within classdesc,etc property/function
     for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
     {
         delete It.Value();
     }
     for (FPropertyDesc *Property : Properties)
-    {
-        delete Property;
+    {   
+        if (GReflectionRegistry.IsDescValid(Property,DESC_PROPERTY))
+        {
+            delete Property;
+        }
     }
     for (FFunctionDesc *Function : Functions)
     {
-        delete Function;
-    }
-}
-
-/**
- * Release a class descriptor
- */
-bool FClassDesc::Release(bool bKeepAlive)
-{
-    --RefCount;     // dec reference count
-    if (!RefCount && !Struct->IsNative())
-    {
-        if (!bKeepAlive)
-        {
-            delete this;
-            return true;
+        if (GReflectionRegistry.IsDescValid(Function,DESC_FUNCTION))
+        {   
+            delete Function;
         }
     }
-    return false;
+
+    Fields.Empty();
+    Properties.Empty();
+    Functions.Empty();
 }
 
-/**
- * Reset a class descriptor
- */
-void FClassDesc::Reset()
-{
-    Struct = nullptr;
-    Type = EType::UNKNOWN;
+void FClassDesc::AddRef()
+{   
+    TArray<FClassDesc*> DescChain;
+    GetInheritanceChain(DescChain);
 
-    ClearLibrary(*GLuaCxt, ClassAnsiName.Get());            // clean up related Lua meta table
-    ClearLoadedModule(*GLuaCxt, ClassAnsiName.Get());       // clean up required Lua module
+    DescChain.Insert(this, 0);   // add self
+    for (int i = 0; i < DescChain.Num(); ++i)
+    {
+        DescChain[i]->RefCount++;
+    }
+}
+
+void FClassDesc::SubRef()
+{ 
+    TArray<FClassDesc*> DescChain;
+    GetInheritanceChain(DescChain);
+
+    DescChain.Insert(this, 0);   // add self
+    for (int i = 0; i < DescChain.Num(); ++i)
+    {
+        DescChain[i]->RefCount--;
+    }
+}
+
+
+void FClassDesc::AddLock()
+{
+    TArray<FClassDesc*> DescChain;
+    GetInheritanceChain(DescChain);
+
+    DescChain.Insert(this, 0);   // add self
+    for (int i = 0; i < DescChain.Num(); ++i)
+    {
+        DescChain[i]->Locked = true;
+    }
+}
+
+void FClassDesc::ReleaseLock()
+{
+    TArray<FClassDesc*> DescChain;
+    GetInheritanceChain(DescChain);
+
+    DescChain.Insert(this, 0);   // add self
+    for (int i = 0; i < DescChain.Num(); ++i)
+    {
+        DescChain[i]->Locked = false;
+    }
+}
+
+bool FClassDesc::IsLocked()
+{
+    return Locked;
+}
+
+FFieldDesc* FClassDesc::FindField(const char* FieldName)
+{
+    FFieldDesc** FieldDescPtr = Fields.Find(FieldName);
+    return FieldDescPtr ? *FieldDescPtr : nullptr;
 }
 
 /**
@@ -155,7 +224,7 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
         if (OuterStruct)
         {
             if (OuterStruct != Struct)
-            {
+            {   
                 FClassDesc *OuterClass = (FClassDesc*)GReflectionRegistry.RegisterClass(OuterStruct);
                 check(OuterClass);
                 return OuterClass->RegisterField(FieldName, QueryClass);
@@ -187,15 +256,67 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
 /**
  * Get class inheritance chain
  */
-void FClassDesc::GetInheritanceChain(TArray<FString> &NameChain, TArray<UStruct*> &StructChain) const
+void FClassDesc::GetInheritanceChain(TArray<FString> &InNameChain, TArray<UStruct*> &InStructChain)
 {
     check(Type != EType::UNKNOWN);
-    UStruct *SuperStruct = Struct->GetInheritanceSuper();
-    while (SuperStruct)
-    {
-        FString Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
-        NameChain.Add(Name);
-        StructChain.Add(SuperStruct);
-        SuperStruct = SuperStruct->GetInheritanceSuper();
+
+    InNameChain.Empty();
+    InStructChain.Empty();
+
+    if (GLuaCxt->IsUObjectValid(Struct))
+    {   
+        if (NameChain.Num() <= 0)
+        {
+            UStruct* SuperStruct = Struct->GetInheritanceSuper();
+            while (SuperStruct)
+            {
+                FString Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
+                NameChain.Add(Name);
+                StructChain.Add(SuperStruct);
+                SuperStruct = SuperStruct->GetInheritanceSuper();
+            }
+        }
+
+        InNameChain = NameChain;
+        InStructChain = StructChain;
     }
+}
+
+void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
+{
+    TArray<FString> InNameChain;
+    TArray<UStruct*> InStructChain;
+    GetInheritanceChain(InNameChain, InStructChain);
+
+    for (int i = 0; i < NameChain.Num(); ++i)
+    {
+        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(TCHAR_TO_UTF8(*NameChain[i]));
+        if (ClassDesc)
+        {
+            DescChain.Add(ClassDesc);
+        }
+        else
+        {
+            UE_LOG(LogUnLua,Warning,TEXT("GetInheritanceChain : ClassDesc %s in inheritance chain %s not found"), *NameChain[i],*GetName());
+        }
+    }
+}
+
+FClassDesc::EType FClassDesc::GetType(UStruct* InStruct)
+{
+    EType Type = EType::UNKNOWN;
+    UScriptStruct* ScriptStruct = Cast<UScriptStruct>(InStruct);
+    if (ScriptStruct)
+    {
+        Type = EType::SCRIPTSTRUCT;
+    }
+    else
+    {
+        UClass* Class = Cast<UClass>(InStruct);
+        if (Class)
+        {
+            Type = EType::CLASS;
+        }
+    }
+    return Type;
 }

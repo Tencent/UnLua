@@ -50,6 +50,10 @@ static bool GetMulticastDelegateInfo(lua_State *L, T* &Delegate, UObject* &Objec
         return false;
     }
 
+#if UNLUA_ENABLE_DEBUG != 0
+    UE_LOG(LogUnLua, Log, TEXT("GetMulticastDelegateInfo : %p,%p,%s"), Delegate, Object, *Object->GetName());
+#endif
+    
     return true;
 }
 
@@ -70,7 +74,7 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FCallbackDesc Callback(Object->GetClass(), CallbackFunction);
+        FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
         FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
         if (FuncName == NAME_None)
         {
@@ -80,9 +84,11 @@ struct TMulticastDelegateLib
         }
         else
         {
+			UE_LOG(UnLuaDelegate, Verbose, TEXT("++ %d %s %p %s"), FDelegateHelper::GetNumBindings(Callback), *Object->GetName(), Object, *FuncName.ToString());
+
             FScriptDelegate DynamicDelegate;
             DynamicDelegate.BindUFunction(Object, FuncName);
-            FDelegateHelper::AddDelegate(Delegate, DynamicDelegate);
+            FDelegateHelper::AddDelegate(Delegate, Object, Callback, DynamicDelegate);
         }
         return 0;
     }
@@ -101,7 +107,7 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Remove(Delegate, Object, FCallbackDesc(Object->GetClass(), CallbackFunction));;
+        FDelegateHelper::Remove(Delegate, Object, FCallbackDesc(Object->GetClass(), CallbackFunction, Object));;
         return 0;
     }
 

@@ -17,11 +17,28 @@
 #include "CoreUObject.h"
 #include "UnLuaBase.h"
 
+#define UNLUA_LOG(L, CategoryName, Verbosity, Format, ...) \
+    {\
+    	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
+        luaL_traceback(L, L, "", 0); \
+        UE_LOG(LogUnLua, Log, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
+        lua_pop(L,1); \
+    }
+
+#define UNLUA_LOGWARNING(L, CategoryName, Verbosity, Format, ...) \
+    {\
+    	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
+        luaL_traceback(L, L, "", 0); \
+        UE_LOG(LogUnLua, Warning, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
+        lua_pop(L,1); \
+    }
+
 #define UNLUA_LOGERROR(L, CategoryName, Verbosity, Format, ...) \
     {\
-        UE_LOG(CategoryName, Verbosity, Format, ##__VA_ARGS__); \
+    	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
         luaL_traceback(L, L, "", 0); \
-        lua_error(L); \
+        UE_LOG(LogUnLua, Error, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
+        lua_pop(L,1); \
     }
 
 #if STATS

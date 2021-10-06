@@ -93,7 +93,7 @@ static int32 UWorld_SpawnActor(lua_State *L)
             lua_pushvalue(L, 8);
             TableRef = luaL_ref(L, LUA_REGISTRYINDEX);
         }
-        FScopedLuaDynamicBinding Binding(L, Class, ANSI_TO_TCHAR(ModuleName), TableRef);
+        FScopedLuaDynamicBinding Binding(L, Class, UTF8_TO_TCHAR(ModuleName), TableRef);
         AActor *NewActor = World->SpawnActor(Class, &Transform, SpawnParameters);
         UnLua::PushUObject(L, NewActor);
     }

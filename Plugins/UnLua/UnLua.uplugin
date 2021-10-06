@@ -1,7 +1,7 @@
 {
     "FileVersion": 3,
-    "Version": 1,
-    "VersionName": "1.0",
+    "Version": 2,
+    "VersionName": "2.0",
     "FriendlyName": "UnLua",
     "Description": "Lua scripting plugin",
     "Category": "Scripting",
@@ -14,29 +14,38 @@
     "IsBetaVersion": false,
     "Installed": false,
     "CanBeUsedWithUnrealHeaderTool": true,
-    "Modules":
-    [
+    "Modules": [
         {
-            "Name" : "UnLua",
-            "Type" : "Runtime",
-            "LoadingPhase" : "PostConfigInit",
-            "WhitelistPlatforms" : [ "Win64", "Mac", "IOS", "Android" ]
+            "Name": "UnLua",
+            "Type": "Runtime",
+            "LoadingPhase": "PostConfigInit",
+            "WhitelistPlatforms": [ "Win64", "Mac", "IOS", "Android", "Linux" ]
         },
         {
-            "Name" : "UnLuaEditor",
-            "Type" : "Editor",
-            "LoadingPhase" : "Default",
-            "WhitelistPlatforms" : [ "Win64", "Mac" ]
+            "Name": "UnLuaEditor",
+            "Type": "Editor",
+            "LoadingPhase": "Default",
+            "WhitelistPlatforms": [ "Win64", "Mac" ]
         },
         {
-            "Name" : "UnLuaDefaultParamCollector",
-            "Type" : "Program",
-            "LoadingPhase" : "PostConfigInit"
+            "Name": "UnLuaDefaultParamCollector",
+            "Type": "Program",
+            "LoadingPhase": "PostConfigInit"
         },
         {
-            "Name" : "UnLuaIntelliSense",
-            "Type" : "Program",
-            "LoadingPhase" : "PostConfigInit"
+            "Name": "UnLuaIntelliSense",
+            "Type": "Program",
+            "LoadingPhase": "PostConfigInit"
+        },
+        {
+            "Name": "UnLuaIntelliSenseBP",
+            "Type": "Editor",
+            "LoadingPhase": "Default"
+        },
+        {
+            "Name": "UnLuaFrameWork",
+            "Type": "Runtime",
+            "LoadingPhase": "PostConfigInit"
         }
     ]
 }

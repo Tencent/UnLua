@@ -15,6 +15,7 @@
 #pragma once
 
 #include "LuaContext.h"
+#include "LuaCore.h"
 
 template <typename LuaContainerType>
 class TLuaContainerInterface

@@ -23,6 +23,7 @@
 #include "Misc/FileHelper.h"
 
 DEFINE_LOG_CATEGORY(LogUnLua);
+DEFINE_LOG_CATEGORY(UnLuaDelegate);
 
 namespace UnLua
 {
@@ -95,26 +96,21 @@ namespace UnLua
      */
     bool LoadFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
     {
-        FString FullFilePath = GLuaSrcFullPath + RelativeFilePath;
-        FString ProjectDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir());
-        FString ProjectPersistentDownloadDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectPersistentDownloadDir());
-        if (!ProjectPersistentDownloadDir.EndsWith("/"))
+        FString FullFilePath = GetFullPathFromRelativePath(RelativeFilePath);
+        if (FullFilePath.IsEmpty())
         {
-            ProjectPersistentDownloadDir.Append("/");
+            UE_LOG(LogUnLua, Warning, TEXT("the lua file try to load does not exist! : %s"), *RelativeFilePath);
+            return false;
         }
-        FString RealFilePath = FullFilePath.Replace(*ProjectDir, *ProjectPersistentDownloadDir);        // try to load the file from 'ProjectPersistentDownloadDir' first
-        if (!IFileManager::Get().FileExists(*RealFilePath))
+
+        if (FullFilePath != GLuaSrcFullPath + RelativeFilePath)
         {
-            RealFilePath = FullFilePath;
-        }
-        else
-        {
-            UE_LOG(LogUnLua, Log, TEXT("Load lua file from DownloadDir : %s"), *RealFilePath);
+            UE_LOG(LogUnLua, Log, TEXT("Load lua file from DownloadDir : %s"), *FullFilePath);
         }
 
         TArray<uint8> Data;
         // developers can provide a delegate to load the file
-        bool bSuccess = FUnLuaDelegates::LoadLuaFile.IsBound() ? FUnLuaDelegates::LoadLuaFile.Execute(RealFilePath, Data) : FFileHelper::LoadFileToArray(Data, *RealFilePath, 0);
+        bool bSuccess = FUnLuaDelegates::LoadLuaFile.IsBound() ? FUnLuaDelegates::LoadLuaFile.Execute(FullFilePath, Data) : FFileHelper::LoadFileToArray(Data, *FullFilePath, 0);
         if (!bSuccess)
         {
             UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -122,7 +118,7 @@ namespace UnLua
         }
 
         int32 SkipLen = (3 < Data.Num()) && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
-        return LoadChunk(L, (const char*)(Data.GetData() + SkipLen), Data.Num() - SkipLen, TCHAR_TO_ANSI(*RelativeFilePath), Mode, Env);    // loads the buffer as a Lua chunk
+        return LoadChunk(L, (const char*)(Data.GetData() + SkipLen), Data.Num() - SkipLen, TCHAR_TO_UTF8(*RelativeFilePath), Mode, Env);    // loads the buffer as a Lua chunk
     }
 
     /**
@@ -217,7 +213,7 @@ namespace UnLua
             const char *ErrorString = lua_tostring(L, -1);
             luaL_traceback(L, L, ErrorString, 1);
             ErrorString = lua_tostring(L, -1);
-            UE_LOG(LogUnLua, Warning, TEXT("Lua error message: %s"), UTF8_TO_TCHAR(ErrorString));
+            UE_LOG(LogUnLua, Error, TEXT("Lua error message: %s"), UTF8_TO_TCHAR(ErrorString));
         }
         else if (Type == LUA_TTABLE)
         {
@@ -227,7 +223,7 @@ namespace UnLua
             while (lua_next(L, -2) != 0)
             {
                 const char *ErrorString = lua_tostring(L, -1);
-                UE_LOG(LogUnLua, Warning, TEXT("Lua error message %d : %s"), MessageIndex++, UTF8_TO_TCHAR(ErrorString));
+                UE_LOG(LogUnLua, Error, TEXT("Lua error message %d : %s"), MessageIndex++, UTF8_TO_TCHAR(ErrorString));
                 lua_pop(L, 1);
             }
         }
@@ -241,7 +237,8 @@ namespace UnLua
      */
     int32 PushPointer(lua_State *L, void *Value, const char *MetatableName, bool bAlwaysCreate)
     {
-        if (!Value)
+        if (!Value
+            || !MetatableName)
         {
             lua_pushnil(L);
             return 1;
@@ -257,6 +254,44 @@ namespace UnLua
             if (Type == LUA_TUSERDATA)
             {
                 lua_remove(L, -2);
+
+                // check metatable is same?
+                bool bMTSame = false;
+                if (lua_getmetatable(L, -1))
+                {   
+                    luaL_getmetatable(L, MetatableName);
+                    if (lua_rawequal(L,-1,-2))
+                    {   
+                        bMTSame = true;
+                    }
+
+                    lua_pop(L, 2);
+                }
+
+				if (!bMTSame)
+                {
+#if UNLUA_ENABLE_DEBUG != 0
+                    FString CurMetatableName;
+                    if (lua_getmetatable(L, -1))
+                    {
+                        lua_pushstring(L, "__name");
+                        Type = lua_rawget(L,-2);
+                        if (LUA_TSTRING == Type)
+                        {
+                            CurMetatableName = UTF8_TO_TCHAR(lua_tostring(L,-1));
+                        }
+                        lua_pop(L, 2);
+                    }
+					UE_LOG(LogTemp, Log, TEXT("%s : userdata with difference metatable finded! need %s,get %s,may be local or stack variable pushed to lua..."),
+                        ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName), *CurMetatableName);
+#endif
+                    bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
+                    if (!bSuccess)
+                    {
+                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"),  UTF8_TO_TCHAR(MetatableName));
+                        return 1;
+                    }
+                }
             }
             else
             {
@@ -268,18 +303,16 @@ namespace UnLua
 
         if (bCreateUserdata)
         {
-            void **Userdata = (void**)lua_newuserdata(L, sizeof(void*));
-            *Userdata = Value;
+            NewUserdataWithTwoLvPtrTag(L, sizeof(void*), Value);
             if (MetatableName)
             {
                 bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
                 if (!bSuccess)
                 {
-                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), ANSI_TO_TCHAR(MetatableName));
+                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
                     return 1;
                 }
             }
-            MarkUserdataTwoLvlPtr(L, -1);       // mark the userdata as a two level pointer
 
             if (!bAlwaysCreate)
             {
@@ -317,7 +350,7 @@ namespace UnLua
      */
     int32 PushUObject(lua_State *L, UObjectBaseUtility *Object, bool bAddRef)
     {
-        if (!Object)
+        if (!GLuaCxt->IsUObjectValid(Object))
         {
             lua_pushnil(L);
             return 1;
@@ -350,7 +383,7 @@ namespace UnLua
      */
     UObject* GetUObject(lua_State *L, int32 Index)
     {
-#if UE_BUILD_DEBUG
+/*#if UE_BUILD_DEBUG
         if (lua_getmetatable(L, Index) == 0)
         {
             return nullptr;
@@ -362,9 +395,17 @@ namespace UnLua
         FClassDesc *ClassDesc = GReflectionRegistry.FindClass(ClassName);
         lua_pop(L, 2);
         return ClassDesc && ClassDesc->IsClass() ? (UObject*)GetCppInstance(L, Index) : nullptr;
-#else
-        return (UObject*)GetCppInstance(L, Index);
-#endif
+#else*/
+        UObject* Object = (UObject*)GetCppInstance(L, Index);
+        if (!GLuaCxt->IsUObjectValid(Object))
+        {
+            return nullptr;
+        }
+        else
+        {
+            return Object;
+        }
+//#endif
     }
 
     /**
@@ -375,7 +416,7 @@ namespace UnLua
         void *Userdata = ::NewUserdataWithPadding(L, Size, MetatableName);
         if (Userdata)
         {
-            MarkUserdataTwoLvlPtr(L, -1);       // mark the new userdata as a two level pointer
+            MarkUserdataTwoLvPtrTag(Userdata);       // mark the new userdata as a two level pointer
         }
         return Userdata;
     }
@@ -550,6 +591,29 @@ namespace UnLua
     {
         FScriptMap *ScriptMap = (FScriptMap*)GetScriptContainer(L, Index);
         return ScriptMap;
+    }
+
+    /**
+     * Helper to recover Lua stack automatically
+     */
+    FAutoStack::FAutoStack()
+    {
+        OldTop = -1;
+        lua_State* L = UnLua::GetState();
+        if (L)
+        {
+            OldTop = lua_gettop(L);
+        }
+    }
+
+    FAutoStack::~FAutoStack()
+    {
+        lua_State* L = UnLua::GetState();
+        if ((L)
+            && (-1 != OldTop))
+        {
+            lua_settop(L, OldTop);
+        }
     }
 
 } // namespace UnLua

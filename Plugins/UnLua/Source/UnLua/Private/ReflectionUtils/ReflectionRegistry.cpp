@@ -14,6 +14,10 @@
 
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
+#include "UnLuaManager.h"
+#include "UEObjectReferencer.h"
+#include "PropertyDesc.h"
+#include "UnLua.h"
 
 /**
  * Clean up
@@ -22,46 +26,127 @@ void FReflectionRegistry::Cleanup()
 {
     for (TMap<FName, FClassDesc*>::TIterator It(Name2Classes); It; ++It)
     {
-        delete It.Value();
+        if (GReflectionRegistry.IsDescValid(It.Value(), DESC_CLASS))
+        {
+            delete It.Value();
+        }
     }
     for (TMap<FName, FEnumDesc*>::TIterator It(Enums); It; ++It)
     {
         delete It.Value();
     }
     for (TMap<UFunction*, FFunctionDesc*>::TIterator It(Functions); It; ++It)
-    {
-        delete It.Value();
+    {  
+        if (GReflectionRegistry.IsDescValid(It.Value(), DESC_FUNCTION))
+        {
+            delete It.Value();
+        }
     }
     Name2Classes.Empty();
     Struct2Classes.Empty();
-    NonNativeStruct2Classes.Empty();
     Enums.Empty();
     Functions.Empty();
+	DescSet.Empty();
+    GCSet.Empty();
+    ClassWhiteSet.Empty();
+}
+
+FClassDesc* FReflectionRegistry::FindClass(const char* InName)
+{
+    FName ClassName = InName;
+    FClassDesc** ClassDesc = Name2Classes.Find(ClassName);
+    if (ClassDesc)
+    {
+        // release invalid desc if found
+        if (!IsDescValid(*ClassDesc, DESC_CLASS))
+        {
+            Name2Classes.Remove(ClassName);
+            ClassDesc = nullptr;
+        }
+        else
+        {
+            if (!GLuaCxt->IsUObjectValid((*ClassDesc)->AsStruct()))
+            {
+                UnRegisterClass(*ClassDesc);
+                ClassDesc = nullptr;
+            }
+        }
+    }
+    return ClassDesc ? *ClassDesc : nullptr;
+}
+
+/**
+ * Try to unregister a class，may do nothing
+ */
+void FReflectionRegistry::TryUnRegisterClass(FClassDesc* ClassDesc)
+{
+    if (IsDescValid(ClassDesc, DESC_CLASS))
+    {
+        if (!ClassDesc->IsValid())
+        {
+#if UNLUA_ENABLE_DEBUG != 0
+            UE_LOG(LogTemp, Log, TEXT("TryUnRegisterClass : remove empty class desc %s"),*ClassDesc->GetName());
+#endif
+            // remove empty desc
+            UnRegisterClass(ClassDesc);
+        }
+        else
+        {
+#if UNLUA_ENABLE_DEBUG != 0
+            UE_LOG(LogTemp, Log, TEXT("TryUnRegisterClass : %s,%d,%d,%d,%d"),
+                *ClassDesc->GetName(), ClassDesc->GetRefCount(), ClassDesc->IsLocked(), IsInClassWhiteSet(ClassDesc->GetName()), ClassDesc->IsNative());
+#endif
+
+            if ((!ClassDesc->IsLocked())
+                && (ClassDesc->GetRefCount() <= 0))
+            {
+                bool bNeedClean = false;
+                if (IsInClassWhiteSet(ClassDesc->GetName()))
+                {
+                    bNeedClean = false;
+                }
+                else
+                {
+                    if (!ClassDesc->IsNative())
+                    {
+#if ENABLE_AUTO_CLEAN_NNATCLASS != 0
+                        bNeedClean = true;
+#endif
+                    }
+                }
+
+                if (bNeedClean)
+                {
+                    if (!ClassDesc->IsNative())
+                    {
+                        GObjectReferencer.RemoveObjectRef(ClassDesc->AsStruct());
+                    }
+
+                    UnRegisterClass(ClassDesc);
+                }
+            }
+        }
+    }
 }
 
 /**
  * Unregister a class
  */
 bool FReflectionRegistry::UnRegisterClass(FClassDesc *ClassDesc)
-{
-    if (ClassDesc)
-    {
-        FName Name(ClassDesc->GetFName());
-        UStruct *Struct = ClassDesc->AsStruct();
-        if (!Struct)
-        {
-            delete ClassDesc;
-            return true;
-        }
-        else if (ClassDesc->Release())
-        {
-            Name2Classes.Remove(Name);
-            Struct2Classes.Remove(Struct);
-            NonNativeStruct2Classes.Remove(Struct);
-            return true;
-        }
+{   
+    if (GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS))
+    {   
+        FName Name(ClassDesc->GetName());
+        UStruct* Struct = ClassDesc->AsStruct();
+
+        delete ClassDesc;
+
+        // clear classdesc registry 
+        Name2Classes.Remove(Name);
+        Struct2Classes.Remove(Struct);
     }
-    return false;
+
+    return true;
 }
 
 /**
@@ -71,15 +156,15 @@ bool FReflectionRegistry::UnRegisterClass(FClassDesc *ClassDesc)
  * @param[out] OutChain - class inheritance chain
  * @return - the class descriptor
  */
-FClassDesc* FReflectionRegistry::RegisterClass(const TCHAR *InName, TArray<FClassDesc*> *OutChain)
+FClassDesc* FReflectionRegistry::RegisterClass(const char* InName)
 {
-    const TCHAR *Name = (InName[0] == 'U' || InName[0] == 'A' || InName[0] == 'F' || InName[0] == 'E') ? InName + 1 : InName;
-    UStruct *Struct = FindObject<UStruct>(ANY_PACKAGE, Name);       // find first
+    FString Name = (InName[0] == 'U' || InName[0] == 'A' || InName[0] == 'F' || InName[0] == 'E') ? UTF8_TO_TCHAR(InName + 1) : UTF8_TO_TCHAR(InName);
+    UStruct *Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);       // find first
     if (!Struct)
     {
-        Struct = LoadObject<UStruct>(nullptr, Name);                // load if not found
+        Struct = LoadObject<UStruct>(nullptr, *Name);                // load if not found
     }
-    return RegisterClass(Struct, OutChain);
+    return RegisterClass(Struct);
 }
 
 /**
@@ -89,9 +174,9 @@ FClassDesc* FReflectionRegistry::RegisterClass(const TCHAR *InName, TArray<FClas
  * @param[out] OutChain - class inheritance chain
  * @return - the class descriptor
  */
-FClassDesc* FReflectionRegistry::RegisterClass(UStruct *InStruct, TArray<FClassDesc*> *OutChain)
+FClassDesc* FReflectionRegistry::RegisterClass(UStruct *InStruct)
 {
-    if (!InStruct)
+    if (!GLuaCxt->IsUObjectValid(InStruct))
     {
         return nullptr;
     }
@@ -102,71 +187,123 @@ FClassDesc* FReflectionRegistry::RegisterClass(UStruct *InStruct, TArray<FClassD
         return nullptr;
     }
 
-    FClassDesc **ClassDescPtr = Struct2Classes.Find(InStruct);
-    if (ClassDescPtr)       // already registered ?
+	// already registered ?
+	FString ClassName = FString::Printf(TEXT("%s%s"), InStruct->GetPrefixCPP(), *InStruct->GetName());
+	FClassDesc *ClassDesc = GReflectionRegistry.FindClass(TCHAR_TO_UTF8(*ClassName));
+    if (!ClassDesc)
     {
-        GetClassChain(*ClassDescPtr, OutChain);
-        return *ClassDescPtr;
+        ClassDesc = RegisterClassInternal(ClassName, InStruct, Type);
     }
 
-    FString ClassName = FString::Printf(TEXT("%s%s"), InStruct->GetPrefixCPP(), *InStruct->GetName());
-    FClassDesc *ClassDesc = RegisterClassInternal(ClassName, InStruct, Type);
-    GetClassChain(ClassDesc, OutChain);
     return ClassDesc;
 }
 
-bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase *InObject)
+
+FEnumDesc* FReflectionRegistry::FindEnum(const char* InName)
 {
-    UStruct *Struct = (UStruct*)InObject;
-    FClassDesc *ClassDesc = nullptr;
-    bool bSuccess = NonNativeStruct2Classes.RemoveAndCopyValue(Struct, ClassDesc);
-    if (bSuccess && ClassDesc)
+    FName EnumName(InName);
+    FEnumDesc** EnumDesc = Enums.Find(EnumName);
+    if (EnumDesc)
     {
-        UE_LOG(LogUnLua, Warning, TEXT("Class/ScriptStruct %s has been GCed by engine!!!"), *ClassDesc->GetName());
-        ClassDesc->Reset();
-        Name2Classes.Remove(ClassDesc->GetFName());
-        Struct2Classes.Remove(Struct);
-        return true;
+        // release invalid desc if found
+        if (!IsDescValid(*EnumDesc, DESC_ENUM))
+        {
+            Enums.Remove(EnumName);
+            EnumDesc = nullptr;
+        }
+        else
+        {
+            if (!GLuaCxt->IsUObjectValid((*EnumDesc)->GetEnum()))
+            {
+                UnRegisterEnum(*EnumDesc);
+                EnumDesc = nullptr;
+            }
+
+        }
     }
-    return false;
+    return EnumDesc ? *EnumDesc : nullptr;
 }
+
 
 /**
  * Register a UEnum
  */
-FEnumDesc* FReflectionRegistry::RegisterEnum(const TCHAR *InName)
-{
-    FEnumDesc **EnumDescPtr = Enums.Find(FName(InName));
-    if (EnumDescPtr)
-    {
-        return *EnumDescPtr;
-    }
-
-    UEnum *Enum = FindObject<UEnum>(ANY_PACKAGE, InName);
+FEnumDesc* FReflectionRegistry::RegisterEnum(const char* InName)
+{   
+    FString Name = UTF8_TO_TCHAR(InName);
+    UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, *Name);
     if (!Enum)
     {
-        Enum = LoadObject<UEnum>(nullptr, InName);
+        Enum = LoadObject<UEnum>(nullptr, *Name);
+        if (!Enum)
+        {
+            return nullptr;
+        }
     }
-    return RegisterEnum(Enum);
+
+    FEnumDesc *EnumDesc = FindEnum(InName);
+    if ((EnumDesc)
+        && (EnumDesc->GetEnum() != Enum))
+    {
+        UnRegisterEnum(EnumDesc);
+        EnumDesc = nullptr;
+    }
+        
+    if (EnumDesc)
+    {
+        return EnumDesc;
+    }
+    else
+    {
+        return RegisterEnum(Enum);
+    }
 }
 
 FEnumDesc* FReflectionRegistry::RegisterEnum(UEnum *InEnum)
 {
-    if (!InEnum)
+    if (!GLuaCxt->IsUObjectValid(InEnum))
     {
         return nullptr;
     }
 
-    FName Name = InEnum->GetFName();
-    FEnumDesc **EnumDescPtr = Enums.Find(Name);
-    if (EnumDescPtr)
+    FTCHARToUTF8 Name(*InEnum->GetName());
+    FEnumDesc* EnumDesc = FindEnum(Name.Get());
+    if ((EnumDesc)
+        && (EnumDesc->GetEnum() != InEnum))
     {
-        return *EnumDescPtr;
+        UnRegisterEnum(EnumDesc);
+        EnumDesc = nullptr;
     }
 
-    FEnumDesc *EnumDesc = new FEnumDesc(InEnum);
-    Enums.Add(Name, EnumDesc);
+    if (EnumDesc)
+    {
+        return EnumDesc;
+    }
+    else
+    {
+        if (InEnum->IsA<UUserDefinedEnum>())
+        {
+            EnumDesc = new FEnumDesc(InEnum, FEnumDesc::EType::UserDefinedEnum);
+        }
+        else
+        {
+            EnumDesc = new FEnumDesc(InEnum);
+        }
+        Enums.Add(Name.Get(), EnumDesc);
+    }
+
     return EnumDesc;
+}
+
+bool FReflectionRegistry::UnRegisterEnum(const FEnumDesc* EnumDesc)
+{
+    if (IsDescValid((void*)EnumDesc,DESC_ENUM))
+    {
+        Enums.Remove(*EnumDesc->GetName());
+        delete EnumDesc;
+    }
+
+    return true;
 }
 
 /**
@@ -174,8 +311,22 @@ FEnumDesc* FReflectionRegistry::RegisterEnum(UEnum *InEnum)
  */
 FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction *InFunction, int32 InFunctionRef)
 {
-    FFunctionDesc *Function = nullptr;
     FFunctionDesc **FunctionPtr = Functions.Find(InFunction);
+    if ((FunctionPtr)
+        && (!IsDescValid(*FunctionPtr, DESC_FUNCTION)))
+    {   
+        Functions.Remove(InFunction);
+        FunctionPtr = nullptr;
+    }
+
+    if ((FunctionPtr)
+        &&((*FunctionPtr)->GetFunction() != InFunction))
+    {
+        UnRegisterFunction(InFunction);
+        FunctionPtr = nullptr;
+    }
+
+    FFunctionDesc* Function = nullptr;
     if (FunctionPtr)
     {
         Function = *FunctionPtr;
@@ -195,14 +346,83 @@ FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction *InFunction, int3
 
 bool FReflectionRegistry::UnRegisterFunction(UFunction *InFunction)
 {
-    FFunctionDesc *FunctionDesc = nullptr;
-    if (Functions.RemoveAndCopyValue(InFunction, FunctionDesc))
-    {
-        delete FunctionDesc;
-        return true;
+    FFunctionDesc** FunctionDesc = Functions.Find(InFunction);
+    if (FunctionDesc)
+    {   
+        Functions.Remove(InFunction);
+
+        if (IsDescValid(*FunctionDesc, DESC_FUNCTION))
+        {
+            delete *FunctionDesc;
+            return true;
+        }
     }
+
     return false;
 }
+
+bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
+{   
+    UObject* Object = (UObject*)InObject;
+
+    FClassDesc* ClassDesc = nullptr;
+    if (Struct2Classes.RemoveAndCopyValue((UStruct*)InObject, ClassDesc))
+    {   
+#if UNLUA_ENABLE_DEBUG != 0
+        UE_LOG(LogUnLua, Log, TEXT("FReflectionRegistry::NotifyUObjectDeleted: Class was gced by UE,so cleanup class %s"),*ClassDesc->GetName());
+#endif
+        // class,ignore ref count
+        UnRegisterClass(ClassDesc);
+
+        return true;
+    }
+    else
+    {
+        // non class object,check class
+        
+        // check lua use this object or not
+        bool bNeedProcess = IsInGCSet(Object);
+        if (bNeedProcess)
+        {
+            RemoveFromGCSet(Object);
+        }
+        else
+        {
+            lua_State* L = UnLua::GetState();
+            if (L)
+            {
+                lua_getfield(UnLua::GetState(), LUA_REGISTRYINDEX, "ObjectMap");            // get the object instance from 'ObjectMap'
+                lua_pushlightuserdata(L, Object);
+                int32 Type = lua_rawget(L, -2);
+                lua_pop(L, 2);
+
+                bNeedProcess = (Type == LUA_TTABLE || Type == LUA_TUSERDATA);
+            }
+        }
+
+        if (bNeedProcess)
+        {
+            UClass* Class = Object->GetClass();
+            if (GLuaCxt->IsUObjectValid(Class))
+            {
+                FString ClassName = FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
+                ClassDesc = FindClass(TCHAR_TO_UTF8(*ClassName));
+                if (ClassDesc)
+                {
+                    ClassDesc->SubRef();
+
+#if UNLUA_ENABLE_DEBUG != 0
+                    UE_LOG(LogUnLua, Log, TEXT("FReflectionRegistry::NotifyUObjectDeleted:%p,%s"),Object, *ClassName);
+#endif
+                    TryUnRegisterClass(ClassDesc);
+                }
+            }
+        }
+        
+        return false;
+    }
+}
+
 
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
 bool FReflectionRegistry::AddOverriddenFunction(UFunction *NewFunc, UFunction *OverriddenFunc)
@@ -230,58 +450,112 @@ UFunction* FReflectionRegistry::FindOverriddenFunction(UFunction *NewFunc)
 }
 #endif
 
+
+void FReflectionRegistry::AddToDescSet(void* Desc, EDescType type)
+{
+	DescSet.Add(Desc, type);
+}
+
+void FReflectionRegistry::RemoveFromDescSet(void* Desc)
+{
+	DescSet.Remove(Desc);
+}
+
+bool FReflectionRegistry::IsDescValid(void* Desc, EDescType type)
+{   
+    EDescType* TypePtr = DescSet.Find(Desc);
+    return TypePtr && (*TypePtr == type);
+}
+
+bool FReflectionRegistry::IsDescValidWithObjectCheck(void* Desc, EDescType type)
+{
+    bool bValid = IsDescValid(Desc, type);
+    if (bValid)
+    {
+        switch (type)
+        {
+        case DESC_CLASS:
+            bValid = bValid && ((FClassDesc*)Desc)->IsValid();
+            break;
+        case DESC_FUNCTION:
+            bValid = bValid && ((FFunctionDesc*)Desc)->IsValid();
+            break;
+        case DESC_PROPERTY:
+            bValid = bValid && ((FPropertyDesc*)Desc)->IsValid();
+            break;
+        case DESC_ENUM:
+            bValid = bValid && ((FEnumDesc*)Desc)->IsValid();
+            break;
+        default:
+            bValid = false;
+        }
+    }
+
+    return bValid;
+}
+
+void FReflectionRegistry::AddToGCSet(const UObject* InObject)
+{   
+    GCSet.Add(InObject,true);
+}
+
+
+void FReflectionRegistry::RemoveFromGCSet(const UObject* InObject)
+{
+    GCSet.Remove(InObject);
+}
+
+
+bool FReflectionRegistry::IsInGCSet(const UObject* InObject)
+{
+    return GCSet.Contains(InObject);
+}
+
+
+void FReflectionRegistry::AddToClassWhiteSet(const FString& ClassName)
+{
+    ClassWhiteSet.Add(ClassName, true);
+}
+
+void FReflectionRegistry::RemoveFromClassWhiteSet(const FString& ClassName)
+{
+    ClassWhiteSet.Remove(ClassName);
+}
+
+bool FReflectionRegistry::IsInClassWhiteSet(const FString& ClassName)
+{
+    return ClassWhiteSet.Contains(ClassName);
+}
+
 FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName, UStruct *Struct, FClassDesc::EType Type)
 {
+    // !!!Fix!!!
+    // desc pool is needed
     check(Struct && Type != FClassDesc::EType::UNKNOWN);
     FClassDesc *ClassDesc = new FClassDesc(Struct, ClassName, Type);
     Name2Classes.Add(FName(*ClassName), ClassDesc);
     Struct2Classes.Add(Struct, ClassDesc);
-    if (!ClassDesc->IsNative())
-    {
-        NonNativeStruct2Classes.Add(Struct, ClassDesc);
-    }
-
+    
     FClassDesc *CurrentClass = ClassDesc;
     TArray<FString> NameChain;
     TArray<UStruct*> StructChain;
     ClassDesc->GetInheritanceChain(NameChain, StructChain);
     for (int32 i = 0; i < NameChain.Num(); ++i)
     {
-        FClassDesc **Class = Struct2Classes.Find(StructChain[i]);
-        if (!Class)
-        {
-            CurrentClass->Parent = new FClassDesc(StructChain[i], NameChain[i], Type);
-            Name2Classes.Add(*NameChain[i], CurrentClass->Parent);
-            Struct2Classes.Add(StructChain[i], CurrentClass->Parent);
-            if (!CurrentClass->Parent->IsNative())
-            {
-                NonNativeStruct2Classes.Add(StructChain[i], CurrentClass->Parent);
-            }
+        FClassDesc* ClassDescParent = FindClass(TCHAR_TO_UTF8(*NameChain[i]));
+        if (!ClassDescParent)
+        {   
+            ClassDescParent = new FClassDesc(StructChain[i], NameChain[i], Type);
+            Name2Classes.Add(*NameChain[i], ClassDescParent);
+            Struct2Classes.Add(StructChain[i], ClassDescParent);
         }
-        else
-        {
-            CurrentClass->Parent = *Class;
-            break;
-        }
-        CurrentClass = CurrentClass->Parent;
     }
+
+#if UNLUA_ENABLE_DEBUG != 0
+    UE_LOG(LogUnLua, Log, TEXT("RegisterClass : %s,%p"), *ClassName, ClassDesc);
+#endif
 
     return ClassDesc;
-}
-
-/**
- * get class inheritance chain
- */
-void FReflectionRegistry::GetClassChain(FClassDesc *ClassDesc, TArray<FClassDesc*> *OutChain)
-{
-    if (OutChain)
-    {
-        while (ClassDesc)
-        {
-            OutChain->Add(ClassDesc);
-            ClassDesc = ClassDesc->Parent;
-        }
-    }
 }
 
 FReflectionRegistry GReflectionRegistry;        // global reflection registry

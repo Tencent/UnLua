@@ -16,6 +16,23 @@
 
 #include "LuaCore.h"
 
+static uint64 GetTypeHash(lua_State *L, int32 Index)
+{
+    if (lua_getmetatable(L, Index) == 0)
+    {
+        return 0;
+    }
+    uint64 Hash = 0;
+    lua_pushstring(L, "TypeHash");
+    lua_rawget(L, -2);
+    if (lua_type(L, -1) == LUA_TNUMBER)
+    {
+        Hash = lua_tonumber(L, -1);
+    }
+    lua_pop(L, 2);
+    return Hash;
+}
+
 namespace UnLua
 {
 
@@ -329,6 +346,13 @@ namespace UnLua
             {
             case LUA_TUSERDATA:
                 {
+                    uint64 Type1 = GetTypeHash(L, 1);
+                    uint64 Type2 = GetTypeHash(L, 2);
+                    if (!Type1 || !Type2 || Type1 != Type2)
+                    {
+                        UE_LOG(LogUnLua, Error, TEXT("Invalid parameters, incompatible types!"));
+                        return 0;
+                    }
                     T *B = (T*)GetCppInstanceFast(L, 2);
                     TMathCalculationHelper<FT, ST, OperatorType, ScalarOperatorType, TMathTypeTraits<T>::NUM_FIELDS>::Calculate(reinterpret_cast<FT*>(Result), reinterpret_cast<FT*>(A), reinterpret_cast<FT*>(B), OperatorType());
                 }
@@ -371,7 +395,7 @@ namespace UnLua
                 return 1;
             }
 
-            lua_pushstring(L, TCHAR_TO_ANSI(*(ToStringWrapper(A))));
+            lua_pushstring(L, TCHAR_TO_UTF8(*(ToStringWrapper(A))));
             return 1;
         }
     };

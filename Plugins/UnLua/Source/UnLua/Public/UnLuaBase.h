@@ -30,6 +30,7 @@
 #endif
 
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
+UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(UnLuaDelegate, Log, All);
 
 #if ENGINE_MINOR_VERSION < 25
 typedef UProperty FProperty;
@@ -39,15 +40,20 @@ struct lua_State;
 struct luaL_Reg;
 
 namespace UnLua
-{
+{   
+    //!!!Fix!!!
 
     /**
      * Interface to manage Lua stack for a C++ type
      */
     struct ITypeOps
-    {
+    {   
+        ITypeOps() { StaticExported = false; };
+        
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const = 0;
         virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const = 0;
+
+        bool StaticExported;
     };
 
     /**
@@ -55,6 +61,7 @@ namespace UnLua
      */
     struct ITypeInterface : public ITypeOps
     {
+        ITypeInterface() { }
         virtual ~ITypeInterface() {}
 
         virtual bool IsPODType() const = 0;
@@ -75,8 +82,10 @@ namespace UnLua
      * Exported property interface
      */
     struct IExportedProperty : public ITypeOps
-    {
-        virtual ~IExportedProperty() {}
+    {   
+        IExportedProperty() { StaticExported = true;}
+		virtual ~IExportedProperty() {}
+       
 
         virtual void Register(lua_State *L) = 0;
 
@@ -365,4 +374,16 @@ namespace UnLua
      */
     UNLUA_API FScriptMap* GetMap(lua_State *L, int32 Index);
 
+
+    /**
+     * Helper to recover Lua stack automatically
+     */
+    struct UNLUA_API FAutoStack
+    {
+        FAutoStack();
+        ~FAutoStack();
+
+    private:
+        int32 OldTop;
+    };
 } // namespace UnLua

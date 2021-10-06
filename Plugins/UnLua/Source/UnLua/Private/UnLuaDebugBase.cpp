@@ -632,7 +632,7 @@ namespace UnLua
             }
             LocalVariables.AddDefaulted();
             FLuaVariable &Variable = LocalVariables.Top();
-            Variable.Key = ANSI_TO_TCHAR(VarName);
+            Variable.Key = UTF8_TO_TCHAR(VarName);
             Variable.Value.Depth = 0;
             Variable.Value.Build(L, -1, Level);
             lua_pop(L, 1);
@@ -650,7 +650,7 @@ namespace UnLua
                 }
                 Upvalues.AddDefaulted();
                 FLuaVariable &Upvalue = Upvalues.Top();
-                Upvalue.Key = ANSI_TO_TCHAR(UpvalueName);
+                Upvalue.Key = UTF8_TO_TCHAR(UpvalueName);
                 Upvalue.Value.Depth = 0;
                 Upvalue.Value.Build(L, -1, Level);
                 lua_pop(L, 1);
@@ -664,7 +664,7 @@ namespace UnLua
     {
         if (!L)
         {
-            return TEXT("Lua state is not created!!!");
+            return FString();
         }
 
         int32 Depth = 0;
@@ -673,7 +673,7 @@ namespace UnLua
         while (lua_getstack(L, Depth++, &ar))
         {
             lua_getinfo(L, "nSl", &ar);
-            FString DisplayInfo = FString::Printf(TEXT("Source : %s, name : %s, Line : %d \n"), ANSI_TO_TCHAR(ar.source), ANSI_TO_TCHAR(ar.name), ar.currentline);
+            FString DisplayInfo = FString::Printf(TEXT("Source : %s, name : %s, Line : %d \n"), UTF8_TO_TCHAR(ar.source), UTF8_TO_TCHAR(ar.name), ar.currentline);
             CallStack += DisplayInfo;
         }
 

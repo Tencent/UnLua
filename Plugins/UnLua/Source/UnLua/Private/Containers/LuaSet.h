@@ -52,6 +52,7 @@ public:
 
         if (ScriptSetFlag == OwnedBySelf)
         {
+            Clear();
             delete Set;
         }
         FMemory::Free(ElementCache);

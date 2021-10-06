@@ -16,44 +16,25 @@
 
 #include "CoreUObject.h"
 #include "Engine/UserDefinedEnum.h"
+#include "LuaContext.h"
 
 /**
  * Enum descriptor
  */
 class FEnumDesc
 {
+public:
     enum class EType
     {
         Enum,
         UserDefinedEnum,
     };
 
-public:
-    explicit FEnumDesc(UEnum *InEnum)
-        : Enum(InEnum), RefCount(0), Type(EType::Enum)
-    {
-        if (Enum)
-        {
-            EnumName = Enum->GetName();
-            UUserDefinedEnum *UDEnum = Cast<UUserDefinedEnum>(Enum);
-            Type = UDEnum ? EType::UserDefinedEnum : EType::Enum;
-        }
-    }
+    explicit FEnumDesc(UEnum *InEnum, EType EType = EType::Enum);
 
-    ~FEnumDesc() {}
+    ~FEnumDesc();
 
-    bool Release()
-    {
-        --RefCount;
-        if (!RefCount)
-        {
-            delete this;
-            return true;
-        }
-        return false;
-    }
-
-    FORCEINLINE bool IsValid() const { return Enum != nullptr; }
+    FORCEINLINE bool IsValid() const { return Enum && GLuaCxt->IsUObjectValid(Enum); }
 
     FORCEINLINE const FString& GetName() const { return EnumName; }
 
@@ -65,10 +46,6 @@ public:
     }
 
     FORCEINLINE UEnum* GetEnum() const { return Enum; }
-
-    FORCEINLINE int32 GetRefCount() const { return RefCount; }
-
-    FORCEINLINE void AddRef() { ++RefCount; }
 
     static int64 GetEnumValue(UEnum *Enum, FName EntryName)
     {
@@ -99,6 +76,5 @@ private:
     };
 
     FString EnumName;
-    int32 RefCount;
     EType Type;
 };

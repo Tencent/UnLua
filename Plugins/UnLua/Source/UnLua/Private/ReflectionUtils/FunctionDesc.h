@@ -15,6 +15,7 @@
 #pragma once
 
 #include "UnLuaBase.h"
+#include "LuaContext.h"
 
 #define ENABLE_PERSISTENT_PARAM_BUFFER 1            // option to allocate persistent buffer for UFunction's parameters
 
@@ -38,7 +39,7 @@ public:
      *
      * @return - true if the function is valid, false otherwise
      */
-    FORCEINLINE bool IsValid() const { return Function != nullptr; }
+    FORCEINLINE bool IsValid() const { return Function && GLuaCxt->IsUObjectValid(Function); }
 
     /**
      * Test if this function has return property
@@ -152,4 +153,5 @@ private:
     uint8 NumCalls;                 // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
     uint8 bStaticFunc : 1;
     uint8 bInterfaceFunc : 1;
+    uint8 bHasDelegateParams : 1;
 };

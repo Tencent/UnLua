@@ -36,27 +36,29 @@ private:
     const char *Name;
 };
 
+FString GetFullPathFromRelativePath(const FString& RelativePath);
 void CreateNamespaceForUE(lua_State *L);
 void SetTableForClass(lua_State *L, const char *Name);
 
 /**
  * Set metatable for the userdata/table on the top of the stack
  */
-bool TryToSetMetatable(lua_State *L, const char *MetatableName);
+bool TryToSetMetatable(lua_State *L, const char *MetatableName, UObject* Object = nullptr);
+FString GetMetatableName(const UObjectBaseUtility* Object);
 
 /**
  * Functions to handle Lua userdata
  */
+void* NewUserdataWithTwoLvPtrTag(lua_State* L, int Size, void* Object);
+void MarkUserdataTwoLvPtrTag(void* Userdata);
 uint8 CalcUserdataPadding(int32 Alignment);
 template <typename T> uint8 CalcUserdataPadding() { return CalcUserdataPadding(alignof(T)); }
-void SetUserdataPadding(lua_State *L, int32 Index, uint8 PaddingBytes);
-void MarkUserdataTwoLvlPtr(lua_State *L, int32 Index);
-void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
-void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr);
-void* NewUserdataWithPadding(lua_State *L, int32 Size, const char *MetatableName, uint8 PaddingSize = 0);
+UNLUA_API void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
+UNLUA_API void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr);
+UNLUA_API void* NewUserdataWithPadding(lua_State *L, int32 Size, const char *MetatableName, uint8 PaddingSize = 0);
 #define NewTypedUserdata(L, Type) NewUserdataWithPadding(L, sizeof(Type), #Type, CalcUserdataPadding<Type>())
-void* GetCppInstance(lua_State *L, int32 Index);
-void* GetCppInstanceFast(lua_State *L, int32 Index);
+UNLUA_API void* GetCppInstance(lua_State *L, int32 Index);
+UNLUA_API void* GetCppInstanceFast(lua_State *L, int32 Index);
 
 /**
  * Functions to handle script containers
@@ -64,7 +66,6 @@ void* GetCppInstanceFast(lua_State *L, int32 Index);
 void* NewScriptContainer(lua_State *L, const FScriptContainerDesc &Desc);
 void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &Desc);
 void* GetScriptContainer(lua_State *L, int32 Index);
-void* GetScriptContainer(lua_State *L, void *Key);
 void RemoveCachedScriptContainer(lua_State *L, void *Key);
 
 /**
@@ -92,6 +93,7 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
  */
 int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
 void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object);
+void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object);
 
 /**
  * Get UObject and Lua function address for delegate
@@ -150,6 +152,7 @@ bool RegisterEnum(lua_State *L, UEnum *Enum);
 /**
  * Functions to register UClass
  */
+int32 Global_UnRegisterClass(lua_State* L);
 int32 Global_RegisterClass(lua_State *L);
 class FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName = nullptr);
 class FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct = nullptr);
@@ -164,12 +167,16 @@ int32 Global_LoadClass(lua_State *L);
 int32 Global_NewObject(lua_State *L);
 UNLUA_API int32 Global_Print(lua_State *L);
 UNLUA_API int32 Global_Require(lua_State *L);
+int32 Global_AddToClassWhiteSet(lua_State* L);
+int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 
 /**
  * Functions to handle UEnum
  */
 int32 Enum_Index(lua_State *L);
 int32 Enum_Delete(lua_State *L);
+int32 Enum_GetMaxValue(lua_State* L);
+int32 Enum_GetNameByValue(lua_State* L);
 
 /**
  * Functions to handle UClass
@@ -187,6 +194,7 @@ int32 Class_Cast(lua_State* L);
 int32 ScriptStruct_New(lua_State *L);
 int32 ScriptStruct_Delete(lua_State *L);
 int32 ScriptStruct_Copy(lua_State *L);
+int32 ScriptStruct_CopyFrom(lua_State *L);
 int32 ScriptStruct_Compare(lua_State *L);
 
 /**

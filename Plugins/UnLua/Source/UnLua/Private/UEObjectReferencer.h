@@ -53,6 +53,11 @@ public:
         Collector.AddReferencedObjects(ReferencedObjects);
     }
 
+    virtual FString GetReferencerName() const
+    {
+        return "UnLua_GObjectReferencer";
+    }
+
 private:
     FObjectReferencer() {}
 

@@ -51,6 +51,7 @@ public:
 
         if (ScriptArrayFlag == OwnedBySelf)
         {
+            Clear();
             delete ScriptArray;
         }
         FMemory::Free(ElementCache);

@@ -23,7 +23,6 @@ public:
     {
         ScriptStruct = FindObject<UScriptStruct>(ANY_PACKAGE, TEXT("PropertyCollector"));
 
-#if !WITH_EDITOR
         // ScriptStruct->CreateCluster() fail to create a cluster...
         int32 RootInternalIndex = GUObjectArray.ObjectToIndex(ScriptStruct);
         FUObjectItem *RootItem = GUObjectArray.IndexToObject(RootInternalIndex);
@@ -33,7 +32,6 @@ public:
             RootItem->SetClusterIndex(ClusterIndex);
             RootItem->SetFlags(EInternalObjectFlags::ClusterRoot);
         }
-#endif
     }
 
     virtual ~FPropertyCreator()
@@ -449,7 +447,7 @@ private:
     template <typename KeyType>
     TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(FProperty *Property, KeyType *Key, TMap<KeyType*, TSharedPtr<UnLua::ITypeInterface>> &PropertyDescMap)
     {
-#if ENGINE_MINOR_VERSION < 25 && !WITH_EDITOR
+#if ENGINE_MINOR_VERSION < 25
         Property->AddToCluster(ScriptStruct);
 #endif
         Properties.Add(Property);
@@ -467,7 +465,7 @@ private:
      */
     TSharedPtr<UnLua::ITypeInterface> OnPropertyCreated(FProperty *Property)
     {
-#if ENGINE_MINOR_VERSION < 25 && !WITH_EDITOR
+#if ENGINE_MINOR_VERSION < 25
         Property->AddToCluster(ScriptStruct);
 #endif
         Properties.Add(Property);

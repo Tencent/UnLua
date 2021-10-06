@@ -36,6 +36,7 @@ public:
     bool ExportClass(UnLua::IExportedClass *Class);
     UnLua::IExportedClass* FindExportedClass(FName Name);
     UnLua::IExportedClass* FindExportedReflectedClass(FName Name);
+    UnLua::IExportedClass* FindExportedNonReflectedClass(FName Name);
 
     bool AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface> TypeInterface);
     TSharedPtr<UnLua::ITypeInterface> FindTypeInterface(FName Name);
@@ -51,31 +52,26 @@ public:
     void OnWorldTickStart(ELevelTick TickType, float DeltaTime);
 #endif
     void OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources);
-    void OnPostWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources);
-    void OnPreWorldInitialization(UWorld *World, const UWorld::InitializationValues);
-    void OnPostWorldInitialization(UWorld *World, const UWorld::InitializationValues);
+    void OnBeginFrame();
     void OnPostEngineInit();
     void OnPreExit();
     void OnAsyncLoadingFlushUpdate();
     void OnCrash();
-    void PreLoadMap(const FString &MapName);
     void PostLoadMapWithWorld(UWorld *World);
     void OnPostGarbageCollect();
+    void OnDelayBindObject(UObject* Object);
 
 #if WITH_EDITOR
     void PreBeginPIE(bool bIsSimulating);
-    void BeginPIE(bool bIsSimulating);
     void PostPIEStarted(bool bIsSimulating);
     void PrePIEEnded(bool bIsSimulating);
-    void EndPIE(bool bIsSimulating);
-
-    void OnEndPlayMap();
+#endif
 
     const TMap<FName, UnLua::IExportedClass*>& GetExportedReflectedClasses() const { return ExportedReflectedClasses; }
     const TMap<FName, UnLua::IExportedClass*>& GetExportedNonReflectedClasses() const { return ExportedNonReflectedClasses; }
     const TArray<UnLua::IExportedEnum*>& GetExportedEnums() const { return ExportedEnums; }
     const TArray<UnLua::IExportedFunction*>& GetExportedFunctions() const { return ExportedFunctions; }
-#endif
+
 
     void AddThread(lua_State *Thread, int32 ThreadRef);
     void ResumeThread(int32 ThreadRef);
@@ -90,8 +86,12 @@ public:
     virtual void NotifyUObjectCreated(const class UObjectBase *InObject, int32 Index) override;
     virtual void NotifyUObjectDeleted(const class UObjectBase *InObject, int32 Index) override;
 #if ENGINE_MINOR_VERSION > 22
-    virtual void OnUObjectArrayShutdown() override {}
+	virtual void OnUObjectArrayShutdown() override;
 #endif
+
+	bool IsUObjectValid(UObjectBase* UObjPtr);
+
+    UUnLuaManager* GetUnLuaManager();
 
 private:
     FLuaContext();
@@ -105,6 +105,7 @@ private:
 
     bool OnGameViewportInputKey(FKey InKey, FModifierKeysState ModifierKeyState, EInputEvent EventType);
 
+
     lua_State *L;
 
     UUnLuaManager *Manager;
@@ -113,13 +114,11 @@ private:
     FDelegateHandle OnWorldTickStartHandle;
     FDelegateHandle OnPostGarbageCollectHandle;
 
-    FString NextMap;
-
     TArray<FString> LibraryNames;       // metatables for classes/enums
     TArray<FString> ModuleNames;        // required Lua modules
 
     TArray<UObject*> Candidates;        // binding candidates during async loading
-    FCriticalSection CandidatesCS;      // critical section for accessing 'Candidates'
+    TArray<UObject*> PostLoadObjects;        // binding object which need post load
 
     TArray<UnLua::IExportedFunction*> ExportedFunctions;                // statically exported global functions
     TArray<UnLua::IExportedEnum*> ExportedEnums;                        // statically exported enums
@@ -128,24 +127,22 @@ private:
 
     TMap<FName, TSharedPtr<UnLua::ITypeInterface>> TypeInterfaces;      // registered type interfaces
 
+    //!!!Fix!!!
+    //thread need refine
     TMap<lua_State*, int32> ThreadToRef;                                // coroutine -> ref
     TMap<int32, lua_State*> RefToThread;                                // ref -> coroutine
+	TMap<UObjectBase *, int32> UObjPtr2Idx;                             // UObject pointer -> index in GUObjectArray
+    TMap<UObjectBase*, FString> UObjPtr2Name;                           // UObject pointer -> Name for debug purpose
+    FCriticalSection Async2MainCS;                                      // async loading thread and main thread sync lock
 
 #if WITH_EDITOR
-    UWorld *ServerWorld;
-    TArray<UWorld*> LoadedWorlds;
-
     void *LuaHandle;
 #endif
 
     TArray<class UInputComponent*> CandidateInputComponents;
+    TArray<UGameInstance*> GameInstances;
 
     bool bEnable;
-    bool bInitialized;
-    bool bIsPIE;
-    bool bAddUObjectNotify;
-    bool bDelegatesRegistered;
-    bool bIsInSeamlessTravel;
 };
 
 extern class FLuaContext *GLuaCxt;

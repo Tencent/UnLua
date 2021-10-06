@@ -48,6 +48,8 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
         }
     }
 
+    //!!!Fix!!!
+    //find desc from classdesc
 #if UE_BUILD_SHIPPING || UE_BUILD_TEST
     if (!FuncDesc)
     {
@@ -71,11 +73,14 @@ DEFINE_FUNCTION(FLuaInvoker::execCallLua)
     }
     if (Actor)
     {
-        ENetMode NetMode = Actor->GetNetMode();
-        if ((Func->HasAnyFunctionFlags(FUNC_NetClient) && NetMode == NM_Client) || (Func->HasAnyFunctionFlags(FUNC_NetServer) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer)))
+        /*ENetMode NetMode = Actor->GetNetMode();
+        if ((Func->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast) && NetMode == NM_Client) || (Func->HasAnyFunctionFlags(FUNC_NetServer | FUNC_NetMulticast) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer)))
         {
             bRpcCall = true;
-        }
+        }*/
+
+        int32 Callspace = Actor->GetFunctionCallspace(Func, nullptr);
+        bRpcCall = Callspace & FunctionCallspace::Remote;
     }
 #endif
 
@@ -196,6 +201,15 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
 #else
     UFunction *NewFunc = DuplicateObject(TemplateFunction, OuterClass, NewFuncName);
 #endif
+    
+    if (!FPlatformProperties::RequiresCookedData())
+    {
+        UMetaData::CopyMetadata(TemplateFunction, NewFunc);
+    }
+    NewFunc->Bind();
+    NewFunc->StaticLink(true);
+
+    /*NewFunc->PropertiesSize = TemplateFunction->PropertiesSize;
     NewFunc->PropertiesSize = TemplateFunction->PropertiesSize;
     NewFunc->MinAlignment = TemplateFunction->MinAlignment;
     int32 NumParams = NewFunc->NumParms;
@@ -221,9 +235,9 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
             DestProperty = DestProperty->PropertyLinkNext;
             SrcProperty = SrcProperty->PropertyLinkNext;
         }
-    }
+    }*/
     OuterClass->AddFunctionToFunctionMap(NewFunc, NewFuncName);
-    //GReflectionRegistry.RegisterFunction(NewFunc);
+    GReflectionRegistry.RegisterFunction(NewFunc);
     NewFunc->ClearInternalFlags(EInternalObjectFlags::Native);
     if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())
     {
@@ -240,7 +254,27 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
  */
 void RemoveUFunction(UFunction *Function, UClass *OuterClass)
 {
-    OuterClass->RemoveFunctionFromFunctionMap(Function);
+	UE_LOG(UnLuaDelegate, Verbose, TEXT("Clean %s"), *Function->GetName());
+
+    if (OuterClass->IsValidLowLevel() && OuterClass->FindFunctionByName(Function->GetFName()))
+    {
+#if UNLUA_ENABLE_DEBUG != 0
+        UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s]"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName());
+#endif
+        OuterClass->RemoveFunctionFromFunctionMap(Function);
+    }
+    else
+    {
+        if (OuterClass->IsValidLowLevel())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("RemoveUFunction: [%p], [%s] of Class : [%p] failed for class invalid"), Function, *Function->GetName(), OuterClass);
+        }
+        else
+        {
+            UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s] for Class has no that function"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName());
+        }
+    }
+
     GReflectionRegistry.UnRegisterFunction(Function);
     if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())
     {

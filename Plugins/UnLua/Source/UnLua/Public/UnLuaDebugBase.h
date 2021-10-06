@@ -15,7 +15,7 @@
 #pragma once
 
 #include "CoreUObject.h"
-#include "UnLuaCompatibility.h"
+//#include "UnLuaCompatibility.h"
 #include "lua.hpp"
 
 #define MAX_LUA_VALUE_DEPTH 4
