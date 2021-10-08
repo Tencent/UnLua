@@ -518,16 +518,12 @@ FString GetMetatableName(const UObjectBaseUtility* Object)
     }
     else
     {
-		if (PrefixCPP
-			&& (PrefixCPP[0] == 'U' || PrefixCPP[0] == 'A' || PrefixCPP[0] == 'F' || PrefixCPP[0] == 'E'))
-		{
-			UStruct* Struct = FindObject<UStruct>(ANY_PACKAGE, *ClassName);       // find first
-			if (Struct)
-			{   
-                MetatableName = FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
-                Class2Metatable.Add(ClassName, MetatableName);
-			}
-		}
+        if (PrefixCPP
+            && (PrefixCPP[0] == 'U' || PrefixCPP[0] == 'A' || PrefixCPP[0] == 'F' || PrefixCPP[0] == 'E'))
+        {
+            MetatableName = FString::Printf(TEXT("%s%s"), PrefixCPP, *Class->GetName());
+            Class2Metatable.Add(ClassName, MetatableName);
+        }
     }
 
 	return MetatableName;
