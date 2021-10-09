@@ -521,7 +521,7 @@ FString GetMetatableName(const UObjectBaseUtility* Object)
         if (PrefixCPP
             && (PrefixCPP[0] == 'U' || PrefixCPP[0] == 'A' || PrefixCPP[0] == 'F' || PrefixCPP[0] == 'E'))
         {
-            MetatableName = FString::Printf(TEXT("%s%s"), PrefixCPP, *Class->GetName());
+            MetatableName = FString::Printf(TEXT("%s%s"), PrefixCPP, *ClassName);
             Class2Metatable.Add(ClassName, MetatableName);
         }
     }
