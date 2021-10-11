@@ -626,13 +626,12 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
         // make a copy of lua module
         lua_newtable(L);
         lua_pushnil(L);
-        while (lua_next(L, -2) != 0)
+        while (lua_next(L, -3) != 0)
         {
             lua_pushvalue(L, -2);
             lua_insert(L, -2);
-            lua_settable(L, -5);
+            lua_settable(L, -4);
         }
-        lua_pop(L, 1);
 
         lua_getglobal(L, "package");
         lua_getfield(L, -1, "loaded");
