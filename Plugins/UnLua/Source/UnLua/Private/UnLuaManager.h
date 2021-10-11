@@ -82,7 +82,7 @@ private:
 
     UClass* GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc = nullptr);
 
-    bool BindInternal(UObjectBaseUtility *Object, UClass *Class, const FString &InModuleName, bool bNewCreated, bool bMutipleLuaBind, FString &Error);
+    bool BindInternal(UObjectBaseUtility *Object, UClass *Class, const FString &InModuleName, bool bNewCreated, bool bMultipleLuaBind, FString &Error);
     bool ConditionalUpdateClass(UClass *Class, const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions);
 
     void OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode = false);

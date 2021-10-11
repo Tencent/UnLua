@@ -76,12 +76,12 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     bool bSuccess = true;
     lua_State *L = *GLuaCxt;
 
-    bool bMutipleLuaBind = false;
+    bool bMultipleLuaBind = false;
     UClass** BindedClass = Classes.Find(InModuleName);
     if ((BindedClass)
         &&(*BindedClass != Object->GetClass()))
     {
-        bMutipleLuaBind = true;
+        bMultipleLuaBind = true;
     }
 
     if (!RegisterClass(L, Class))              // register class first
@@ -108,7 +108,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     }
     else
     {
-        bSuccess = BindInternal(Object, Class, InModuleName, true, bMutipleLuaBind, Error);                             // bind!!!
+        bSuccess = BindInternal(Object, Class, InModuleName, true, bMultipleLuaBind, Error);                             // bind!!!
     }
 
     if (bSuccess)
@@ -591,7 +591,7 @@ UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFu
 /**
  * Bind a Lua module for a UObject
  */
-bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, const FString& InModuleName, bool bNewCreated, bool bMutipleLuaBind, FString& Error)
+bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, const FString& InModuleName, bool bNewCreated, bool bMultipleLuaBind, FString& Error)
 {
     if (!Object || !Class)
     {
@@ -600,7 +600,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
 
     // module may be already loaded for other class,etc muti bp bind to same lua
     FString RealModuleName = InModuleName;
-    if (bMutipleLuaBind)
+    if (bMultipleLuaBind)
     {
         lua_State* L = UnLua::GetState();
         const int32 Type = GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
