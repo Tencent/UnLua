@@ -565,6 +565,11 @@ namespace UnLua
             return 0;
         }
         TTuple<ClassType*, typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<ClassType*, typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<N>::Type());
+        if (Args.template Get<0>() == nullptr)
+        {
+            UE_LOG(LogUnLua, Error, TEXT("!!! Func(%s) this == nullptr!"), *GetName());
+            return 0;
+        }
         return TInvokingHelper<RetType>::Invoke(L, Func, Args, typename TOneBasedIndices<sizeof...(ArgType)>::Type());
     }
 
