@@ -2493,6 +2493,11 @@ int32 Class_Index(lua_State *L)
 				lua_remove(L, -2);
 			}
         }
+        else
+        {
+            lua_pushnil(L);
+            lua_remove(L, -2);
+        }
     }
     return 1;
 }
