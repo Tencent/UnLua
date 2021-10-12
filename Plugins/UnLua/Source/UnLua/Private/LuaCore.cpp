@@ -2490,12 +2490,8 @@ int32 Class_Index(lua_State *L)
 				&& (ContainerPtr))
 			{
 				Property->Read(L, ContainerPtr, false);
+				lua_remove(L, -2);
 			}
-            else
-            {
-                lua_pushnil(L);
-            }
-            lua_remove(L, -2);
         }
     }
     return 1;
