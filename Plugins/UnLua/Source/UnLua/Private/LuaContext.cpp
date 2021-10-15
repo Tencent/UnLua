@@ -382,10 +382,11 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility* Object)
         if (Class->ImplementsInterface(InterfaceClass))                             // static binding
         {
             // fliter some object in bp nest case
-            // skip objects during asset loding 
-            if (Object->HasAnyFlags(RF_NeedLoad) && Object->HasAnyFlags(RF_Load) && Object->GetFName().GetNumber() < 1 && Object->GetClass()->GetName().Contains(Object->GetName()))
+            // RF_WasLoaded & RF_NeedPostLoad?
+            UObject* Outer = Object->GetOuter();
+            if ((Outer)
+                && (Outer->GetFName().IsEqual("WidgetTree")) && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
             {
-                UE_LOG(LogUnLua, Log, TEXT("%s : Skip internal object (%s,%p,%s) during asset loading"), ANSI_TO_TCHAR(__FUNCTION__), *Object->GetFullName(), Object, *Class->GetName());
                 return false;
             }
 
