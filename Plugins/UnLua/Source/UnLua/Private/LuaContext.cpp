@@ -1004,6 +1004,7 @@ void FLuaContext::Initialize()
 
         if (L)
         {
+            GPropertyCreator.Cleanup();
             bEnable = true;
             FUnLuaDelegates::OnLuaContextInitialized.Broadcast();
         }
