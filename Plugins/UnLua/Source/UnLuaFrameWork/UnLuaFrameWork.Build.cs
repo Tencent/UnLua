@@ -46,5 +46,15 @@ public class UnLuaFrameWork : ModuleRules
                 "UnLua",
             }
 			);
+
+        bool bEnableAutoHotfix = false;
+        if (bEnableAutoHotfix)
+        {
+            PublicDefinitions.Add("UNLUA_ENABLE_AUTO_HOTFIX=1");
+        }
+        else
+        {
+            PublicDefinitions.Add("UNLUA_ENABLE_AUTO_HOTFIX=0");
+        }
     }
 }
