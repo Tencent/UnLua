@@ -2214,7 +2214,7 @@ int LoadFromCustomLoader(lua_State *L)
     if(!FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, FullFilePath))
         return 0;
 
-    const auto Chunk = reinterpret_cast<const char*>(Data.GetData());
+    const auto Chunk = (const char*)Data.GetData();
     const auto ChunkName = TCHAR_TO_UTF8(*FileName);
     if(!UnLua::LoadChunk(L, Chunk, Data.Num(), ChunkName))
         return luaL_error(L, TCHAR_TO_UTF8("file loading from custom loader error"));
@@ -2234,7 +2234,7 @@ int LoadFromFileSystem(lua_State *L)
 
     const auto SkipLen = 3 < Data.Num() && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
     const auto ChunkName = TCHAR_TO_UTF8(*RelativePath);
-    const auto Chunk = reinterpret_cast<const char*>(Data.GetData() + SkipLen);
+    const auto Chunk = (const char*)(Data.GetData() + SkipLen);
     const auto ChunkSize = Data.Num() - SkipLen;
     if(!UnLua::LoadChunk(L, Chunk, ChunkSize, ChunkName))
         return luaL_error(L, TCHAR_TO_UTF8("file loading from file system error"));
