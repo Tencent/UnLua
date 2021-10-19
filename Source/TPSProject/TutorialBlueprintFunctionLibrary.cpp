@@ -74,9 +74,10 @@ bool CustomLoader2(const FString& RelativePath, TArray<uint8>& Data, FString& Fu
     for (auto& Part : Parts)
     {
         Part.ReplaceInline(TEXT("?"), *SlashedRelativePath);
-
+        FPaths::CollapseRelativeDirectories(Part);
+        
         if (FPaths::IsRelative(Part))
-            FullPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(*GLuaSrcFullPath, Part));
+            FullPath = FPaths::ConvertRelativePathToFull(GLuaSrcFullPath, Part);
         else
             FullPath = Part;
 
