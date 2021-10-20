@@ -33,7 +33,7 @@ void FUnLuaLibArraySpec::Define()
 
     Describe(TEXT("构造TArray"), [this]()
     {
-        It(TEXT("正确构造TArray<int32>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TArray<int32>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
             local Array = UE4.TArray(0)\
@@ -51,7 +51,7 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(Array->operator[](1), 2);
         });
 
-        It(TEXT("正确构造TArray<FString>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TArray<FString>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
             local Array = UE4.TArray('')\
@@ -69,7 +69,7 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(Array->operator[](1), "B");
         });
 
-        It(TEXT("正确构造TArray<bool>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TArray<bool>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
             local Array = UE4.TArray(true)\
@@ -87,7 +87,7 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(Array->operator[](1), false);
         });
 
-        It(TEXT("正确构造TArray<FVector>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TArray<FVector>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
             local Array = UE4.TArray(UE4.FVector)\
@@ -108,7 +108,7 @@ void FUnLuaLibArraySpec::Define()
 
     Describe(TEXT("Length"), [this]
     {
-        It(TEXT("正确获取长度"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("获取数组长度"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
             local Array = UE4.TArray(0)\
@@ -315,6 +315,270 @@ void FUnLuaLibArraySpec::Define()
             ";
             UnLua::RunChunk(L, Chunk);
             TEST_FALSE(lua_toboolean(L, -2));
+        });
+    });
+
+    Describe(TEXT("Resize"), [this]
+    {
+        It(TEXT("扩容，使用默认元素填充"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Resize(3)\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const TArray<int32>* Array = (TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array->Num(), 3);
+            TEST_EQUAL(Array->operator[](0), 1);
+            TEST_EQUAL(Array->operator[](1), 0);
+            TEST_EQUAL(Array->operator[](2), 0);
+        });
+
+        It(TEXT("缩容，移除多余元素"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Add(1)\
+            Array:Resize(1)\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const TArray<int32>* Array = (TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array->Num(), 1);
+            TEST_EQUAL(Array->operator[](0), 1);
+        });
+    });
+
+    Describe(TEXT("GetData"), [this]
+    {
+        It(TEXT("获取数组分配的内存指针"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            return Array, Array:GetData()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -2);
+            TEST_TRUE(ScriptArray!=nullptr);
+            TEST_EQUAL(lua_topointer(L, -1), ScriptArray->GetData());
+        });
+    });
+
+    Describe(TEXT("Get"), [this]
+    {
+        It(TEXT("拷贝指定索引位置的元素"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(UE4.FVector)\
+            Array:Add(UE4.FVector(1,1,1))\
+            local Copied = Array:Get(1)\
+            Copied:Set(2)\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const TArray<FVector>* Array = (TArray<FVector>*)ScriptArray;
+            TEST_EQUAL(Array->operator[](0), FVector(1,1,1));
+        });
+    });
+
+    Describe(TEXT("GetRef"), [this]
+    {
+        It(TEXT("获取指定索引位置的元素引用"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(UE4.FVector)\
+            Array:Add(UE4.FVector(1,1,1))\
+            local Ref = Array:GetRef(1)\
+            Ref:Set(2)\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const TArray<FVector>* Array = (TArray<FVector>*)ScriptArray;
+            TEST_EQUAL(Array->operator[](0), FVector(2,1,1));
+        });
+    });
+
+    Describe(TEXT("Set"), [this]
+    {
+        It(TEXT("设置指定索引位置的元素"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Add(1)\
+            Array:Set(1,2)\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const TArray<int32>* Array = (TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array->operator[](0), 2);
+        });
+    });
+
+    Describe(TEXT("Swap"), [this]
+    {
+        It(TEXT("交换两个索引位置的元素"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Add(2)\
+            Array:Add(3)\
+            Array:Swap(1,3)\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+            const TArray<int32>* Array = (TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array->operator[](0), 3);
+            TEST_EQUAL(Array->operator[](2), 1);
+        });
+    });
+
+    Describe(TEXT("Shuffle"), [this]
+    {
+        It(TEXT("随机打乱数组元素位置"), EAsyncExecution::ThreadPool, [this]()
+        {
+            FMath::RandInit(1);
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Add(2)\
+            Array:Add(3)\
+            Array:Shuffle()\
+            return Array\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+            const TArray<int32>* Array = (TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array->operator[](0), 1);
+            TEST_EQUAL(Array->operator[](1), 3);
+            TEST_EQUAL(Array->operator[](2), 2);
+        });
+    });
+
+    Describe(TEXT("LastIndex"), [this]
+    {
+        It(TEXT("获取数组最后一个元素的索引位置"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Add(2)\
+            return Array:LastIndex()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_EQUAL(lua_tointeger(L, -1), 2LL);
+        });
+    });
+
+    Describe(TEXT("IsValidIndex"), [this]
+    {
+        It(TEXT("合法位置索引返回true"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            return Array:IsValidIndex(1)\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_TRUE(lua_toboolean(L, -1));
+        });
+        It(TEXT("非法位置索引返回false"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            return Array:IsValidIndex(0)\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_FALSE(lua_toboolean(L, -1));
+        });
+    });
+
+    Describe(TEXT("Contains"), [this]
+    {
+        It(TEXT("数组包含指定元素返回true"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            return Array:Contains(1)\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_TRUE(lua_toboolean(L, -1));
+        });
+        It(TEXT("数组不包含指定元素返回false"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            return Array:Contains(0)\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_FALSE(lua_toboolean(L, -1));
+        });
+    });
+
+    Describe(TEXT("Append"), [this]
+    {
+        It(TEXT("追加另外一个数组的所有元素到数组末尾"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array1 = UE4.TArray(0)\
+            Array1:Add(1)\
+            Array1:Add(2)\
+            local Array2 = UE4.TArray(0)\
+            Array2:Add(3)\
+            Array2:Add(4)\
+            Array1:Append(Array2)\
+            return Array1\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+            const TArray<int32>* Array = (TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array->operator[](0), 1);
+            TEST_EQUAL(Array->operator[](1), 2);
+            TEST_EQUAL(Array->operator[](2), 3);
+            TEST_EQUAL(Array->operator[](3), 4);
+        });
+    });
+
+    Describe(TEXT("ToTable"), [this]
+    {
+        It(TEXT("将数组内容转为LuaTable"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Array = UE4.TArray(0)\
+            Array:Add(1)\
+            Array:Add(2)\
+            local Table = Array:ToTable()\
+            return Table[1], Table[2]\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_EQUAL(lua_tointeger(L, -1), 2LL);
+            TEST_EQUAL(lua_tointeger(L, -2), 1LL);
         });
     });
 

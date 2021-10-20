@@ -32,7 +32,7 @@ void FUnLuaLibClassSpec::Define()
         L = UnLua::CreateState();
     });
 
-    Describe(TEXT("加载UClass"), [this]()
+    Describe(TEXT("Load"), [this]()
     {
         It(TEXT("正确加载蓝图类"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
@@ -43,7 +43,7 @@ void FUnLuaLibClassSpec::Define()
         });
     });
 
-    Describe(TEXT("判断UClass父子关系"), [this]()
+    Describe(TEXT("IsChildOf"), [this]()
     {
         It(TEXT("正确判断子类"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
@@ -55,9 +55,9 @@ void FUnLuaLibClassSpec::Define()
         });
     });
 
-    Describe(TEXT("获取默认类对象"), [this]()
+    Describe(TEXT("GetDefaultObject"), [this]()
     {
-        It(TEXT("正确获取CDO"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("正确获取类默认对象"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const UObject* Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"))->GetDefaultObject();
             const char* Chunk = "\
