@@ -267,6 +267,23 @@ void FUnLuaLibMapSpec::Define()
         });
     });
 
+    Describe(TEXT("ToTable"), [this]()
+    {
+        It(TEXT("将Map内容转为LuaTable"), EAsyncExecution::ThreadPool, [this]()
+        {
+            const char* Chunk = "\
+            local Map = UE4.TMap(0,0)\
+            Map:Add(1,3)\
+            Map:Add(2,4)\
+            local Table = Map:ToTable()\
+            return Table[1], Table[2]\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_EQUAL(lua_tointeger(L, -1), 4LL);
+            TEST_EQUAL(lua_tointeger(L, -2), 3LL);
+        });
+    });
+
     AfterEach([this]
     {
         UnLua::Shutdown();
