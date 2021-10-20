@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreUObject.h"
-
+#include "Containers/Ticker.h"
 #include "Modules/ModuleManager.h"
 
 class UnLuaFrameWorkModule : public IModuleInterface
@@ -9,6 +9,15 @@ class UnLuaFrameWorkModule : public IModuleInterface
 public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+#if UNLUA_ENABLE_AUTO_HOTFIX
+public:
+	bool Tick(float DeltaTime);
+
+private:
+	FTickerDelegate TickDelegate;
+	FDelegateHandle TickDelegateHandle;
+#endif
 };
 
 namespace UnLua

@@ -495,39 +495,32 @@ FString GetMetatableName(const UObjectBaseUtility* Object)
 		return "";
 	}
 
-	UClass* Class = Object->GetClass();
-	const TCHAR* PrefixCPP = Class->GetPrefixCPP();
-	FString ClassName = "";
-	if (Class->IsChildOf<UClass>()
-		|| Class->IsChildOf<UScriptStruct>()
-		|| Class->IsChildOf<UEnum>())
-	{
-		ClassName = Object->GetName();
-	}
-	else
-	{
-		ClassName = Class->GetName();
-	}
-    
-    FString MetatableName = "";
+    const TCHAR* PrefixCPP;
+    FString ClassName;
+    if (Object->IsA<UEnum>()) 
+    {
+        PrefixCPP = TEXT("E");
+        ClassName = Object->GetName();
+    }
+    else if (Object->IsA<UStruct>())
+    {
+        PrefixCPP = ((UStruct*)Object)->GetPrefixCPP();
+        ClassName = Object->GetName();
+    }
+    else 
+    {
+        PrefixCPP = Object->GetClass()->GetPrefixCPP();
+        ClassName = Object->GetClass()->GetName();
+    }
 
-    FString *MetatableNamePtr = Class2Metatable.Find(ClassName);
-    if (MetatableNamePtr)
+    FString MetatableName;
+    if (FString* MetatableNamePtr = Class2Metatable.Find(ClassName))
     {
         MetatableName = *MetatableNamePtr;
     }
     else
     {
-		if (PrefixCPP
-			&& (PrefixCPP[0] == 'U' || PrefixCPP[0] == 'A' || PrefixCPP[0] == 'F' || PrefixCPP[0] == 'E'))
-		{
-			UStruct* Struct = FindObject<UStruct>(ANY_PACKAGE, *ClassName);       // find first
-			if (Struct)
-			{   
-                MetatableName = FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
-                Class2Metatable.Add(ClassName, MetatableName);
-			}
-		}
+        MetatableName = Class2Metatable.Add(ClassName, FString::Printf(TEXT("%s%s"), PrefixCPP, *ClassName));
     }
 
 	return MetatableName;
@@ -2499,6 +2492,11 @@ int32 Class_Index(lua_State *L)
 				Property->Read(L, ContainerPtr, false);
 				lua_remove(L, -2);
 			}
+        }
+        else
+        {
+            lua_pushnil(L);
+            lua_remove(L, -2);
         }
     }
     return 1;

@@ -48,7 +48,7 @@ end
 function BP_PlayerCharacter_C:FallCheck()
 	local Location = self:K2_GetActorLocation()
 	if Location.Z < -200.0 then
-		UE4.UKismetSystemLibrary.ExecuteConsoleCommand(self, "RestartLevel")
+	    UE4.UKismetSystemLibrary.ExecuteConsoleCommand(self, "RestartLevel")
 	end
 end
 

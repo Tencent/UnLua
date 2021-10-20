@@ -45,6 +45,7 @@
   * [08_CppCallLua](Content/Script/Tutorials/08_CppCallLua.lua) 从C++调用Lua
   * [09_StaticExport](Content/Script/Tutorials/09_StaticExport.lua) 静态导出自定义类型到Lua使用
   * [10_Replications](Content/Script/Tutorials/10_Replications.lua) 覆盖网络复制事件
+  * [11_ReleaseUMG](Content/Script/Tutorials/11_ReleaseUMG.lua) 释放UMG相关对象
 
 # 模块说明
 * UnLua 主要运行时模块
