@@ -15,10 +15,35 @@
 #pragma once
 
 #include "UnLua.h"
+#include "TestHelpers.generated.h"
 
 namespace UnLuaTestHelpers
 {
 }
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
+
+DECLARE_DELEGATE_RetVal_OneParam(FString, FUnLuaTestDelegate1, FString);
+
+UCLASS()
+class UNLUA_API UUnLuaTestStub : public UObject
+{
+    GENERATED_BODY()
+
+public:
+    UPROPERTY(BlueprintReadWrite)
+    FUnLuaTestSimpleEvent SimpleEvent;
+    
+    FSimpleDelegate SimpleDelegate;
+
+    FUnLuaTestDelegate1 Callback1;
+
+    UPROPERTY()
+    int32 Counter;
+
+    UFUNCTION(BlueprintCallable)
+    void AddCount() { Counter++; }
+};
 
 #if WITH_DEV_AUTOMATION_TESTS
 
