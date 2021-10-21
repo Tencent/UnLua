@@ -23,7 +23,7 @@ namespace UnLuaTestHelpers
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
 
-DECLARE_DELEGATE_RetVal_OneParam(FString, FUnLuaTestDelegate1, FString);
+DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
 UCLASS()
 class UNLUA_API UUnLuaTestStub : public UObject
@@ -31,12 +31,11 @@ class UNLUA_API UUnLuaTestStub : public UObject
     GENERATED_BODY()
 
 public:
-    UPROPERTY(BlueprintReadWrite)
+    UPROPERTY()
     FUnLuaTestSimpleEvent SimpleEvent;
-    
-    FSimpleDelegate SimpleDelegate;
 
-    FUnLuaTestDelegate1 Callback1;
+    UPROPERTY()
+    FUnLuaTestSimpleHandler SimpleHandler;
 
     UPROPERTY()
     int32 Counter;
