@@ -133,14 +133,10 @@ void FUnLuaLibMapSpec::Define()
             const char* Chunk = "\
             local Map = UE4.TMap(0,0)\
             Map:Add(1,1)\
-            Map:Add(2,2)\
-            return Map\
+            return Map:Remove(2)\
             ";
             UnLua::RunChunk(L, Chunk);
-            const auto Map = (TMap<int32, int32>*)UnLua::GetMap(L, -1);
-            TEST_EQUAL(Map->Num(), 2);
-            TEST_EQUAL(Map->operator[](1), 1);
-            TEST_EQUAL(Map->operator[](2), 2);
+            TEST_FALSE(lua_toboolean(L, -1));
         });
 
         It(TEXT("Key存在，移除并返回true"), EAsyncExecution::ThreadPool, [this]()
@@ -148,13 +144,12 @@ void FUnLuaLibMapSpec::Define()
             const char* Chunk = "\
             local Map = UE4.TMap(0,0)\
             Map:Add(1,1)\
-            Map:Add(1,2)\
-            return Map\
+            return Map:Remove(1), Map\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto Map = (TMap<int32, int32>*)UnLua::GetMap(L, -1);
-            TEST_EQUAL(Map->Num(), 1);
-            TEST_EQUAL(Map->operator[](1), 2);
+            TEST_EQUAL(Map->Num(), 0);
+            TEST_TRUE(lua_toboolean(L, -2));
         });
     });
 
