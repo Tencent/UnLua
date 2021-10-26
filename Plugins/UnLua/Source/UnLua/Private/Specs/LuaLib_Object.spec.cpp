@@ -12,7 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LuaContext.h"
 #include "UnLuaBase.h"
+#include "UnLuaManager.h"
 #include "UnLuaTemplate.h"
 #include "Misc/AutomationTest.h"
 #include "Specs/TestHelpers.h"
@@ -21,6 +23,7 @@
 
 BEGIN_DEFINE_SPEC(FUnLuaLibObjectSpec, "UnLua.API.UObject", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
     lua_State* L;
+    UWorld* World;
 END_DEFINE_SPEC(FUnLuaLibObjectSpec)
 
 void FUnLuaLibObjectSpec::Define()
@@ -29,10 +32,131 @@ void FUnLuaLibObjectSpec::Define()
     {
         UnLua::Startup();
         L = UnLua::CreateState();
+
+        World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
+        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
+        WorldContext.SetCurrentWorld(World);
+
+        const FURL URL;
+        World->InitializeActorsForPlay(URL);
+        World->BeginPlay();
+
+        UnLua::PushUObject(L, World, false);
+        lua_setglobal(L, "World");
+    });
+
+    Describe(TEXT("Load"), [this]()
+    {
+        It(TEXT("加载一个对象"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            UClass* Expected = LoadObject<UClass>(nullptr, TEXT("/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C"));
+            const char* Chunk = "\
+            local ActorClass = UE4.UObject.Load('/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C')\
+            return ActorClass\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            UClass* Actual = (UClass*)UnLua::GetUObject(L, -1);
+            TEST_EQUAL(Actual, Expected);
+        });
+    });
+
+    Describe(TEXT("IsValid"), [this]()
+    {
+        It(TEXT("获取对象的有效状态"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            AActor* Actor = World->SpawnActor(AActor::StaticClass());
+            UnLua::PushUObject(L, Actor, false);
+            lua_setglobal(L, "G_Actor");
+            Actor->K2_DestroyActor();
+
+            World->ForceGarbageCollection(true);
+            World->Tick(LEVELTICK_TimeOnly, SMALL_NUMBER);
+
+            const char* Chunk = "\
+            return G_Actor:IsValid()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+
+            TEST_FALSE(lua_toboolean(L, -1));
+        });
+    });
+
+    Describe(TEXT("GetName"), [this]()
+    {
+        It(TEXT("获取对象的名称"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Outer = NewObject(UE4.UUnLuaTestStub)\
+            local Actor = NewObject(UE4.AActor, Outer, 'Test')\
+            return Actor:GetName()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_EQUAL(lua_tostring(L, -1), "Test");
+        });
+    });
+
+    Describe(TEXT("GetOuter"), [this]()
+    {
+        It(TEXT("获取对象的外部对象"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local ParentActor = NewObject(UE4.AActor)\
+            local ChildActor = NewObject(UE4.AActor, ParentActor)\
+            return ChildActor:GetOuter(), ParentActor\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            AActor* Actual = (AActor*)UnLua::GetUObject(L, -2);
+            AActor* Expected = (AActor*)UnLua::GetUObject(L, -1);
+            TEST_EQUAL(Expected, Actual);
+        });
+    });
+
+    Describe(TEXT("GetClass"), [this]()
+    {
+        It(TEXT("获取对象的类型"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Actor = NewObject(UE4.AActor)\
+            return Actor:GetClass()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            UClass* Class = (UClass*)UnLua::GetUObject(L, -1);
+            TEST_EQUAL(Class, AActor::StaticClass());
+        });
+    });
+
+    Describe(TEXT("GetWorld"), [this]()
+    {
+        It(TEXT("获取对象所在的World"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Actor = World:SpawnActor(UE4.AActor)\
+            return Actor:GetWorld()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            UWorld* Actual = (UWorld*)UnLua::GetUObject(L, -1);
+            TEST_EQUAL(Actual, World);
+        });
+    });
+
+    Describe(TEXT("IsA"), [this]()
+    {
+        It(TEXT("判断对象是否为指定类型"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Actor = NewObject(UE4.AActor)\
+            return Actor:IsA(UE4.AActor), Actor:IsA(UE4.UGameInstance)\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_TRUE(lua_toboolean(L, -2));
+            TEST_FALSE(lua_toboolean(L, -1));
+        });
     });
 
     AfterEach([this]
     {
+        GEngine->DestroyWorldContext(World);
+        World->DestroyWorld(false);
         UnLua::Shutdown();
     });
 }
