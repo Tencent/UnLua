@@ -153,6 +153,14 @@ void FUnLuaLibObjectSpec::Define()
         });
     });
 
+    xDescribe(TEXT("Release"), [this]()
+    {
+        It(TEXT("释放对象在LuaVM的引用"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            check(false);
+        });
+    });
+
     AfterEach([this]
     {
         GEngine->DestroyWorldContext(World);
