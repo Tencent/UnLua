@@ -15,40 +15,60 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FColor_New(lua_State *L)
+static int32 FColor_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FColor);
-    FColor *V = new(Userdata) FColor(ForceInitToZero);
-    if (NumParams > 1)
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FColor);
+
+    switch (NumParams)
     {
-        V->R = (uint8)lua_tonumber(L, 2);
-    }
-    if (NumParams > 2)
-    {
-        V->G = (uint8)lua_tonumber(L, 3);
-    }
-    if (NumParams > 3)
-    {
-        V->B = (uint8)lua_tonumber(L, 4);
-    }
-    if (NumParams > 4)
-    {
-        V->A = (uint8)lua_tonumber(L, 5);
+    case 1:
+        {
+            new(Userdata) FColor(ForceInitToZero);
+            break;
+        }
+    case 2:
+        {
+            const uint32& ColorValue = lua_tointeger(L, 2);
+            new(Userdata) FColor(ColorValue);
+            break;
+        }
+    case 4:
+        {
+            const uint8& R = (uint8)lua_tointeger(L, 2);
+            const uint8& G = (uint8)lua_tointeger(L, 3);
+            const uint8& B = (uint8)lua_tointeger(L, 4);
+            new(Userdata) FColor(R, G, B);
+            break;
+        }
+    case 5:
+        {
+            const uint8& R = (uint8)lua_tointeger(L, 2);
+            const uint8& G = (uint8)lua_tointeger(L, 3);
+            const uint8& B = (uint8)lua_tointeger(L, 4);
+            const uint8& A = (uint8)lua_tointeger(L, 5);
+            new(Userdata) FColor(R, G, B, A);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
     }
     return 1;
 }
 
-static int32 FColor_Set(lua_State *L)
+static int32 FColor_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FColor *A = (FColor*)GetCppInstanceFast(L, 1);
+    FColor* A = (FColor*)GetCppInstanceFast(L, 1);
     if (!A)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FColor!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -73,22 +93,22 @@ static int32 FColor_Set(lua_State *L)
     return 0;
 }
 
-static int32 FColor_Add(lua_State *L)
+static int32 FColor_Add(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 2)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FColor *A = (FColor*)GetCppInstanceFast(L, 1);
+    FColor* A = (FColor*)GetCppInstanceFast(L, 1);
     if (!A)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FColor A!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
-    FColor *B = (FColor*)GetCppInstanceFast(L, 2);
+    FColor* B = (FColor*)GetCppInstanceFast(L, 2);
     if (!B)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FColor B!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -98,18 +118,18 @@ static int32 FColor_Add(lua_State *L)
     FColor C = *A;
     C += (*B);
 
-    void *Userdata = NewTypedUserdata(L, FColor);
-    FColor *V = new(Userdata) FColor(C);
+    void* Userdata = NewTypedUserdata(L, FColor);
+    FColor* V = new(Userdata) FColor(C);
     return 1;
 }
 
 static const luaL_Reg FColorLib[] =
 {
-    { "Set", FColor_Set },
-    { "__add", FColor_Add },
-    { "__call", FColor_New },
-    { "__tostring", UnLua::TMathUtils<FColor>::ToString },
-    { nullptr, nullptr }
+    {"Set", FColor_Set},
+    {"__add", FColor_Add},
+    {"__call", FColor_New},
+    {"__tostring", UnLua::TMathUtils<FColor>::ToString},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FColor)
@@ -117,4 +137,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FColor)
     ADD_NAMED_FUNCTION("ToLinearColor", ReinterpretAsLinear)
     ADD_LIB(FColorLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FColor)
