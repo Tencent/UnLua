@@ -23,7 +23,7 @@ static int32 FIntPoint_New(lua_State* L)
     {
     case 1:
         {
-            new(Userdata) FIntPoint(EForceInit::ForceInitToZero);
+            new(Userdata) FIntPoint(ForceInitToZero);
             break;
         }
     case 2:
