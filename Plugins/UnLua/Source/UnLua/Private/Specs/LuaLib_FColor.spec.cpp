@@ -36,22 +36,29 @@ void FUnLuaLibFColorSpec::Define()
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
             UnLua::RunChunk(L, "return UE4.FColor()");
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(ForceInitToZero));
         });
 
         It(TEXT("指定ColorValue"), EAsyncExecution::ThreadPool, [this]()
         {
             UnLua::RunChunk(L, "return UE4.FColor(0x01020304)");
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(0x01020304));
         });
 
         It(TEXT("指定RGB"), EAsyncExecution::ThreadPool, [this]()
         {
             UnLua::RunChunk(L, "return UE4.FColor(1,2,3)");
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,2,3));
+        });
+
+        It(TEXT("指定RGBA"), EAsyncExecution::ThreadPool, [this]()
+        {
+            UnLua::RunChunk(L, "return UE4.FColor(1,2,3,4)");
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            TEST_EQUAL(Color, FColor(1,2,3,4));
         });
     });
 
@@ -65,7 +72,7 @@ void FUnLuaLibFColorSpec::Define()
             return Color\
             ";
             UnLua::RunChunk(L, Chunk);
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,0,0,0));
         });
 
@@ -77,7 +84,7 @@ void FUnLuaLibFColorSpec::Define()
             return Color\
             ";
             UnLua::RunChunk(L, Chunk);
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,2,0,0));
         });
 
@@ -89,7 +96,7 @@ void FUnLuaLibFColorSpec::Define()
             return Color\
             ";
             UnLua::RunChunk(L, Chunk);
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,2,3,0));
         });
 
@@ -101,7 +108,7 @@ void FUnLuaLibFColorSpec::Define()
             return Color\
             ";
             UnLua::RunChunk(L, Chunk);
-            const FColor& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,2,3,4));
         });
     });
@@ -116,7 +123,7 @@ void FUnLuaLibFColorSpec::Define()
             return Color1 + Color2\
             ";
             UnLua::RunChunk(L, Chunk);
-            const auto Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
+            const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(5,7,9));
         });
     });
