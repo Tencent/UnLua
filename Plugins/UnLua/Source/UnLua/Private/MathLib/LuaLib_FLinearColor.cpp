@@ -47,7 +47,7 @@ static int32 FLinearColor_New(lua_State* L)
     default:
         {
             UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            break;
+            return 0;
         }
     }
     return 1;
