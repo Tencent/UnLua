@@ -15,25 +15,51 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FVector_New(lua_State *L)
+static int32 FVector_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FVector);
-    FVector *V = new(Userdata) FVector(0.0f);
-    UnLua::TFieldSetter3<float>::Set(L, NumParams, &V->X);
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FVector);
+
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FVector(ForceInitToZero);
+            break;
+        }
+    case 2:
+        {
+            const float& XYZ = lua_tonumber(L, 2);
+            new(Userdata) FVector(XYZ);
+            break;
+        }
+    case 4:
+        {
+            const float& X = lua_tonumber(L, 2);
+            const float& Y = lua_tonumber(L, 3);
+            const float& Z = lua_tonumber(L, 4);
+            new(Userdata) FVector(X, Y, Z);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
     return 1;
 }
 
-static int32 FVector_Set(lua_State *L)
+static int32 FVector_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FVector *V = (FVector*)GetCppInstanceFast(L, 1);
+    FVector* V = (FVector*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -44,56 +70,71 @@ static int32 FVector_Set(lua_State *L)
     return 0;
 }
 
-static int32 FVector_Normalize(lua_State *L)
+static int32 FVector_Normalize(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    if (NumParams != 1)
+    const int32 NumParams = lua_gettop(L);
+    if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FVector *V = (FVector*)GetCppInstanceFast(L, 1);
+    FVector* V = (FVector*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    lua_pushboolean(L, V->Normalize());
+
+    if (NumParams == 1)
+    {
+        lua_pushboolean(L, V->Normalize());
+    }
+    else if (NumParams == 2)
+    {
+        const float& Tolerance = lua_tonumber(L, 2);
+        lua_pushboolean(L, V->Normalize(Tolerance));
+    }
+    else
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
     return 1;
 }
 
-static int32 FVector_UNM(lua_State *L)
+static int32 FVector_UNM(lua_State* L)
 {
-    FVector *V = (FVector*)GetCppInstanceFast(L, 1);
+    FVector* V = (FVector*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    void *Userdata = NewTypedUserdata(L, FVector);
+    void* Userdata = NewTypedUserdata(L, FVector);
     new(Userdata) FVector(-(*V));
     return 1;
 }
 
 static const luaL_Reg FVectorLib[] =
 {
-    { "Set", FVector_Set },
-    { "Normalize", FVector_Normalize },
-    { "Add", UnLua::TMathCalculation<FVector, UnLua::TAdd<float>, true>::Calculate },
-    { "Sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>, true>::Calculate },
-    { "Mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>, true>::Calculate },
-    { "Div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>, true>::Calculate },
-    { "__add", UnLua::TMathCalculation<FVector, UnLua::TAdd<float>>::Calculate },
-    { "__sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>>::Calculate },
-    { "__div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FVector>::ToString },
-    { "__unm", FVector_UNM },
-    { "__call", FVector_New },
-    { nullptr, nullptr }
+    {"Set", FVector_Set},
+    {"Normalize", FVector_Normalize},
+    {"Add", UnLua::TMathCalculation<FVector, UnLua::TAdd<float>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FVector, UnLua::TAdd<float>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FVector>::ToString},
+    {"__unm", FVector_UNM},
+    {"__call", FVector_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FVector)
@@ -114,4 +155,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FVector)
     ADD_NAMED_FUNCTION("ToQuat", ToOrientationQuat)
     ADD_LIB(FVectorLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FVector)
