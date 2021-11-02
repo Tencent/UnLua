@@ -161,8 +161,9 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE4.FIntPoint(1,2))");
-            const auto S = lua_tostring(L, -1); 
-            TEST_EQUAL(lua_tostring(L, -1), "X=1 Y=2");
+            const auto& Actual = lua_tostring(L, -1);
+            const auto& Expected = FIntPoint(1, 2).ToString();
+            TEST_EQUAL(Actual, Expected);
         });
     });
 

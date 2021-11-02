@@ -189,8 +189,10 @@ void FUnLuaLibFVector2DSpec::Define()
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE4.FVector2D(1,2))");
-            const auto S = lua_tostring(L, -1);
-            TEST_EQUAL(lua_tostring(L, -1), FVector2D(1,2).ToString());
+            const auto& Actual = lua_tostring(L, -1);
+            const auto& Expected = FVector2D(1,2).ToString();
+            TEST_EQUAL(Actual, Expected);
+            
         });
     });
 

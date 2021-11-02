@@ -174,8 +174,9 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE4.FIntVector(1,2,3))");
-            const auto S = lua_tostring(L, -1);
-            TEST_EQUAL(lua_tostring(L, -1), "X=1 Y=2 Z=3");
+            const auto& Actual =lua_tostring(L, -1);
+            const auto& Expected =  FIntVector(1,2,3).ToString();
+            TEST_EQUAL(Actual, Expected);
         });
     });
 
