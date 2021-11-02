@@ -15,32 +15,66 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FQuat_New(lua_State *L)
+static int32 FQuat_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FQuat);
-    FQuat *V = new(Userdata) FQuat(ForceInit);
-    UnLua::TFieldSetter4<float>::Set(L, NumParams, &V->X);
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FQuat);
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FQuat(ForceInitToZero);
+            break;
+        }
+    case 5:
+        {
+            const float& X = lua_tonumber(L, 2);
+            const float& Y = lua_tonumber(L, 3);
+            const float& Z = lua_tonumber(L, 4);
+            const float& W = lua_tonumber(L, 5);
+            new(Userdata) FQuat(X, Y, Z, W);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
+
     return 1;
 }
 
-static int32 FQuat_Normalize(lua_State *L)
+static int32 FQuat_Normalize(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    if (NumParams != 1)
+    const int32 NumParams = lua_gettop(L);
+    if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FQuat *V = (FQuat*)GetCppInstanceFast(L, 1);
+    FQuat* V = (FQuat*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FQuat!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    V->Normalize();
+    if (NumParams == 1)
+    {
+        V->Normalize();
+    }
+    else if (NumParams == 2)
+    {
+        const float& Tolerance = lua_tonumber(L, 2);
+        V->Normalize(Tolerance);
+    }
+    else
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+    }
+
     return 0;
 }
 
@@ -48,26 +82,26 @@ static int32 FQuat_Normalize(lua_State *L)
  * Build a FQuat from an axis and an angle. 
  * example: local Q = FQuat.FromAxisAndAngle(Axis, Angle)
  */
-static int32 FQuat_FromAxisAndAngle(lua_State *L)
+static int32 FQuat_FromAxisAndAngle(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 2)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FVector *Axis = (FVector*)GetCppInstanceFast(L, 1);
+    FVector* Axis = (FVector*)GetCppInstanceFast(L, 1);
     if (!Axis)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid Axis!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
-    float Angle = lua_tonumber(L, 2);
+    const float Angle = lua_tonumber(L, 2);
 
     if (NumParams > 2)
     {
-        FQuat *Q = (FQuat*)GetCppInstanceFast(L, 3);
+        FQuat* Q = (FQuat*)GetCppInstanceFast(L, 3);
         if (Q)
         {
             *Q = FQuat(*Axis, Angle);
@@ -76,21 +110,21 @@ static int32 FQuat_FromAxisAndAngle(lua_State *L)
         }
     }
 
-    void *Userdata = NewTypedUserdata(L, FQuat);
+    void* Userdata = NewTypedUserdata(L, FQuat);
     new(Userdata) FQuat(*Axis, Angle);
     return 1;
 }
 
-static int32 FQuat_Set(lua_State *L)
+static int32 FQuat_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FQuat *V = (FQuat*)GetCppInstanceFast(L, 1);
+    FQuat* V = (FQuat*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FQuat!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -103,14 +137,14 @@ static int32 FQuat_Set(lua_State *L)
 
 static const luaL_Reg FQuatLib[] =
 {
-    { "Normalize", FQuat_Normalize },
-    { "FromAxisAndAngle", FQuat_FromAxisAndAngle },
-    { "Set", FQuat_Set },
-    { "Mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, true, UnLua::TMul<FQuat, float>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, false, UnLua::TMul<FQuat, float>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FQuat>::ToString },
-    { "__call", FQuat_New },
-    { nullptr, nullptr }
+    {"Normalize", FQuat_Normalize},
+    {"FromAxisAndAngle", FQuat_FromAxisAndAngle},
+    {"Set", FQuat_Set},
+    {"Mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, true, UnLua::TMul<FQuat, float>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, false, UnLua::TMul<FQuat, float>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FQuat>::ToString},
+    {"__call", FQuat_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FQuat)
@@ -139,4 +173,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FQuat)
     ADD_FUNCTION_EX("Div", FQuat, operator/=, const float)
     ADD_LIB(FQuatLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FQuat)
