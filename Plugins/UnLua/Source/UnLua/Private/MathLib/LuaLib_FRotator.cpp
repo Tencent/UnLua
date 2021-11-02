@@ -15,25 +15,51 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FRotator_New(lua_State *L)
+static int32 FRotator_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FRotator);
-    FRotator *V = new(Userdata) FRotator(0.0f);
-    UnLua::TFieldSetter3<float>::Set(L, NumParams, &V->Pitch);
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FRotator);
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FRotator(ForceInitToZero);
+            break;
+        }
+    case 2:
+        {
+            const float& F = lua_tonumber(L, 2);
+            new(Userdata) FRotator(F);
+            break;
+        }
+    case 4:
+        {
+            const float& Pitch = lua_tonumber(L, 2);
+            const float& Yaw = lua_tonumber(L, 3);
+            const float& Roll = lua_tonumber(L, 4);
+            new(Userdata) FRotator(Pitch, Yaw, Roll);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
+
     return 1;
 }
 
-static int32 GetRotatorScaledAxis(lua_State *L, EAxis::Type Axis, int32 MinParams)
+static int32 GetRotatorScaledAxis(lua_State* L, EAxis::Type Axis, int32 MinParams)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < MinParams)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FRotator *A = (FRotator*)GetCppInstanceFast(L, 1);
+    FRotator* A = (FRotator*)GetCppInstanceFast(L, 1);
     if (!A)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FRotator!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -42,8 +68,8 @@ static int32 GetRotatorScaledAxis(lua_State *L, EAxis::Type Axis, int32 MinParam
 
     if (NumParams > MinParams)
     {
-        int32 OutParamIndex = MinParams + 1;
-        FVector *B = (FVector*)GetCppInstanceFast(L, OutParamIndex);
+        const int32 OutParamIndex = MinParams + 1;
+        FVector* B = (FVector*)GetCppInstanceFast(L, OutParamIndex);
         if (B)
         {
             *B = FRotationMatrix(*A).GetScaledAxis(Axis);
@@ -52,36 +78,36 @@ static int32 GetRotatorScaledAxis(lua_State *L, EAxis::Type Axis, int32 MinParam
         }
     }
 
-    void *Userdata = NewTypedUserdata(L, FVector);
+    void* Userdata = NewTypedUserdata(L, FVector);
     new(Userdata) FVector(FRotationMatrix(*A).GetScaledAxis(Axis));
     return 1;
 };
 
-static int32 FRotator_GetRightVector(lua_State *L)
+static int32 FRotator_GetRightVector(lua_State* L)
 {
     return GetRotatorScaledAxis(L, EAxis::Y, 1);
 }
 
-static int32 FRotator_GetUpVector(lua_State *L)
+static int32 FRotator_GetUpVector(lua_State* L)
 {
     return GetRotatorScaledAxis(L, EAxis::Z, 1);
 }
 
-static int32 FRotator_GetUnitAxis(lua_State *L)
+static int32 FRotator_GetUnitAxis(lua_State* L)
 {
     return GetRotatorScaledAxis(L, (EAxis::Type)lua_tointeger(L, 2), 2);
 }
 
-static int32 FRotator_Set(lua_State *L)
+static int32 FRotator_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FRotator *V = (FRotator*)GetCppInstanceFast(L, 1);
+    FRotator* V = (FRotator*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FRotator!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -94,13 +120,13 @@ static int32 FRotator_Set(lua_State *L)
 
 static const luaL_Reg FRotatorLib[] =
 {
-    { "GetRightVector", FRotator_GetRightVector },
-    { "GetUpVector", FRotator_GetUpVector },
-    { "GetUnitAxis", FRotator_GetUnitAxis },
-    { "__tostring", UnLua::TMathUtils<FRotator>::ToString },
-    { "Set", FRotator_Set },
-    { "__call", FRotator_New },
-    { nullptr, nullptr }
+    {"GetRightVector", FRotator_GetRightVector},
+    {"GetUpVector", FRotator_GetUpVector},
+    {"GetUnitAxis", FRotator_GetUnitAxis},
+    {"__tostring", UnLua::TMathUtils<FRotator>::ToString},
+    {"Set", FRotator_Set},
+    {"__call", FRotator_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FRotator)
@@ -122,4 +148,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FRotator)
     ADD_FUNCTION_EX("Mul", FRotator, operator*=, float)
     ADD_LIB(FRotatorLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FRotator)
