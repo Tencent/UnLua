@@ -564,7 +564,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             }
         }
 
-        Property->GetValue(L, InParams, false);
+        Property->GetValue(L, InParams, !Property->IsReferenceParameter());
     }
 
     // object is also pushed, return is push when return
