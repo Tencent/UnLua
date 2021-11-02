@@ -161,33 +161,13 @@ static int32 FTransform_BlendWith(lua_State* L)
     return 0;
 }
 
-static int32 FTransform_ToString(lua_State* L)
-{
-    const int32 NumParams = lua_gettop(L);
-    if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    FTransform* Instance = (FTransform*)GetCppInstanceFast(L, 1);
-    if (!Instance)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    lua_pushstring(L, TCHAR_TO_UTF8(*Instance->ToString()));
-    return 1;
-}
-
 static const luaL_Reg FTransformLib[] =
 {
     {"Blend", FTransform_Blend},
     {"BlendWith", FTransform_BlendWith},
     {"Mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, true, UnLua::TMul<FTransform, float>>::Calculate},
     {"__mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, false, UnLua::TMul<FTransform, float>>::Calculate},
-    {"__tostring", FTransform_ToString},
+    {"__tostring", UnLua::TMathUtils<FTransform>::ToString},
     {"__call", FTransform_New},
     {nullptr, nullptr}
 };

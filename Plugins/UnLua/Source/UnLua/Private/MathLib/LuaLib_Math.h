@@ -369,7 +369,6 @@ namespace UnLua
     };
 
     template <typename T> FString ToStringWrapper(T *A) { return A->ToString(); }
-    FORCEINLINE FString ToStringWrapper(FTransform *A) { return A->ToHumanReadableString(); }
 
     template <typename T>
     struct TMathUtils
