@@ -178,6 +178,22 @@ void FUnLuaBaseSpec::Define()
             TEST_EQUAL(RetValues[0].Value<const char*>(), "Foo");
         });
 
+        It(TEXT("支持多参数传入和传出"), EAsyncExecution::ThreadPool, [this]()
+        {
+            UnLua::RunChunk(L, "function GlobalFunction(a,b,c,d) return a,b,c,d end");
+            const UnLua::FLuaRetValues RetValues = UnLua::Call(L, "GlobalFunction", "A", 1, true, FVector(1, 2, 3));
+            TEST_TRUE(RetValues.IsValid());
+            TEST_EQUAL(RetValues.Num(), 4);
+            TEST_EQUAL(RetValues[0].GetType(), LUA_TSTRING);
+            TEST_EQUAL(RetValues[0].Value<const char*>(), "A");
+            TEST_EQUAL(RetValues[1].GetType(), LUA_TNUMBER);
+            TEST_EQUAL(RetValues[1].Value<int32>(), 1);
+            TEST_EQUAL(RetValues[2].GetType(), LUA_TBOOLEAN);
+            TEST_EQUAL(RetValues[2].Value<bool>(), true);
+            TEST_EQUAL(RetValues[3].GetType(), LUA_TUSERDATA);
+            TEST_EQUAL(RetValues[3].Value<FVector>(), FVector(1,2,3));
+        });
+
         It(TEXT("调用失败，返回值被标记为无效"), EAsyncExecution::ThreadPool, [this]()
         {
             AddExpectedError(TEXT("Global function NotExistsFunction doesn't exist!"));
