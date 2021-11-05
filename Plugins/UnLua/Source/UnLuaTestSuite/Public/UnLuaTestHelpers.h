@@ -15,7 +15,7 @@
 #pragma once
 
 #include "UnLua.h"
-#include "TestHelpers.generated.h"
+#include "UnLuaTestHelpers.generated.h"
 
 namespace UnLuaTestHelpers
 {
@@ -26,7 +26,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
 DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
 UCLASS()
-class UNLUA_API UUnLuaTestStub : public UObject
+class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
 {
     GENERATED_BODY()
 

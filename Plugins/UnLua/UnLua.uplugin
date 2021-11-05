@@ -46,6 +46,11 @@
             "Name": "UnLuaFrameWork",
             "Type": "Runtime",
             "LoadingPhase": "PostConfigInit"
+        },
+        {
+            "Name": "UnLuaTestSuite",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
         }
     ]
 }

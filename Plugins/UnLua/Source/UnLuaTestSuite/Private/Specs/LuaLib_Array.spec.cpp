@@ -14,8 +14,8 @@
 
 #include "UnLuaBase.h"
 #include "UnLuaTemplate.h"
+#include "UnLuaTestHelpers.h"
 #include "Misc/AutomationTest.h"
-#include "Specs/TestHelpers.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
