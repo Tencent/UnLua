@@ -58,7 +58,9 @@ namespace UnLua
     template <bool bCopy, typename T1, typename... T2>
     FORCEINLINE int32 PushArgs(lua_State *L, T1 &&V1, T2&&... V2)
     {
-        return UnLua::Push(L, Forward<T1>(V1), bCopy) + PushArgs<bCopy>(L, Forward<T2>(V2)...);
+        const int32 Ret1 = UnLua::Push(L, Forward<T1>(V1), bCopy);
+        const int32 Ret2 = PushArgs<bCopy>(L, Forward<T2>(V2)...);
+        return Ret1 + Ret2;
     }
 
     
