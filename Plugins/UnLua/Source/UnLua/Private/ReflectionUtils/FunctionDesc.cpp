@@ -19,6 +19,8 @@
 #include "LuaContext.h"
 #include "LuaFunctionInjection.h"
 #include "DefaultParamCollection.h"
+#include "UnLua.h"
+#include "UUnLuaLatentAction.h"
 
 /**
  * Function descriptor constructor
@@ -419,8 +421,18 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
         Property->InitializeValue(Params);
         if (i == LatentPropertyIndex)
         {
+            const int32 ThreadRef = *((int32*)Userdata);
+            if(lua_type(L, FirstParamIndex + ParamIndex) == LUA_TUSERDATA)
+            {
+                // custom latent action info
+                FLatentActionInfo Info = UnLua::Get<FLatentActionInfo>(L, FirstParamIndex + ParamIndex, UnLua::TType<FLatentActionInfo>());
+                if(Info.Linkage == UUnLuaLatentAction::MAGIC_LEGACY_LINKAGE)
+                    Info.Linkage = ThreadRef;
+                Property->CopyValue(Params, &Info);
+                continue;
+            }
+
             // bind a callback to the latent function
-            int32 ThreadRef = *((int32*)Userdata);
             FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)GLuaCxt->GetManager());
             Property->CopyValue(Params, &LatentActionInfo);
             continue;
