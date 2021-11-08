@@ -30,9 +30,18 @@ bool FUnLuaTestBase::Update()
 void FUnLuaTestBase::TearDown()
 {
     FAITestBase::TearDown();
-    if (L)
+
+    AddLatent([&]()
     {
-        UnLua::Shutdown();
-        L = nullptr;
-    }
+        if (L)
+        {
+            UnLua::Shutdown();
+            L = nullptr;
+        }
+    });
+}
+
+void FUnLuaTestBase::AddLatent(TFunction<void()>&& Func, float Delay) const
+{
+    ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestDelayedCallbackLatentCommand(MoveTemp(Func), Delay));
 }

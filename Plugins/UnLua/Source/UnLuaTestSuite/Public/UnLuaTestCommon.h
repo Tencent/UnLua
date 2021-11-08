@@ -19,6 +19,32 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+class FUnLuaTestDelayedCallbackLatentCommand : public IAutomationLatentCommand
+{
+public:
+    FUnLuaTestDelayedCallbackLatentCommand(TFunction<void()>&& InCallback, float InDelay = 0.1f)
+        : Callback(MoveTemp(InCallback)), Delay(InDelay)
+    {
+        //Set the start time
+        StartTime = FPlatformTime::Seconds();
+    }
+
+    virtual bool Update() override
+    {
+        const double NewTime = FPlatformTime::Seconds();
+        if (NewTime - StartTime >= static_cast<double>(Delay))
+        {
+            Callback();
+            return true;
+        }
+        return false;
+    }
+
+private:
+    TFunction<void()> Callback;
+    float Delay;
+};
+
 struct UNLUATESTSUITE_API FUnLuaTestBase : FAITestBase
 {
 public:
@@ -29,6 +55,8 @@ public:
     virtual void TearDown() override;
 
 protected:
+    void AddLatent(TFunction<void()>&& Func, float Delay = 0.1f) const;
+
     lua_State* L;
 };
 

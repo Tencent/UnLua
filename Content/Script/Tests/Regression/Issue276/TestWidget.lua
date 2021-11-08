@@ -3,7 +3,11 @@ require "UnLua"
 local M = Class()
 
 local function run(self)
-    UE4.UKismetSystemLibrary.Delay(self, 0.5)
+    local action = NewObject(UE4.UUnLuaLatentAction, self)
+    action:SetTickableWhenPaused(true)
+    local info = action:CreateInfoForLegacy()
+    UE4.UKismetSystemLibrary.Delay(self, 0.5, info)
+
     _G.Flag = true
 end
 

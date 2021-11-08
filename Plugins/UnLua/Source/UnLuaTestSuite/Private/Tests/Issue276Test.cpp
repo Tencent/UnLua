@@ -26,11 +26,13 @@ struct FUnLuaTest_Issue276 : FUnLuaTestBase
 
         AutomationOpenMap(TEXT("/Game/Tests/Regression/Issue276/Issue276"));
 
-        ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.0f));
-
-        lua_getglobal(L, "Flag");
-
-        RUNNER_TEST_TRUE(lua_toboolean(L, -1));
+        AddLatent([&]()
+        {
+            lua_getglobal(L, "Flag");
+            const bool Flag = (bool)lua_toboolean(L, -1);
+            RUNNER_TEST_TRUE(Flag);
+            return true;
+        }, 2.0f);
 
         return true;
     }
