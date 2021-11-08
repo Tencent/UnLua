@@ -20,7 +20,7 @@
 #include "LuaFunctionInjection.h"
 #include "DefaultParamCollection.h"
 #include "UnLua.h"
-#include "UUnLuaLatentAction.h"
+#include "UnLuaLatentAction.h"
 
 /**
  * Function descriptor constructor
