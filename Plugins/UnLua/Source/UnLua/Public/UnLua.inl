@@ -160,7 +160,7 @@ namespace UnLua
 
         virtual uint32 GetValueTypeHash(const void *Src) const override
         {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
             static_assert(TModels<CGetTypeHashable, T>::Value, "type must support GetTypeHash()!");
 #else
             static_assert(THasGetTypeHash<T>::Value, "type must support GetTypeHash()!");

@@ -39,7 +39,7 @@ FPropertyDesc::~FPropertyDesc()
 
 bool FPropertyDesc::IsValid() const
 {
-#if ENGINE_MINOR_VERSION < 25
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
     return GLuaCxt->IsUObjectValid(Property);
 #else
     bool bValid = false;
@@ -1601,7 +1601,7 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
             PropertyDesc = new TMulticastDelegatePropertyDesc<FMulticastScriptDelegate>(InProperty);
             break;
         }
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
     case CPT_MulticastSparseDelegate:
         {
             PropertyDesc = new TMulticastDelegatePropertyDesc<FSparseDelegate>(InProperty);
@@ -1727,7 +1727,7 @@ int32 GetPropertyType(const FProperty *Property)
         {
             Type = CPT_Delegate;
         }
-#if ENGINE_MINOR_VERSION < 23
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 23
         else if (const FMulticastDelegateProperty *TempMulticastDelegateProperty = CastField<FMulticastDelegateProperty>(Property))
         {
             Type = CPT_MulticastDelegate;

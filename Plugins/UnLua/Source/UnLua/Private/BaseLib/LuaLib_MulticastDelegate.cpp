@@ -170,7 +170,7 @@ static const luaL_Reg FMulticastScriptDelegateLib[] =
 EXPORT_UNTYPED_CLASS(FMulticastScriptDelegate, false, FMulticastScriptDelegateLib)
 IMPLEMENT_EXPORTED_CLASS(FMulticastScriptDelegate)
 
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
 static const luaL_Reg FMulticastSparseDelegateLib[] =
 {
     { "Add", TMulticastDelegateLib<FSparseDelegate>::Add },

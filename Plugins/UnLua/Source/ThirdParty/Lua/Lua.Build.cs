@@ -14,7 +14,11 @@ public class Lua : ModuleRules
         bEnableUndefinedIdentifierWarnings = false;
         ShadowVariableWarningLevel = WarningLevel.Off;
 
-        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+#if UE_5_0_OR_LATER
+    if (Target.Platform == UnrealTargetPlatform.Win64)
+#else
+    if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+#endif
         {
             PublicDefinitions.Add("_CRT_SECURE_NO_WARNINGS");
             if (Target.bBuildEditor)

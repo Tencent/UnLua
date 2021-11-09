@@ -795,7 +795,7 @@ static void PushDelegateElement(lua_State *L, FDelegateProperty *Property, void 
  */
 static void PushMCDelegateElement(lua_State *L, FMulticastDelegateProperty *Property, void *Value)
 {
-#if ENGINE_MINOR_VERSION < 23
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 23
     FMulticastScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
 #else
     void *ScriptDelegate = Value;
@@ -2145,7 +2145,7 @@ int32 Global_NewObject(lua_State *L)
             TableRef = luaL_ref(L, LUA_REGISTRYINDEX);
         }
         FScopedLuaDynamicBinding Binding(L, Class, UTF8_TO_TCHAR(ModuleName), TableRef);
-#if ENGINE_MINOR_VERSION < 26
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 26
         UObject* Object = StaticConstructObject_Internal(Class, Outer, Name);
 #else
         FStaticConstructObjectParameters ObjParams(Class);
