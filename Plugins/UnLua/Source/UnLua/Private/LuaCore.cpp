@@ -2190,117 +2190,57 @@ int32 Global_Print(lua_State *L)
     return 0;
 }
 
-void FindLuaLoader(lua_State *L, const char *name) {
-    int i;
-    luaL_Buffer msg;  /* to build error message */
-    luaL_buffinit(L, &msg);
-
-    lua_getglobal(L, "package");
-    /* push 'package.searchers' to index 3 in the stack */
-    if (lua_getfield(L, -1, "searchers") != LUA_TTABLE)
-        luaL_error(L, "'package.searchers' must be a table");
-    /*  iterate over available searchers to find a loader */
-    for (i = 1; ; i++) {
-        if (lua_rawgeti(L, -1, i) == LUA_TNIL) {  /* no more searchers? */
-            lua_pop(L, 1);  /* remove nil */
-            luaL_pushresult(&msg);  /* create error message */
-            luaL_error(L, "module '%s' not found:%s", name, lua_tostring(L, -1));
-        }
-        lua_pushstring(L, name);
-        lua_call(L, 1, 2);  /* call it */
-        if (lua_isfunction(L, -2))  /* did it find a loader? */
-            return;  /* module loader found */
-        else if (lua_isstring(L, -2)) {  /* searcher returned error message? */
-            lua_pop(L, 1);  /* remove extra return */
-            luaL_addvalue(&msg);  /* concatenate error message */
-        }
-        else
-            lua_pop(L, 2);  /* remove both returns */
-    }
-    lua_pop(L, 1);
-}
-
-
-/**
- * Global glue function to require a Lua module
- */
-int32 Global_Require(lua_State *L)
+int LoadFromBuiltinLibs(lua_State *L)
 {
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+    TCHAR* Name = UTF8_TO_TCHAR(lua_tostring(L, 1));
+    const auto Ctx = FLuaContext::Create();
+    const auto BuiltinLoaders = Ctx->GetBuiltinLoaders();
+    const auto Loader = BuiltinLoaders.Find(Name);
+    if(!Loader)
         return 0;
-    }
-
-    const char *ModuleName = lua_tostring(L, 1);
-    if (!ModuleName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    lua_settop(L, 1);       /* LOADED table will be at index 2 */
-
-    lua_getfield(L, LUA_REGISTRYINDEX, LUA_LOADED_TABLE);
-    lua_getfield(L, 2, ModuleName);
-    if (lua_toboolean(L, -1))
-    {
-        return 1;
-    }
-
-    lua_pop(L, 1);
-
-    FString FileName(UTF8_TO_TCHAR(ModuleName));
-    FileName.ReplaceInline(TEXT("."), TEXT("/"));
-    FString RelativeFilePath = FString::Printf(TEXT("%s.lua"), *FileName);
-
-    // first check if the file is exist or not
-    FString FullFilePath = GetFullPathFromRelativePath(RelativeFilePath);
-    if (!FullFilePath.IsEmpty())
-    {   
-        bool bSuccess = UnLua::LoadFile(L, RelativeFilePath);
-        if (bSuccess)
-        {
-            //FString FullFilePath = GLuaSrcFullPath + RelativeFilePath;
-            lua_pushvalue(L, 1);
-            lua_pushstring(L, TCHAR_TO_UTF8(*FullFilePath));
-            lua_pcall(L, 2, 1, 0);
-
-            if (!lua_isnil(L, -1))
-            {
-                lua_setfield(L, 2, ModuleName);
-            }
-            if (lua_getfield(L, 2, ModuleName) == LUA_TNIL)
-            {
-                lua_pushboolean(L, 1);
-                lua_pushvalue(L, -1);
-                lua_setfield(L, 2, ModuleName);
-            }
-        }
-
-        return 1;
-    }
-    else
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: use ori require to load file %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(ModuleName));
-
-        const char* name = ModuleName;
-        FindLuaLoader(L, name);
-        lua_pushstring(L, name);  /* pass name as argument to module loader */
-        lua_insert(L, -2);  /* name is 1st argument (before search data) */
-        lua_call(L, 2, 1);  /* run loader to load module */
-        if (!lua_isnil(L, -1))  /* non-nil return? */
-            lua_setfield(L, 2, name);  /* LOADED[name] = returned value */
-        if (lua_getfield(L, 2, name) == LUA_TNIL) {   /* module set no value? */
-            lua_pushboolean(L, 1);  /* use true as result */
-            lua_pushvalue(L, -1);  /* extra copy to be returned */
-            lua_setfield(L, 2, name);  /* LOADED[name] = true */
-        }
-        return 1;
-    }
+    lua_pushcfunction(L, *Loader);
+    return 1;
 }
 
+int LoadFromCustomLoader(lua_State *L)
+{
+    if(!FUnLuaDelegates::CustomLoadLuaFile.IsBound())
+        return 0;
+
+    const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
+    
+    TArray<uint8> Data;
+    FString FullFilePath;
+    if(!FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, FullFilePath))
+        return 0;
+
+    const auto Chunk = (const char*)Data.GetData();
+    const auto ChunkName = TCHAR_TO_UTF8(*FileName);
+    if(!UnLua::LoadChunk(L, Chunk, Data.Num(), ChunkName))
+        return luaL_error(L, TCHAR_TO_UTF8("file loading from custom loader error"));
+
+    return 1;
+}
+
+int LoadFromFileSystem(lua_State *L)
+{
+    FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
+    FileName.ReplaceInline(TEXT("."), TEXT("/"));
+    const auto RelativePath = FString::Printf(TEXT("%s.lua"), *FileName);
+    const auto FullPath = GetFullPathFromRelativePath(RelativePath);
+    TArray<uint8> Data;
+    if(!FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+        return 0;
+
+    const auto SkipLen = 3 < Data.Num() && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
+    const auto ChunkName = TCHAR_TO_UTF8(*RelativePath);
+    const auto Chunk = (const char*)(Data.GetData() + SkipLen);
+    const auto ChunkSize = Data.Num() - SkipLen;
+    if(!UnLua::LoadChunk(L, Chunk, ChunkSize, ChunkName))
+        return luaL_error(L, TCHAR_TO_UTF8("file loading from file system error"));
+
+    return 1;
+}
 
 int32 Global_AddToClassWhiteSet(lua_State* L)
 {
@@ -2322,7 +2262,6 @@ int32 Global_AddToClassWhiteSet(lua_State* L)
 
     return 0;
 }
-
 
 int32 Global_RemoveFromClassWhiteSet(lua_State* L)
 {

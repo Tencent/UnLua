@@ -45,6 +45,8 @@ public:
 
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
     void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
+    void AddSearcher(int (*Searcher)(lua_State *), int Index);
+    void AddBuiltinLoader(const TCHAR *Name, int (*Loader)(lua_State *)) { BuiltinLoaders.Add(Name, Loader); }
 
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 23)
     void OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime);
@@ -71,7 +73,7 @@ public:
     const TMap<FName, UnLua::IExportedClass*>& GetExportedNonReflectedClasses() const { return ExportedNonReflectedClasses; }
     const TArray<UnLua::IExportedEnum*>& GetExportedEnums() const { return ExportedEnums; }
     const TArray<UnLua::IExportedFunction*>& GetExportedFunctions() const { return ExportedFunctions; }
-
+    const TMap<const TCHAR *, int (*)(lua_State *)>& GetBuiltinLoaders() const { return BuiltinLoaders; } 
 
     void AddThread(lua_State *Thread, int32 ThreadRef);
     void ResumeThread(int32 ThreadRef);
@@ -126,6 +128,8 @@ private:
     TMap<FName, UnLua::IExportedClass*> ExportedNonReflectedClasses;    // statically exported non-reflected classes
 
     TMap<FName, TSharedPtr<UnLua::ITypeInterface>> TypeInterfaces;      // registered type interfaces
+
+    TMap<const TCHAR *, int (*)(lua_State *)> BuiltinLoaders;
 
     //!!!Fix!!!
     //thread need refine

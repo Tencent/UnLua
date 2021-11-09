@@ -125,6 +125,10 @@ void FLuaContext::CreateState()
         check(L);
         luaL_openlibs(L);                                           // open all standard Lua libraries
 
+        AddSearcher(LoadFromCustomLoader, 2);
+        AddSearcher(LoadFromFileSystem, 3);
+        AddSearcher(LoadFromBuiltinLibs, 4);
+
         lua_pushstring(L, "ObjectMap");                             // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
@@ -156,17 +160,12 @@ void FLuaContext::CreateState()
         lua_register(L, "UnLua_UnRegisterClass", Global_UnRegisterClass);
 
         lua_register(L, "UEPrint", Global_Print);
-        //if (FPlatformProperties::RequiresCookedData())
-        {
-            lua_register(L, "require", Global_Require);             // override 'require' when running with cooked data
-        }
 
         // register collision related enums
         FCollisionHelper::Initialize();     // initialize collision helper stuff
         RegisterECollisionChannel(L);
         RegisterEObjectTypeQuery(L);
         RegisterETraceTypeQuery(L);
-
 
         if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
         {
@@ -452,6 +451,31 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility* Object)
         }
     }
     return false;
+}
+
+void FLuaContext::AddSearcher(int (*Searcher)(lua_State *), int Index)
+{
+    // if #package.searchers 
+    lua_getglobal(L, "package");
+    lua_getfield(L, -1, "searchers");
+    lua_remove(L, -2);
+    if(!lua_istable(L, -1))
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("Invalid package.serachers!"));
+        return;
+    }
+
+    const uint32 Len = lua_rawlen(L, -1);
+    Index = Index < 0 ? (int)(Len + Index + 2) : Index;
+    for (int e = (int)Len + 1; e > Index; e--)
+    {
+        lua_rawgeti(L, -1, e - 1);
+        lua_rawseti(L, -2, e);
+    }
+    
+    lua_pushcfunction(L, Searcher);
+    lua_rawseti(L, -2, Index);
+    lua_pop(L, 1);
 }
 
 /**
