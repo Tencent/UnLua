@@ -17,20 +17,19 @@
 #include "UnLuaEditorCommands.h"
 #include "Misc/CoreDelegates.h"
 #include "IPersonaToolkit.h"
+#include "Textures/SlateIcon.h"
 #include "Editor.h"
 #include "Animation/AnimBlueprint.h"
 #include "BlueprintEditorModule.h"
-#include "AnimationBlueprintEditor.h"
 #include "AnimationBlueprintEditorModule.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
-#include "Misc/FileHelper.h"
+#include "Toolbars/AnimationBlueprintToolbar.h"
+#include "Toolbars/BlueprintToolbar.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
-
-extern bool CreateLuaTemplateFile(UBlueprint *Blueprint);
 
 // copy dependency file to plugin's content dir
 static bool CopyDependencyFile(const TCHAR *FileName)
@@ -74,6 +73,9 @@ public:
         OnPostEngineInitHandle = FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnLuaEditorModule::OnPostEngineInit);
         PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaEditorModule::PostPIEStarted);
         PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FUnLuaEditorModule::PrePIEEnded);
+
+        BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
+        AnimationBlueprintToolbar = MakeShareable(new FAnimationBlueprintToolbar);
     }
 
     virtual void ShutdownModule() override
@@ -89,12 +91,9 @@ public:
 private:
     void OnPostEngineInit()
     {
-        FBlueprintEditorModule &BlueprintEditorModule = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet");
-        BlueprintEditorModule.GetMenuExtensibilityManager()->GetExtenderDelegates().Add(FAssetEditorExtender::CreateRaw(this, &FUnLuaEditorModule::GetBlueprintToolbarExtender));
-
-        FAnimationBlueprintEditorModule &AnimationBlueprintEditorModule = FModuleManager::LoadModuleChecked<FAnimationBlueprintEditorModule>("AnimationBlueprintEditor");
-        AnimationBlueprintEditorModule.GetAllAnimationBlueprintEditorToolbarExtenders().Add(IAnimationBlueprintEditorModule::FAnimationBlueprintEditorToolbarExtender::CreateRaw(this, &FUnLuaEditorModule::GetAnimationBlueprintToolbarExtender));
-
+        BlueprintToolbar->Initialize();
+        AnimationBlueprintToolbar->Initialize();
+        
         IMainFrameModule &MainFrameModule = FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT("MainFrame"));
         MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
     }
@@ -109,30 +108,6 @@ private:
         bIsPIE = false;     // clear PIE flag
     }
 
-    TSharedRef<FExtender> GetBlueprintToolbarExtender(const TSharedRef<FUICommandList> CommandList, const TArray<UObject*> ContextSensitiveObjects)
-    {
-        // add a button to blueprint editor toolbar
-
-        UBlueprint *Blueprint = ContextSensitiveObjects.Num() < 1 ? nullptr : Cast<UBlueprint>(ContextSensitiveObjects[0]);
-        TSharedPtr<class FUICommandList> NewCommandList = MakeShareable(new FUICommandList);
-        NewCommandList->MapAction(FUnLuaEditorCommands::Get().CreateLuaTemplate, FExecuteAction::CreateLambda([Blueprint]() { CreateLuaTemplateFile(Blueprint); }), FCanExecuteAction());
-        TSharedRef<FExtender> ToolbarExtender(new FExtender());
-        ToolbarExtender->AddToolBarExtension("Debugging", EExtensionHook::After, NewCommandList, FToolBarExtensionDelegate::CreateRaw(this, &FUnLuaEditorModule::AddToolbarExtension));
-        return ToolbarExtender;
-    }
-
-    TSharedRef<FExtender> GetAnimationBlueprintToolbarExtender(const TSharedRef<FUICommandList> CommandList, TSharedRef<IAnimationBlueprintEditor> InAnimationBlueprintEditor)
-    {
-        // add a button to animation blueprint editor toolbar
-
-        UAnimBlueprint *AnimBlueprint = InAnimationBlueprintEditor->GetPersonaToolkit()->GetAnimBlueprint();
-        TSharedPtr<class FUICommandList> NewCommandList = MakeShareable(new FUICommandList);
-        NewCommandList->MapAction(FUnLuaEditorCommands::Get().CreateLuaTemplate, FExecuteAction::CreateLambda([AnimBlueprint]() { CreateLuaTemplateFile(AnimBlueprint); }), FCanExecuteAction());
-        TSharedRef<FExtender> ToolbarExtender(new FExtender());
-        ToolbarExtender->AddToolBarExtension("Debugging", EExtensionHook::After, NewCommandList, FToolBarExtensionDelegate::CreateRaw(this, &FUnLuaEditorModule::AddToolbarExtension));
-        return ToolbarExtender;
-    }
-
     void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
     {
         // register default key input to 'Hotfix' Lua
@@ -145,20 +120,13 @@ private:
         check(bSuccess);
     }
 
-    void AddToolbarExtension(FToolBarBuilder &ToolbarBuilder)
-    {
-        // add a button to export Lua template file
-        const FUnLuaEditorCommands &Commands = FUnLuaEditorCommands::Get();
-        ToolbarBuilder.BeginSection(NAME_None);
-        ToolbarBuilder.AddToolBarButton(Commands.CreateLuaTemplate);
-        ToolbarBuilder.EndSection();
-    }
-
     bool CanHotfixLua() const
     {
         return bIsPIE;      // enable Lua 'Hotfix' in PIE
     }
 
+    TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
+    TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
     TSharedPtr<ISlateStyle> Style;
 
     FDelegateHandle OnPostEngineInitHandle;
