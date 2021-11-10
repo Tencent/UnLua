@@ -13,46 +13,30 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaTestCommon.h"
+#include "Misc/AutomationTest.h"
+#include "Tests/AutomationCommon.h"
 
-bool FUnLuaTestBase::SetUp()
+#if WITH_DEV_AUTOMATION_TESTS
+
+struct FUnLuaTest_Issue284 : FUnLuaTestBase
 {
-    UnLua::Startup();
-    L = UnLua::GetState();
-    return true;
-}
-
-bool FUnLuaTestBase::Update()
-{
-    FAITestBase::Update();
-    return true;
-}
-
-void FUnLuaTestBase::TearDown()
-{
-    FAITestBase::TearDown();
-
-    if (InstantTest())
+    virtual bool InstantTest() override
     {
-        if (L)
-        {
-            UnLua::Shutdown();
-            L = nullptr;
-        }
+        return true;
     }
-    else
-    {
-        AddLatent([&]()
-        {
-            if (L)
-            {
-                UnLua::Shutdown();
-                L = nullptr;
-            }
-        });
-    }
-}
 
-void FUnLuaTestBase::AddLatent(TFunction<void()>&& Func, float Delay) const
-{
-    ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestDelayedCallbackLatentCommand(MoveTemp(Func), Delay));
-}
+    virtual bool SetUp() override
+    {
+        FUnLuaTestBase::SetUp();
+
+        GetTestRunner().AddExpectedError(TEXT("module 'test.test' not found"), EAutomationExpectedErrorFlags::Contains);
+
+        UnLua::RunChunk(L, "require('test.test')");
+
+        return true;
+    }
+};
+
+IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue284, TEXT("UnLua.Regression.Issue284 require不存在的lib会崩"))
+
+#endif //WITH_DEV_AUTOMATION_TESTS
