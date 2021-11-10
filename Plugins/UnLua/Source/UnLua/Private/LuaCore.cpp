@@ -2193,16 +2193,19 @@ int32 Global_Print(lua_State *L)
 void FindLuaLoader(lua_State *L, const char *name) {
     int i;
     luaL_Buffer msg;  /* to build error message */
-    luaL_buffinit(L, &msg);
 
-    lua_getglobal(L, "package");
+    lua_getglobal(L, LUA_LOADLIBNAME);
     /* push 'package.searchers' to index 3 in the stack */
     if (lua_getfield(L, -1, "searchers") != LUA_TTABLE)
         luaL_error(L, "'package.searchers' must be a table");
+    lua_remove(L, -2);
+    luaL_buffinit(L, &msg);
     /*  iterate over available searchers to find a loader */
     for (i = 1; ; i++) {
-        if (lua_rawgeti(L, -1, i) == LUA_TNIL) {  /* no more searchers? */
+        luaL_addstring(&msg, "\n\t");  /* error-message prefix */
+        if (lua_rawgeti(L, 3, i) == LUA_TNIL) {  /* no more searchers? */
             lua_pop(L, 1);  /* remove nil */
+            luaL_buffsub(&msg, 2);  /* remove prefix */
             luaL_pushresult(&msg);  /* create error message */
             luaL_error(L, "module '%s' not found:%s", name, lua_tostring(L, -1));
         }
@@ -2214,10 +2217,11 @@ void FindLuaLoader(lua_State *L, const char *name) {
             lua_pop(L, 1);  /* remove extra return */
             luaL_addvalue(&msg);  /* concatenate error message */
         }
-        else
+        else {  /* no error message */
             lua_pop(L, 2);  /* remove both returns */
+            luaL_buffsub(&msg, 2);  /* remove prefix */
+        }
     }
-    lua_pop(L, 1);
 }
 
 
@@ -2287,17 +2291,23 @@ int32 Global_Require(lua_State *L)
 
         const char* name = ModuleName;
         FindLuaLoader(L, name);
-        lua_pushstring(L, name);  /* pass name as argument to module loader */
-        lua_insert(L, -2);  /* name is 1st argument (before search data) */
+        lua_rotate(L, -2, 1);  /* function <-> loader data */
+        lua_pushvalue(L, 1);  /* name is 1st argument to module loader */
+        lua_pushvalue(L, -3);  /* loader data is 2nd argument */
+        /* stack: ...; loader data; loader function; mod. name; loader data */
         lua_call(L, 2, 1);  /* run loader to load module */
+        /* stack: ...; loader data; result from loader */
         if (!lua_isnil(L, -1))  /* non-nil return? */
             lua_setfield(L, 2, name);  /* LOADED[name] = returned value */
+        else
+            lua_pop(L, 1);  /* pop nil */
         if (lua_getfield(L, 2, name) == LUA_TNIL) {   /* module set no value? */
             lua_pushboolean(L, 1);  /* use true as result */
-            lua_pushvalue(L, -1);  /* extra copy to be returned */
+            lua_copy(L, -1, -2);  /* replace loader result */
             lua_setfield(L, 2, name);  /* LOADED[name] = true */
         }
-        return 1;
+        lua_rotate(L, -2, 1);  /* loader data <-> module result  */
+        return 2;  /* return module result and loader data */
     }
 }
 
