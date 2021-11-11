@@ -185,7 +185,8 @@ static int32 TMap_FindRef(lua_State *L)
     void *Value = Map->Find(Map->ElementCache);
     if (Value)
     {
-        Map->ValueInterface->Read(L, Value, false);
+        const void *Key = (uint8*)Value - Map->ValueInterface->GetOffset();
+        Map->ValueInterface->Read(L, Key, false);
     }
     else
     {
