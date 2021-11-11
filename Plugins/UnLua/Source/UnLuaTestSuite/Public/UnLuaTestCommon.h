@@ -72,4 +72,16 @@ protected:
     return true;\
     }
 
+#define RUNNER_TEST_EQUAL(expression, expected)\
+    if (!GetTestRunner().TestEqual(TEXT(#expression), expression, expected))\
+    {\
+    return true;\
+    }
+
+#define RUNNER_TEST_NULL(expression)\
+    if (!GetTestRunner().TestNull(TEXT(#expression), expression))\
+    {\
+    return true;\
+    }
+
 #endif //WITH_DEV_AUTOMATION_TESTS
