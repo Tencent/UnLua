@@ -239,10 +239,6 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     OuterClass->AddFunctionToFunctionMap(NewFunc, NewFuncName);
     GReflectionRegistry.RegisterFunction(NewFunc);
     NewFunc->ClearInternalFlags(EInternalObjectFlags::Native);
-    if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())
-    {
-        NewFunc->AddToRoot();
-    }
     return NewFunc;
 }
 
@@ -276,10 +272,6 @@ void RemoveUFunction(UFunction *Function, UClass *OuterClass)
     }
 
     GReflectionRegistry.UnRegisterFunction(Function);
-    if (GUObjectArray.DisregardForGCEnabled() || GUObjectClusters.GetNumAllocatedClusters())
-    {
-        Function->RemoveFromRoot();
-    }
 #if !CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION
     if (Function->IsNative())
     {

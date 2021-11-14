@@ -67,12 +67,12 @@ FClassDesc::~FClassDesc()
 	GReflectionRegistry.RemoveFromDescSet(this);
 
     // remove refs to class,etc ufunction/delegate
-    if (GLuaCxt->IsUObjectValid((UClass*)Struct))
+    // if (GLuaCxt->IsUObjectValid(Class))
     {
         UUnLuaManager* UnLuaManager = GLuaCxt->GetManager();
         if (UnLuaManager)
         {
-            UnLuaManager->CleanUpByClass((UClass*)Struct);
+            UnLuaManager->CleanUpByClass(Class);
         }
     }
 
