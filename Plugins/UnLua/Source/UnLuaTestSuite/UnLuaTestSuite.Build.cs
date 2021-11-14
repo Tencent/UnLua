@@ -47,6 +47,11 @@ public class UnLuaTestSuite : ModuleRules
 				"AITestSuite",
 			}
 		);
+		
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.Add("UnrealEd");
+		}
 
 		DynamicallyLoadedModuleNames.AddRange(
 			new string[]

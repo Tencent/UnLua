@@ -13,11 +13,26 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaTestCommon.h"
+#include "Tests/AutomationCommon.h"
+#if WITH_EDITOR
+#include "Tests/AutomationEditorCommon.h"
+#endif
 
 bool FUnLuaTestBase::SetUp()
 {
     UnLua::Startup();
     L = UnLua::GetState();
+
+#if WITH_EDITOR
+    const auto& MapName = GetMapName();
+    if (!MapName.IsEmpty())
+    {
+        AutomationOpenMap(MapName);
+        ADD_LATENT_AUTOMATION_COMMAND(FWaitForMapToLoadCommand);
+        return true;
+    }
+#endif
+
     return true;
 }
 
@@ -41,6 +56,11 @@ void FUnLuaTestBase::TearDown()
     }
     else
     {
+#if WITH_EDITOR
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+        ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.1f));
+#endif
+
         AddLatent([&]()
         {
             if (L)

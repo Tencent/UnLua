@@ -55,6 +55,8 @@ public:
     virtual void TearDown() override;
 
 protected:
+    virtual FString GetMapName() { return ""; }
+
     void AddLatent(TFunction<void()>&& Func, float Delay = 0.1f) const;
 
     lua_State* L;
@@ -80,6 +82,12 @@ protected:
 
 #define RUNNER_TEST_NULL(expression)\
     if (!GetTestRunner().TestNull(TEXT(#expression), expression))\
+    {\
+    return true;\
+    }
+
+#define RUNNER_TEST_NOT_NULL(expression)\
+    if (!GetTestRunner().TestNotNull(TEXT(#expression), expression))\
     {\
     return true;\
     }
