@@ -20,11 +20,11 @@
 
 struct FUnLuaTest_Issue286 : FUnLuaTestBase
 {
+    virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue286/Issue286"); }
+
     virtual bool SetUp() override
     {
         FUnLuaTestBase::SetUp();
-
-        AutomationOpenMap(TEXT("/Game/Tests/Regression/Issue286/Issue286"));
 
         AddLatent([&]()
         {

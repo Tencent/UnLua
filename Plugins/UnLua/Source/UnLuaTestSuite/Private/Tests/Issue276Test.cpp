@@ -14,17 +14,17 @@
 
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
-#include "Tests/AutomationCommon.h"
+
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 struct FUnLuaTest_Issue276 : FUnLuaTestBase
 {
+    virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue276/Issue276"); }
+
     virtual bool SetUp() override
     {
         FUnLuaTestBase::SetUp();
-
-        AutomationOpenMap(TEXT("/Game/Tests/Regression/Issue276/Issue276"));
 
         AddLatent([&]()
         {
