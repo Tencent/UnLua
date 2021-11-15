@@ -86,7 +86,7 @@ void FUnLuaBaseSpec::Define()
         {
             UnLua::Push(L, static_cast<uint64>(0xFFFFFFFFFFFFFFFF));
             TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<uint64>()));
-            TEST_EQUAL(lua_tointeger(L, -1), 0xFFFFFFFFFFFFFFFFLL);
+            TEST_EQUAL((int64)lua_tointeger(L, -1), (int64)0xFFFFFFFFFFFFFFFFLL);
         });
 
         It(TEXT("正确传入float到Lua堆栈"), EAsyncExecution::ThreadPool, [this]()
