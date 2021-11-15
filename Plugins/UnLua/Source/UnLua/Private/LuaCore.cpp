@@ -1331,7 +1331,7 @@ static int32 GetField(lua_State* L)
             {
                 if (ClassDesc->IsClass())
                 {
-                    luaL_getmetatable(L, "UObject");
+                    luaL_getmetatable(L, "UClass");
                     lua_pushvalue(L, 2);                // push key
                     lua_rawget(L, -2);
                     lua_remove(L, -2);
