@@ -654,6 +654,35 @@ namespace UnLua
     }
 #endif
 
+    /**
+     * Exported static property
+     */
+    template <typename T>
+    TExportedStaticProperty<T>::TExportedStaticProperty(const FString &InName, T* Value)
+        : FExportedProperty(InName, 0), Value(Value)
+    {}
+
+#if WITH_EDITOR
+    template <typename T>
+    void TExportedStaticProperty<T>::GenerateIntelliSense(FString &Buffer) const
+    {
+        FString TypeName = TTypeIntelliSense<typename TDecay<T>::Type>::GetName();
+        Buffer += FString::Printf(TEXT("---@field %s %s %s \r\n"), TEXT("public"), *Name, *TypeName);
+    }
+#endif
+
+    template <typename T>
+    void TExportedStaticProperty<T>::Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const
+    {
+        
+    }
+
+    template <typename T>
+    void TExportedStaticProperty<T>::Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const
+    {
+        
+    }
+    
     template <typename T>
     TExportedArrayProperty<T>::TExportedArrayProperty(const FString &InName, uint32 InOffset, int32 InArrayDim)
         : FExportedProperty(InName, InOffset), ArrayDim(InArrayDim)
@@ -962,6 +991,12 @@ namespace UnLua
         FExportedClassBase::Properties.Add(new TExportedArrayProperty<T>(InName, PropertyOffset.Offset, N));
     }
 
+    template <bool bIsReflected, typename ClassType, typename... CtorArgType>
+    template <typename T> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddStaticProperty(const FString &InName, T *Property)
+    {
+        FExportedClassBase::Properties.Add(new TExportedStaticProperty<T>(InName, Property));
+    }
+    
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     template <typename RetType, typename... ArgType> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddFunction(const FString &InName, RetType(ClassType::*InFunc)(ArgType...))
     {
