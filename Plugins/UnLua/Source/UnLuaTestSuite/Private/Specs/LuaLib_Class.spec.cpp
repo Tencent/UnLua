@@ -49,7 +49,7 @@ void FUnLuaLibClassSpec::Define()
         {
             const char* Chunk = "\
             local GameModeClass = UE4.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
-            return UE4.UClass.IsChildOf(GameModeClass, UE4.AGameModeBase)";
+            return GameModeClass:IsChildOf(UE4.AGameModeBase)";
             UnLua::RunChunk(L, Chunk);
             TEST_TRUE(!!lua_toboolean(L, -1));
         });
@@ -62,7 +62,7 @@ void FUnLuaLibClassSpec::Define()
             const UObject* Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"))->GetDefaultObject();
             const char* Chunk = "\
             local GameModeClass = UE4.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
-            return UE4.UClass.GetDefaultObject(GameModeClass)";
+            return GameModeClass:GetDefaultObject()";
             UnLua::RunChunk(L, Chunk);
             const UObject* Actual = static_cast<UObject*>(UnLua::GetPointer(L, -1));
             TEST_EQUAL(Actual, Expected);
