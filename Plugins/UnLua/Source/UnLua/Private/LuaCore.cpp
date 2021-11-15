@@ -2217,7 +2217,7 @@ int LoadFromCustomLoader(lua_State *L)
     const auto Chunk = (const char*)Data.GetData();
     const auto ChunkName = TCHAR_TO_UTF8(*FileName);
     if(!UnLua::LoadChunk(L, Chunk, Data.Num(), ChunkName))
-        return luaL_error(L, TCHAR_TO_UTF8("file loading from custom loader error"));
+        return luaL_error(L, "file loading from custom loader error");
 
     return 1;
 }
@@ -2237,7 +2237,7 @@ int LoadFromFileSystem(lua_State *L)
     const auto Chunk = (const char*)(Data.GetData() + SkipLen);
     const auto ChunkSize = Data.Num() - SkipLen;
     if(!UnLua::LoadChunk(L, Chunk, ChunkSize, ChunkName))
-        return luaL_error(L, TCHAR_TO_UTF8("file loading from file system error"));
+        return luaL_error(L, "file loading from file system error");
 
     return 1;
 }
