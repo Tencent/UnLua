@@ -69,7 +69,7 @@ void FUnLuaLibObjectSpec::Define()
             lua_setglobal(L, "G_Actor");
             Actor->K2_DestroyActor();
 
-            World->ForceGarbageCollection(true);
+            GEngine->ForceGarbageCollection(true);
             World->Tick(LEVELTICK_TimeOnly, SMALL_NUMBER);
 
             const char* Chunk = "\
