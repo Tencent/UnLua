@@ -26,13 +26,9 @@ bool IsOverridable(UFunction* Function)
 {
     check(Function);
 
-#if CHECK_BLUEPRINTEVENT_FOR_NATIVIZED_CLASS
 	static const uint32 FlagMask = FUNC_Native | FUNC_Event | FUNC_Net;
 	static const uint32 FlagResult = FUNC_Native | FUNC_Event;
 	return Function->HasAnyFunctionFlags(FUNC_BlueprintEvent) || (Function->FunctionFlags & FlagMask) == FlagResult;
-#else
-    return Function->HasAnyFunctionFlags(FUNC_BlueprintEvent);
-#endif
 }
 
 /**
