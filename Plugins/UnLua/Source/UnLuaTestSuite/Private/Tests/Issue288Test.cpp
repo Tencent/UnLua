@@ -14,9 +14,7 @@
 
 #include "LuaContext.h"
 #include "UnLuaTestCommon.h"
-#include "Blueprint/UserWidget.h"
 #include "Engine/SimpleConstructionScript.h"
-#include "Engine/StreamableManager.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
