@@ -2,13 +2,13 @@
 
 ## Q：覆写RecieveTick无效？(Overwritten RecieveTick but unuseful)
 
-A：只有当蓝图中的Tick事件启用时，Lua中的Tick才会执行。这个是UE4自己的设计，开启Tick有两种方法，一种是在C++中把bCanEverTick设为true，另一种就是在蓝图中创建Event Tick节点，可见FKismetCompilerContext::SetCanEverTick()函数。
-A: Lua's Tick will only be called while Tick in Blueprint is enabled. This is designed by UE4, you could enable Tick with two ways: one is set `bCanEverTick=true` in C++, and the other way is create `Event Tick` node in Blueprint, could see more details in `FKismetCompilerContext::SetCanEverTick()`.
+A：只有当蓝图中的Tick事件启用时，Lua中的Tick才会执行。这个是UE自己的设计，开启Tick有两种方法，一种是在C++中把bCanEverTick设为true，另一种就是在蓝图中创建Event Tick节点，可见FKismetCompilerContext::SetCanEverTick()函数。
+A: Lua's Tick will only be called while Tick in Blueprint is enabled. This is designed by UE, you could enable Tick with two ways: one is set `bCanEverTick=true` in C++, and the other way is create `Event Tick` node in Blueprint, could see more details in `FKismetCompilerContext::SetCanEverTick()`.
 
 ## Q：Lua代码打包后加载不到？(Could not load Lua script files after packing)
 
 A：在 "Additional Non-Asset Directories to Package" 一栏中加入Script目录。
-A: Add Lua script files path into `Additional Non-Asset Directories to Package` in UE4Editor's Project Settings
+A: Add Lua script files path into `Additional Non-Asset Directories to Package` in UEEditor's Project Settings
 
 ## Q：多继承层次里不能覆写接口的方法吗？(Can't overwrite interface methods in multiple inheritance levels?)
 
@@ -32,8 +32,8 @@ A: It is no different from ordinary lua process debugging, you can directly use 
 
 ## Q：如何使用IntelliSense（智能提示）？(How to use IntelliSense?)
 
-A：设置 UnLuaIntelliSense.Build.cs 中 ENABLE_INTELLISENSE=1，并重新生成工程，则可以在UnLua 插件下的Intermediate目录中生成Lua IntelliSense，将该IntelliSense添加到Lua IDE的IntelliSense目录下，则可以实现UE4的智能提示。
-A: Set `ENABLE_INTELLISENSE=1` in `UnLuaIntelliSense.Build.cs` and regenerate the project, then you can generate Lua IntelliSense in the Intermediate directory under the UnLua plug-in, and add the IntelliSense to the IntelliSense directory of Lua IDE to realize UE4 smart prompts.
+A：设置 UnLuaIntelliSense.Build.cs 中 ENABLE_INTELLISENSE=1，并重新生成工程，则可以在UnLua 插件下的Intermediate目录中生成Lua IntelliSense，将该IntelliSense添加到Lua IDE的IntelliSense目录下，则可以实现UE的智能提示。
+A: Set `ENABLE_INTELLISENSE=1` in `UnLuaIntelliSense.Build.cs` and regenerate the project, then you can generate Lua IntelliSense in the Intermediate directory under the UnLua plug-in, and add the IntelliSense to the IntelliSense directory of Lua IDE to realize UE smart prompts.
 
 ## Q：有哪些产品正在使用UnLua？(Which products are using UnLua?)
 

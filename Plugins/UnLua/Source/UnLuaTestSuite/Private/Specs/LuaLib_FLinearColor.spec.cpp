@@ -35,21 +35,21 @@ void FUnLuaLibFLinearColorSpec::Define()
     {
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FLinearColor()");
+            UnLua::RunChunk(L, "return UE.FLinearColor()");
             const auto& Color = UnLua::Get<FLinearColor>(L, -1, UnLua::TType<FLinearColor>());
             TEST_EQUAL(Color, FLinearColor(EForceInit::ForceInit));
         });
 
         It(TEXT("指定RGB"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FLinearColor(0.1,0.2,0.3)");
+            UnLua::RunChunk(L, "return UE.FLinearColor(0.1,0.2,0.3)");
             const auto& Color = UnLua::Get<FLinearColor>(L, -1, UnLua::TType<FLinearColor>());
             TEST_EQUAL(Color, FLinearColor(0.1f,0.2f,0.3f));
         });
 
         It(TEXT("指定RGBA"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FLinearColor(0.1,0.2,0.3,0.4)");
+            UnLua::RunChunk(L, "return UE.FLinearColor(0.1,0.2,0.3,0.4)");
             const auto& Color = UnLua::Get<FLinearColor>(L, -1, UnLua::TType<FLinearColor>());
             TEST_EQUAL(Color, FLinearColor(0.1f,0.2f,0.3f,0.4f));
         });
@@ -60,7 +60,7 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("设置R"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FLinearColor()\
+            local Color = UE.FLinearColor()\
             Color:Set(0.1)\
             return Color\
             ";
@@ -72,7 +72,7 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("设置RG"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FLinearColor()\
+            local Color = UE.FLinearColor()\
             Color:Set(0.1,0.2)\
             return Color\
             ";
@@ -84,7 +84,7 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("设置RGB"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FLinearColor()\
+            local Color = UE.FLinearColor()\
             Color:Set(0.1,0.2,0.3)\
             return Color\
             ";
@@ -96,7 +96,7 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("设置RGBA"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FLinearColor()\
+            local Color = UE.FLinearColor()\
             Color:Set(0.1,0.2,0.3,0.4)\
             return Color\
             ";
@@ -111,8 +111,8 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("颜色相加"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color1 = UE4.FLinearColor(0.1,0.2,0.3)\
-            local Color2 = UE4.FLinearColor(0.4,0.5,0.6)\
+            local Color1 = UE.FLinearColor(0.1,0.2,0.3)\
+            local Color2 = UE.FLinearColor(0.4,0.5,0.6)\
             return Color1 + Color2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -126,8 +126,8 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("颜色相减"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color1 = UE4.FLinearColor(0.4,0.5,0.6)\
-            local Color2 = UE4.FLinearColor(0.1,0.2,0.3)\
+            local Color1 = UE.FLinearColor(0.4,0.5,0.6)\
+            local Color2 = UE.FLinearColor(0.1,0.2,0.3)\
             return Color1 - Color2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -141,8 +141,8 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("颜色相乘"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color1 = UE4.FLinearColor(0.1,0.2,0.3)\
-            local Color2 = UE4.FLinearColor(0.4,0.5,0.6)\
+            local Color1 = UE.FLinearColor(0.1,0.2,0.3)\
+            local Color2 = UE.FLinearColor(0.4,0.5,0.6)\
             return Color1 * Color2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -156,8 +156,8 @@ void FUnLuaLibFLinearColorSpec::Define()
         It(TEXT("颜色相除"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color1 = UE4.FLinearColor(0.1,0.2,0.3)\
-            local Color2 = UE4.FLinearColor(0.4,0.5,0.6)\
+            local Color1 = UE.FLinearColor(0.1,0.2,0.3)\
+            local Color2 = UE.FLinearColor(0.4,0.5,0.6)\
             return Color1 / Color2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -170,7 +170,7 @@ void FUnLuaLibFLinearColorSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FLinearColor(1,2,3,4))");
+            UnLua::RunChunk(L, "return tostring(UE.FLinearColor(1,2,3,4))");
             TEST_EQUAL(lua_tostring(L, -1), "(R=1.000000,G=2.000000,B=3.000000,A=4.000000)");
         });
     });

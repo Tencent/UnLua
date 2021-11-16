@@ -864,7 +864,7 @@ namespace UnLua
         if (!bIsReflected)
         {
 #if WITH_UE4_NAMESPACE
-            lua_getglobal(L, "UE4");
+            lua_getglobal(L, "UE");
             lua_pushstring(L, ClassName.Get());
             lua_pushvalue(L, -3);
             lua_rawset(L, -3);

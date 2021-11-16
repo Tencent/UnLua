@@ -36,7 +36,7 @@ void FUnLuaLibFTransformSpec::Define()
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            return UE4.FTransform()\
+            return UE.FTransform()\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -48,8 +48,8 @@ void FUnLuaLibFTransformSpec::Define()
         {
             // TODO: not supported currently
             const char* Chunk = "\
-            local Translation = UE4.FVector(0,0,1)\
-            return UE4.FTransform(Translation)\
+            local Translation = UE.FVector(0,0,1)\
+            return UE.FTransform(Translation)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -60,8 +60,8 @@ void FUnLuaLibFTransformSpec::Define()
         It(TEXT("指定Rotation(FQuat)"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Rotation = UE4.FQuat(0,0,0,1)\
-            return UE4.FTransform(Rotation)\
+            local Rotation = UE.FQuat(0,0,0,1)\
+            return UE.FTransform(Rotation)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -73,8 +73,8 @@ void FUnLuaLibFTransformSpec::Define()
         {
             // TODO: not supported currently
             const char* Chunk = "\
-            local Rotation = UE4.FRotator(0,0,0)\
-            return UE4.FTransform(Rotation)\
+            local Rotation = UE.FRotator(0,0,0)\
+            return UE.FTransform(Rotation)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -85,9 +85,9 @@ void FUnLuaLibFTransformSpec::Define()
         It(TEXT("指定Rotation(FQuat)/Translation"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Rotation = UE4.FQuat(0,0,0,1)\
-            local Translation = UE4.FVector(0,0,1)\
-            return UE4.FTransform(Rotation, Translation)\
+            local Rotation = UE.FQuat(0,0,0,1)\
+            local Translation = UE.FVector(0,0,1)\
+            return UE.FTransform(Rotation, Translation)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -99,9 +99,9 @@ void FUnLuaLibFTransformSpec::Define()
         {
             // TODO: not supported currently
             const char* Chunk = "\
-            local Rotation = UE4.FRotator(0,0,0)\
-            local Translation = UE4.FVector(0,0,1)\
-            return UE4.FTransform(Rotation, Translation)\
+            local Rotation = UE.FRotator(0,0,0)\
+            local Translation = UE.FVector(0,0,1)\
+            return UE.FTransform(Rotation, Translation)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -112,10 +112,10 @@ void FUnLuaLibFTransformSpec::Define()
         It(TEXT("指定Rotation(FQuat)/Translation/Scale"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Rotation = UE4.FQuat(0,0,0,1)\
-            local Translation = UE4.FVector(0,0,1)\
-            local Scale = UE4.FVector(1,1,1) * 2\
-            return UE4.FTransform(Rotation, Translation, Scale)\
+            local Rotation = UE.FQuat(0,0,0,1)\
+            local Translation = UE.FVector(0,0,1)\
+            local Scale = UE.FVector(1,1,1) * 2\
+            return UE.FTransform(Rotation, Translation, Scale)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -127,10 +127,10 @@ void FUnLuaLibFTransformSpec::Define()
         {
             // TODO: not supported currently
             const char* Chunk = "\
-            local Rotation = UE4.FRotator(0,0,0)\
-            local Translation = UE4.FVector(0,0,1)\
-            local Scale = UE4.FVector(0,0,1) * 2\
-            return UE4.FTransform(Rotation, Translation, Scale)\
+            local Rotation = UE.FRotator(0,0,0)\
+            local Translation = UE.FVector(0,0,1)\
+            local Scale = UE.FVector(0,0,1) * 2\
+            return UE.FTransform(Rotation, Translation, Scale)\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto& Actual = UnLua::Get<FTransform>(L, -1, UnLua::TType<FTransform>());
@@ -144,8 +144,8 @@ void FUnLuaLibFTransformSpec::Define()
         It(TEXT("将当前Transform与目标Transform混合"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Transform1 = UE4.FTransform(UE4.FQuat(0,0,0,1), UE4.FVector(0,0,1))\
-            local Transform2 = UE4.FTransform(UE4.FQuat(0,0,0,1), UE4.FVector(0,0,1) * 2)\
+            local Transform1 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,1))\
+            local Transform2 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,1) * 2)\
             Transform1:BlendWith(Transform2, 0.5)\
             return Transform1\
             ";
@@ -166,9 +166,9 @@ void FUnLuaLibFTransformSpec::Define()
         It(TEXT("将当前Transform与目标两个Transform混合"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Transform1 = UE4.FTransform(UE4.FQuat(0,0,0,1), UE4.FVector(0,0,1))\
-            local Transform2 = UE4.FTransform(UE4.FQuat(0,0,0,1), UE4.FVector(0,0,2))\
-            local Transform3 = UE4.FTransform(UE4.FQuat(0,0,0,1), UE4.FVector(0,0,3))\
+            local Transform1 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,1))\
+            local Transform2 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,2))\
+            local Transform3 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,3))\
             Transform1:Blend(Transform2, Transform3, 0.5)\
             return Transform1\
             ";
@@ -189,7 +189,7 @@ void FUnLuaLibFTransformSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FTransform())");
+            UnLua::RunChunk(L, "return tostring(UE.FTransform())");
             const auto& Actual = lua_tostring(L, -1);
             const auto& Expected = FTransform().ToString();
             TEST_EQUAL(Actual, Expected);

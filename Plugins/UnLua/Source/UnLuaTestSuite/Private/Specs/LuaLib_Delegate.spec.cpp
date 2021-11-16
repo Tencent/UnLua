@@ -36,7 +36,7 @@ void FUnLuaLibDelegateSpec::Define()
         It(TEXT("绑定"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Stub = NewObject(UE4.UUnLuaTestStub)\
+            local Stub = NewObject(UE.UUnLuaTestStub)\
             Stub.SimpleHandler:Bind(Stub, function() end)\
             return Stub\
             ";
@@ -51,7 +51,7 @@ void FUnLuaLibDelegateSpec::Define()
         It(TEXT("解绑"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Stub = NewObject(UE4.UUnLuaTestStub)\
+            local Stub = NewObject(UE.UUnLuaTestStub)\
             local Callback = function() end\
             Stub.SimpleHandler:Bind(Stub, Callback)\
             Stub.SimpleHandler:Unbind()\
@@ -68,7 +68,7 @@ void FUnLuaLibDelegateSpec::Define()
         It(TEXT("执行委托"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Stub = NewObject(UE4.UUnLuaTestStub)\
+            local Stub = NewObject(UE.UUnLuaTestStub)\
             local Counter = 0\
             Stub.SimpleHandler:Bind(Stub, function() Counter = Counter + 1 end)\
             Stub.SimpleHandler:Execute()\

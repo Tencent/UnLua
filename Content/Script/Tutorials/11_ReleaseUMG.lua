@@ -35,7 +35,7 @@ L：强制 Lua GC
 end
 
 function M:ReceiveBeginPlay()
-    local widget_class = UE4.UClass.Load("/Game/Tutorials/11_ReleaseUMG/ReleaseUMG_Root.ReleaseUMG_Root_C")
+    local widget_class = UE.UClass.Load("/Game/Tutorials/11_ReleaseUMG/ReleaseUMG_Root.ReleaseUMG_Root_C")
     local widget_root = NewObject(widget_class, self)
     widget_root:AddToViewport()
 
@@ -48,7 +48,7 @@ function M:L_Pressed()
 end
 
 function M:C_Pressed()
-    UE4.UKismetSystemLibrary.CollectGarbage()
+    UE.UKismetSystemLibrary.CollectGarbage()
     Screen.Print("UKismetSystemLibrary.CollectGarbage()")
 end
 

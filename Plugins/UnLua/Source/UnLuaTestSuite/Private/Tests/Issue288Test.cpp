@@ -39,7 +39,7 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 		World->BeginPlay();
 
 		const char* Chunk1 = "\
-		local UMGClass = UE4.UClass.Load('/Game/Tests/Regression/Issue288/UnLuaTestUMG_Issue288.UnLuaTestUMG_Issue288_C')\
+		local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue288/UnLuaTestUMG_Issue288.UnLuaTestUMG_Issue288_C')\
 		G_UMG = NewObject(UMGClass)\
 		";
 		UnLua::RunChunk(L, Chunk1);

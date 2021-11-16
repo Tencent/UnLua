@@ -27,9 +27,9 @@ function M:ReceiveBeginPlay()
     —— 本示例来自 "Content/Script/Tutorials.08_CppCallLua.lua"
     ]]
     Screen.Print(msg)
-    UE4.UTutorialBlueprintFunctionLibrary.CallLuaByGlobalTable()
+    UE.UTutorialBlueprintFunctionLibrary.CallLuaByGlobalTable()
     Screen.Print("=================")
-    UE4.UTutorialBlueprintFunctionLibrary.CallLuaByFLuaTable()
+    UE.UTutorialBlueprintFunctionLibrary.CallLuaByFLuaTable()
 end
 
 function M.CallMe(a, b)

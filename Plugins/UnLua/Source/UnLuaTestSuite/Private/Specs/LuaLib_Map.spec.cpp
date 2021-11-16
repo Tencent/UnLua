@@ -36,7 +36,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("构造TMap<int32,int32>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             Map:Add(2,2)\
             return Map\
@@ -51,7 +51,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("构造TMap<FString,FString>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap('','')\
+            local Map = UE.TMap('','')\
             Map:Add('A','Apple')\
             Map:Add('B','Banana')\
             return Map\
@@ -66,9 +66,9 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("构造TMap<FVector,bool>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(UE4.FVector,true)\
-            Map:Add(UE4.FVector(1,1,1),true)\
-            Map:Add(UE4.FVector(2,2,2),false)\
+            local Map = UE.TMap(UE.FVector,true)\
+            Map:Add(UE.FVector(1,1,1),true)\
+            Map:Add(UE.FVector(2,2,2),false)\
             return Map\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -84,7 +84,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("获取Map长度"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             Map:Add(2,2)\
             return Map:Length()\
@@ -99,7 +99,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("Key不存在，新增"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             Map:Add(2,2)\
             return Map\
@@ -114,7 +114,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("Key存在，覆盖"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             Map:Add(1,2)\
             return Map\
@@ -131,7 +131,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("Key不存在，返回false"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             return Map:Remove(2)\
             ";
@@ -142,7 +142,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("Key存在，移除并返回true"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             return Map:Remove(1), Map\
             ";
@@ -158,7 +158,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("查找Key不存在，返回nil"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             return Map:Find(2)\
             ";
@@ -169,7 +169,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("查找Key存在，返回Value的拷贝"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             return Map:Find(1)\
             ";
@@ -183,8 +183,8 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("查找Key不存在，返回nil"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,UE4.FVector)\
-            Map:Add(1,UE4.FVector(1,1,1))\
+            local Map = UE.TMap(0,UE.FVector)\
+            Map:Add(1,UE.FVector(1,1,1))\
             return Map:FindRef(2)\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -194,8 +194,8 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("查找Key存在，返回Value的引用"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,UE4.FVector)\
-            Map:Add(1,UE4.FVector(1,1,1))\
+            local Map = UE.TMap(0,UE.FVector)\
+            Map:Add(1,UE.FVector(1,1,1))\
             local Ref = Map:FindRef(1)\
             Ref:Set(2,2,2)\
             return Map\
@@ -211,7 +211,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("清除，移除所有键值对"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             Map:Add(2,2)\
             Map:Clear()\
@@ -227,10 +227,10 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("获取所有Key的数组"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,1)\
             Map:Add(2,2)\
-            local Ret = UE4.TArray(0)\
+            local Ret = UE.TArray(0)\
             Ret:Append(Map:Keys())\
             return Ret\
             ";
@@ -247,10 +247,10 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("获取所有Value的数组"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,3)\
             Map:Add(2,4)\
-            local Ret = UE4.TArray(0)\
+            local Ret = UE.TArray(0)\
             Ret:Append(Map:Values())\
             return Ret\
             ";
@@ -267,7 +267,7 @@ void FUnLuaLibMapSpec::Define()
         It(TEXT("将Map内容转为LuaTable"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Map = UE4.TMap(0,0)\
+            local Map = UE.TMap(0,0)\
             Map:Add(1,3)\
             Map:Add(2,4)\
             local Table = Map:ToTable()\

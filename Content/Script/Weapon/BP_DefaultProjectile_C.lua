@@ -10,7 +10,7 @@ end
 
 function BP_DefaultProjectile_C:UserConstructionScript()
 	self.Super.UserConstructionScript(self)
-	self.DamageType = UE4.UClass.Load("/Game/Core/Blueprints/BP_DamageType.BP_DamageType_C")
+	self.DamageType = UE.UClass.Load("/Game/Core/Blueprints/BP_DamageType.BP_DamageType_C")
 end
 
 function BP_DefaultProjectile_C:ReceiveBeginPlay()

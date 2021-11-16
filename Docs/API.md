@@ -66,7 +66,7 @@ FUnLuaDelegates
 * `LoadLuaFile` 支持注册自定义的Lua文件加载器委托到UnLua，实现自定义Lua文件加载机制 (Trriged while try to loading lua file, could register user-defined loading)
 
 ### 接口(Interface)
-* `UUnLuaInterface` UnLua的核心接口，用来标记和识别需要绑定到Lua的对象 (Core interface for UnLua, used to tell UnLua which UE4-Object should be bind with Lua file)
+* `UUnLuaInterface` UnLua的核心接口，用来标记和识别需要绑定到Lua的对象 (Core interface for UnLua, used to tell UnLua which UE-Object should be bind with Lua file)
 
 ### 类
 * `FLuaContext` 封装了整个UnLua运行环境上下文 (Wrapper of UnLua's context, contains the main lua_State of UnLua)
@@ -90,7 +90,7 @@ FUnLuaDelegates
 ## Lua API
 
 ### 全局表(Global Tables)
-* `UE4` 仅当 `WITH_UE4_NAMESPACE` 开关启用时存在，作为访问C++侧类的根对象。当开关禁用时，访问C++可以直接通过 `_G` 作为根对象来访问。类型是用到了才会注册到Lua，因此不必担心一次性加载过多导致的性能问题 (Could use `UE4.UE4Class` to access class in c++ if you open `WITH_UE4_NAMESPACE`, otherwise, could access class in c++ by `_G.UE4Class`. Class will be registered into Lua while being used, so don’t worry about the performance problems caused by too much loading at one time.)
+* `UE` 仅当 `WITH_UE4_NAMESPACE` 开关启用时存在，作为访问C++侧类的根对象。当开关禁用时，访问C++可以直接通过 `_G` 作为根对象来访问。类型是用到了才会注册到Lua，因此不必担心一次性加载过多导致的性能问题 (Could use `UE.UEClass` to access class in c++ if you open `WITH_UE4_NAMESPACE`, otherwise, could access class in c++ by `_G.UEClass`. Class will be registered into Lua while being used, so don’t worry about the performance problems caused by too much loading at one time.)
 
 ### 全局函数(Global Functions)
 * `RegisterEnum` 手动注册一个枚举到Lua (Used to manually register an enum into Lua)
@@ -112,7 +112,7 @@ FUnLuaDelegates
 ### 实例函数(Functions of Instances)
 * `Initialize` 当任意对象被绑定到Lua时，都会调用这个初始化函数 (Assuming that every Lua Table has this function, it will be called when binding with UObject)
 
-### 委托(Functions for UE4 Delegate)
+### 委托(Functions for UE Delegate)
 * `Bind` 绑定一个回调到当前 `FScriptDelegate` 实例上。(Binds the given lua callback with the given instance of FScriptDelegate)
 
 * `Unbind` 从当前 `FScriptDelegate` 实例上解绑回调。(Unbinds the lua callback of the given instance of FScriptDelegate)
@@ -129,7 +129,7 @@ FUnLuaDelegates
 以下宏定义可通过 `UnLua.Build.cs` 修改：
 * `AUTO_UNLUA_STARTUP` 是否自动启动UnLua环境，默认**启用**。 (Macro for whether to automatically start or not, default is true)
 
-* `WITH_UE4_NAMESPACE` 是否提供一个统一的 `UE4` 命名空间 `table` 作为对引擎侧类型的访问入口，默认**启用**。(Macro for whether to use `UE4` to access Unreal Class's in Lua or not , default is true)
+* `WITH_UE4_NAMESPACE` 是否提供一个统一的 `UE` 命名空间 `table` 作为对引擎侧类型的访问入口，默认**启用**。(Macro for whether to use `UE` to access Unreal Class's in Lua or not , default is true)
 
 * `SUPPORTS_RPC_CALL` 是否提供对 `_RPC` 远程方法支持，默认**启用**。(Macro for whether to support RPC calls, default is true)
 

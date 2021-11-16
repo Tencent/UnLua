@@ -35,7 +35,7 @@ void FUnLuaLibFQuatSpec::Define()
     {
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FQuat()");
+            UnLua::RunChunk(L, "return UE.FQuat()");
             const auto& Actual = UnLua::Get<FQuat>(L, -1, UnLua::TType<FQuat>());
             const auto& Expected = FQuat(ForceInitToZero);
             TEST_EQUAL(Actual, Expected);
@@ -43,7 +43,7 @@ void FUnLuaLibFQuatSpec::Define()
 
         It(TEXT("分别指定X/Y/Z/W"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FQuat(4,3,2,1)");
+            UnLua::RunChunk(L, "return UE.FQuat(4,3,2,1)");
             const auto& Actual = UnLua::Get<FQuat>(L, -1, UnLua::TType<FQuat>());
             const auto& Expected = FQuat(4, 3, 2, 1);
             TEST_EQUAL(Actual, Expected);
@@ -52,8 +52,8 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("指定轴与角度"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Axis = UE4.FVector(0,0,1)\
-            local Quat = UE4.FQuat.FromAxisAndAngle(Axis, 3.14)\
+            local Axis = UE.FVector(0,0,1)\
+            local Quat = UE.FQuat.FromAxisAndAngle(Axis, 3.14)\
             return Quat\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -68,7 +68,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat()\
+            local Quat = UE.FQuat()\
             Quat:Set(4)\
             return Quat\
             ";
@@ -81,7 +81,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("设置X/Y"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat()\
+            local Quat = UE.FQuat()\
             Quat:Set(4,3)\
             return Quat\
             ";
@@ -94,7 +94,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("设置X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat()\
+            local Quat = UE.FQuat()\
             Quat:Set(4,3,2)\
             return Quat\
             ";
@@ -107,7 +107,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("设置X/Y/Z/W"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat()\
+            local Quat = UE.FQuat()\
             Quat:Set(4,3,2,1)\
             return Quat\
             ";
@@ -123,7 +123,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("大于等于容差，归一化"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat(4,3,2,1)\
+            local Quat = UE.FQuat(4,3,2,1)\
             Quat:Normalize()\
             return Quat\
             ";
@@ -137,7 +137,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("小于容差，不归一化"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat(4,3,2,1)\
+            local Quat = UE.FQuat(4,3,2,1)\
             Quat:Normalize(100)\
             return Quat\
             ";
@@ -154,7 +154,7 @@ void FUnLuaLibFQuatSpec::Define()
         It(TEXT("四元数乘以浮点数"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Quat = UE4.FQuat(4,3,2,1)\
+            local Quat = UE.FQuat(4,3,2,1)\
             return Quat * 2.0\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -168,7 +168,7 @@ void FUnLuaLibFQuatSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FQuat(4,3,2,1))");
+            UnLua::RunChunk(L, "return tostring(UE.FQuat(4,3,2,1))");
             const auto& Actual = lua_tostring(L, -1);
             const auto& Expected = FQuat(4, 3, 2, 1).ToString();
             TEST_EQUAL(Actual, Expected);

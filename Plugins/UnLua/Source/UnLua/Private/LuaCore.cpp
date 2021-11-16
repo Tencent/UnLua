@@ -93,7 +93,7 @@ FString GetFullPathFromRelativePath(const FString& RelativePath)
 }
 
 /**
- * Create 'UE4' namespace (a Lua table)
+ * Create 'UE' namespace (a Lua table)
  */
 void CreateNamespaceForUE(lua_State *L)
 {
@@ -104,7 +104,9 @@ void CreateNamespaceForUE(lua_State *L)
     lua_rawset(L, -3);
     lua_pushvalue(L, -1);
     lua_setmetatable(L, -2);
-    lua_setglobal(L, "UE4");
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, "UE4");    // for legacy support only, will be removed in future release
+    lua_setglobal(L, "UE");
 
     lua_pushboolean(L, true);
 #else
@@ -119,7 +121,7 @@ void CreateNamespaceForUE(lua_State *L)
 void SetTableForClass(lua_State *L, const char *Name)
 {
 #if WITH_UE4_NAMESPACE
-    lua_getglobal(L, "UE4");
+    lua_getglobal(L, "UE");
     lua_pushstring(L, Name);
     lua_pushvalue(L, -3);
     lua_rawset(L, -3);

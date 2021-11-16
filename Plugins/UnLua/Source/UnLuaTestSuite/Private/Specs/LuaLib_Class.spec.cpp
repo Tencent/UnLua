@@ -37,7 +37,7 @@ void FUnLuaLibClassSpec::Define()
         It(TEXT("正确加载蓝图类"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const UClass* Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"));
-            UnLua::RunChunk(L, "return UE4.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')");
+            UnLua::RunChunk(L, "return UE.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')");
             const UClass* Actual = static_cast<UClass*>(UnLua::GetPointer(L, -1));
             TEST_EQUAL(Actual, Expected);
         });
@@ -48,8 +48,8 @@ void FUnLuaLibClassSpec::Define()
         It(TEXT("正确判断子类"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local GameModeClass = UE4.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
-            return GameModeClass:IsChildOf(UE4.AGameModeBase)";
+            local GameModeClass = UE.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
+            return GameModeClass:IsChildOf(UE.AGameModeBase)";
             UnLua::RunChunk(L, Chunk);
             TEST_TRUE(!!lua_toboolean(L, -1));
         });
@@ -61,7 +61,7 @@ void FUnLuaLibClassSpec::Define()
         {
             const UObject* Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"))->GetDefaultObject();
             const char* Chunk = "\
-            local GameModeClass = UE4.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
+            local GameModeClass = UE.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
             return GameModeClass:GetDefaultObject()";
             UnLua::RunChunk(L, Chunk);
             const UObject* Actual = static_cast<UObject*>(UnLua::GetPointer(L, -1));

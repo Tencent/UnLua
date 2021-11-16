@@ -35,7 +35,7 @@ void FUnLuaLibFRotatorSpec::Define()
     {
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FRotator()");
+            UnLua::RunChunk(L, "return UE.FRotator()");
             const auto& Actual = UnLua::Get<FRotator>(L, -1, UnLua::TType<FRotator>());
             const auto& Expected = FRotator(ForceInitToZero);
             TEST_EQUAL(Actual, Expected);
@@ -43,7 +43,7 @@ void FUnLuaLibFRotatorSpec::Define()
 
         It(TEXT("同时指定Pitch/Yaw/Roll"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FRotator(1)");
+            UnLua::RunChunk(L, "return UE.FRotator(1)");
             const auto& Actual = UnLua::Get<FRotator>(L, -1, UnLua::TType<FRotator>());
             const auto& Expected = FRotator(1);
             TEST_EQUAL(Actual, Expected);
@@ -51,7 +51,7 @@ void FUnLuaLibFRotatorSpec::Define()
 
         It(TEXT("分别指定Pitch/Yaw/Roll"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FRotator(1,2,3)");
+            UnLua::RunChunk(L, "return UE.FRotator(1,2,3)");
             const auto& Actual = UnLua::Get<FRotator>(L, -1, UnLua::TType<FRotator>());
             const auto& Expected = FRotator(1, 2, 3);
             TEST_EQUAL(Actual, Expected);
@@ -63,7 +63,7 @@ void FUnLuaLibFRotatorSpec::Define()
         It(TEXT("设置Pitch"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Rotator = UE4.FRotator()\
+            local Rotator = UE.FRotator()\
             Rotator:Set(1)\
             return Rotator\
             ";
@@ -76,7 +76,7 @@ void FUnLuaLibFRotatorSpec::Define()
         It(TEXT("设置Pitch/Yaw"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Rotator = UE4.FRotator()\
+            local Rotator = UE.FRotator()\
             Rotator:Set(1,2)\
             return Rotator\
             ";
@@ -89,7 +89,7 @@ void FUnLuaLibFRotatorSpec::Define()
         It(TEXT("设置Pitch/Yaw/Roll"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Rotator = UE4.FRotator()\
+            local Rotator = UE.FRotator()\
             Rotator:Set(1,2,3)\
             return Rotator\
             ";
@@ -104,7 +104,7 @@ void FUnLuaLibFRotatorSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FRotator(1,2,3))");
+            UnLua::RunChunk(L, "return tostring(UE.FRotator(1,2,3))");
             const auto& Actual = lua_tostring(L, -1);
             const auto& Expected = FRotator(1, 2, 3).ToString();
             TEST_EQUAL(Actual, Expected);

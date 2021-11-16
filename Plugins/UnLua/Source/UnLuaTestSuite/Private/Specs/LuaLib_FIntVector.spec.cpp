@@ -35,21 +35,21 @@ void FUnLuaLibFIntVectorSpec::Define()
     {
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FIntVector()");
+            UnLua::RunChunk(L, "return UE.FIntVector()");
             const auto& Vector = UnLua::Get<FIntVector>(L, -1, UnLua::TType<FIntVector>());
             TEST_EQUAL(Vector, FIntVector(EForceInit::ForceInitToZero));
         });
 
         It(TEXT("分别指定X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FIntVector(1,2,3)");
+            UnLua::RunChunk(L, "return UE.FIntVector(1,2,3)");
             const auto& Vector = UnLua::Get<FIntVector>(L, -1, UnLua::TType<FIntVector>());
             TEST_EQUAL(Vector, FIntVector(1,2,3));
         });
 
         It(TEXT("同时指定X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FIntVector(1)");
+            UnLua::RunChunk(L, "return UE.FIntVector(1)");
             const auto& Vector = UnLua::Get<FIntVector>(L, -1, UnLua::TType<FIntVector>());
             TEST_EQUAL(Vector, FIntVector(1));
         });
@@ -60,7 +60,7 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector = UE4.FIntVector()\
+            local Vector = UE.FIntVector()\
             Vector:Set(1)\
             return Vector\
             ";
@@ -72,7 +72,7 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("设置X/Y"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector = UE4.FIntVector()\
+            local Vector = UE.FIntVector()\
             Vector:Set(1,2)\
             return Vector\
             ";
@@ -87,7 +87,7 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("获取平方后的长度"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector = UE4.FIntVector(3,4,0)\
+            local Vector = UE.FIntVector(3,4,0)\
             return Vector:SizeSquared()\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -102,8 +102,8 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("向量相加"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector1 = UE4.FIntVector(1,2,3)\
-            local Vector2 = UE4.FIntVector(4,5,6)\
+            local Vector1 = UE.FIntVector(1,2,3)\
+            local Vector2 = UE.FIntVector(4,5,6)\
             return Vector1 + Vector2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -117,8 +117,8 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("向量相减"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector1 = UE4.FIntVector(1,2,3)\
-            local Vector2 = UE4.FIntVector(4,5,6)\
+            local Vector1 = UE.FIntVector(1,2,3)\
+            local Vector2 = UE.FIntVector(4,5,6)\
             return Vector1 - Vector2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -132,7 +132,7 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("向量乘以整数"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector = UE4.FIntVector(1,2,3)\
+            local Vector = UE.FIntVector(1,2,3)\
             return Vector * 2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -146,7 +146,7 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("向量除以整数"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector = UE4.FIntVector(2,4,8)\
+            local Vector = UE.FIntVector(2,4,8)\
             return Vector / 2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -160,7 +160,7 @@ void FUnLuaLibFIntVectorSpec::Define()
         It(TEXT("取反向量"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Vector = UE4.FIntVector(1,2,3)\
+            local Vector = UE.FIntVector(1,2,3)\
             return -Vector\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -173,7 +173,7 @@ void FUnLuaLibFIntVectorSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FIntVector(1,2,3))");
+            UnLua::RunChunk(L, "return tostring(UE.FIntVector(1,2,3))");
             const auto& Actual =lua_tostring(L, -1);
             const auto& Expected =  FIntVector(1,2,3).ToString();
             TEST_EQUAL(Actual, Expected);

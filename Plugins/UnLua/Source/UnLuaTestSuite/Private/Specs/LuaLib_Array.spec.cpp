@@ -36,7 +36,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("构造TArray<int32>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array\
@@ -54,7 +54,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("构造TArray<FString>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray('')\
+            local Array = UE.TArray('')\
             Array:Add('A')\
             Array:Add('B')\
             return Array\
@@ -72,7 +72,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("构造TArray<bool>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(true)\
+            local Array = UE.TArray(true)\
             Array:Add(true)\
             Array:Add(false)\
             return Array\
@@ -90,9 +90,9 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("构造TArray<FVector>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(UE4.FVector)\
-            Array:Add(UE4.FVector(1,2,3))\
-            Array:Add(UE4.FVector(3,2,1))\
+            local Array = UE.TArray(UE.FVector)\
+            Array:Add(UE.FVector(1,2,3))\
+            Array:Add(UE.FVector(3,2,1))\
             return Array\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -111,7 +111,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("获取数组长度"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array:Length()\
@@ -123,7 +123,7 @@ void FUnLuaLibArraySpec::Define()
         xIt(TEXT("Num"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array:Num()\
@@ -138,7 +138,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("追加元素到数组末尾"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array\
@@ -159,7 +159,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("只追加不重复的元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:AddUnique(1)\
             Array:AddUnique(1)\
             return Array\
@@ -179,7 +179,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("找到元素，返回索引位置"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array:Find(2)\
@@ -191,7 +191,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("没有找到元素，返回0"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array:Find(100)\
@@ -206,7 +206,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("插入元素到指定位置"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             Array:Insert(3, 2)\
@@ -228,7 +228,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("移除指定索引处的元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             Array:Remove(2)\
@@ -249,7 +249,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("移除指定元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             Array:RemoveItem(1)\
@@ -270,7 +270,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("清除数组，移除所有元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             Array:Clear()\
@@ -290,7 +290,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("预留N个数组元素的空间"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             local Result = Array:Reserve(10)\
             return Result, Array\
             ";
@@ -308,7 +308,7 @@ void FUnLuaLibArraySpec::Define()
         {
             AddExpectedError(TEXT("TArray_Reserve: 'Reserve' is only valid for empty TArray!"));
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             local Result = Array:Reserve(10)\
             return Result, Array\
@@ -323,7 +323,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("扩容，使用默认元素填充"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Resize(3)\
             return Array\
@@ -342,7 +342,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("缩容，移除多余元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(1)\
             Array:Resize(1)\
@@ -363,7 +363,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("获取数组分配的内存指针"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             return Array, Array:GetData()\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -378,8 +378,8 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("拷贝指定索引位置的元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(UE4.FVector)\
-            Array:Add(UE4.FVector(1,1,1))\
+            local Array = UE.TArray(UE.FVector)\
+            Array:Add(UE.FVector(1,1,1))\
             local Copied = Array:Get(1)\
             Copied:Set(2)\
             return Array\
@@ -398,8 +398,8 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("获取指定索引位置的元素引用"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(UE4.FVector)\
-            Array:Add(UE4.FVector(1,1,1))\
+            local Array = UE.TArray(UE.FVector)\
+            Array:Add(UE.FVector(1,1,1))\
             local Ref = Array:GetRef(1)\
             Ref:Set(2)\
             return Array\
@@ -418,7 +418,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("设置指定索引位置的元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(1)\
             Array:Set(1,2)\
@@ -438,7 +438,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("交换两个索引位置的元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             Array:Add(3)\
@@ -460,7 +460,7 @@ void FUnLuaLibArraySpec::Define()
         {
             FMath::RandInit(1);
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             Array:Add(3)\
@@ -482,7 +482,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("获取数组最后一个元素的索引位置"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             return Array:LastIndex()\
@@ -497,7 +497,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("合法位置索引返回true"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             return Array:IsValidIndex(1)\
             ";
@@ -507,7 +507,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("非法位置索引返回false"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             return Array:IsValidIndex(0)\
             ";
@@ -521,7 +521,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("数组包含指定元素返回true"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             return Array:Contains(1)\
             ";
@@ -531,7 +531,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("数组不包含指定元素返回false"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             return Array:Contains(0)\
             ";
@@ -545,10 +545,10 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("追加另外一个数组的所有元素到数组末尾"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array1 = UE4.TArray(0)\
+            local Array1 = UE.TArray(0)\
             Array1:Add(1)\
             Array1:Add(2)\
-            local Array2 = UE4.TArray(0)\
+            local Array2 = UE.TArray(0)\
             Array2:Add(3)\
             Array2:Add(4)\
             Array1:Append(Array2)\
@@ -570,7 +570,7 @@ void FUnLuaLibArraySpec::Define()
         It(TEXT("将数组内容转为LuaTable"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Array = UE4.TArray(0)\
+            local Array = UE.TArray(0)\
             Array:Add(1)\
             Array:Add(2)\
             local Table = Array:ToTable()\

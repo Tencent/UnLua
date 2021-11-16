@@ -47,7 +47,7 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	EndTime = Seconds()
 	Message = Message .. "\n" ..  "read FVector ; " .. tostring((EndTime - StartTime) * Multiplier)
 
-	local COM = UE4.FVector(1.0, 1.0, 1.0)
+	local COM = UE.FVector(1.0, 1.0, 1.0)
 	StartTime = Seconds()
 	for i=1, N do
 		RawObject.COM = COM
@@ -62,7 +62,7 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	EndTime = Seconds()
 	Message = Message .. "\n" ..  "read TArray<FVector> ; " .. tostring((EndTime - StartTime) * Multiplier)
 
-	local PredictedPositions = UE4.TArray(UE4.FVector)
+	local PredictedPositions = UE.TArray(UE.FVector)
 	StartTime = Seconds()
 	for i=1, N do
 		RawObject.PredictedPositions = PredictedPositions
@@ -120,8 +120,8 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	EndTime = Seconds()
 	Message = Message .. "\n" .. "FString UpdateMeshName(const FString&) ; "..tostring((EndTime - StartTime) * Multiplier)
 
-	local Origin = UE4.FVector(1.0, 1.0, 1.0)
-	local Direction = UE4.FVector(1.0, 0.0, 0.0)
+	local Origin = UE.FVector(1.0, 1.0, 1.0)
+	local Direction = UE.FVector(1.0, 0.0, 0.0)
 	StartTime = Seconds()
 	for i=1, N do
 		local bHit = self:Raycast(Origin, Direction)
@@ -129,7 +129,7 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	EndTime = Seconds()
 	Message = Message .. "\n" .. "bool Raycast(const FVector&, const FVector&) const ; "..tostring((EndTime - StartTime) * Multiplier)
 
-	local Indices = UE4.TArray(0)
+	local Indices = UE.TArray(0)
 	StartTime = Seconds()
 	for i=1, N do
 		self:GetIndices(Indices)
@@ -154,7 +154,7 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	EndTime = Seconds()
 	Message = Message .. "\n" .. "void UpdateIndices(const TArray<int32>&) ; "..tostring((EndTime - StartTime) * Multiplier)
 
-	local Positions = UE4.TArray(UE4.FVector)
+	local Positions = UE.TArray(UE.FVector)
 	StartTime = Seconds()
 	for i=1, N do
 		self:GetPositions(Positions)
@@ -163,7 +163,7 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	Message = Message .. "\n" .. "void GetPositions(TArray<FVector>&) const ; "..tostring((EndTime - StartTime) * Multiplier)
 
 	for i=1, 1024 do
-		Positions:Add(UE4.FVector(i, i, i))
+		Positions:Add(UE.FVector(i, i, i))
 	end
 	StartTime = Seconds()
 	for i=1, N do
@@ -195,7 +195,7 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 
 	StartTime = Seconds()
 	for i=1, N do
-		local HitResult = UE4.FHitResult()
+		local HitResult = UE.FHitResult()
 	end
 	EndTime = Seconds()
 	Message = Message .. "\n" .. "FHitResult() ; "..tostring((EndTime - StartTime) * Multiplier)

@@ -28,13 +28,13 @@ end
 function M:ReceiveBeginPlay()
     print_intro()
 
-    UE4.UTutorialBlueprintFunctionLibrary.SetupCustomLoader(1)
+    UE.UTutorialBlueprintFunctionLibrary.SetupCustomLoader(1)
     Screen.Print(string.format("FromCustomLoader1:%s", require("Tutorials")))
     
     package.loaded["Tutorials"] = nil
 
     package.path = package.path .. ";./?/Index.lua"
-    UE4.UTutorialBlueprintFunctionLibrary.SetupCustomLoader(2)
+    UE.UTutorialBlueprintFunctionLibrary.SetupCustomLoader(2)
     Screen.Print(string.format("FromCustomLoader2:%s", require("Tutorials")))
 end
 

@@ -49,7 +49,7 @@ void FUnLuaLibWorldSpec::Define()
         It(TEXT("创建Actor，仅指定Actor类型"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Actor = World:SpawnActor(UE4.AActor)\
+            local Actor = World:SpawnActor(UE.AActor)\
             return Actor\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -60,11 +60,11 @@ void FUnLuaLibWorldSpec::Define()
         It(TEXT("创建Actor，指定初始Transform"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Rotation = UE4.FQuat.FromAxisAndAngle(UE4.FVector(0,0,1),3.14)\
-            local Translation = UE4.FVector(1,1,1)\
-            local Scale = UE4.FVector(2,2,2)\
-            local Transform = UE4.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE4.ACharacter, Transform)\
+            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
+            local Translation = UE.FVector(1,1,1)\
+            local Scale = UE.FVector(2,2,2)\
+            local Transform = UE.FTransform(Rotation, Translation, Scale)\
+            local Actor = World:SpawnActor(UE.ACharacter, Transform)\
             return Actor\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -78,11 +78,11 @@ void FUnLuaLibWorldSpec::Define()
         It(TEXT("创建Actor，指定初始Transform/CollisionHandling"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Rotation = UE4.FQuat.FromAxisAndAngle(UE4.FVector(0,0,1),3.14)\
-            local Translation = UE4.FVector(1,1,1)\
-            local Scale = UE4.FVector(2,2,2)\
-            local Transform = UE4.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE4.ACharacter, Transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)\
+            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
+            local Translation = UE.FVector(1,1,1)\
+            local Scale = UE.FVector(2,2,2)\
+            local Transform = UE.FTransform(Rotation, Translation, Scale)\
+            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)\
             return Actor\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -100,11 +100,11 @@ void FUnLuaLibWorldSpec::Define()
             lua_setglobal(L, "G_OwnerActor");
 
             const char* Chunk = "\
-            local Rotation = UE4.FQuat.FromAxisAndAngle(UE4.FVector(0,0,1),3.14)\
-            local Translation = UE4.FVector(1,1,1)\
-            local Scale = UE4.FVector(2,2,2)\
-            local Transform = UE4.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE4.ACharacter, Transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor)\
+            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
+            local Translation = UE.FVector(1,1,1)\
+            local Scale = UE.FVector(2,2,2)\
+            local Transform = UE.FTransform(Rotation, Translation, Scale)\
+            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor)\
             return Actor\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -127,11 +127,11 @@ void FUnLuaLibWorldSpec::Define()
             lua_setglobal(L, "G_InstigatorPawn");
 
             const char* Chunk = "\
-            local Rotation = UE4.FQuat.FromAxisAndAngle(UE4.FVector(0,0,1),3.14)\
-            local Translation = UE4.FVector(1,1,1)\
-            local Scale = UE4.FVector(2,2,2)\
-            local Transform = UE4.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE4.ACharacter, Transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor, G_InstigatorPawn)\
+            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
+            local Translation = UE.FVector(1,1,1)\
+            local Scale = UE.FVector(2,2,2)\
+            local Transform = UE.FTransform(Rotation, Translation, Scale)\
+            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor, G_InstigatorPawn)\
             return Actor\
             ";
             UnLua::RunChunk(L, Chunk);

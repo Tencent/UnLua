@@ -36,10 +36,10 @@ void FUnLuaLibDataTableSpec::Define()
         It(TEXT("获取数据表中指定行的数据"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local DataTable = UE4.UObject.Load('/Game/Tests/Misc/DataTable_Test.DataTable_Test')\
-            local RowStruct = UE4.UObject.Load('/Game/Tests/Misc/Struct_TableRow.Struct_TableRow')\
+            local DataTable = UE.UObject.Load('/Game/Tests/Misc/DataTable_Test.DataTable_Test')\
+            local RowStruct = UE.UObject.Load('/Game/Tests/Misc/Struct_TableRow.Struct_TableRow')\
             local Row = RowStruct()\
-            local Result = UE4.UDataTableFunctionLibrary.GetTableDataRowFromName(DataTable, 'Row_1', Row)\
+            local Result = UE.UDataTableFunctionLibrary.GetTableDataRowFromName(DataTable, 'Row_1', Row)\
             return Result, Row.TestString\
             ";
             UnLua::RunChunk(L, Chunk);

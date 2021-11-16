@@ -32,7 +32,7 @@ function M:LeftMouseButton_Pressed()
     local World = self:GetWorld()
     local SpawnClass = self.SpawnClass
     local Transform = self.SpawnPointActor:GetTransform()
-    local AlwaysSpawn = UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn
+    local AlwaysSpawn = UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn
     World:SpawnActor(SpawnClass, Transform, AlwaysSpawn, self, self, "Tutorials.GravitySphereActor")
 end
 

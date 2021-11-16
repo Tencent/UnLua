@@ -7,7 +7,7 @@
 
 require "UnLua"
 
-local FLinearColor = UE4.FLinearColor
+local FLinearColor = UE.FLinearColor
 
 local M = Class()
 
@@ -16,7 +16,7 @@ function M:Construct()
     self.ClickMeCheckBox.OnCheckStateChanged:Add(self, self.OnCheckBoxToggled)
 
     -- 相当于在蓝图中的 Set Timer by Event
-    self.TimerHandle = UE4.UKismetSystemLibrary.K2_SetTimerDelegate({ self, self.OnTimer }, 1, true)
+    self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({ self, self.OnTimer }, 1, true)
 end
 
 function M:OnButtonClicked()
@@ -36,7 +36,7 @@ function M:OnCheckBoxToggled(on)
 end
 
 function M:OnTimer()
-    local seconds = UE4.UKismetSystemLibrary.GetGameTimeInSeconds(self)
+    local seconds = UE.UKismetSystemLibrary.GetGameTimeInSeconds(self)
     self.GameTimeTextBlock:SetText(string.format("游戏时长：%d 秒", math.floor(seconds)))
 end
 
@@ -46,7 +46,7 @@ function M:Destruct()
     self.ClickMeCheckBox.OnCheckStateChanged:Remove(self, self.OnCheckBoxToggled)
 
     -- 相当于在蓝图中的 Clear and Invalidate Timer by Handle
-    UE4.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.TimerHandle)
+    UE.UKismetSystemLibrary.K2_ClearAndInvalidateTimerHandle(self, self.TimerHandle)
 end
 
 return M

@@ -36,7 +36,7 @@ void FUnLuaEnumSpec::Define()
         It(TEXT("获取枚举的名称"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            return UE4.ECollisionResponse:GetNameByValue(UE4.ECollisionResponse.ECR_Overlap)\
+            return UE.ECollisionResponse:GetNameByValue(UE.ECollisionResponse.ECR_Overlap)\
             ";
             UnLua::RunChunk(L, Chunk);
             TEST_EQUAL(lua_tostring(L, -1), "Overlap");
@@ -55,7 +55,7 @@ void FUnLuaEnumSpec::Define()
         It(TEXT("获取枚举类型的最大值"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            return UE4.ECollisionResponse:GetMaxValue()\
+            return UE.ECollisionResponse:GetMaxValue()\
             ";
             UnLua::RunChunk(L, Chunk);
             const auto Actual = (int32)lua_tointeger(L, -1);

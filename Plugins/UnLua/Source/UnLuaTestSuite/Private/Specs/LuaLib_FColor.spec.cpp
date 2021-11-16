@@ -35,28 +35,28 @@ void FUnLuaLibFColorSpec::Define()
     {
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FColor()");
+            UnLua::RunChunk(L, "return UE.FColor()");
             const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(ForceInitToZero));
         });
 
         It(TEXT("指定ColorValue"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FColor(0x01020304)");
+            UnLua::RunChunk(L, "return UE.FColor(0x01020304)");
             const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(0x01020304));
         });
 
         It(TEXT("指定RGB"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FColor(1,2,3)");
+            UnLua::RunChunk(L, "return UE.FColor(1,2,3)");
             const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,2,3));
         });
 
         It(TEXT("指定RGBA"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FColor(1,2,3,4)");
+            UnLua::RunChunk(L, "return UE.FColor(1,2,3,4)");
             const auto& Color = UnLua::Get<FColor>(L, -1, UnLua::TType<FColor>());
             TEST_EQUAL(Color, FColor(1,2,3,4));
         });
@@ -67,7 +67,7 @@ void FUnLuaLibFColorSpec::Define()
         It(TEXT("设置R"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FColor()\
+            local Color = UE.FColor()\
             Color:Set(1)\
             return Color\
             ";
@@ -79,7 +79,7 @@ void FUnLuaLibFColorSpec::Define()
         It(TEXT("设置RG"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FColor()\
+            local Color = UE.FColor()\
             Color:Set(1,2)\
             return Color\
             ";
@@ -91,7 +91,7 @@ void FUnLuaLibFColorSpec::Define()
         It(TEXT("设置RGB"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FColor()\
+            local Color = UE.FColor()\
             Color:Set(1,2,3)\
             return Color\
             ";
@@ -103,7 +103,7 @@ void FUnLuaLibFColorSpec::Define()
         It(TEXT("设置RGBA"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color = UE4.FColor()\
+            local Color = UE.FColor()\
             Color:Set(1,2,3,4)\
             return Color\
             ";
@@ -118,8 +118,8 @@ void FUnLuaLibFColorSpec::Define()
         It(TEXT("颜色相加"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Color1 = UE4.FColor(1,2,3)\
-            local Color2 = UE4.FColor(4,5,6)\
+            local Color1 = UE.FColor(1,2,3)\
+            local Color2 = UE.FColor(4,5,6)\
             return Color1 + Color2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -132,7 +132,7 @@ void FUnLuaLibFColorSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FColor(1,2,3,4))");
+            UnLua::RunChunk(L, "return tostring(UE.FColor(1,2,3,4))");
             TEST_EQUAL(lua_tostring(L, -1), "(R=1,G=2,B=3,A=4)");
         });
     });

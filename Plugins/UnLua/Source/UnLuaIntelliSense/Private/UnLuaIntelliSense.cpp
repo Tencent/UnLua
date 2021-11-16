@@ -42,7 +42,7 @@ public:
     virtual void Initialize(const FString& RootLocalPath, const FString& RootBuildPath, const FString& OutputDirectory, const FString& IncludeBase) override
     {
         OutputDir = IncludeBase + TEXT("../Intermediate/");     // export symbol (IntelliSense) files to plugin's 'Intermediate' dir
-        UE4Namespace = TEXT("_G.UE4 = {\r\n\r\n");
+        UE4Namespace = TEXT("_G.UE = {\r\n\r\n");
     }
 
     virtual void ExportClass(UClass* Class, const FString& SourceHeaderFilename, const FString& GeneratedHeaderFilename, bool bHasChanged) override

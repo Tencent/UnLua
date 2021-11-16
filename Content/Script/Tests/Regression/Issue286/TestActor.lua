@@ -3,9 +3,9 @@ require "UnLua"
 local M = Class()
 
 function M:ReceiveBeginPlay()
-    local map = UE4.TMap(UE4.FName, UE4.FVector)
+    local map = UE.TMap(UE.FName, UE.FVector)
 	local bpmap = self.MyMap
-	local v = UE4.FVector(1, 2, 3)
+	local v = UE.FVector(1, 2, 3)
 	map:Add("a", v)
 	bpmap:Add("a", v)
 	local expected = map:FindRef("a")

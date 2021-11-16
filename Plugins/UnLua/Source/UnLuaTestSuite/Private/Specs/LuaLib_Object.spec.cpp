@@ -51,7 +51,7 @@ void FUnLuaLibObjectSpec::Define()
         {
             UClass* Expected = LoadObject<UClass>(nullptr, TEXT("/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C"));
             const char* Chunk = "\
-            local ActorClass = UE4.UObject.Load('/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C')\
+            local ActorClass = UE.UObject.Load('/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C')\
             return ActorClass\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -86,8 +86,8 @@ void FUnLuaLibObjectSpec::Define()
         It(TEXT("获取对象的名称"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Outer = NewObject(UE4.UUnLuaTestStub)\
-            local Actor = NewObject(UE4.AActor, Outer, 'Test')\
+            local Outer = NewObject(UE.UUnLuaTestStub)\
+            local Actor = NewObject(UE.AActor, Outer, 'Test')\
             return Actor:GetName()\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -100,8 +100,8 @@ void FUnLuaLibObjectSpec::Define()
         It(TEXT("获取对象的外部对象"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local ParentActor = NewObject(UE4.AActor)\
-            local ChildActor = NewObject(UE4.AActor, ParentActor)\
+            local ParentActor = NewObject(UE.AActor)\
+            local ChildActor = NewObject(UE.AActor, ParentActor)\
             return ChildActor:GetOuter(), ParentActor\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -116,7 +116,7 @@ void FUnLuaLibObjectSpec::Define()
         It(TEXT("获取对象的类型"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Actor = NewObject(UE4.AActor)\
+            local Actor = NewObject(UE.AActor)\
             return Actor:GetClass()\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -130,7 +130,7 @@ void FUnLuaLibObjectSpec::Define()
         It(TEXT("获取对象所在的World"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Actor = World:SpawnActor(UE4.AActor)\
+            local Actor = World:SpawnActor(UE.AActor)\
             return Actor:GetWorld()\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -144,8 +144,8 @@ void FUnLuaLibObjectSpec::Define()
         It(TEXT("判断对象是否为指定类型"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local Actor = NewObject(UE4.AActor)\
-            return Actor:IsA(UE4.AActor), Actor:IsA(UE4.UGameInstance)\
+            local Actor = NewObject(UE.AActor)\
+            return Actor:IsA(UE.AActor), Actor:IsA(UE.UGameInstance)\
             ";
             UnLua::RunChunk(L, Chunk);
             TEST_TRUE(lua_toboolean(L, -2));

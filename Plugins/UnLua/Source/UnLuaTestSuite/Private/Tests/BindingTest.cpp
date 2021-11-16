@@ -54,7 +54,7 @@ bool FUnLuaTest_StaticBinding::RunTest(const FString& Parameters)
     Run([this](lua_State* L, UWorld* World)
     {
         const char* Chunk1 = "\
-                    local ActorClass = UE4.UClass.Load('/Game/Tests/Binding/BP_UnLuaTestActor_StaticBinding.BP_UnLuaTestActor_StaticBinding_C')\
+                    local ActorClass = UE.UClass.Load('/Game/Tests/Binding/BP_UnLuaTestActor_StaticBinding.BP_UnLuaTestActor_StaticBinding_C')\
                     G_Actor = World:SpawnActor(ActorClass)\
                 ";
         UnLua::RunChunk(L, Chunk1);
@@ -81,9 +81,9 @@ bool FUnLuaTest_DynamicBinding::RunTest(const FString& Parameters)
     Run([this](lua_State* L, UWorld* World)
     {
         const char* Chunk1 = "\
-                    local ActorClass = UE4.UClass.Load('/Game/Tests/Binding/BP_UnLuaTestActor_DynamicBinding.BP_UnLuaTestActor_DynamicBinding_C')\
-                    local Transform = UE4.FTransform()\
-                    G_Actor = World:SpawnActor(ActorClass, Transform, UE4.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, nil, nil, 'Tests.Binding.BP_UnLuaTestActor')\
+                    local ActorClass = UE.UClass.Load('/Game/Tests/Binding/BP_UnLuaTestActor_DynamicBinding.BP_UnLuaTestActor_DynamicBinding_C')\
+                    local Transform = UE.FTransform()\
+                    G_Actor = World:SpawnActor(ActorClass, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, nil, nil, 'Tests.Binding.BP_UnLuaTestActor')\
                 ";
         UnLua::RunChunk(L, Chunk1);
 

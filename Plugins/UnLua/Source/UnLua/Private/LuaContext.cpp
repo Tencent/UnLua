@@ -145,7 +145,7 @@ void FLuaContext::CreateState()
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
-        CreateNamespaceForUE(L);                                    // create 'UE4' namespace (table)
+        CreateNamespaceForUE(L);                                    // create 'UE' namespace (table)
 
         // register global Lua functions
         lua_register(L, "RegisterEnum", Global_RegisterEnum);

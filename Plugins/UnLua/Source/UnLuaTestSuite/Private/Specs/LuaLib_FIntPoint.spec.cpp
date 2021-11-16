@@ -35,21 +35,21 @@ void FUnLuaLibFIntPointSpec::Define()
     {
         It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FIntPoint()");
+            UnLua::RunChunk(L, "return UE.FIntPoint()");
             const auto& Point = UnLua::Get<FIntPoint>(L, -1, UnLua::TType<FIntPoint>());
             TEST_EQUAL(Point, FIntPoint(EForceInit::ForceInit));
         });
 
         It(TEXT("分别指定X和Y"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FIntPoint(1,2)");
+            UnLua::RunChunk(L, "return UE.FIntPoint(1,2)");
             const auto& Point = UnLua::Get<FIntPoint>(L, -1, UnLua::TType<FIntPoint>());
             TEST_EQUAL(Point, FIntPoint(1,2));
         });
 
         It(TEXT("同时指定X和Y"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return UE4.FIntPoint(1)");
+            UnLua::RunChunk(L, "return UE.FIntPoint(1)");
             const auto& Point = UnLua::Get<FIntPoint>(L, -1, UnLua::TType<FIntPoint>());
             TEST_EQUAL(Point, FIntPoint(1));
         });
@@ -60,7 +60,7 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point = UE4.FIntPoint()\
+            local Point = UE.FIntPoint()\
             Point:Set(1)\
             return Point\
             ";
@@ -72,7 +72,7 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("设置XY"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point = UE4.FIntPoint()\
+            local Point = UE.FIntPoint()\
             Point:Set(1,2)\
             return Point\
             ";
@@ -87,8 +87,8 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("两点相加"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point1 = UE4.FIntPoint(2,4)\
-            local Point2 = UE4.FIntPoint(1,2)\
+            local Point1 = UE.FIntPoint(2,4)\
+            local Point2 = UE.FIntPoint(1,2)\
             return Point1 + Point2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -102,8 +102,8 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("两点相减"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point1 = UE4.FIntPoint(2,4)\
-            local Point2 = UE4.FIntPoint(1,2)\
+            local Point1 = UE.FIntPoint(2,4)\
+            local Point2 = UE.FIntPoint(1,2)\
             return Point1 - Point2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -117,8 +117,8 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("两点相乘"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point1 = UE4.FIntPoint(1,2)\
-            local Point2 = UE4.FIntPoint(3,4)\
+            local Point1 = UE.FIntPoint(1,2)\
+            local Point2 = UE.FIntPoint(3,4)\
             return Point1 * Point2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -132,8 +132,8 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("两点相除"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point1 = UE4.FIntPoint(2,4)\
-            local Point2 = UE4.FIntPoint(1,2)\
+            local Point1 = UE.FIntPoint(2,4)\
+            local Point2 = UE.FIntPoint(1,2)\
             return Point1 / Point2\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -147,7 +147,7 @@ void FUnLuaLibFIntPointSpec::Define()
         It(TEXT("取相反数"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Point = UE4.FIntPoint(1,2)\
+            local Point = UE.FIntPoint(1,2)\
             return -Point\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -160,7 +160,7 @@ void FUnLuaLibFIntPointSpec::Define()
     {
         It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
         {
-            UnLua::RunChunk(L, "return tostring(UE4.FIntPoint(1,2))");
+            UnLua::RunChunk(L, "return tostring(UE.FIntPoint(1,2))");
             const auto& Actual = lua_tostring(L, -1);
             const auto& Expected = FIntPoint(1, 2).ToString();
             TEST_EQUAL(Actual, Expected);

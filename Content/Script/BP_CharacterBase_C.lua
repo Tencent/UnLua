@@ -17,7 +17,7 @@ end
 function BP_CharacterBase_C:ReceiveBeginPlay()
 	local Weapon = self:SpawnWeapon()
 	if Weapon then
-		Weapon:K2_AttachToComponent(self.WeaponPoint, nil, UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget, UE4.EAttachmentRule.SnapToTarget)
+		Weapon:K2_AttachToComponent(self.WeaponPoint, nil, UE.EAttachmentRule.SnapToTarget, UE.EAttachmentRule.SnapToTarget, UE.EAttachmentRule.SnapToTarget)
 		self.Weapon = Weapon
 	end
 end
@@ -52,14 +52,14 @@ end
 
 function BP_CharacterBase_C:Died(DamageType)
 	self.IsDead = true
-	self.CapsuleComponent:SetCollisionEnabled(UE4.ECollisionEnabled.NoCollision)
+	self.CapsuleComponent:SetCollisionEnabled(UE.ECollisionEnabled.NoCollision)
 	self:StopFire()
 	local Controller = self:GetController()
 	Controller:UnPossess()
 end
 
 function BP_CharacterBase_C:Destroy(Duration)
-	UE4.UKismetSystemLibrary.Delay(self, Duration)
+	UE.UKismetSystemLibrary.Delay(self, Duration)
 	if self.Weapon then
 		self.Weapon:K2_DestroyActor()
 	end

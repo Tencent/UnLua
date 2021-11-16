@@ -36,7 +36,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("构造TSet<int32>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(2)\
             return Set\
@@ -51,7 +51,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("构造TSet<FString>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet('')\
+            local Set = UE.TSet('')\
             Set:Add('A')\
             Set:Add('B')\
             return Set\
@@ -66,9 +66,9 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("构造TSet<FVector>"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(UE4.FVector)\
-            Set:Add(UE4.FVector(1,1,1))\
-            Set:Add(UE4.FVector(2,2,2))\
+            local Set = UE.TSet(UE.FVector)\
+            Set:Add(UE.FVector(1,1,1))\
+            Set:Add(UE.FVector(2,2,2))\
             return Set\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -84,7 +84,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("获取Set长度"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(2)\
             return Set:Length()\
@@ -99,7 +99,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("元素不存在，新增"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(2)\
             return Set\
@@ -114,7 +114,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("不增加重复的元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(1)\
             return Set\
@@ -131,7 +131,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("元素不存在，返回false"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             return Set:Remove(2)\
             ";
@@ -142,7 +142,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("元素存在，移除并返回true"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             return Set:Remove(1), Set\
             ";
@@ -158,7 +158,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("查找元素存在，返回true"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             return Set:Contains(1)\
             ";
@@ -169,7 +169,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("查找元素不存在，返回false"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             return Set:Contains(2)\
             ";
@@ -183,7 +183,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("清除，移除所有元素"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(2)\
             Set:Clear()\
@@ -199,10 +199,10 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("获取所有元素的数组"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(2)\
-            local Ret = UE4.TArray(0)\
+            local Ret = UE.TArray(0)\
             Ret:Append(Set:ToArray())\
             return Ret\
             ";
@@ -219,7 +219,7 @@ void FUnLuaLibSetSpec::Define()
         It(TEXT("将Set内容转为LuaTable"), EAsyncExecution::ThreadPool, [this]()
         {
             const char* Chunk = "\
-            local Set = UE4.TSet(0)\
+            local Set = UE.TSet(0)\
             Set:Add(1)\
             Set:Add(2)\
             local Table = Set:ToTable()\

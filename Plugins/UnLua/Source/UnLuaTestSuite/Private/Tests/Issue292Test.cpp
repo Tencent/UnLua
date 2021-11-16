@@ -39,7 +39,7 @@ struct FUnLuaTest_Issue292 : FUnLuaTestBase
         Actor->K2_DestroyActor();
 
         const char* Chunk = "\
-            return G_Actor:IsValid(), UE4.UKismetSystemLibrary.IsValid(G_Actor)\
+            return G_Actor:IsValid(), UE.UKismetSystemLibrary.IsValid(G_Actor)\
             ";
         UnLua::RunChunk(L, Chunk);
 
