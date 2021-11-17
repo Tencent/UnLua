@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.0] - 2021-11-30
+
+### Added
+
+- 支持最新的UE5抢先体验版
+- 基于UE的自动化测试系统的全API测试、回归测试覆盖
+- 支持自定义加载器，允许用户自己扩展实现Lua文件的查找与加载逻辑
+- 自定义加载器的示例教程
+- 编辑器下增加了Toolbar用来进行快速绑定/解绑Lua，以及一些常用功能入口
+- 增加 `UUnLuaLatentAction` 用于包装异步行为，支持 `SetTickableWhenPaused` 
+- 支持使用 `ADD_STATIC_PROPERTY` 宏来导出静态成员变量
+- 支持在Lua中直接访问 `EKeys`
+- 编辑器下动态绑定一个静态绑定的对象，会有警告日志避免误操作
+
+### Changed
+
+- 在Lua中访问UE对象统一使用`UE`，考虑到向后兼容，原来的`UE4`继续保留
+- 统一结构类型的构造参数表达，与UE相同
+  - FVector/FIntVector/FVector2D/FVector4/FIntPoint
+  - FColor/FLinearColor
+  - FQuat/FRotator/FTransform
+- 统一UObject在Lua侧IsValid的语义，与UE相同
+
+### Fixed
+- Lua中调用UClass的方法提示方法为nil [#274](https://github.com/Tencent/UnLua/issues/274)
+- 游戏世界暂停后，在协程里的Delay后不继续执行 [#276](https://github.com/Tencent/UnLua/pull/276)
+- 在非主线程崩溃时不应该访问Lua堆栈 [#278](https://github.com/Tencent/UnLua/pull/278)
+- 无法将FVector/FRotator/FTransform等类型的函数参数保存到lua对象中 [#279](https://github.com/Tencent/UnLua/issues/279)
+- 调用Lua时参数传递顺序异常 [#280](https://github.com/Tencent/UnLua/issues/280)
+- require不存在的lib会崩 [#284](https://github.com/Tencent/UnLua/issues/284)
+- 蓝图TMap的FindRef错误 [#286](https://github.com/Tencent/UnLua/issues/286)
+- UMG里Image用到的Texture内存泄漏 [#288](https://github.com/Tencent/UnLua/issues/288)
+- UClass在被UEGC后没有释放相应的绑定 [#289](https://github.com/Tencent/UnLua/issues/289)
+- 调用K2_DestroyActor后，立刻调用IsValid会返回true [#292](https://github.com/Tencent/UnLua/issues/292)
+
+
+### Removed
+
+- 移除宏定义 `CHECK_BLUEPRINTEVENT_FOR_NATIVIZED_CLASS`
+- 移除宏定义 `CLEAR_INTERNAL_NATIVE_FLAG_DURING_DUPLICATION`
+
 ## [2.0.1] - 2021-10-20
 
 ### Added
