@@ -8,6 +8,8 @@ end
 
 function M:ReceiveBeginPlay()
     self.ReceiveBeginPlayCalled = true
+    self.ClassReferenceProperty = self:GetClass()
+    self.SoftClassReferenceProperty:Set(self:GetClass())
     self.ObjectReferenceProperty = self
 end
 

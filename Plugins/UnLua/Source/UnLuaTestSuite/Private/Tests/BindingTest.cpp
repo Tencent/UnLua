@@ -15,7 +15,6 @@
 #include "UnLuaTestCommon.h"
 #include "UnLuaTestHelpers.h"
 #include "Misc/AutomationTest.h"
-#include "Tests/AutomationCommon.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -107,7 +106,6 @@ bool FUnLuaTest_ConflictedBinding::RunTest(const FString& Parameters)
 {
     Run([this](lua_State* L, UWorld* World)
     {
-
         AddExpectedError(TEXT("conflicts"), EAutomationExpectedErrorFlags::Contains);
 
         const char* Chunk1 = "\
@@ -127,6 +125,32 @@ bool FUnLuaTest_ConflictedBinding::RunTest(const FString& Parameters)
         const auto Error = lua_tostring(L, -1);
         TEST_EQUAL(Error, "");
     });
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUnLuaTest_MultipleBinding, TEXT("UnLua.API.Binding.Multiple 多重绑定：同一个Lua脚本绑定到不同类"), EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter);
+
+bool FUnLuaTest_MultipleBinding::RunTest(const FString& Parameters)
+{
+    Run([this](lua_State* L, UWorld* World)
+    {
+        const char* Chunk1 = "\
+                    local ActorClass = UE.UClass.Load('/Game/Tests/Binding/BP_UnLuaTestActor_StaticBindingChild.BP_UnLuaTestActor_StaticBindingChild_C')\
+                    G_Actor = World:SpawnActor(ActorClass)\
+                ";
+        UnLua::RunChunk(L, Chunk1);
+
+        World->Tick(LEVELTICK_All, SMALL_NUMBER);
+
+        const char* Chunk2 = "\
+                return G_Actor:RunTest()\
+                ";
+        UnLua::RunChunk(L, Chunk2);
+
+        const auto Error = lua_tostring(L, -1);
+        TEST_EQUAL(Error, "");
+    });
+
     return true;
 }
 
