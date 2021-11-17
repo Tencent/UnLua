@@ -87,7 +87,6 @@ void FLuaContext::RegisterDelegates()
 #endif
 
     FWorldDelegates::OnWorldCleanup.AddRaw(this, &FLuaContext::OnWorldCleanup);
-    FCoreDelegates::OnBeginFrame.AddRaw(this, &FLuaContext::OnBeginFrame);
     FCoreDelegates::OnPostEngineInit.AddRaw(this, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
     FCoreDelegates::OnPreExit.AddRaw(this, &FLuaContext::OnPreExit);                 // called before StaticExit()
     FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaContext::OnAsyncLoadingFlushUpdate);
@@ -524,25 +523,6 @@ void FLuaContext::OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanu
 #else
     Cleanup(GIsRequestingExit, World);                          // clean up
 #endif
-}
-
-
-void FLuaContext::OnBeginFrame()
-{
-    for (int i = PostLoadObjects.Num() - 1; 0 <= i; --i)
-    {
-        UObject* Object = PostLoadObjects[i];
-        if (!IsUObjectValid(Object))
-        {
-            PostLoadObjects.RemoveAt(i);
-        }
-        else if (!Object->HasAnyFlags(RF_NeedPostLoad))
-        {
-            UE_LOG(LogUnLua, Log, TEXT("TryToBindLua[%llu]: Bind object %s,%p"), GFrameCounter, *Object->GetName(), Object);
-            TryToBindLua(Object);
-            PostLoadObjects.RemoveAt(i);
-        }
-    }
 }
 
 /**
@@ -1089,7 +1069,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
 
             GReflectionRegistry.Cleanup();                      // clean up reflection registry
 
-            PostLoadObjects.Empty();
             GameInstances.Empty();
             CandidateInputComponents.Empty();
             FCoreUObjectDelegates::GetPostGarbageCollect().Remove(OnPostGarbageCollectHandle);

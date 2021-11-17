@@ -54,7 +54,6 @@ public:
     void OnWorldTickStart(ELevelTick TickType, float DeltaTime);
 #endif
     void OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources);
-    void OnBeginFrame();
     void OnPostEngineInit();
     void OnPreExit();
     void OnAsyncLoadingFlushUpdate();
@@ -120,7 +119,6 @@ private:
     TArray<FString> ModuleNames;        // required Lua modules
 
     TArray<UObject*> Candidates;        // binding candidates during async loading
-    TArray<UObject*> PostLoadObjects;        // binding object which need post load
 
     TArray<UnLua::IExportedFunction*> ExportedFunctions;                // statically exported global functions
     TArray<UnLua::IExportedEnum*> ExportedEnums;                        // statically exported enums
