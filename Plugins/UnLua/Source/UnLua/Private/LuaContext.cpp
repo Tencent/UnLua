@@ -434,6 +434,12 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility* Object)
                     return false;
                 }
 
+#if !UE_BUILD_SHIPPING
+                if (GLuaDynamicBinding.IsValid(Class) && GLuaDynamicBinding.ModuleName != ModuleName)
+                {
+                    UE_LOG(LogUnLua, Warning, TEXT("Dynamic binding '%s' ignored as it conflicts static binding '%s'."), *GLuaDynamicBinding.ModuleName, *ModuleName);
+                }
+#endif
 
                 return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);   // bind!!!
             }
