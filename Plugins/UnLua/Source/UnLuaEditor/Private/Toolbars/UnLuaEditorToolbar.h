@@ -32,6 +32,4 @@ protected:
 	const TSharedRef<FUICommandList> CommandList;
 
 	UObject* ContextObject;
-
-	TWeakPtr<IBlueprintEditor> BlueprintEditorPtr;
 };

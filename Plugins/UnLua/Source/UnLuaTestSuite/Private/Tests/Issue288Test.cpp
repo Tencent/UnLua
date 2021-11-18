@@ -60,7 +60,13 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 
 		Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
 		if (Texture2D)
+		{
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
 			FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults | EReferenceChainSearchMode::FullChain);
+#else
+			FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults);
+#endif
+		}
 		RUNNER_TEST_NULL(Texture2D);
 
 		return true;
