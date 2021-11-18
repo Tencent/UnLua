@@ -50,6 +50,6 @@ struct FUnLuaTest_Issue292 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue292, TEXT("UnLua.Regression.Issue292 actor调用K2_DestroyActor后，立刻调用IsValid会返回true"))
+IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue292, TEXT("UnLua.Regression.Issue292 actor调用K2_DestroyActor后，立刻调用IsValid会返回true"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

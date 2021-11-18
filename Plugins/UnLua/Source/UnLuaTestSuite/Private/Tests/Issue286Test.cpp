@@ -38,6 +38,6 @@ struct FUnLuaTest_Issue286 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue286, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
+IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue286, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

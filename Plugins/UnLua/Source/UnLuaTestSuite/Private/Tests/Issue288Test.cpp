@@ -67,6 +67,6 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 	}
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue288, TEXT("UnLua.Regression.Issue288 UMG里Image用到的Texture内存泄漏"))
+IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue288, TEXT("UnLua.Regression.Issue288 UMG里Image用到的Texture内存泄漏"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

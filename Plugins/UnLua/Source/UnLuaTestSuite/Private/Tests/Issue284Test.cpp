@@ -37,6 +37,6 @@ struct FUnLuaTest_Issue284 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue284, TEXT("UnLua.Regression.Issue284 require不存在的lib会崩"))
+IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue284, TEXT("UnLua.Regression.Issue284 require不存在的lib会崩"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

@@ -63,6 +63,6 @@ struct FUnLuaTest_Issue291 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue291, TEXT("UnLua.Regression.Issue291 delegate绑定本身不在lua里有引用的object，在绑定后触发gc会导致无法调用绑定的函数"))
+IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue291, TEXT("UnLua.Regression.Issue291 delegate绑定本身不在lua里有引用的object，在绑定后触发gc会导致无法调用绑定的函数"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

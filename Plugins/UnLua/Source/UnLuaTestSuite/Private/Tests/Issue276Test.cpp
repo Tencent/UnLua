@@ -38,6 +38,6 @@ struct FUnLuaTest_Issue276 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue276, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
+IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue276, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

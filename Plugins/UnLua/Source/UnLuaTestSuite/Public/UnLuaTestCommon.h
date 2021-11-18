@@ -15,9 +15,23 @@
 #pragma once
 
 #include "UnLua.h"
-#include "AITestsCommon.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+
+DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FUnLuaTestCommand_WaitSeconds, float, Duration);
+
+class FUnLuaTestCommand_WaitOneTick : public IAutomationLatentCommand
+{
+public:
+    FUnLuaTestCommand_WaitOneTick()
+        : bAlreadyRun(false)
+    {
+    }
+
+    virtual bool Update() override;
+private:
+    bool bAlreadyRun;
+};
 
 class FUnLuaTestDelayedCallbackLatentCommand : public IAutomationLatentCommand
 {
@@ -45,22 +59,86 @@ private:
     float Delay;
 };
 
-struct UNLUATESTSUITE_API FUnLuaTestBase : FAITestBase
+struct UNLUATESTSUITE_API FUnLuaTestBase
 {
 public:
-    virtual bool SetUp() override;
+    virtual bool InstantTest() { return false; }
 
-    virtual bool Update() override;
+    virtual bool SetUp();
 
-    virtual void TearDown() override;
+    virtual bool Update() { return true; }
 
+    virtual void TearDown();
+
+    virtual void SetTestRunner(FAutomationTestBase& AutomationTestInstance) { TestRunner = &AutomationTestInstance; }
+    
 protected:
+    FUnLuaTestBase() : L(nullptr), TestRunner(nullptr)
+    {
+    }
+
     virtual FString GetMapName() { return ""; }
+
+    FAutomationTestBase& GetTestRunner() const
+    {
+        check(TestRunner);
+        return *TestRunner;
+    }
 
     void AddLatent(TFunction<void()>&& Func, float Delay = 0.1f) const;
 
     lua_State* L;
+    FAutomationTestBase* TestRunner;
 };
+
+
+DEFINE_EXPORTED_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(UNLUATESTSUITE_API, FUnLuaTestCommand_SetUpTest, FUnLuaTestBase*, UnLuaTest);
+
+DEFINE_EXPORTED_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(UNLUATESTSUITE_API, FUnLuaTestCommand_PerformTest, FUnLuaTestBase*, UnLuaTest);
+
+DEFINE_EXPORTED_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(UNLUATESTSUITE_API, FUnLuaTestCommand_TearDownTest, FUnLuaTestBase*, UnLuaTest);
+
+/////////////////////////////////////////
+// TEST DEFINE MACROS
+
+#define IMPLEMENT_UNLUA_LATENT_TEST(TestClass, PrettyName) \
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestClass##_Runner, PrettyName, (EAutomationTestFlags::ClientContext | EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)) \
+bool TestClass##_Runner::RunTest(const FString& Parameters) \
+{ \
+/* spawn test instance. Setup should be done in test's constructor */ \
+TestClass* TestInstance = new TestClass(); \
+TestInstance->SetTestRunner(*this); \
+/* set up */ \
+ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_SetUpTest(TestInstance)); \
+/* run latent command to update */ \
+ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_PerformTest(TestInstance)); \
+/* run latent command to tear down */ \
+ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_TearDownTest(TestInstance)); \
+return true; \
+}
+
+#define IMPLEMENT_UNLUA_INSTANT_TEST(TestClass, PrettyName) \
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestClass##Runner, PrettyName, (EAutomationTestFlags::ClientContext | EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)) \
+bool TestClass##Runner::RunTest(const FString& Parameters) \
+{ \
+bool bSuccess = false; \
+/* spawn test instance. */ \
+TestClass* TestInstance = new TestClass(); \
+TestInstance->SetTestRunner(*this); \
+/* set up */ \
+if (TestInstance->SetUp()) \
+{ \
+/* call the instant-test code */ \
+bSuccess = TestInstance->InstantTest(); \
+/* tear down */ \
+TestInstance->TearDown(); \
+}\
+delete TestInstance; \
+return bSuccess; \
+}
+
+///////////////////////////////
+// RUNNER_TEST MACROS
 
 #define RUNNER_TEST_TRUE(expression)\
     if (!GetTestRunner().TestTrue(TEXT(#expression), (bool)(expression)))\

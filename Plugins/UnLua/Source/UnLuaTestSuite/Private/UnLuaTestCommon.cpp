@@ -18,6 +18,43 @@
 #include "Tests/AutomationEditorCommon.h"
 #endif
 
+bool FUnLuaTestCommand_WaitSeconds::Update()
+{
+    const float NewTime = FPlatformTime::Seconds();
+    return NewTime - StartTime >= Duration;
+}
+
+bool FUnLuaTestCommand_WaitOneTick::Update()
+{
+    if (bAlreadyRun == false)
+    {
+        bAlreadyRun = true;
+        return true;
+    }
+    return false;
+}
+
+bool FUnLuaTestCommand_SetUpTest::Update()
+{
+    return UnLuaTest && UnLuaTest->SetUp();
+}
+
+bool FUnLuaTestCommand_PerformTest::Update()
+{
+    return UnLuaTest == nullptr || UnLuaTest->Update();
+}
+
+bool FUnLuaTestCommand_TearDownTest::Update()
+{
+    if (UnLuaTest)
+    {
+        UnLuaTest->TearDown();
+        delete UnLuaTest;
+        UnLuaTest = nullptr;
+    }
+    return true;
+}
+
 bool FUnLuaTestBase::SetUp()
 {
     UnLua::Startup();
@@ -36,16 +73,8 @@ bool FUnLuaTestBase::SetUp()
     return true;
 }
 
-bool FUnLuaTestBase::Update()
-{
-    FAITestBase::Update();
-    return true;
-}
-
 void FUnLuaTestBase::TearDown()
 {
-    FAITestBase::TearDown();
-
     if (InstantTest())
     {
         if (L)
