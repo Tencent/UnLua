@@ -44,6 +44,15 @@ public:
     void AddCount() { Counter++; }
 };
 
+UCLASS()
+class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLibrary
+{
+    GENERATED_BODY()
+
+    UFUNCTION(BlueprintCallable)
+    static int32 TestForIssue293(const FString& A, int32 B, const TArray<FColor>& C) { return C.Num(); }
+};
+
 #if WITH_DEV_AUTOMATION_TESTS
 
 #define TEST_TRUE(expression) \

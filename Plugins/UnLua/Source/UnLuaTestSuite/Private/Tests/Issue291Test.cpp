@@ -50,7 +50,7 @@ struct FUnLuaTest_Issue291 : FUnLuaTestBase
             Actor.Capsule.OnInputTouchBegin:Add(Actor.Capsule, test)\
             collectgarbage('collect')\
             \
-            Actor.Capsule.OnInputTouchBegin:Broadcast()\
+            Actor.Capsule.OnInputTouchBegin:Broadcast(0)\
             return Flag\
         ";
 
