@@ -561,8 +561,6 @@ void FLuaContext::OnPostEngineInit()
 void FLuaContext::OnPreExit()
 {
     Cleanup(true);                                  // full clean up
-
-    DestroyDefaultParamCollection();                // destroy data of default parameters of UFunctions
 }
 
 /**

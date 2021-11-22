@@ -66,4 +66,3 @@ struct FFunctionCollection
 extern TMap<FName, FFunctionCollection> GDefaultParamCollection;
 
 extern void CreateDefaultParamCollection();
-extern void DestroyDefaultParamCollection();
