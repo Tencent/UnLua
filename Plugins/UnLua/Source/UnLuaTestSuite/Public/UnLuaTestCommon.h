@@ -62,7 +62,7 @@ private:
 struct UNLUATESTSUITE_API FUnLuaTestBase
 {
 public:
-    ~FUnLuaTestBase()
+    virtual ~FUnLuaTestBase()
     {
     }
 
