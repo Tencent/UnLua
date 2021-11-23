@@ -18,6 +18,8 @@
 #include "Tests/AutomationEditorCommon.h"
 #endif
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 bool FUnLuaTestCommand_WaitSeconds::Update()
 {
     const float NewTime = FPlatformTime::Seconds();
@@ -105,3 +107,5 @@ void FUnLuaTestBase::AddLatent(TFunction<void()>&& Func, float Delay) const
 {
     ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestDelayedCallbackLatentCommand(MoveTemp(Func), Delay));
 }
+
+#endif
