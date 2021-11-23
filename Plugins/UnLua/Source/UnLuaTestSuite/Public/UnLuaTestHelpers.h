@@ -44,6 +44,8 @@ public:
     void AddCount() { Counter++; }
 };
 
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FIssule294Event, int32, Value1, UObject*, Value2);
+
 UCLASS()
 class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLibrary
 {
@@ -51,6 +53,13 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
 
     UFUNCTION(BlueprintCallable)
     static int32 TestForIssue293(const FString& A, int32 B, const TArray<FColor>& C) { return C.Num(); }
+
+    UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "Event, Array"))
+    static int32 TestForIssue294(const FString& A, int32 B, const FIssule294Event& Event, const TArray<FColor>& Array)
+    {
+        Event.ExecuteIfBound(1, StaticClass());
+        return Array.Num();
+    }
 };
 
 #if WITH_DEV_AUTOMATION_TESTS
