@@ -84,6 +84,9 @@ public:
         GeneratedFileContent += FString::Printf(TEXT("FIntParamValue* SharedInt_Zero = new FIntParamValue(0);\r\n"));
         GeneratedFileContent += FString::Printf(TEXT("FByteParamValue* SharedByte_Zero = new FByteParamValue(0);\r\n"));
         GeneratedFileContent += FString::Printf(TEXT("FNameParamValue* SharedFName_None = new FNameParamValue(FName(\"None\"));\r\n"));
+        GeneratedFileContent += FString::Printf(TEXT("FScriptArrayParamValue* SharedScriptArray = new FScriptArrayParamValue();\r\n"));
+        GeneratedFileContent += FString::Printf(TEXT("FScriptDelegateParamValue* SharedScriptDelegate = new FScriptDelegateParamValue(FScriptDelegate());\r\n"));
+        GeneratedFileContent += FString::Printf(TEXT("FMulticastScriptDelegateParamValue* SharedMulticastScriptDelegate = new FMulticastScriptDelegateParamValue(FMulticastScriptDelegate());\r\n"));
         GeneratedFileContent += FString::Printf(TEXT("\r\n"));
 
         OutputDir = OutputDirectory;
@@ -111,8 +114,18 @@ public:
                 continue;
             }
 
+            const FString& AutoCreateRefTerm = MetaMap->FindRef("AutoCreateRefTerm");
+            TArray<FString> AutoEmitParameterNames;
+            if (!AutoCreateRefTerm.IsEmpty())
+            {
+                AutoCreateRefTerm.ParseIntoArray(AutoEmitParameterNames, TEXT(","), true);
+                for (FString& ParamName : AutoEmitParameterNames)
+                    ParamName.TrimStartAndEndInline();
+                // GeneratedFileContent += FString::Printf(TEXT("// DEBUG %s AutoCreateRefTerm=%s \r\n"), *Function->GetName(), *AutoCreateRefTerm);
+            }
+
             // parameters
-            for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & CPF_Parm); ++It)
+            for (TFieldIterator<FProperty> It(Function); It && (It->HasAnyPropertyFlags(CPF_Parm) && !It->HasAnyPropertyFlags(CPF_ReturnParm)); ++It)
             {
                 FProperty* Property = *It;
                 FString ValueStr;
@@ -120,8 +133,13 @@ public:
                 // filter out properties without default value
                 if (!FindDefaultValueString(MetaMap, Property, ValueStr))
                 {
-                    // GeneratedFileContent += FString::Printf(TEXT("// DEBUG %s has no default value\r\n"),  *Property->GetName());
-                    continue;
+                    if (AutoEmitParameterNames.Find(Property->GetName()) == INDEX_NONE)
+                    {
+                        // GeneratedFileContent += FString::Printf(TEXT("// DEBUG %s has no default value\r\n"),  *Property->GetName());
+                        continue;
+                    }
+                    // GeneratedFileContent += FString::Printf(TEXT("// DEBUG %s AutoEmitParameterNames(%d) %s\r\n"),
+                    //                                         *Property->GetName(), AutoEmitParameterNames.Find(Property->GetName()), *AutoCreateRefTerm);
                 }
 
                 if (Property->IsA(FStructProperty::StaticClass()))
@@ -267,6 +285,21 @@ public:
                     {
                         PreAddProperty(Class, Function);
                         GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FStringParamValue(TEXT(\"%s\")));\r\n"), *Property->GetName(), *ValueStr);
+                    }
+                    else if (Property->IsA(FArrayProperty::StaticClass()))
+                    {
+                        PreAddProperty(Class, Function);
+                        GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedScriptArray);\r\n"), *Property->GetName());
+                    }
+                    else if (Property->IsA(FDelegateProperty::StaticClass()))
+                    {
+                        PreAddProperty(Class, Function);
+                        GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedScriptDelegate);\r\n"), *Property->GetName());
+                    }
+                    else if (Property->IsA(FMulticastDelegateProperty::StaticClass()))
+                    {
+                        PreAddProperty(Class, Function);
+                        GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedMulticastDelegate);\r\n"), *Property->GetName());
                     }
                 }
             }
