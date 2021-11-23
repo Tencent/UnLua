@@ -62,6 +62,10 @@ private:
 struct UNLUATESTSUITE_API FUnLuaTestBase
 {
 public:
+    ~FUnLuaTestBase()
+    {
+    }
+
     virtual bool InstantTest() { return false; }
 
     virtual bool SetUp();
@@ -71,7 +75,7 @@ public:
     virtual void TearDown();
 
     virtual void SetTestRunner(FAutomationTestBase& AutomationTestInstance) { TestRunner = &AutomationTestInstance; }
-    
+
 protected:
     FUnLuaTestBase() : L(nullptr), TestRunner(nullptr)
     {
