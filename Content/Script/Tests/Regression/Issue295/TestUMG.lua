@@ -8,6 +8,7 @@ end
 
 function M:Destruct()
     print("Destruct")
+    self:Release()
 end
 
 return M

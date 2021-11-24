@@ -48,8 +48,30 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
             UnLua::RunChunk(L, Chunk);
         });
 
+        AddLatent([this]
+        {
+            GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains, 2);
+            lua_gc(L, LUA_GCCOLLECT, 0);
+            CollectGarbage(RF_NoFlags, true);    
+        });
+
         ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_LoadMap("/Game/Tests/Regression/Issue295/Issue295_2"));
 
+        AddLatent([this]
+        {
+            const char* Chunk = "\
+            local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
+            local Outer = G_World\
+            \
+            local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')\
+            UMG1:AddToViewport()\
+            \
+            local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')\
+            UMG2:AddToViewport()\
+            ";
+            UnLua::RunChunk(L, Chunk);
+        });
+        
         return true;
     }
 };
