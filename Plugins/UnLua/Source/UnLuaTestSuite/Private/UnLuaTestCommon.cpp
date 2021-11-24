@@ -51,12 +51,10 @@ bool FUnLuaTestCommand_PerformTest::Update()
 
 bool FUnLuaTestCommand_TearDownTest::Update()
 {
-    if (UnLuaTest)
-    {
-        UnLuaTest->TearDown();
-        delete UnLuaTest;
-        UnLuaTest = nullptr;
-    }
+    if (!UnLuaTest)
+        return false;
+
+    UnLuaTest->TearDown();
     return true;
 }
 
