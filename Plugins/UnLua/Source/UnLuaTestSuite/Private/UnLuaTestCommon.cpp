@@ -13,6 +13,9 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaTestCommon.h"
+
+#include "GameFramework/GameStateBase.h"
+#include "GameFramework/WorldSettings.h"
 #include "Tests/AutomationCommon.h"
 #if WITH_EDITOR
 #include "Tests/AutomationEditorCommon.h"
@@ -106,6 +109,22 @@ void FUnLuaTestBase::TearDown()
 void FUnLuaTestBase::AddLatent(TFunction<void()>&& Func, float Delay) const
 {
     ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestDelayedCallbackLatentCommand(MoveTemp(Func), Delay));
+}
+
+UWorld* FUnLuaTestBase::CreateWorld(FName WorldName)
+{
+    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, WorldName);
+    World->bMatchStarted = true;
+    const auto GameState = (AGameStateBase*)World->SpawnActor(AGameStateBase::StaticClass());
+    World->SetGameState(GameState);
+
+    FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
+    WorldContext.SetCurrentWorld(World);
+
+    const FURL URL;
+    World->InitializeActorsForPlay(URL);
+    World->BeginPlay();
+    return World;
 }
 
 #endif

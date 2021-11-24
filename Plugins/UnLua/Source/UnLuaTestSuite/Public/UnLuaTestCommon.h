@@ -15,10 +15,27 @@
 #pragma once
 
 #include "UnLua.h"
+#include "GameFramework/GameStateBase.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FUnLuaTestCommand_WaitSeconds, float, Duration);
+
+static UWorld* GetAnyGameWorld()
+{
+    UWorld* TestWorld = nullptr;
+    const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
+    for (const FWorldContext& Context : WorldContexts)
+    {
+        if ((Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game) && Context.World() != NULL)
+        {
+            TestWorld = Context.World();
+            break;
+        }
+    }
+
+    return TestWorld;
+}
 
 class FUnLuaTestCommand_WaitOneTick : public IAutomationLatentCommand
 {
@@ -59,6 +76,65 @@ private:
     float Delay;
 };
 
+class UNLUATESTSUITE_API FUnLuaTestCommand_LoadMap : public IAutomationLatentCommand
+{
+public:
+    FUnLuaTestCommand_LoadMap(FString MapName)
+        : MapName(MapName), bMapLoadingStarted(false), bMapLoaded(false)
+    {
+    }
+
+    virtual bool Update() override
+    {
+        if (!bMapLoadingStarted)
+        {
+            const auto TestWorld = GetAnyGameWorld();
+            if (!TestWorld)
+                return false;
+
+            bMapLoadingStarted = true;
+            // Convert both to short names and strip PIE prefix
+            FString ShortMapName = FPackageName::GetShortName(MapName);
+            FString ShortWorldMapName = FPackageName::GetShortName(TestWorld->GetMapName());
+
+            if (TestWorld->GetOutermost()->PIEInstanceID != INDEX_NONE)
+            {
+                FString PIEPrefix = FString::Printf(PLAYWORLD_PACKAGE_PREFIX TEXT("_%d_"), TestWorld->GetOutermost()->PIEInstanceID);
+                ShortWorldMapName.ReplaceInline(*PIEPrefix, TEXT(""));
+            }
+            if (ShortMapName != ShortWorldMapName)
+            {
+                FString OpenCommand = FString::Printf(TEXT("Open %s"), *MapName);
+                GEngine->Exec(TestWorld, *OpenCommand);
+            }
+            return false;
+        }
+
+        if (!bMapLoaded)
+        {
+            const auto TestWorld = GetAnyGameWorld();
+            if (!TestWorld)
+                return false;
+
+            if (!TestWorld->AreActorsInitialized())
+                return false;
+
+            AGameStateBase* GameState = TestWorld->GetGameState();
+            if (GameState && GameState->HasMatchStarted())
+                return true;
+            
+            return false;
+        }
+
+        return false;
+    }
+
+private:
+    FString MapName;
+    bool bMapLoadingStarted;
+    bool bMapLoaded;
+};
+
 struct UNLUATESTSUITE_API FUnLuaTestBase
 {
 public:
@@ -91,10 +167,11 @@ protected:
 
     void AddLatent(TFunction<void()>&& Func, float Delay = 0.1f) const;
 
+    UWorld* CreateWorld(FName WorldName = "UnLuaTest");
+
     lua_State* L;
     FAutomationTestBase* TestRunner;
 };
-
 
 DEFINE_EXPORTED_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(UNLUATESTSUITE_API, FUnLuaTestCommand_SetUpTest, FUnLuaTestBase*, UnLuaTest);
 
