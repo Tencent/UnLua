@@ -56,6 +56,6 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 	}
 };
 
-IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue289, TEXT("UnLua.Regression.Issue289 UClass在被UEGC后没有释放相应的绑定"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue289, TEXT("UnLua.Regression.Issue289 UClass在被UEGC后没有释放相应的绑定"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

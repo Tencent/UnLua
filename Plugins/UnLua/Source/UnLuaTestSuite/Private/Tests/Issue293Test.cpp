@@ -46,6 +46,6 @@ struct FUnLuaTest_Issue293 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue293, TEXT("UnLua.Regression.Issue293 关闭RPC会导致部分函数在非Editor模式下crash"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue293, TEXT("UnLua.Regression.Issue293 关闭RPC会导致部分函数在非Editor模式下crash"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

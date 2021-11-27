@@ -21,22 +21,22 @@ struct FUnLuaTest_Issue286 : FUnLuaTestBase
 {
     virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue286/Issue286"); }
 
+    virtual bool InstantTest() override
+    {
+        return true;
+    }
+    
     virtual bool SetUp() override
     {
         FUnLuaTestBase::SetUp();
 
-        AddLatent([&]()
-        {
-            lua_getglobal(L, "Result");
-            const char* Error = lua_tostring(L, -1);
-            RUNNER_TEST_EQUAL(Error, TEXT("passed"));
-            return true;
-        });
-
+        lua_getglobal(L, "Result");
+        const char* Error = lua_tostring(L, -1);
+        RUNNER_TEST_EQUAL(Error, TEXT("passed"));
         return true;
     }
 };
 
-IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue286, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue286, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

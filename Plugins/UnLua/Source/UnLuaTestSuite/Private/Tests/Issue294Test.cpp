@@ -62,6 +62,6 @@ struct FUnLuaTest_Issue294 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue294, TEXT("UnLua.Regression.Issue294 AutoCreateRefTerm标记的参数需要生成默认值"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue294, TEXT("UnLua.Regression.Issue294 AutoCreateRefTerm标记的参数需要生成默认值"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

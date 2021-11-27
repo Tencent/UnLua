@@ -135,4 +135,15 @@ void FUnLuaTestBase::SimulateTick(float Seconds, ELevelTick TickType) const
     }
 }
 
+void FUnLuaTestBase::LoadMap(FString MapName) const
+{
+    const auto OldWorld = GWorld;
+    const FURL URL(*MapName);
+    FString Error;
+    LoadPackage(nullptr, *URL.Map, LOAD_None);
+    FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
+    GEngine->LoadMap(*WorldContext, URL, nullptr, Error);
+    GWorld = OldWorld;
+}
+
 #endif

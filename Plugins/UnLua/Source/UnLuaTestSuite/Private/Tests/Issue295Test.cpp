@@ -20,6 +20,11 @@
 
 struct FUnLuaTest_Issue295 : FUnLuaTestBase
 {
+    virtual bool InstantTest() override
+    {
+        return true;
+    }
+
     virtual FString GetMapName() override
     {
         return "/Game/Tests/Regression/Issue295/Issue295_1";
@@ -29,12 +34,10 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        AddLatent([this]
-        {
-            UnLua::PushUObject(L, GetWorld());
-            lua_setglobal(L, "G_World");
+        UnLua::PushUObject(L, GetWorld());
+        lua_setglobal(L, "G_World");
 
-            const char* Chunk = "\
+        const char* Chunk1 = "\
             local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
             local Outer = G_World\
             \
@@ -44,24 +47,18 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
             local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')\
             UMG2:AddToViewport()\
             ";
-            UnLua::RunChunk(L, Chunk);
-        });
+        UnLua::RunChunk(L, Chunk1);
 
-        AddLatent([this]
-        {
-            GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains, 2);
-            lua_gc(L, LUA_GCCOLLECT, 0);
-            CollectGarbage(RF_NoFlags, true);
-        });
+        GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains, 2);
+        lua_gc(L, LUA_GCCOLLECT, 0);
+        CollectGarbage(RF_NoFlags, true);
 
-        ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_LoadMap(WorldContext, "/Game/Tests/Regression/Issue295/Issue295_2"));
+        LoadMap("/Game/Tests/Regression/Issue295/Issue295_2");
 
-        AddLatent([this]
-        {
-            UnLua::PushUObject(L, GetWorld());
-            lua_setglobal(L, "G_World");
+        UnLua::PushUObject(L, GetWorld());
+        lua_setglobal(L, "G_World");
 
-            const char* Chunk = "\
+        const char* Chunk2 = "\
             local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
             local Outer = G_World\
             \
@@ -71,13 +68,12 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
             local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')\
             UMG2:AddToViewport()\
             ";
-            UnLua::RunChunk(L, Chunk);
-        });
+        UnLua::RunChunk(L, Chunk2);
 
         return true;
     }
 };
 
-IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue295, TEXT("UnLua.Regression.Issue295 动态绑定的UMG对象，在切换地图回调Destruct导致崩溃"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue295, TEXT("UnLua.Regression.Issue295 动态绑定的UMG对象，在切换地图回调Destruct导致崩溃"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

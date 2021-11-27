@@ -166,6 +166,8 @@ protected:
 
     void SimulateTick(float Seconds = SMALL_NUMBER, ELevelTick TickType = LEVELTICK_All) const;
 
+    void LoadMap(FString MapName) const;
+    
     lua_State* L;
     FAutomationTestBase* TestRunner;
     UGameInstance* GameInstance;
