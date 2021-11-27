@@ -31,14 +31,7 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 	{
 		FUnLuaTestBase::SetUp();
 
-		const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
-		FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-		WorldContext.SetCurrentWorld(World);
-		FCoreUObjectDelegates::PostLoadMapWithWorld.Broadcast(World);
-
-		const FURL URL;
-		World->InitializeActorsForPlay(URL);
-		World->BeginPlay();
+		const auto World = GetWorld();
 
 		const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/Game/Tests/Regression/Issue289/BP_UnLuaTestActor_Issue289.BP_UnLuaTestActor_Issue289_C"));
 		const auto Actor = World->SpawnActor(ActorClass);

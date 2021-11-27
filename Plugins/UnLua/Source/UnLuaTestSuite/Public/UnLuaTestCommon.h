@@ -79,8 +79,8 @@ private:
 class UNLUATESTSUITE_API FUnLuaTestCommand_LoadMap : public IAutomationLatentCommand
 {
 public:
-    FUnLuaTestCommand_LoadMap(FString MapName)
-        : MapName(MapName), bMapLoadingStarted(false), bMapLoaded(false)
+    FUnLuaTestCommand_LoadMap(FWorldContext* WorldContext, FString MapName)
+        : MapName(MapName), WorldContext(WorldContext), bMapLoadingStarted(false), bMapLoaded(false)
     {
     }
 
@@ -88,41 +88,35 @@ public:
     {
         if (!bMapLoadingStarted)
         {
-            const auto TestWorld = GetAnyGameWorld();
-            if (!TestWorld)
-                return false;
-
+            const auto OldWorld = GWorld;
+            const FURL URL(*MapName);
+            FString Error;
+            LoadPackage(nullptr, *URL.Map, LOAD_None);
+            FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
+            GEngine->LoadMap(*WorldContext, URL, nullptr, Error);
+            GWorld = OldWorld;
             bMapLoadingStarted = true;
-            // Convert both to short names and strip PIE prefix
-            FString ShortMapName = FPackageName::GetShortName(MapName);
-            FString ShortWorldMapName = FPackageName::GetShortName(TestWorld->GetMapName());
-
-            if (TestWorld->GetOutermost()->PIEInstanceID != INDEX_NONE)
-            {
-                FString PIEPrefix = FString::Printf(PLAYWORLD_PACKAGE_PREFIX TEXT("_%d_"), TestWorld->GetOutermost()->PIEInstanceID);
-                ShortWorldMapName.ReplaceInline(*PIEPrefix, TEXT(""));
-            }
-            if (ShortMapName != ShortWorldMapName)
-            {
-                FString OpenCommand = FString::Printf(TEXT("Open %s"), *MapName);
-                GEngine->Exec(TestWorld, *OpenCommand);
-            }
             return false;
         }
 
         if (!bMapLoaded)
         {
-            const auto TestWorld = GetAnyGameWorld();
+            if (!bMapLoadingStarted)
+                return false;
+
+            const auto TestWorld = WorldContext->World();
             if (!TestWorld)
                 return false;
 
-            if (!TestWorld->AreActorsInitialized())
-                return false;
+            if (TestWorld && TestWorld->AreActorsInitialized())
+            {
+                AGameStateBase* GameState = TestWorld->GetGameState();
+                if (GameState && GameState->HasMatchStarted())
+                {
+                    return true;
+                }
+            }
 
-            AGameStateBase* GameState = TestWorld->GetGameState();
-            if (GameState && GameState->HasMatchStarted())
-                return true;
-            
             return false;
         }
 
@@ -131,6 +125,7 @@ public:
 
 private:
     FString MapName;
+    FWorldContext* WorldContext;
     bool bMapLoadingStarted;
     bool bMapLoaded;
 };
@@ -152,8 +147,10 @@ public:
 
     virtual void SetTestRunner(FAutomationTestBase& AutomationTestInstance) { TestRunner = &AutomationTestInstance; }
 
+    void AddLatent(TFunction<void()>&& Func, float Delay = 0.1f) const;
+
 protected:
-    FUnLuaTestBase() : L(nullptr), TestRunner(nullptr)
+    FUnLuaTestBase() : L(nullptr), TestRunner(nullptr), GameInstance(nullptr), WorldContext(nullptr)
     {
     }
 
@@ -165,12 +162,14 @@ protected:
         return *TestRunner;
     }
 
-    void AddLatent(TFunction<void()>&& Func, float Delay = 0.1f) const;
+    UWorld* GetWorld() const;
 
-    UWorld* CreateWorld(FName WorldName = "UnLuaTest");
+    void SimulateTick(float Seconds = SMALL_NUMBER, ELevelTick TickType = LEVELTICK_All) const;
 
     lua_State* L;
     FAutomationTestBase* TestRunner;
+    UGameInstance* GameInstance;
+    FWorldContext* WorldContext;
 };
 
 DEFINE_EXPORTED_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(UNLUATESTSUITE_API, FUnLuaTestCommand_SetUpTest, FUnLuaTestBase*, UnLuaTest);

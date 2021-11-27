@@ -29,14 +29,7 @@ struct FUnLuaTest_Issue291 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
-        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-        WorldContext.SetCurrentWorld(World);
-
-        const FURL URL;
-        World->InitializeActorsForPlay(URL);
-        World->BeginPlay();
-        
+        const auto World = GetWorld();
         UnLua::PushUObject(L, World);
         lua_setglobal(L, "G_World");
 

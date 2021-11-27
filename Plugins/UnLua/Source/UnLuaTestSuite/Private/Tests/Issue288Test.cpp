@@ -21,56 +21,48 @@
 
 struct FUnLuaTest_Issue288 : FUnLuaTestBase
 {
-	virtual bool InstantTest() override
-	{
-		return true;
-	}
+    virtual bool InstantTest() override
+    {
+        return true;
+    }
 
-	virtual bool SetUp() override
-	{
-		FUnLuaTestBase::SetUp();
+    virtual bool SetUp() override
+    {
+        FUnLuaTestBase::SetUp();
 
-		const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
-		FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-		WorldContext.SetCurrentWorld(World);
-
-		const FURL URL;
-		World->InitializeActorsForPlay(URL);
-		World->BeginPlay();
-
-		const char* Chunk1 = "\
+        const char* Chunk1 = "\
 		local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue288/UnLuaTestUMG_Issue288.UnLuaTestUMG_Issue288_C')\
 		G_UMG = NewObject(UMGClass)\
 		";
-		UnLua::RunChunk(L, Chunk1);
+        UnLua::RunChunk(L, Chunk1);
 
-		auto Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
-		RUNNER_TEST_NOT_NULL(Texture2D);
+        auto Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
+        RUNNER_TEST_NOT_NULL(Texture2D);
 
-		const char* Chunk2 = "\
+        const char* Chunk2 = "\
 		G_UMG:Release()\
 		G_UMG = nil\
 		";
-		UnLua::RunChunk(L, Chunk2);
+        UnLua::RunChunk(L, Chunk2);
 
-		GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains);
-		
-		lua_gc(L, LUA_GCCOLLECT, 0);
-		CollectGarbage(RF_NoFlags, true);
+        GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains);
 
-		Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
-		if (Texture2D)
-		{
+        lua_gc(L, LUA_GCCOLLECT, 0);
+        CollectGarbage(RF_NoFlags, true);
+
+        Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
+        if (Texture2D)
+        {
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
-			FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults | EReferenceChainSearchMode::FullChain);
+            FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults | EReferenceChainSearchMode::FullChain);
 #else
 			FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults);
 #endif
-		}
-		RUNNER_TEST_NULL(Texture2D);
+        }
+        RUNNER_TEST_NULL(Texture2D);
 
-		return true;
-	}
+        return true;
+    }
 };
 
 IMPLEMENT_UNLUA_LATENT_TEST(FUnLuaTest_Issue288, TEXT("UnLua.Regression.Issue288 UMG里Image用到的Texture内存泄漏"))

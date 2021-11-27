@@ -28,11 +28,12 @@ struct FUnLuaTest_Issue276 : FUnLuaTestBase
 
         AddLatent([&]()
         {
+            SimulateTick(1.0f);
             lua_getglobal(L, "Flag");
-            const bool Flag = (bool)lua_toboolean(L, -1);
+            const bool Flag = !!lua_toboolean(L, -1);
             RUNNER_TEST_TRUE(Flag);
             return true;
-        }, 2.0f);
+        });
 
         return true;
     }

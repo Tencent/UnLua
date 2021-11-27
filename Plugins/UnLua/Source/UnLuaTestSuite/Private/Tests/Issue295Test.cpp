@@ -20,21 +20,20 @@
 
 struct FUnLuaTest_Issue295 : FUnLuaTestBase
 {
+    virtual FString GetMapName() override
+    {
+        return "/Game/Tests/Regression/Issue295/Issue295_1";
+    }
+
     virtual bool SetUp() override
     {
         FUnLuaTestBase::SetUp();
 
         AddLatent([this]
         {
-            const auto World = CreateWorld();
-            UnLua::PushUObject(L, World);
+            UnLua::PushUObject(L, GetWorld());
             lua_setglobal(L, "G_World");
-        });
 
-        ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_LoadMap("/Game/Tests/Regression/Issue295/Issue295_1"));
-
-        AddLatent([this]
-        {
             const char* Chunk = "\
             local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
             local Outer = G_World\
@@ -52,13 +51,16 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
         {
             GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains, 2);
             lua_gc(L, LUA_GCCOLLECT, 0);
-            CollectGarbage(RF_NoFlags, true);    
+            CollectGarbage(RF_NoFlags, true);
         });
 
-        ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_LoadMap("/Game/Tests/Regression/Issue295/Issue295_2"));
+        ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestCommand_LoadMap(WorldContext, "/Game/Tests/Regression/Issue295/Issue295_2"));
 
         AddLatent([this]
         {
+            UnLua::PushUObject(L, GetWorld());
+            lua_setglobal(L, "G_World");
+
             const char* Chunk = "\
             local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
             local Outer = G_World\
@@ -71,7 +73,7 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
             ";
             UnLua::RunChunk(L, Chunk);
         });
-        
+
         return true;
     }
 };

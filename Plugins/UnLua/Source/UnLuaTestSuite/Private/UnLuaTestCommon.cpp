@@ -17,9 +17,6 @@
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/WorldSettings.h"
 #include "Tests/AutomationCommon.h"
-#if WITH_EDITOR
-#include "Tests/AutomationEditorCommon.h"
-#endif
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -54,7 +51,12 @@ bool FUnLuaTestCommand_TearDownTest::Update()
     if (!UnLuaTest)
         return false;
 
-    UnLuaTest->TearDown();
+    UnLuaTest->AddLatent([this]
+    {
+        UnLuaTest->TearDown();
+        delete UnLuaTest;
+        UnLuaTest = nullptr;
+    });
     return true;
 }
 
@@ -63,15 +65,30 @@ bool FUnLuaTestBase::SetUp()
     UnLua::Startup();
     L = UnLua::GetState();
 
-#if WITH_EDITOR
+    GameInstance = NewObject<UGameInstance>(GEngine);
+    GameInstance->InitializeStandalone();
+    WorldContext = GameInstance->GetWorldContext();
+
     const auto& MapName = GetMapName();
-    if (!MapName.IsEmpty())
+    if (MapName.IsEmpty())
     {
-        AutomationOpenMap(MapName);
-        ADD_LATENT_AUTOMATION_COMMAND(FWaitForMapToLoadCommand);
-        return true;
+        if (!WorldContext->World())
+        {
+            const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
+            World->SetGameInstance(GameInstance);
+            WorldContext->SetCurrentWorld(World);
+        }
     }
-#endif
+    else
+    {
+        const auto OldWorld = GWorld;
+        const FURL URL(*MapName);
+        FString Error;
+        LoadPackage(nullptr, *URL.Map, LOAD_None);
+        FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
+        GEngine->LoadMap(*WorldContext, URL, nullptr, Error);
+        GWorld = OldWorld;
+    }
 
     return true;
 }
@@ -80,26 +97,19 @@ void FUnLuaTestBase::TearDown()
 {
     if (InstantTest())
     {
-        if (L)
-        {
-            UnLua::Shutdown();
-            L = nullptr;
-        }
+        const auto World = GetWorld();
+        GEngine->DestroyWorldContext(World);
+        World->DestroyWorld(false);
+        UnLua::Shutdown();
     }
     else
     {
-#if WITH_EDITOR
-        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
-        ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(0.1f));
-#endif
-
-        AddLatent([&]()
+        AddLatent([this]()
         {
-            if (L)
-            {
-                UnLua::Shutdown();
-                L = nullptr;
-            }
+            const auto World = GetWorld();
+            GEngine->DestroyWorldContext(World);
+            World->DestroyWorld(false);
+            UnLua::Shutdown();
         });
     }
 }
@@ -109,20 +119,20 @@ void FUnLuaTestBase::AddLatent(TFunction<void()>&& Func, float Delay) const
     ADD_LATENT_AUTOMATION_COMMAND(FUnLuaTestDelayedCallbackLatentCommand(MoveTemp(Func), Delay));
 }
 
-UWorld* FUnLuaTestBase::CreateWorld(FName WorldName)
+UWorld* FUnLuaTestBase::GetWorld() const
 {
-    UWorld* World = UWorld::CreateWorld(EWorldType::Game, false, WorldName);
-    World->bMatchStarted = true;
-    const auto GameState = (AGameStateBase*)World->SpawnActor(AGameStateBase::StaticClass());
-    World->SetGameState(GameState);
+    return WorldContext->World();
+}
 
-    FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-    WorldContext.SetCurrentWorld(World);
-
-    const FURL URL;
-    World->InitializeActorsForPlay(URL);
-    World->BeginPlay();
-    return World;
+void FUnLuaTestBase::SimulateTick(float Seconds, ELevelTick TickType) const
+{
+    constexpr auto Step = 1.0f / 60.0f;
+    const auto World = GetWorld();
+    while (Seconds > 0)
+    {
+        World->Tick(TickType, Step);
+        Seconds -= Step;
+    }
 }
 
 #endif

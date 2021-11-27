@@ -36,6 +36,7 @@ public class UnLuaTestSuite : ModuleRules
 				"Core",
 				"CoreUObject",
 				"Engine",
+				"Slate"
 			}
 		);
 
