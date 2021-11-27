@@ -15,27 +15,12 @@
 #pragma once
 
 #include "UnLua.h"
+#include "Engine.h"
 #include "GameFramework/GameStateBase.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
 DEFINE_LATENT_AUTOMATION_COMMAND_ONE_PARAMETER(FUnLuaTestCommand_WaitSeconds, float, Duration);
-
-static UWorld* GetAnyGameWorld()
-{
-    UWorld* TestWorld = nullptr;
-    const TIndirectArray<FWorldContext>& WorldContexts = GEngine->GetWorldContexts();
-    for (const FWorldContext& Context : WorldContexts)
-    {
-        if ((Context.WorldType == EWorldType::PIE || Context.WorldType == EWorldType::Game) && Context.World() != NULL)
-        {
-            TestWorld = Context.World();
-            break;
-        }
-    }
-
-    return TestWorld;
-}
 
 class FUnLuaTestCommand_WaitOneTick : public IAutomationLatentCommand
 {

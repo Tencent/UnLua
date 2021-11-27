@@ -13,9 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaTestCommon.h"
-
-#include "GameFramework/GameStateBase.h"
-#include "GameFramework/WorldSettings.h"
 #include "Tests/AutomationCommon.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
