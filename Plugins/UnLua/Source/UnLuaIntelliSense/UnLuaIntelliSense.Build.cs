@@ -12,9 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-using UnrealBuildTool;
-using System.IO;
-
 namespace UnrealBuildTool.Rules
 {
     public class UnLuaIntelliSense : ModuleRules
@@ -23,32 +20,28 @@ namespace UnrealBuildTool.Rules
         {
             bEnforceIWYU = false;
 
-            PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+            PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
             PublicIncludePaths.AddRange(
-                new string[] {
+                new[]
+                {
                     "Programs/UnrealHeaderTool/Public",
                 }
-                );
-
+            );
 
             PrivateIncludePaths.AddRange(
-                new string[] {
-                    "UnLuaIntelliSense/Private",
-                    "UnLua/Private",
-                }
-                );
-
+                new[]
+                {
+                    "UnLua/Private"
+                });
 
             PrivateDependencyModuleNames.AddRange(
-                new string[]
+                new[]
                 {
                     "Core",
-                    "CoreUObject",
+                    "CoreUObject"
                 }
-                );
-
-            PublicDefinitions.Add("ENABLE_INTELLISENSE=0");
+            );
 
             PublicDefinitions.Add("HACK_HEADER_GENERATOR=1");
         }

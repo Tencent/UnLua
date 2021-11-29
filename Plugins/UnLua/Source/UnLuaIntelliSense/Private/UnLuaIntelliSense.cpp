@@ -17,11 +17,8 @@
 #include "IScriptGeneratorPluginInterface.h"
 #include "UnLuaCompatibility.h"
 
-#define LOCTEXT_NAMESPACE "FUnLuaIntelliSenseModule"
 
-#ifndef ENABLE_INTELLISENSE
-#define ENABLE_INTELLISENSE 0
-#endif
+#define LOCTEXT_NAMESPACE "FUnLuaIntelliSenseModule"
 
 static const FName NAME_ToolTip(TEXT("ToolTip"));           // key of ToolTip meta data
 static const FName NAME_LatentInfo = TEXT("LatentInfo");    // tag of latent function
@@ -30,9 +27,15 @@ class FUnLuaIntelliSenseModule : public IScriptGeneratorPluginInterface
 {
 public:
     virtual void StartupModule() override { IModularFeatures::Get().RegisterModularFeature(TEXT("ScriptGenerator"), this); }
+    
     virtual void ShutdownModule() override { IModularFeatures::Get().UnregisterModularFeature(TEXT("ScriptGenerator"), this); }
+    
     virtual FString GetGeneratedCodeModuleName() const override { return TEXT("UnLua"); }
-    virtual bool SupportsTarget(const FString& TargetName) const override { return ENABLE_INTELLISENSE ? true : false; }
+    
+    virtual bool SupportsTarget(const FString& TargetName) const override
+    {
+        return true;
+    }
 
     virtual bool ShouldExportClassesForModule(const FString& ModuleName, EBuildModuleType::Type ModuleType, const FString& ModuleGeneratedIncludeDirectory) const override
     {
@@ -42,7 +45,7 @@ public:
     virtual void Initialize(const FString& RootLocalPath, const FString& RootBuildPath, const FString& OutputDirectory, const FString& IncludeBase) override
     {
         OutputDir = IncludeBase + TEXT("../Intermediate/");     // export symbol (IntelliSense) files to plugin's 'Intermediate' dir
-        UE4Namespace = TEXT("_G.UE = {\r\n\r\n");
+        Output = TEXT("UE = {\r\n\r\n");
     }
 
     virtual void ExportClass(UClass* Class, const FString& SourceHeaderFilename, const FString& GeneratedHeaderFilename, bool bHasChanged) override
@@ -170,15 +173,15 @@ public:
             SaveFile(ModuleName, EnumName, GeneratedFileContent);
         }
 
-        // save 'UE4Namespace' to lua file
+        // save 'Output' to lua file
         UE4Names.Sort();
         for (const FString &Name : UE4Names)
         {
-            UE4Namespace += FString::Printf(TEXT("    ---@type %s\r\n"), *Name);
-            UE4Namespace += FString::Printf(TEXT("    %s = nil,\r\n\r\n"), *Name);
+            Output += FString::Printf(TEXT("    ---@type %s\r\n"), *Name);
+            Output += FString::Printf(TEXT("    %s = nil,\r\n\r\n"), *Name);
         }
-        UE4Namespace += TEXT("    _UE4_END_ = nil\r\n\r\n}\r\n");
-        SaveFile(TEXT(""), TEXT("UE4"), UE4Namespace);
+        Output += TEXT("    _UE4_END_ = nil\r\n\r\n}\r\nUE4 = UE\r\n");
+        SaveFile(TEXT(""), TEXT("UE"), Output);
     }
 
     virtual FString GetGeneratorName() const override
@@ -409,56 +412,56 @@ private:
             {
                 return TEXT("integer");
             }
-            else if (const FInt8Property *TempI8Property = CastField<FInt8Property>(Property))
+            if (const FInt8Property *TempI8Property = CastField<FInt8Property>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FInt16Property *TempI16Property = CastField<FInt16Property>(Property))
+            if (const FInt16Property *TempI16Property = CastField<FInt16Property>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FIntProperty *TempI32Property = CastField<FIntProperty>(Property))
+            if (const FIntProperty *TempI32Property = CastField<FIntProperty>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FInt64Property *TempI64Property = CastField<FInt64Property>(Property))
+            if (const FInt64Property *TempI64Property = CastField<FInt64Property>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FUInt16Property *TempU16Property = CastField<FUInt16Property>(Property))
+            if (const FUInt16Property *TempU16Property = CastField<FUInt16Property>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FUInt32Property *TempU32Property = CastField<FUInt32Property>(Property))
+            if (const FUInt32Property *TempU32Property = CastField<FUInt32Property>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FUInt64Property *TempU64Property = CastField<FUInt64Property>(Property))
+            if (const FUInt64Property *TempU64Property = CastField<FUInt64Property>(Property))
             {
                 return TEXT("integer");
             }
-            else if (const FFloatProperty *TempFloatProperty = CastField<FFloatProperty>(Property))
+            if (const FFloatProperty *TempFloatProperty = CastField<FFloatProperty>(Property))
             {
                 return TEXT("number");
             }
-            else if (const FDoubleProperty *TempDoubleProperty = CastField<FDoubleProperty>(Property))
+            if (const FDoubleProperty *TempDoubleProperty = CastField<FDoubleProperty>(Property))
             {
                 return TEXT("number");
             }
-            else if (const FEnumProperty *TempEnumProperty = CastField<FEnumProperty>(Property))
+            if (const FEnumProperty *TempEnumProperty = CastField<FEnumProperty>(Property))
             {
                 return ((FEnumProperty*)Property)->GetEnum()->GetName();
             }
-            else if (const FBoolProperty *TempBoolProperty = CastField<FBoolProperty>(Property))
+            if (const FBoolProperty *TempBoolProperty = CastField<FBoolProperty>(Property))
             {
                 return TEXT("boolean");
             }
-            else if (const FClassProperty *TempClassProperty = CastField<FClassProperty>(Property))
+            if (const FClassProperty *TempClassProperty = CastField<FClassProperty>(Property))
             {
                 UClass *Class = ((FClassProperty*)Property)->MetaClass;
                 return FString::Printf(TEXT("TSubclassOf<%s%s>"), Class->GetPrefixCPP(), *Class->GetName());
             }
-            else if (const FSoftObjectProperty *TempSoftObjectProperty = CastField<FSoftObjectProperty>(Property))
+            if (const FSoftObjectProperty *TempSoftObjectProperty = CastField<FSoftObjectProperty>(Property))
             {
                 if (((FSoftObjectProperty*)Property)->PropertyClass->IsChildOf(UClass::StaticClass()))
                 {
@@ -468,63 +471,63 @@ private:
                 UClass *Class = ((FSoftObjectProperty*)Property)->PropertyClass;
                 return FString::Printf(TEXT("TSoftObjectPtr<%s%s>"), Class->GetPrefixCPP(), *Class->GetName());
             }
-            else if (const FObjectProperty *TempObjectProperty = CastField<FObjectProperty>(Property))
+            if (const FObjectProperty *TempObjectProperty = CastField<FObjectProperty>(Property))
             {
                 UClass *Class = ((FObjectProperty*)Property)->PropertyClass;
                 return FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
             }
-            else if (const FWeakObjectProperty *TempWeakObjectProperty = CastField<FWeakObjectProperty>(Property))
+            if (const FWeakObjectProperty *TempWeakObjectProperty = CastField<FWeakObjectProperty>(Property))
             {
                 UClass *Class = ((FWeakObjectProperty*)Property)->PropertyClass;
                 return FString::Printf(TEXT("TWeakObjectPtr<%s%s>"), Class->GetPrefixCPP(), *Class->GetName());
             }
-            else if (const FLazyObjectProperty *TempLazyObjectProperty = CastField<FLazyObjectProperty>(Property))
+            if (const FLazyObjectProperty *TempLazyObjectProperty = CastField<FLazyObjectProperty>(Property))
             {
                 UClass *Class = ((FLazyObjectProperty*)Property)->PropertyClass;
                 return FString::Printf(TEXT("TLazyObjectPtr<%s%s>"), Class->GetPrefixCPP(), *Class->GetName());
             }
-            else if (const FInterfaceProperty *TempInterfaceProperty = CastField<FInterfaceProperty>(Property))
+            if (const FInterfaceProperty *TempInterfaceProperty = CastField<FInterfaceProperty>(Property))
             {
                 UClass *Class = ((FInterfaceProperty*)Property)->InterfaceClass;
                 return FString::Printf(TEXT("TScriptInterface<%s%s>"), Class->GetPrefixCPP(), *Class->GetName());
             }
-            else if (const FNameProperty *TempNameProperty = CastField<FNameProperty>(Property))
+            if (const FNameProperty *TempNameProperty = CastField<FNameProperty>(Property))
             {
                 return TEXT("string");
             }
-            else if (const FStrProperty *TempStringProperty = CastField<FStrProperty>(Property))
+            if (const FStrProperty *TempStringProperty = CastField<FStrProperty>(Property))
             {
                 return TEXT("string");
             }
-            else if (const FTextProperty *TempTextProperty = CastField<FTextProperty>(Property))
+            if (const FTextProperty *TempTextProperty = CastField<FTextProperty>(Property))
             {
                 return TEXT("string");
             }
-            else if (const FArrayProperty *TempArrayProperty = CastField<FArrayProperty>(Property))
+            if (const FArrayProperty *TempArrayProperty = CastField<FArrayProperty>(Property))
             {
                 FProperty *Inner = ((FArrayProperty*)Property)->Inner;
                 return FString::Printf(TEXT("TArray<%s>"), *GetTypeName(Inner));
             }
-            else if (const FMapProperty *TempMapProperty = CastField<FMapProperty>(Property))
+            if (const FMapProperty *TempMapProperty = CastField<FMapProperty>(Property))
             {
                 FProperty *KeyProp = ((FMapProperty*)Property)->KeyProp;
                 FProperty *ValueProp = ((FMapProperty*)Property)->ValueProp;
                 return FString::Printf(TEXT("TMap<%s, %s>"), *GetTypeName(KeyProp), *GetTypeName(ValueProp));
             }
-            else if (const FSetProperty *TempSetProperty = CastField<FSetProperty>(Property))
+            if (const FSetProperty *TempSetProperty = CastField<FSetProperty>(Property))
             {
                 FProperty *ElementProp = ((FSetProperty*)Property)->ElementProp;
                 return FString::Printf(TEXT("TSet<%s>"), *GetTypeName(ElementProp));
             }
-            else if (const FStructProperty *TempStructProperty = CastField<FStructProperty>(Property))
+            if (const FStructProperty *TempStructProperty = CastField<FStructProperty>(Property))
             {
                 return ((FStructProperty*)Property)->Struct->GetStructCPPName();
             }
-            else if (const FDelegateProperty *TempDelegateProperty = CastField<FDelegateProperty>(Property))
+            if (const FDelegateProperty *TempDelegateProperty = CastField<FDelegateProperty>(Property))
             {
                 return TEXT("Delegate");
             }
-            else if (const FMulticastDelegateProperty *TempMulticastDelegateProperty = CastField<FMulticastDelegateProperty>(Property))
+            if (const FMulticastDelegateProperty *TempMulticastDelegateProperty = CastField<FMulticastDelegateProperty>(Property))
             {
                 return TEXT("MulticastDelegate");
             }
@@ -547,7 +550,7 @@ private:
     }
 
     FString OutputDir;
-    FString UE4Namespace;
+    FString Output;
     TArray<FString> UE4Names;
 };
 
