@@ -45,7 +45,6 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 		";
         UnLua::RunChunk(L, Chunk2);
 
-        GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains);
 
         lua_gc(L, LUA_GCCOLLECT, 0);
         CollectGarbage(RF_NoFlags, true);

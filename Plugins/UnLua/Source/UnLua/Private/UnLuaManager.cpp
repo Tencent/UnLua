@@ -757,6 +757,9 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
  */
 void UUnLuaManager::ReplaceFunction(UFunction *TemplateFunction, UClass *OuterClass)
 {
+    if (TemplateFunction->GetNativeFunc() == FLuaInvoker::execCallLua)
+        return;
+
     FNativeFuncPtr *NativePtr = CachedNatives.Find(TemplateFunction);
     if (!NativePtr)
     {
