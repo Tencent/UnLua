@@ -202,8 +202,15 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     GReflectionRegistry.RegisterFunction(NewFunc);
     NewFunc->ClearInternalFlags(EInternalObjectFlags::Native);
 
-    NewFunc->Next = OuterClass->Children;
-    OuterClass->Children = NewFunc;
+    if (OuterClass->IsRooted() || GUObjectArray.IsDisregardForGC(OuterClass))
+    {
+        NewFunc->AddToRoot();
+    }
+    else
+    {
+        NewFunc->Next = OuterClass->Children;
+        OuterClass->Children = NewFunc;
+    }
 
     return NewFunc;
 }
