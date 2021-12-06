@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - UClass在被UEGC后没有释放相应的绑定 [#289](https://github.com/Tencent/UnLua/issues/289)
 - 调用K2_DestroyActor后，立刻调用IsValid会返回true [#292](https://github.com/Tencent/UnLua/issues/292)
 - 关闭RPC会导致部分函数在非Editor模式下crash [#293](https://github.com/Tencent/UnLua/issues/293)
+- 索引DataTable时，如果没有这个key，会得到异常的返回值 [#298](https://github.com/Tencent/UnLua/pull/298)
 
 
 ### Removed
