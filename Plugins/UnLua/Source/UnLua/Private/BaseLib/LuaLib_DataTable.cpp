@@ -48,7 +48,11 @@ namespace UnLua
 
 		void* RowPtr = Table->FindRowUnchecked(RowName);
 
-		if (RowPtr != nullptr)
+		if (RowPtr == nullptr)
+		{
+			lua_pushnil(L);
+		}
+		else
 		{
 			const UScriptStruct* StructType = Table->GetRowStruct();
 
