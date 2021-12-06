@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.1.0] - 2021-11-30
+## [2.1.0] - 2021-12-6
 
 ### Added
 
@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 支持使用 `ADD_STATIC_PROPERTY` 宏来导出静态成员变量
 - 支持在Lua中直接访问 `EKeys`
 - 编辑器下动态绑定一个静态绑定的对象，会有警告日志避免误操作
+- `UnLuaDefaultParamCollector` 模块的默认值生成现在支持 `AutoCreateRefTerm` 标记
 
 ### Changed
 
@@ -38,6 +39,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - UMG里Image用到的Texture内存泄漏 [#288](https://github.com/Tencent/UnLua/issues/288)
 - UClass在被UEGC后没有释放相应的绑定 [#289](https://github.com/Tencent/UnLua/issues/289)
 - 调用K2_DestroyActor后，立刻调用IsValid会返回true [#292](https://github.com/Tencent/UnLua/issues/292)
+- 关闭RPC会导致部分函数在非Editor模式下crash [#293](https://github.com/Tencent/UnLua/issues/293)
 
 
 ### Removed
