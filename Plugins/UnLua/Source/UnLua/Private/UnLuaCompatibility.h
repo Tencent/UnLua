@@ -76,6 +76,11 @@ typedef UMulticastSparseDelegateProperty FMulticastSparseDelegateProperty;
 #define GetChildProperties(Function) (Function)->ChildProperties
 #endif
 
+#if ENGINE_MAJOR_VERSION >=5 && !UE_LARGE_WORLD_COORDINATES_DISABLED
+typedef double unluaReal;
+#else
+typedef float unluaReal;
+#endif
 
 template <typename T>
 struct TMulticastDelegateTraits

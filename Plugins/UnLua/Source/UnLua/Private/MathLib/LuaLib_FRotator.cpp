@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
@@ -34,9 +35,9 @@ static int32 FRotator_New(lua_State* L)
         }
     case 4:
         {
-            const float& Pitch = lua_tonumber(L, 2);
-            const float& Yaw = lua_tonumber(L, 3);
-            const float& Roll = lua_tonumber(L, 4);
+            const unluaReal& Pitch = lua_tonumber(L, 2);
+            const unluaReal& Yaw = lua_tonumber(L, 3);
+            const unluaReal& Roll = lua_tonumber(L, 4);
             new(Userdata) FRotator(Pitch, Yaw, Roll);
             break;
         }
@@ -114,7 +115,7 @@ static int32 FRotator_Set(lua_State* L)
         return 0;
     }
 
-    UnLua::TFieldSetter3<float>::Set(L, NumParams, &V->Pitch);
+    UnLua::TFieldSetter3<unluaReal>::Set(L, NumParams, &V->Pitch);
     return 0;
 }
 
@@ -145,7 +146,7 @@ BEGIN_EXPORT_REFLECTED_CLASS(FRotator)
     ADD_CONST_FUNCTION_EX("__mul", FRotator, operator*, float)
     ADD_FUNCTION_EX("Add", FRotator, operator+=, const FRotator&)
     ADD_FUNCTION_EX("Sub", FRotator, operator-=, const FRotator&)
-    ADD_FUNCTION_EX("Mul", FRotator, operator*=, float)
+    ADD_FUNCTION_EX("Mul", FRotator, operator*=, unluaReal)
     ADD_LIB(FRotatorLib)
 END_EXPORT_CLASS()
 
