@@ -45,6 +45,18 @@ public:
     void AddCount() { Counter++; }
 };
 
+USTRUCT(BlueprintType)
+struct UNLUATESTSUITE_API FUnLuaTestTableRow : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Title;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Level;
+};
+
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FIssule294Event, int32, Value1, UObject*, Value2);
 
 UCLASS()
