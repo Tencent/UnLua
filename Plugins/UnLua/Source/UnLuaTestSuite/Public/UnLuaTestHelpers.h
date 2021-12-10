@@ -26,6 +26,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
 
 DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
+
 UCLASS()
 class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
 {
@@ -38,6 +40,9 @@ public:
     UPROPERTY()
     FUnLuaTestSimpleHandler SimpleHandler;
 
+    UPROPERTY()
+    FIssue304Event Issue304Event;
+    
     UPROPERTY()
     int32 Counter;
 
