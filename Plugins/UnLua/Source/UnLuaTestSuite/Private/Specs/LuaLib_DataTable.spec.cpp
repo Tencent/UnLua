@@ -39,7 +39,7 @@ void FUnLuaLibDataTableSpec::Define()
             local DataTable = UE.UObject.Load('/Game/Tests/Misc/DataTable_BPTest.DataTable_BPTest')\
             local RowStruct = UE.UObject.Load('/Game/Tests/Misc/Struct_TableRow.Struct_TableRow')\
             local Row = RowStruct()\
-            local Result = UE.UDataTableFunctionLibrary.GetTableDataRowFromName(DataTable, 'Row_1', Row)\
+            local Result = UE.UDataTableFunctionLibrary.GetDataTableRowFromName(DataTable, 'Row_1', Row)\
             return Row.TestString\
             ";
             UnLua::RunChunk(L, Chunk);
@@ -51,7 +51,7 @@ void FUnLuaLibDataTableSpec::Define()
             const char* Chunk = "\
             local DataTable = UE.UObject.Load('/Game/Tests/Misc/DataTable_CppTest.DataTable_CppTest')\
             local Row = UE.FUnLuaTestTableRow()\
-            local Result = UE.UDataTableFunctionLibrary.GetTableDataRowFromName(DataTable, 'Row_1', Row)\
+            local Result = UE.UDataTableFunctionLibrary.GetDataTableRowFromName(DataTable, 'Row_1', Row)\
             return Row.Title\
             ";
             UnLua::RunChunk(L, Chunk);
