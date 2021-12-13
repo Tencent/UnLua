@@ -181,16 +181,25 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     if (!IsValid(Blueprint))
         return;
 
-    const UClass* Class = Blueprint->GeneratedClass;
-    const FString ClassName = Class->GetName();
-    FString OuterPath = Class->GetPathName();
-    int32 LastIndex;
-    if (OuterPath.FindLastChar('/', LastIndex))
-    {
-        OuterPath = OuterPath.Left(LastIndex + 1);
-    }
-    OuterPath = OuterPath.RightChop(6); // ignore "/Game/"
-    const FString FileName = FString::Printf(TEXT("%s%s%s.lua"), *GLuaSrcFullPath, *OuterPath, *ClassName);
+    UClass* Class = Blueprint->GeneratedClass;
+
+    const auto Func = Class->FindFunctionByName(FName("GetModuleName"));
+    if (!IsValid(Func))
+        return;
+
+    FString ModuleName;
+    Class->ProcessEvent(Func, &ModuleName);
+
+    if (ModuleName.IsEmpty())
+        return;
+
+    TArray<FString> ModuleNameParts;
+    ModuleName.ParseIntoArray(ModuleNameParts, TEXT("."));
+    const auto ClassName = ModuleNameParts.Last();
+
+    const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/"));
+    const auto FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *RelativePath);
+
     if (FPaths::FileExists(FileName))
     {
         UE_LOG(LogUnLua, Warning, TEXT("Lua file (%s) is already existed!"), *ClassName);
