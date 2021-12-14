@@ -15,20 +15,25 @@ public class Lua : ModuleRules
         ShadowVariableWarningLevel = WarningLevel.Off;
 
 #if UE_5_0_OR_LATER
-    if (Target.Platform == UnrealTargetPlatform.Win64)
+        if (Target.Platform == UnrealTargetPlatform.Win64)
 #else
-    if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
+        if (Target.Platform == UnrealTargetPlatform.Win32 || Target.Platform == UnrealTargetPlatform.Win64)
 #endif
         {
             PublicDefinitions.Add("_CRT_SECURE_NO_WARNINGS");
-            if (Target.bBuildEditor)
-                PrivateDefinitions.Add("LUA_BUILD_AS_DLL");
+            if (Target.LinkType != TargetLinkType.Monolithic)
+            {
+                PublicDefinitions.Add("LUA_BUILD_AS_DLL");
+            }
         }
 
         if (Target.Platform == UnrealTargetPlatform.Android || Target.Platform == UnrealTargetPlatform.Mac
              || Target.Platform == UnrealTargetPlatform.IOS || Target.Platform == UnrealTargetPlatform.Linux)
         {
-            PrivateDefinitions.Add("LUA_BUILD_AS_DLL");
+            if (Target.LinkType != TargetLinkType.Monolithic)
+            {
+                PublicDefinitions.Add("LUA_BUILD_AS_DLL");
+            }
             PrivateDefinitions.Add("LUA_USE_DLOPEN");
         }
 
