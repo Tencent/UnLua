@@ -42,12 +42,22 @@ public:
 
     UPROPERTY()
     FIssue304Event Issue304Event;
-    
+
     UPROPERTY()
     int32 Counter;
 
     UFUNCTION(BlueprintCallable)
     void AddCount() { Counter++; }
+};
+
+UCLASS()
+class UNLUATESTSUITE_API AUnLuaTestActor : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+    int32 TestForIssue300();
 };
 
 USTRUCT(BlueprintType)
