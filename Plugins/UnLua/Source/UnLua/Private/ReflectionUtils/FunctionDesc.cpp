@@ -654,8 +654,15 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         }
         else
         {
+            const FPropertyDesc* ReturnProperty = Properties[ReturnPropertyIndex];
+            FOutParmRec *RetParam = FindOutParmRec(OutParam, ReturnProperty->GetProperty());
+
+            check(RetParam);
             check(RetValueAddress);
-            Properties[ReturnPropertyIndex]->SetValueInternal(L, RetValueAddress, -1, true);        // set value for return property
+
+            // set value for return property
+            ReturnProperty->SetValueInternal(L, RetValueAddress, -1, true);
+            ReturnProperty->SetValueInternal(L, RetParam->PropAddr, -1, true);
         }
     }
 
