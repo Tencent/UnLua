@@ -15,24 +15,57 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FVector2D_New(lua_State *L)
+static int32 FVector2D_New(lua_State* L)
 {
-    void *Userdata = NewTypedUserdata(L, FVector2D);
-    FVector2D *V = new(Userdata) FVector2D(0.0f, 0.0f);
-    UnLua::TFieldSetter2<float>::Set(L, lua_gettop(L), &V->X);
-    return 1;
-}
-
-static int32 FVector2D_Set(lua_State *L)
-{
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FVector2D *V = (FVector2D*)GetCppInstanceFast(L, 1);
+    void* Userdata = NewTypedUserdata(L, FVector2D);
+
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FVector2D(ForceInitToZero);
+            break;
+        }
+    case 2:
+        {
+            const float& XY = lua_tonumber(L, 2);
+            new(Userdata) FVector2D(XY);
+            break;
+        }
+    case 3:
+        {
+            const float& X = lua_tonumber(L, 2);
+            const float& Y = lua_tonumber(L, 3);
+            new(Userdata) FVector2D(X, Y);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int32 FVector2D_Set(lua_State* L)
+{
+    const int32 NumParams = lua_gettop(L);
+    if (NumParams < 1)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -43,36 +76,49 @@ static int32 FVector2D_Set(lua_State *L)
     return 0;
 }
 
-static int32 FVector2D_Normalize(lua_State *L)
+static int32 FVector2D_Normalize(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    if (NumParams != 1)
+    const int32 NumParams = lua_gettop(L);
+    if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FVector2D *V = (FVector2D*)GetCppInstanceFast(L, 1);
+    FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    V->Normalize();
+    if (NumParams == 1)
+    {
+        V->Normalize();
+    }
+    else if (NumParams == 2)
+    {
+        const float& Tolerance = lua_tonumber(L, 2);
+        V->Normalize(Tolerance);
+    }
+    else
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+    }
+    
     return 0;
 }
 
-static int32 FVector2D_IsNormalized(lua_State *L)
+static int32 FVector2D_IsNormalized(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FVector2D *V = (FVector2D*)GetCppInstanceFast(L, 1);
+    FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -83,37 +129,37 @@ static int32 FVector2D_IsNormalized(lua_State *L)
     return 1;
 }
 
-static int32 FVector2D_UNM(lua_State *L)
+static int32 FVector2D_UNM(lua_State* L)
 {
-    FVector2D *V = (FVector2D*)GetCppInstanceFast(L, 1);
+    FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    void *Userdata = NewTypedUserdata(L, FVector2D);
+    void* Userdata = NewTypedUserdata(L, FVector2D);
     new(Userdata) FVector2D(-(*V));
     return 1;
 }
 
 static const luaL_Reg FVector2DLib[] =
 {
-    { "Set", FVector2D_Set },
-    { "Normalize", FVector2D_Normalize },
-    { "IsNormalized", FVector2D_IsNormalized },
-    { "Add", UnLua::TMathCalculation<FVector2D, UnLua::TAdd<float>, true>::Calculate },
-    { "Sub", UnLua::TMathCalculation<FVector2D, UnLua::TSub<float>, true>::Calculate },
-    { "Mul", UnLua::TMathCalculation<FVector2D, UnLua::TMul<float>, true>::Calculate },
-    { "Div", UnLua::TMathCalculation<FVector2D, UnLua::TDiv<float>, true>::Calculate },
-    { "__add", UnLua::TMathCalculation<FVector2D, UnLua::TAdd<float>>::Calculate },
-    { "__sub", UnLua::TMathCalculation<FVector2D, UnLua::TSub<float>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FVector2D, UnLua::TMul<float>>::Calculate },
-    { "__div", UnLua::TMathCalculation<FVector2D, UnLua::TDiv<float>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FVector2D>::ToString },
-    { "__unm", FVector2D_UNM },
-    { "__call", FVector2D_New },
-    { nullptr, nullptr }
+    {"Set", FVector2D_Set},
+    {"Normalize", FVector2D_Normalize},
+    {"IsNormalized", FVector2D_IsNormalized},
+    {"Add", UnLua::TMathCalculation<FVector2D, UnLua::TAdd<float>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FVector2D, UnLua::TSub<float>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FVector2D, UnLua::TMul<float>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FVector2D, UnLua::TDiv<float>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FVector2D, UnLua::TAdd<float>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FVector2D, UnLua::TSub<float>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FVector2D, UnLua::TMul<float>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FVector2D, UnLua::TDiv<float>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FVector2D>::ToString},
+    {"__unm", FVector2D_UNM},
+    {"__call", FVector2D_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FVector2D)
@@ -125,4 +171,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FVector2D)
     ADD_STATIC_FUNCTION(DistSquared)
     ADD_LIB(FVector2DLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FVector2D)

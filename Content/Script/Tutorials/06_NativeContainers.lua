@@ -59,7 +59,7 @@ function M:One_Pressed()
     print("========== TArray ==========")
     print("注：索引从1开始")
 
-    local array = UE4.TArray(0)
+    local array = UE.TArray(0)
     print("New:          ", dump_array(array))
 
     array:Add(1)
@@ -101,7 +101,7 @@ function M:Two_Pressed()
     Screen.Print("TSet")
 
     print("========== TSet ==========")
-    local set = UE4.TSet(0)
+    local set = UE.TSet(0)
     print("New:          ", dump_set(set))
 
     set:Add(1)
@@ -134,7 +134,7 @@ function M:Three_Pressed()
     Screen.Print("TMap")
 
     print("========== TMap ==========")
-    local map = UE4.TMap(0, true)
+    local map = UE.TMap(0, true)
     print("New:          ", dump_map(map))
 
     map:Add(1, true)

@@ -1,7 +1,7 @@
 [TOC]
 
 # Overview
-UnLua is a feature-rich and high optimized scripting solution for UE4. Developes can develop game logic using Lua with it, and it's possible to iterate game logic much more faster with Lua's hotload feature. This document will introduce the major features and basic programming pattern of UnLua.
+UnLua is a feature-rich and high optimized scripting solution for UE. Developes can develop game logic using Lua with it, and it's possible to iterate game logic much more faster with Lua's hotload feature. This document will introduce the major features and basic programming pattern of UnLua.
 
 ---
 
@@ -408,14 +408,14 @@ BEGIN_EXPORT_ENUM(EEye)
 END_EXPORT_ENUM(EEye)
 ```
 
-## Optional 'UE4' Namespace
-UnLua provides an option to add a namespace **'UE4'** to all classes and enums in the engine. You can find this option in **UnLua.Build.cs**.
+## Optional 'UE' Namespace
+UnLua provides an option to add a namespace **'UE'** to all classes and enums in the engine. You can find this option in **UnLua.Build.cs**.
 
 ![UE4_NAMESPACE](./Images/ue4_namespace.png)
 
 If this option is enabled, your Lua codes should be:
 ```
-local Position = UE4.FVector()
+local Position = UE.FVector()
 ```
 
 ---

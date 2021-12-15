@@ -15,25 +15,54 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FLinearColor_New(lua_State *L)
+static int32 FLinearColor_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FLinearColor);
-    FLinearColor *V = new(Userdata) FLinearColor(ForceInit);
-    UnLua::TFieldSetter4<float>::Set(L, NumParams, &V->R);
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FLinearColor);
+
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FLinearColor(ForceInitToZero);
+            break;
+        }
+    case 4:
+        {
+            const float& R = lua_tonumber(L, 2);
+            const float& G = lua_tonumber(L, 3);
+            const float& B = lua_tonumber(L, 4);
+            new(Userdata) FLinearColor(R, G, B);
+            break;
+        }
+    case 5:
+        {
+            const float& R = lua_tonumber(L, 2);
+            const float& G = lua_tonumber(L, 3);
+            const float& B = lua_tonumber(L, 4);
+            const float& A = lua_tonumber(L, 5);
+            new(Userdata) FLinearColor(R, G, B, A);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
     return 1;
 }
 
-static int32 FLinearColor_Set(lua_State *L)
+static int32 FLinearColor_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FLinearColor *V = (FLinearColor*)GetCppInstanceFast(L, 1);
+    FLinearColor* V = (FLinearColor*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FLinearColor!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -46,18 +75,18 @@ static int32 FLinearColor_Set(lua_State *L)
 
 static const luaL_Reg FLinearColorLib[] =
 {
-    { "Set", FLinearColor_Set },
-    { "Add", UnLua::TMathCalculation<FLinearColor, UnLua::TAdd<float>, true>::Calculate },
-    { "Sub", UnLua::TMathCalculation<FLinearColor, UnLua::TSub<float>, true>::Calculate },
-    { "Mul", UnLua::TMathCalculation<FLinearColor, UnLua::TMul<float>, true>::Calculate },
-    { "Div", UnLua::TMathCalculation<FLinearColor, UnLua::TDiv<float>, true>::Calculate },
-    { "__add", UnLua::TMathCalculation<FLinearColor, UnLua::TAdd<float>>::Calculate },
-    { "__sub", UnLua::TMathCalculation<FLinearColor, UnLua::TSub<float>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FLinearColor, UnLua::TMul<float>>::Calculate },
-    { "__div", UnLua::TMathCalculation<FLinearColor, UnLua::TDiv<float>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FLinearColor>::ToString },
-    { "__call", FLinearColor_New },
-    { nullptr, nullptr }
+    {"Set", FLinearColor_Set},
+    {"Add", UnLua::TMathCalculation<FLinearColor, UnLua::TAdd<float>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FLinearColor, UnLua::TSub<float>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FLinearColor, UnLua::TMul<float>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FLinearColor, UnLua::TDiv<float>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FLinearColor, UnLua::TAdd<float>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FLinearColor, UnLua::TSub<float>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FLinearColor, UnLua::TMul<float>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FLinearColor, UnLua::TDiv<float>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FLinearColor>::ToString},
+    {"__call", FLinearColor_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FLinearColor)
@@ -65,4 +94,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FLinearColor)
     ADD_NAMED_FUNCTION("Clamp", GetClamped)
     ADD_LIB(FLinearColorLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FLinearColor)

@@ -1,0 +1,173 @@
+// Tencent is pleased to support the open source community by making UnLua available.
+// 
+// Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+//
+// Licensed under the MIT License (the "License")) 
+// you may not use this file except in compliance with the License. You may obtain a copy of the License at
+//
+// http://opensource.org/licenses/MIT
+//
+// Unless required by applicable law or agreed to in writing, 
+// software distributed under the License is distributed on an "AS IS" BASIS, 
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+// See the License for the specific language governing permissions and limitations under the License.
+
+#include "InputCoreTypes.h"
+#include "UnLuaEx.h"
+#include "LuaCore.h"
+
+
+BEGIN_EXPORT_CLASS(EKeys)
+    ADD_STATIC_PROPERTY(AnyKey)
+
+    ADD_STATIC_PROPERTY(MouseX)
+    ADD_STATIC_PROPERTY(MouseY)
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
+    ADD_STATIC_PROPERTY(Mouse2D)
+#endif
+    ADD_STATIC_PROPERTY(MouseScrollUp)
+    ADD_STATIC_PROPERTY(MouseScrollDown)
+    ADD_STATIC_PROPERTY(MouseWheelAxis)
+
+    ADD_STATIC_PROPERTY(LeftMouseButton)
+    ADD_STATIC_PROPERTY(RightMouseButton)
+    ADD_STATIC_PROPERTY(MiddleMouseButton)
+    ADD_STATIC_PROPERTY(ThumbMouseButton)
+    ADD_STATIC_PROPERTY(ThumbMouseButton2)
+
+    ADD_STATIC_PROPERTY(BackSpace)
+    ADD_STATIC_PROPERTY(Tab)
+    ADD_STATIC_PROPERTY(Enter)
+    ADD_STATIC_PROPERTY(Pause)
+
+    ADD_STATIC_PROPERTY(CapsLock)
+    ADD_STATIC_PROPERTY(Escape)
+    ADD_STATIC_PROPERTY(SpaceBar)
+    ADD_STATIC_PROPERTY(PageUp)
+    ADD_STATIC_PROPERTY(PageDown)
+    ADD_STATIC_PROPERTY(End)
+    ADD_STATIC_PROPERTY(Home)
+
+    ADD_STATIC_PROPERTY(Left)
+    ADD_STATIC_PROPERTY(Up)
+    ADD_STATIC_PROPERTY(Right)
+    ADD_STATIC_PROPERTY(Down)
+
+    ADD_STATIC_PROPERTY(Insert)
+    ADD_STATIC_PROPERTY(Delete)
+
+    ADD_STATIC_PROPERTY(Zero)
+    ADD_STATIC_PROPERTY(One)
+    ADD_STATIC_PROPERTY(Two)
+    ADD_STATIC_PROPERTY(Three)
+    ADD_STATIC_PROPERTY(Four)
+    ADD_STATIC_PROPERTY(Five)
+    ADD_STATIC_PROPERTY(Six)
+    ADD_STATIC_PROPERTY(Seven)
+    ADD_STATIC_PROPERTY(Eight)
+    ADD_STATIC_PROPERTY(Nine)
+
+    ADD_STATIC_PROPERTY(A)
+    ADD_STATIC_PROPERTY(B)
+    ADD_STATIC_PROPERTY(C)
+    ADD_STATIC_PROPERTY(D)
+    ADD_STATIC_PROPERTY(E)
+    ADD_STATIC_PROPERTY(F)
+    ADD_STATIC_PROPERTY(G)
+    ADD_STATIC_PROPERTY(H)
+    ADD_STATIC_PROPERTY(I)
+    ADD_STATIC_PROPERTY(J)
+    ADD_STATIC_PROPERTY(K)
+    ADD_STATIC_PROPERTY(L)
+    ADD_STATIC_PROPERTY(M)
+    ADD_STATIC_PROPERTY(N)
+    ADD_STATIC_PROPERTY(O)
+    ADD_STATIC_PROPERTY(P)
+    ADD_STATIC_PROPERTY(Q)
+    ADD_STATIC_PROPERTY(R)
+    ADD_STATIC_PROPERTY(S)
+    ADD_STATIC_PROPERTY(T)
+    ADD_STATIC_PROPERTY(U)
+    ADD_STATIC_PROPERTY(V)
+    ADD_STATIC_PROPERTY(W)
+    ADD_STATIC_PROPERTY(X)
+    ADD_STATIC_PROPERTY(Y)
+    ADD_STATIC_PROPERTY(Z)
+
+    ADD_STATIC_PROPERTY(NumPadZero)
+    ADD_STATIC_PROPERTY(NumPadOne)
+    ADD_STATIC_PROPERTY(NumPadTwo)
+    ADD_STATIC_PROPERTY(NumPadThree)
+    ADD_STATIC_PROPERTY(NumPadFour)
+    ADD_STATIC_PROPERTY(NumPadFive)
+    ADD_STATIC_PROPERTY(NumPadSix)
+    ADD_STATIC_PROPERTY(NumPadSeven)
+    ADD_STATIC_PROPERTY(NumPadEight)
+    ADD_STATIC_PROPERTY(NumPadNine)
+
+    ADD_STATIC_PROPERTY(Multiply)
+    ADD_STATIC_PROPERTY(Add)
+    ADD_STATIC_PROPERTY(Subtract)
+    ADD_STATIC_PROPERTY(Decimal)
+    ADD_STATIC_PROPERTY(Divide)
+
+    ADD_STATIC_PROPERTY(F1)
+    ADD_STATIC_PROPERTY(F2)
+    ADD_STATIC_PROPERTY(F3)
+    ADD_STATIC_PROPERTY(F4)
+    ADD_STATIC_PROPERTY(F5)
+    ADD_STATIC_PROPERTY(F6)
+    ADD_STATIC_PROPERTY(F7)
+    ADD_STATIC_PROPERTY(F8)
+    ADD_STATIC_PROPERTY(F9)
+    ADD_STATIC_PROPERTY(F10)
+    ADD_STATIC_PROPERTY(F11)
+    ADD_STATIC_PROPERTY(F12)
+
+    ADD_STATIC_PROPERTY(NumLock)
+
+    ADD_STATIC_PROPERTY(ScrollLock)
+
+    ADD_STATIC_PROPERTY(LeftShift)
+    ADD_STATIC_PROPERTY(RightShift)
+    ADD_STATIC_PROPERTY(LeftControl)
+    ADD_STATIC_PROPERTY(RightControl)
+    ADD_STATIC_PROPERTY(LeftAlt)
+    ADD_STATIC_PROPERTY(RightAlt)
+    ADD_STATIC_PROPERTY(LeftCommand)
+    ADD_STATIC_PROPERTY(RightCommand)
+
+    ADD_STATIC_PROPERTY(Semicolon)
+    ADD_STATIC_PROPERTY(Equals)
+    ADD_STATIC_PROPERTY(Comma)
+    ADD_STATIC_PROPERTY(Underscore)
+    ADD_STATIC_PROPERTY(Hyphen)
+    ADD_STATIC_PROPERTY(Period)
+    ADD_STATIC_PROPERTY(Slash)
+    ADD_STATIC_PROPERTY(Tilde)
+    ADD_STATIC_PROPERTY(LeftBracket)
+    ADD_STATIC_PROPERTY(Backslash)
+    ADD_STATIC_PROPERTY(RightBracket)
+    ADD_STATIC_PROPERTY(Apostrophe)
+
+    ADD_STATIC_PROPERTY(Ampersand)
+    ADD_STATIC_PROPERTY(Asterix)
+    ADD_STATIC_PROPERTY(Caret)
+    ADD_STATIC_PROPERTY(Colon)
+    ADD_STATIC_PROPERTY(Dollar)
+    ADD_STATIC_PROPERTY(Exclamation)
+    ADD_STATIC_PROPERTY(LeftParantheses)
+    ADD_STATIC_PROPERTY(RightParantheses)
+    ADD_STATIC_PROPERTY(Quote)
+
+    ADD_STATIC_PROPERTY(A_AccentGrave)
+    ADD_STATIC_PROPERTY(E_AccentGrave)
+    ADD_STATIC_PROPERTY(E_AccentAigu)
+    ADD_STATIC_PROPERTY(C_Cedille)
+    ADD_STATIC_PROPERTY(Section)
+
+    ADD_STATIC_PROPERTY(Invalid)
+
+END_EXPORT_CLASS(EKeys)
+
+IMPLEMENT_EXPORTED_CLASS(EKeys)

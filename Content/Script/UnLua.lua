@@ -87,6 +87,7 @@ else
 	global_mt.__index = global_index
 	setmetatable(_G, global_mt)
 	UE4 = _G
+    UE = _G
 
 	print("WITH_UE4_NAMESPACE==false");
 end

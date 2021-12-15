@@ -10,7 +10,7 @@ end
 
 function M:OnAddNew()
     print("Root Add New")
-    local widget_class = UE4.UClass.Load("/Game/Tutorials/11_ReleaseUMG/ReleaseUMG_ItemParent.ReleaseUMG_ItemParent_C")
+    local widget_class = UE.UClass.Load("/Game/Tutorials/11_ReleaseUMG/ReleaseUMG_ItemParent.ReleaseUMG_ItemParent_C")
     local widget = NewObject(widget_class, self)
     self.VerticalBox_Panel:AddChildToVerticalBox(widget)
 end

@@ -3,11 +3,11 @@ require "UnLua"
 local ABP_AICharacter_C = Class()
 
 function ABP_AICharacter_C:AnimNotify_NotifyPhysics()
-	UE4.UBPI_Interfaces_C.ChangeToRagdoll(self.Pawn)
+	UE.UBPI_Interfaces_C.ChangeToRagdoll(self.Pawn)
 end
 
 function ABP_AICharacter_C:BlueprintBeginPlay()
-	self.Velocity = UE4.FVector()
+	self.Velocity = UE.FVector()
 	self.Pawn = self:TryGetPawnOwner()
 end
 
@@ -21,11 +21,11 @@ function ABP_AICharacter_C:BlueprintUpdateAnimation(DeltaTimeX)
 		return
 	end
 	self.Speed = Vel:Size()
-	local Character = Pawn:Cast(UE4.ABP_CharacterBase_C)
+	local Character = Pawn:Cast(UE.ABP_CharacterBase_C)
 	if Character then
 		if Character.IsDead and not self.IsDead then
 			self.IsDead = true
-			self.DeathAnimIndex = UE4.UKismetMathLibrary.RandomIntegerInRange(0, 2)
+			self.DeathAnimIndex = UE.UKismetMathLibrary.RandomIntegerInRange(0, 2)
 		end
 	end
 end

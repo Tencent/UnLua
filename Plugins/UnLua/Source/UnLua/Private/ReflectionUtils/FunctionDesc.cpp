@@ -19,6 +19,8 @@
 #include "LuaContext.h"
 #include "LuaFunctionInjection.h"
 #include "DefaultParamCollection.h"
+#include "UnLua.h"
+#include "UnLuaLatentAction.h"
 
 /**
  * Function descriptor constructor
@@ -330,7 +332,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #endif
 
     // call the UFuncton...
-#if !SUPPORTS_RPC_CALL && !WITH_EDITOR
+#if !SUPPORTS_RPC_CALL
     if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native) && NumCalls == 1)
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
@@ -419,8 +421,18 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
         Property->InitializeValue(Params);
         if (i == LatentPropertyIndex)
         {
+            const int32 ThreadRef = *((int32*)Userdata);
+            if(lua_type(L, FirstParamIndex + ParamIndex) == LUA_TUSERDATA)
+            {
+                // custom latent action info
+                FLatentActionInfo Info = UnLua::Get<FLatentActionInfo>(L, FirstParamIndex + ParamIndex, UnLua::TType<FLatentActionInfo>());
+                if(Info.Linkage == UUnLuaLatentAction::MAGIC_LEGACY_LINKAGE)
+                    Info.Linkage = ThreadRef;
+                Property->CopyValue(Params, &Info);
+                continue;
+            }
+
             // bind a callback to the latent function
-            int32 ThreadRef = *((int32*)Userdata);
             FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)GLuaCxt->GetManager());
             Property->CopyValue(Params, &LatentActionInfo);
             continue;
@@ -441,8 +453,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
 #endif
             CleanupFlags[i] = Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false);
         }
-        else 
-        if (!Property->IsOutParameter())
+        else if (!Property->IsOutParameter())
         {
             if (DefaultParams)
             {
@@ -454,6 +465,16 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
                     Property->CopyValue(Params, ValuePtr);
                     CleanupFlags[i] = true;
                 }
+            }
+            else
+            {
+#if ENABLE_TYPE_CHECK == 1
+                FString ErrorMsg = "";
+                if (!Property->CheckPropertyType(L, FirstParamIndex + ParamIndex, ErrorMsg))
+                {
+                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Invalid parameter type calling ufunction : %s,parameter : %d, error msg : %s"), *FuncName, ParamIndex, *ErrorMsg);
+                }
+#endif
             }
         }
         ++ParamIndex;
@@ -564,7 +585,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             }
         }
 
-        Property->GetValue(L, InParams, false);
+        Property->GetValue(L, InParams, !Property->IsReferenceParameter());
     }
 
     // object is also pushed, return is push when return

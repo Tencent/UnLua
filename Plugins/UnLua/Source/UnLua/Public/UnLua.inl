@@ -59,7 +59,8 @@ namespace UnLua
     FORCEINLINE int32 PushArgs(lua_State *L, T1 &&V1, T2&&... V2)
     {
         const int32 Ret1 = UnLua::Push(L, Forward<T1>(V1), bCopy);
-        return Ret1 + PushArgs<bCopy>(L, Forward<T2>(V2)...);
+        const int32 Ret2 = PushArgs<bCopy>(L, Forward<T2>(V2)...);
+        return Ret1 + Ret2;
     }
 
     
@@ -159,7 +160,7 @@ namespace UnLua
 
         virtual uint32 GetValueTypeHash(const void *Src) const override
         {
-#if ENGINE_MINOR_VERSION > 22
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
             static_assert(TModels<CGetTypeHashable, T>::Value, "type must support GetTypeHash()!");
 #else
             static_assert(THasGetTypeHash<T>::Value, "type must support GetTypeHash()!");

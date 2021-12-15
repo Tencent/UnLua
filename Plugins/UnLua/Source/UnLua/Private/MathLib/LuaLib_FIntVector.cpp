@@ -15,25 +15,51 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FIntVector_New(lua_State *L)
+static int32 FIntVector_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FIntVector);
-    FIntVector *V = new(Userdata) FIntVector(0.0f, 0.0f, 0.0f);
-    UnLua::TFieldSetter3<int32>::Set(L, NumParams, &V->X);
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FIntVector);
+
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FIntVector(ForceInitToZero);
+            break;
+        }
+    case 2:
+        {
+            const int32& XYZ = lua_tointeger(L, 2);
+            new(Userdata) FIntVector(XYZ);
+            break;
+        }
+    case 4:
+        {
+            const int32& X = lua_tointeger(L, 2);
+            const int32& Y = lua_tointeger(L, 3);
+            const int32& Z = lua_tointeger(L, 4);
+            new(Userdata) FIntVector(X, Y, Z);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
     return 1;
 }
 
-static int32 FIntVector_Set(lua_State *L)
+static int32 FIntVector_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FIntVector *V = (FIntVector*)GetCppInstanceFast(L, 1);
+    FIntVector* V = (FIntVector*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntVector!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -44,16 +70,16 @@ static int32 FIntVector_Set(lua_State *L)
     return 0;
 }
 
-static int32 FIntVector_SizeSquared(lua_State *L)
+static int32 FIntVector_SizeSquared(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FIntVector *V = (FIntVector*)GetCppInstanceFast(L, 1);
+    FIntVector* V = (FIntVector*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntVector!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -65,40 +91,41 @@ static int32 FIntVector_SizeSquared(lua_State *L)
     return 1;
 }
 
-static int32 FIntVector_UNM(lua_State *L)
+static int32 FIntVector_UNM(lua_State* L)
 {
-    FIntVector *V = (FIntVector*)GetCppInstanceFast(L, 1);
+    FIntVector* V = (FIntVector*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntVector!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    void *Userdata = NewTypedUserdata(L, FIntVector);
+    void* Userdata = NewTypedUserdata(L, FIntVector);
     new(Userdata) FIntVector(-V->X, -V->Y, -V->Z);
     return 1;
 }
 
 static const luaL_Reg FIntVectorLib[] =
 {
-    { "Set", FIntVector_Set },
-    { "SizeSquared", FIntVector_SizeSquared },
-    { "Add", UnLua::TMathCalculation<FIntVector, UnLua::TAdd<int32>, true>::Calculate },
-    { "Sub", UnLua::TMathCalculation<FIntVector, UnLua::TSub<int32>, true>::Calculate },
-    { "Mul", UnLua::TMathCalculation<FIntVector, UnLua::TMul<int32>, true>::Calculate },
-    { "Div", UnLua::TMathCalculation<FIntVector, UnLua::TDiv<int32>, true>::Calculate },
-    { "__add", UnLua::TMathCalculation<FIntVector, UnLua::TAdd<int32>>::Calculate },
-    { "__sub", UnLua::TMathCalculation<FIntVector, UnLua::TSub<int32>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FIntVector, UnLua::TMul<int32>>::Calculate },
-    { "__div", UnLua::TMathCalculation<FIntVector, UnLua::TDiv<int32>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FIntVector>::ToString },
-    { "__unm", FIntVector_UNM },
-    { "__call", FIntVector_New },
-    { nullptr, nullptr }
+    {"Set", FIntVector_Set},
+    {"SizeSquared", FIntVector_SizeSquared},
+    {"Add", UnLua::TMathCalculation<FIntVector, UnLua::TAdd<int32>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FIntVector, UnLua::TSub<int32>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FIntVector, UnLua::TMul<int32>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FIntVector, UnLua::TDiv<int32>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FIntVector, UnLua::TAdd<int32>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FIntVector, UnLua::TSub<int32>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FIntVector, UnLua::TMul<int32>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FIntVector, UnLua::TDiv<int32>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FIntVector>::ToString},
+    {"__unm", FIntVector_UNM},
+    {"__call", FIntVector_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FIntVector)
     ADD_FUNCTION(Size)
     ADD_LIB(FIntVectorLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FIntVector)

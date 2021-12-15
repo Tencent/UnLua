@@ -1,7 +1,7 @@
 [TOC]
 
 # 概述
-UnLua是一个功能丰富、高度优化的UE4代码解决方案。开发者可以使用Lua来进行游戏逻辑编写，借助于Lua的热重载特性，可以获得快得多的游戏逻辑迭代速度。本文将会介绍UnLua的主要功能和基础编程模式。
+UnLua是一个功能丰富、高度优化的UE脚本解决方案。开发者可以使用Lua来进行游戏逻辑编写，借助于Lua的热重载特性，可以获得快得多的游戏逻辑迭代速度。本文将会介绍UnLua的主要功能和基础编程模式。
 
 ---
 
@@ -419,14 +419,14 @@ BEGIN_EXPORT_ENUM(EEye)
 END_EXPORT_ENUM(EEye)
 ```
 
-## 可选的 'UE4' 命名空间
-UnLua 提供了一个选项，可以将所有的类和枚举都放到 **'UE4'** 这个命名空间下。 可以在 `UnLua.Build.cs` 里找到。
+## 可选的 'UE' 命名空间
+UnLua 提供了一个选项，可以将所有的类和枚举都放到 **'UE'** 这个命名空间下。 可以在 `UnLua.Build.cs` 里找到。
 
 ![UE4_NAMESPACE](./Images/ue4_namespace.png)
 
 如果启用了这个选项，在Lua里应该这么写：
 ```
-local Position = UE4.FVector()
+local Position = UE.FVector()
 ```
 
 ---

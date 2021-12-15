@@ -19,7 +19,7 @@ function M:ReceiveBeginPlay()
     ]]
     Screen.Print(msg)
     
-    local tutorial = UE4.FTutorialObject("教程")
+    local tutorial = UE.FTutorialObject("教程")
     msg = string.format("tutorial -> %s\n\ntutorial:GetTitle() -> %s", tostring(tutorial), tutorial:GetTitle())
     Screen.Print(msg)
 end

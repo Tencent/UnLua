@@ -29,7 +29,14 @@ FUnLuaEditorStyle::FUnLuaEditorStyle()
 
     SetContentRoot(IPluginManager::Get().FindPlugin("UnLua")->GetBaseDir() / TEXT("Resources"));
 
-    Set("UnLuaEditor.CreateLuaTemplate", new IMAGE_BRUSH("icon_luatemplate_40x", Icon40x40));
+    Set("UnLuaEditor.UnLuaLogo", new IMAGE_BRUSH("Icons/icon_unlua_logo_40x", Icon40x40));
+    Set("UnLuaEditor.Status_NotBound", new IMAGE_BRUSH("Icons/icon_unlua_logo_40x", Icon40x40));
+    Set("UnLuaEditor.Status_Bound", new IMAGE_BRUSH("Icons/icon_status_bound_40x", Icon40x40));
+    Set("UnLuaEditor.Status_BoundButInvalid", new IMAGE_BRUSH("Icons/icon_status_bound_but_invalid_40x", Icon40x40));
+    Set("UnLuaEditor.CreateLuaTemplate", new IMAGE_BRUSH("Icons/icon_create_template_40x", Icon40x40));
+    Set("UnLuaEditor.CopyAsRelativePath", new IMAGE_BRUSH("Icons/icon_copy_40x", Icon40x40));
+    Set("UnLuaEditor.BindToLua", new IMAGE_BRUSH("Icons/icon_bind_to_lua_40x", Icon40x40));
+    Set("UnLuaEditor.UnbindFromLua", new IMAGE_BRUSH("Icons/icon_unbind_from_lua_40x", Icon40x40));
 
     FSlateStyleRegistry::RegisterSlateStyle(*this);
 }

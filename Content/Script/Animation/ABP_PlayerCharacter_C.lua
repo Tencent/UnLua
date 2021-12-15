@@ -3,14 +3,14 @@ require "UnLua"
 local ABP_PlayerCharacter_C = Class()
 
 function ABP_PlayerCharacter_C:AnimNotify_NotifyPhysics()
-	UE4.UBPI_Interfaces_C.ChangeToRagdoll(self.Pawn)
+	UE.UBPI_Interfaces_C.ChangeToRagdoll(self.Pawn)
 end
 
 function ABP_PlayerCharacter_C:BlueprintBeginPlay()
-	self.Velocity = UE4.FVector()
-	self.ForwardVec = UE4.FVector()
-	self.RightVec = UE4.FVector()
-	self.ControlRot = UE4.FRotator()
+	self.Velocity = UE.FVector()
+	self.ForwardVec = UE.FVector()
+	self.RightVec = UE.FVector()
+	self.ControlRot = UE.FRotator()
 	self.Pawn = self:TryGetPawnOwner()
 end
 
@@ -23,11 +23,11 @@ function ABP_PlayerCharacter_C:BlueprintUpdateAnimation(DeltaTimeX)
 	if not Vel then
 		return
 	end
-	local Character = Pawn:Cast(UE4.ABP_CharacterBase_C)
+	local Character = Pawn:Cast(UE.ABP_CharacterBase_C)
 	if Character then
 		if Character.IsDead and not self.IsDead then
 			self.IsDead = true
-			self.DeathAnimIndex = UE4.UKismetMathLibrary.RandomIntegerInRange(0, 2)
+			self.DeathAnimIndex = UE.UKismetMathLibrary.RandomIntegerInRange(0, 2)
 		end
 	end
 	local Speed = Vel:Size()
@@ -40,7 +40,7 @@ function ABP_PlayerCharacter_C:BlueprintUpdateAnimation(DeltaTimeX)
 		local RightVec = Rot:GetRightVector(self.RightVec)
 		local DP0 = Vel:Dot(RightVec)
 		local DP1 = Vel:Dot(ForwardVec)
-		local Angle = UE4.UKismetMathLibrary.Acos(DP1)
+		local Angle = UE.UKismetMathLibrary.Acos(DP1)
 		if DP0 > 0.0 then
 			self.Direction = Angle
 		else

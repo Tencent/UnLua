@@ -1,9 +1,9 @@
 local M = {}
 
-local PrintString = UE4.UKismetSystemLibrary.PrintString
+local PrintString = UE.UKismetSystemLibrary.PrintString
 
 function M.Print(text, color, duration)
-    color = color or UE4.FLinearColor(1, 1, 1, 1)
+    color = color or UE.FLinearColor(1, 1, 1, 1)
     duration = duration or 100
     PrintString(nil, text, true, false, color, duration)
 end

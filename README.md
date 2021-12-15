@@ -1,9 +1,13 @@
 ![LOGO](./Images/UnLua.png)
 
-# 概述
-**UnLua**是适用于UE4的一个高度优化的**Lua脚本解决方案**。它遵循UE4的编程模式，功能丰富且易于学习，UE4程序员可以零学习成本使用。
+[![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Tencent/UnLua/blob/master/LICENSE.TXT)
+[![release](https://img.shields.io/github/v/release/Tencent/UnLua)](https://github.com/Tencent/UnLua/releases)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/Tencent/UnLua/pulls)
 
-# 在UE4中使用Lua
+# 概述
+**UnLua**是适用于UE的一个高度优化的**Lua脚本解决方案**。它遵循UE的编程模式，功能丰富且易于学习，UE程序员可以零学习成本使用。
+
+# 在UE中使用Lua
 * 直接访问所有的UCLASS, UPROPERTY, UFUNCTION, USTRUCT, UENUM，无须胶水代码。
 * 替换蓝图中定义的实现 ( Event / Function )。
 * 处理各类事件通知 ( Replication / Animation / Input )。
@@ -18,7 +22,7 @@
 
 # 平台支持
 * 运行平台：Windows / Android / iOS / Linux / OSX
-* 引擎版本：Unreal Engine 4.17.x - Unreal Engine 4.26.x
+* 引擎版本：Unreal Engine 4.17.x - Unreal Engine 5.x
 
 **注意**: 4.17.x 和 4.18.x 版本需要对 Build.cs 做一些修改。
 
@@ -28,7 +32,7 @@
   2. 重新启动你的UE工程
 
 ## 开始UnLua之旅
-**注意**: 如果你是一位UE4萌新，推荐使用更详细的[图文版教学](Docs/Quickstart_For_UE4_Newbie.md)继续以下步骤。
+**注意**: 如果你是一位UE萌新，推荐使用更详细的[图文版教学](Docs/Quickstart_For_UE_Newbie.md)继续以下步骤。
   1. 新建蓝图后打开，添加接口 `UnLuaInterface`
   2. 在接口的 `GetModule` 函数中填入Lua文件路径，如 `GameModes.BP_MyGameMode_C`
   3. 点击菜单栏中的 `Lua Template` 图标生成Lua模版文件
@@ -46,12 +50,14 @@
   * [09_StaticExport](Content/Script/Tutorials/09_StaticExport.lua) 静态导出自定义类型到Lua使用
   * [10_Replications](Content/Script/Tutorials/10_Replications.lua) 覆盖网络复制事件
   * [11_ReleaseUMG](Content/Script/Tutorials/11_ReleaseUMG.lua) 释放UMG相关对象
+  * [12_CustomLoader](Content/Script/Tutorials/12_CustomLoader.lua) 自定义加载器
 
 # 模块说明
 * UnLua 主要运行时模块
 * UnLuaEditor 编辑器模块，提供Lua模版生成和commandlet控制台命令
 * UnLuaDefaultParamCollector 编码模块，收集UFUNCTION的默认参数
 * UnLuaIntelliSense 编码模块，生成用于智能提示的符号信息到内部使用的IDE（即将开放），默认不启用
+* UnLuaTestSuite 自动化测试模块，覆盖了UnLua提供的API的规范测试以及一些Issue对应的回归测试
 
 # 文档
 * [功能清单](Docs/Features.md)：更详细的功能列表

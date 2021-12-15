@@ -15,87 +15,161 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FTransform_New(lua_State *L)
+static int32 FTransform_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FTransform);
-    FTransform *V = new(Userdata) FTransform;
-    if (NumParams > 1)
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FTransform);
+
+    switch (NumParams)
     {
-        FQuat* Quat = (FQuat*)GetCppInstanceFast(L, 2);
-        if (Quat)
+    case 1:
         {
-            V->SetRotation(*Quat);
+            new(Userdata) FTransform();
+            return 1;
+        }
+    case 2:
+        {
+            const FQuat* Rotation = (FQuat*)GetCppInstanceFast(L, 2);
+            if (Rotation)
+            {
+                new(Userdata) FTransform(*Rotation);
+                return 1;
+            }
+
+            // TODO: not supported currently
+            // if (IsType(L, 2, UnLua::TType<FVector>()))
+            // {
+            //     const FVector* Translation = (FVector*)GetCppInstanceFast(L, 2);;
+            //     if (Translation)
+            //     {
+            //         new(Userdata) FTransform(*Translation);
+            //         return 1;
+            //     }
+            // }
+            //
+            // if (IsType(L, 2, UnLua::TType<FRotator>()))
+            // {
+            //     const FRotator* Rotation = (FRotator*)GetCppInstanceFast(L, 2);
+            //     if (Rotation)
+            //     {
+            //         new(Userdata) FTransform(*Rotation);
+            //         return 1;
+            //     }
+            // }
+            //
+            // if (IsType(L, 2, UnLua::TType<FQuat>()))
+            // {
+            //     const FQuat* Quat = (FQuat*)GetCppInstanceFast(L, 2);
+            //     if (Quat)
+            //     {
+            //         new(Userdata) FTransform(*Quat);
+            //         return 1;
+            //     }
+            // }
+
+            break;
+        }
+    case 3:
+        {
+            const FQuat* Rotation = (FQuat*)GetCppInstanceFast(L, 2);
+            const FVector* Translation = (FVector*)GetCppInstanceFast(L, 3);
+            if (Rotation && Translation)
+            {
+                new(Userdata) FTransform(*Rotation, *Translation);
+                return 1;
+            }
+
+            break;
+        }
+    case 4:
+        {
+            const FQuat* Rotation = (FQuat*)GetCppInstanceFast(L, 2);
+            const FVector* Translation = (FVector*)GetCppInstanceFast(L, 3);
+            const FVector* Scale = (FVector*)GetCppInstanceFast(L, 4);
+            if (Rotation && Translation && Scale)
+            {
+                new(Userdata) FTransform(*Rotation, *Translation, *Scale);
+                return 1;
+            }
+
+            break;
         }
     }
-    if (NumParams > 2)
-    {
-        FVector* Vector = (FVector*)GetCppInstanceFast(L, 3);
-        if (Vector)
-        {
-            V->SetTranslation(*Vector);
-        }
-    }
-    if (NumParams > 3)
-    {
-        FVector* Vector = (FVector*)GetCppInstanceFast(L, 4);
-        if (Vector)
-        {
-            V->SetScale3D(*Vector);
-        }
-    }
-    return 1;
+
+    UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+    return 0;
 }
 
-static int32 FTransform_Blend(lua_State *L)
+static int32 FTransform_Blend(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 3)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FTransform *A = (FTransform*)GetCppInstanceFast(L, 1);
+    FTransform* A = (FTransform*)GetCppInstanceFast(L, 1);
     if (!A)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform A!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
-    FTransform *B = (FTransform*)GetCppInstanceFast(L, 2);
+    FTransform* B = (FTransform*)GetCppInstanceFast(L, 2);
     if (!B)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform B!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    if (NumParams > 3)
+    FTransform* C = (FTransform*)GetCppInstanceFast(L, 3);
+    if (!C)
     {
-        FTransform *C = (FTransform*)GetCppInstanceFast(L, 3);
-        if (!C)
-        {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform C!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
-        }
-        float Alpha = lua_tonumber(L, 4);
-        A->Blend(*B, *C, Alpha);
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform C!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
     }
-    else
+    const float Alpha = lua_tonumber(L, 4);
+    A->Blend(*B, *C, Alpha);
+    return 0;
+}
+
+static int32 FTransform_BlendWith(lua_State* L)
+{
+    const int32 NumParams = lua_gettop(L);
+    if (NumParams < 3)
     {
-        float Alpha = lua_tonumber(L, 3);
-        A->BlendWith(*B, Alpha);
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
     }
+
+    FTransform* A = (FTransform*)GetCppInstanceFast(L, 1);
+    if (!A)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform A!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+    FTransform* B = (FTransform*)GetCppInstanceFast(L, 2);
+    if (!B)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform B!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    const float Alpha = lua_tonumber(L, 3);
+    A->BlendWith(*B, Alpha);
+
     return 0;
 }
 
 static const luaL_Reg FTransformLib[] =
 {
-    { "Blend", FTransform_Blend },
-    { "Mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, true, UnLua::TMul<FTransform, float>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, false, UnLua::TMul<FTransform, float>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FTransform>::ToString },
-    { "__call", FTransform_New },
-    { nullptr, nullptr }
+    {"Blend", FTransform_Blend},
+    {"BlendWith", FTransform_BlendWith},
+    {"Mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, true, UnLua::TMul<FTransform, float>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FTransform, UnLua::TMul<FTransform>, false, UnLua::TMul<FTransform, float>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FTransform>::ToString},
+    {"__call", FTransform_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FTransform)
@@ -114,4 +188,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FTransform)
     ADD_FUNCTION_EX("Add", FTransform&, operator+=, const FTransform&)
     ADD_LIB(FTransformLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FTransform)

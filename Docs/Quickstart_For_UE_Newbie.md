@@ -1,8 +1,8 @@
 #  快速入门示例
 
-本文站在UE4新手视角，以GameModeBase为父类作为用例，说明如何通过Lua来编写/覆盖蓝图逻辑。其他类型同样可以依此类推。
+本文站在UE新手视角，以GameModeBase为父类作为用例，说明如何通过Lua来编写/覆盖蓝图逻辑。其他类型同样可以依此类推。
 
-如果你是已经是UE4的老手了，建议直接[开始UnLua之旅](../README.md#开始UnLua之旅)
+如果你是已经是UE的老手了，建议直接[开始UnLua之旅](../README.md#开始UnLua之旅)
 
 ##  1. 新建蓝图
 ![新建蓝图](Images/create_blueprint.png)

@@ -1,8 +1,8 @@
 require "UnLua"
 
 local Screen = require "Tutorials.Screen"
-local FVector2D = UE4.FVector2D
-local FLinearColor = UE4.FLinearColor
+local FVector2D = UE.FVector2D
+local FLinearColor = UE.FLinearColor
 
 local M = Class()
 

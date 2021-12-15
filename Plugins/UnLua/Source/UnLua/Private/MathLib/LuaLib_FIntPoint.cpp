@@ -15,25 +15,50 @@
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
-static int32 FIntPoint_New(lua_State *L)
+static int32 FIntPoint_New(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
-    void *Userdata = NewTypedUserdata(L, FIntPoint);
-    FIntPoint *V = new(Userdata) FIntPoint(0.0f, 0.0f);
-    UnLua::TFieldSetter2<int32>::Set(L, NumParams, &V->X);
+    const int32 NumParams = lua_gettop(L);
+    void* Userdata = NewTypedUserdata(L, FIntPoint);
+    switch (NumParams)
+    {
+    case 1:
+        {
+            new(Userdata) FIntPoint(ForceInitToZero);
+            break;
+        }
+    case 2:
+        {
+            const int32& XY = lua_tointeger(L, 2);
+            new(Userdata) FIntPoint(XY);
+            break;
+        }
+    case 3:
+        {
+            const int32& X = lua_tointeger(L, 2);
+            const int32& Y = lua_tointeger(L, 3);
+            new(Userdata) FIntPoint(X, Y);
+            break;
+        }
+    default:
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+    }
+    
     return 1;
 }
 
-static int32 FIntPoint_Set(lua_State *L)
+static int32 FIntPoint_Set(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FIntPoint *V = (FIntPoint*)GetCppInstanceFast(L, 1);
+    FIntPoint* V = (FIntPoint*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntPoint!"), ANSI_TO_TCHAR(__FUNCTION__));
@@ -44,35 +69,35 @@ static int32 FIntPoint_Set(lua_State *L)
     return 0;
 }
 
-static int32 FIntPoint_UNM(lua_State *L)
+static int32 FIntPoint_UNM(lua_State* L)
 {
-    FIntPoint *V = (FIntPoint*)GetCppInstanceFast(L, 1);
+    FIntPoint* V = (FIntPoint*)GetCppInstanceFast(L, 1);
     if (!V)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntPoint!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    void *Userdata = NewTypedUserdata(L, FIntPoint);
+    void* Userdata = NewTypedUserdata(L, FIntPoint);
     new(Userdata) FIntPoint(-V->X, -V->Y);
     return 1;
 }
 
 static const luaL_Reg FIntPointLib[] =
 {
-    { "Set", FIntPoint_Set },
-    { "Add", UnLua::TMathCalculation<FIntPoint, UnLua::TAdd<int32>, true>::Calculate },
-    { "Sub", UnLua::TMathCalculation<FIntPoint, UnLua::TSub<int32>, true>::Calculate },
-    { "Mul", UnLua::TMathCalculation<FIntPoint, UnLua::TMul<int32>, true>::Calculate },
-    { "Div", UnLua::TMathCalculation<FIntPoint, UnLua::TDiv<int32>, true>::Calculate },
-    { "__add", UnLua::TMathCalculation<FIntPoint, UnLua::TAdd<int32>>::Calculate },
-    { "__sub", UnLua::TMathCalculation<FIntPoint, UnLua::TSub<int32>>::Calculate },
-    { "__mul", UnLua::TMathCalculation<FIntPoint, UnLua::TMul<int32>>::Calculate },
-    { "__div", UnLua::TMathCalculation<FIntPoint, UnLua::TDiv<int32>>::Calculate },
-    { "__tostring", UnLua::TMathUtils<FIntPoint>::ToString },
-    { "__unm", FIntPoint_UNM },
-    { "__call", FIntPoint_New },
-    { nullptr, nullptr }
+    {"Set", FIntPoint_Set},
+    {"Add", UnLua::TMathCalculation<FIntPoint, UnLua::TAdd<int32>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FIntPoint, UnLua::TSub<int32>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FIntPoint, UnLua::TMul<int32>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FIntPoint, UnLua::TDiv<int32>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FIntPoint, UnLua::TAdd<int32>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FIntPoint, UnLua::TSub<int32>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FIntPoint, UnLua::TMul<int32>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FIntPoint, UnLua::TDiv<int32>>::Calculate},
+    {"__tostring", UnLua::TMathUtils<FIntPoint>::ToString},
+    {"__unm", FIntPoint_UNM},
+    {"__call", FIntPoint_New},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FIntPoint)
@@ -80,4 +105,5 @@ BEGIN_EXPORT_REFLECTED_CLASS(FIntPoint)
     ADD_FUNCTION(SizeSquared)
     ADD_LIB(FIntPointLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FIntPoint)

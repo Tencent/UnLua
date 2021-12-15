@@ -83,27 +83,17 @@ int32 UObject_Load(lua_State *L)
  */
 static int32 UObject_IsValid(lua_State *L)
 {
-    int32 NumParams = lua_gettop(L);
-    bool bValid = false;
+    const int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        UE_LOG(LogUnLua, Error, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
     }
-    else
-    {
-        UObject* Object = UnLua::GetUObject(L, 1);
-        if (!Object)
-        {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
-        }
-        else
-        {
-            bValid = GLuaCxt->IsUObjectValid(Object);
-        }
-    }
-
+    
+    UObject* Object = UnLua::GetUObject(L, 1);
+    const bool bValid = GLuaCxt->IsUObjectValid(Object) && IsValid(Object);
     lua_pushboolean(L, bValid);
-    return bValid ? 1 : 0;
+    return 1;
 }
 
 /**

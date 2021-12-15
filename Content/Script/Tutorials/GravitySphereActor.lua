@@ -1,7 +1,7 @@
 require "UnLua"
 
-local FVector = UE4.FVector
-local FLinearColor = UE4.FLinearColor
+local FVector = UE.FVector
+local FLinearColor = UE.FLinearColor
 
 local M = Class()
 

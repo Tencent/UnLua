@@ -19,7 +19,9 @@
 class IParamValue
 {
 public:
-    virtual ~IParamValue() {}
+    virtual ~IParamValue()
+    {
+    }
 
     virtual const void* GetValue() const = 0;
 };
@@ -28,14 +30,28 @@ template <typename T>
 class TParamValue : public IParamValue
 {
 public:
-    explicit TParamValue(const T &InValue)
+    explicit TParamValue(const T& InValue)
         : Value(InValue)
-    {}
+    {
+    }
 
     virtual const void* GetValue() const override { return &Value; }
 
 private:
     T Value;
+};
+
+class FScriptArrayParamValue : public IParamValue
+{
+public:
+    explicit FScriptArrayParamValue()
+    {
+    }
+
+    virtual const void* GetValue() const override { return &Value; }
+
+private:
+    FScriptArray Value;
 };
 
 typedef TParamValue<bool> FBoolParamValue;
@@ -52,6 +68,8 @@ typedef TParamValue<FVector2D> FVector2DParamValue;
 typedef TParamValue<FRotator> FRotatorParamValue;
 typedef TParamValue<FLinearColor> FLinearColorParamValue;
 typedef TParamValue<FColor> FColorParamValue;
+typedef TParamValue<FScriptDelegate> FScriptDelegateParamValue;
+typedef TParamValue<FMulticastScriptDelegate> FMulticastScriptDelegateParamValue;
 
 struct FParameterCollection
 {
@@ -66,4 +84,3 @@ struct FFunctionCollection
 extern TMap<FName, FFunctionCollection> GDefaultParamCollection;
 
 extern void CreateDefaultParamCollection();
-extern void DestroyDefaultParamCollection();

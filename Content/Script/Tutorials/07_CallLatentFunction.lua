@@ -11,7 +11,7 @@ local M = Class()
 local function run(self, name)
     Screen.Print(string.format("协程%s：启动", name))
     for i = 1, 5 do
-        UE4.UKismetSystemLibrary.Delay(self, 1)
+        UE.UKismetSystemLibrary.Delay(self, 1)
         Screen.Print(string.format("协程%s：%d", name, i))
     end
     Screen.Print(string.format("协程%s：结束", name))

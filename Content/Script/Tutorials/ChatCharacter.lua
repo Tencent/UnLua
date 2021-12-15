@@ -29,11 +29,11 @@ function M:SpaceBar_Pressed()
 end
 
 function M:MoveForward(AxisValue)
-	self:AddMovementInput(UE4.FVector(AxisValue, 0, 0), 100, false)
+	self:AddMovementInput(UE.FVector(AxisValue, 0, 0), 100, false)
 end
 
 function M:MoveRight(AxisValue)
-    self:AddMovementInput(UE4.FVector(0, AxisValue, 0), 100, false)
+    self:AddMovementInput(UE.FVector(0, AxisValue, 0), 100, false)
 end
 
 return M

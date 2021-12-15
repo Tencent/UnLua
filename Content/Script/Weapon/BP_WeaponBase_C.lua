@@ -23,13 +23,13 @@ end
 function BP_WeaponBase_C:StartFire()
 	self.IsFiring = true
 	self:FireAmmunition()
-	self.TimerHandle = UE4.UKismetSystemLibrary.K2_SetTimerDelegate({self, BP_WeaponBase_C.Refire}, self.FireInterval, true)
+	self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({self, BP_WeaponBase_C.Refire}, self.FireInterval, true)
 end
 
 function BP_WeaponBase_C:StopFire()
 	if self.IsFiring then
 		self.IsFiring = false
-		UE4.UKismetSystemLibrary.K2_ClearTimerHandle(self, self.TimerHandle)
+		UE.UKismetSystemLibrary.K2_ClearTimerHandle(self, self.TimerHandle)
 	end
 end
 
@@ -75,9 +75,9 @@ function BP_WeaponBase_C:InstantFire()
 	local ForwardVector = Transform.Rotation:GetForwardVector()
 	local End = ForwardVector * self.WeaponTraceDistance
 	End.Add(Start)
-	--local HitResult = UE4.FHitResult()
+	--local HitResult = UE.FHitResult()
 	--local ActorsToIgnore = TArray(AActor)
-	local bResult = UE4.UKismetSystemLibrary.LineTraceSingle(self, Start, End, UE4.ETraceTypeQuery.Weapon, false, nil, UE4.EDrawDebugTrace.None, nil, true)
+	local bResult = UE.UKismetSystemLibrary.LineTraceSingle(self, Start, End, UE.ETraceTypeQuery.Weapon, false, nil, UE.EDrawDebugTrace.None, nil, true)
 	if bResult then
 		-- todo:
 	end
@@ -87,23 +87,23 @@ function BP_WeaponBase_C:GetFireInfo()
 	--[[
 	local TraceStart = FVector()
 	local TraceDirection = FVector()
-	UE4.UBPI_Interfaces_C.GetWeaponTraceInfo(self.Instigator, TraceStart, TraceDirection)
+	UE.UBPI_Interfaces_C.GetWeaponTraceInfo(self.Instigator, TraceStart, TraceDirection)
 	]]
-	local TraceStart, TraceDirection = UE4.UBPI_Interfaces_C.GetWeaponTraceInfo(self.Instigator)
+	local TraceStart, TraceDirection = UE.UBPI_Interfaces_C.GetWeaponTraceInfo(self.Instigator)
 	local Delta = TraceDirection * self.WeaponTraceDistance
 	local TraceEnd = TraceStart + Delta
-	local HitResult = UE4.FHitResult()
+	local HitResult = UE.FHitResult()
 	--local ActorsToIgnore = TArray(AActor)
-	local bResult = UE4.UKismetSystemLibrary.LineTraceSingle(self, TraceStart, TraceEnd, UE4.ETraceTypeQuery.Weapon, false, nil, UE4.EDrawDebugTrace.None, HitResult, true)
+	local bResult = UE.UKismetSystemLibrary.LineTraceSingle(self, TraceStart, TraceEnd, UE.ETraceTypeQuery.Weapon, false, nil, UE.EDrawDebugTrace.None, HitResult, true)
 	local Translation = self.SkeletalMesh:GetSocketLocation(self.MuzzleSocketName)
 	local Rotation
 	if bResult then
 		local ImpactPoint = HitResult.ImpactPoint
-		Rotation = UE4.UKismetMathLibrary.FindLookAtRotation(Translation, ImpactPoint)
+		Rotation = UE.UKismetMathLibrary.FindLookAtRotation(Translation, ImpactPoint)
 	else
-		Rotation = UE4.UKismetMathLibrary.FindLookAtRotation(Translation, TraceEnd)
+		Rotation = UE.UKismetMathLibrary.FindLookAtRotation(Translation, TraceEnd)
 	end
-	local Transform = UE4.FTransform(Rotation:ToQuat(), Translation)
+	local Transform = UE.FTransform(Rotation:ToQuat(), Translation)
 	return Transform
 end
 

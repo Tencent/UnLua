@@ -13,11 +13,11 @@ function BP_ProjectileBase_C:ReceiveBeginPlay()
 end
 
 function BP_ProjectileBase_C:OnComponentHit_Sphere(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
-	local Character = OtherActor:Cast(UE4.ABP_CharacterBase_C)
+	local Character = OtherActor:Cast(UE.ABP_CharacterBase_C)
 	if Character then
 		Character.BoneName = Hit.BoneName;
 		local Controller = self.Instigator:GetController()
-		UE4.UGameplayStatics.ApplyDamage(Character, self.Damage, Controller, self.Instigator, self.DamageType)
+		UE.UGameplayStatics.ApplyDamage(Character, self.Damage, Controller, self.Instigator, self.DamageType)
 	end
 	self:K2_DestroyActor()
 end

@@ -15,3 +15,5 @@ IOS/
 *.sln
 *.VC.db
 *.xcworkspace
+/.idea
+/TPSProject.sln.DotSettings.user
