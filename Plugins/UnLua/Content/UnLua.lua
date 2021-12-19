@@ -20,28 +20,26 @@ local function Index(t, k)
 	local super = mt
 	while super do
 		local v = rawget(super, k)
-        if v~= nil then
-            if rawequal(v, NotExist) then
-                return nil
-            end
+		if v ~= nil and not rawequal(v, NotExist) then
 			rawset(t, k, v)
 			return v
 		end
 		super = rawget(super, "Super")
 	end
-    local p = mt[k]
 
-    if p ~= nil then
-        if type(p) == "userdata" then
-            return GetUProperty(t, p)
-        elseif type(p) == "function" then
-            rawset(t, k, p)
-        elseif rawequal(p, NotExist) then
-            return nil
-        end
-    else
-        rawset(mt, k, NotExist)
-    end
+	local p = mt[k]
+	if p ~= nil then
+		if type(p) == "userdata" then
+			return GetUProperty(t, p)
+		elseif type(p) == "function" then
+			rawset(t, k, p)
+		elseif rawequal(p, NotExist) then
+			return nil
+		end
+	else
+		rawset(mt, k, NotExist)
+	end
+
 	return p
 end
 
@@ -65,7 +63,7 @@ local function Class(super_name)
 	new_class.__newindex = NewIndex
 	new_class.Super = super_class
 
-    return new_class
+  return new_class
 end
 
 local function global_index(t, k)
@@ -87,6 +85,7 @@ else
 	global_mt.__index = global_index
 	setmetatable(_G, global_mt)
 	UE4 = _G
+    UE = _G
 
 	print("WITH_UE4_NAMESPACE==false");
 end
