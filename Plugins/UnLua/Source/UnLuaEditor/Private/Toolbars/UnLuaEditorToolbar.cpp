@@ -34,11 +34,14 @@ void FUnLuaEditorToolbar::BindCommands()
     CommandList->MapAction(Commands.UnbindFromLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::UnbindFromLua_Executed));
 }
 
-void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
+void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject)
 {
+    if (!InContextObject)
+        return;
+
     ToolbarBuilder.BeginSection(NAME_None);
 
-    const auto Blueprint = Cast<UBlueprint>(ContextObject);
+    const auto Blueprint = Cast<UBlueprint>(InContextObject);
     const auto BindingStatus = GetBindingStatus(Blueprint);
     FString InStyleName;
     switch (BindingStatus)
@@ -59,8 +62,9 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
 
     ToolbarBuilder.AddComboButton(
         FUIAction(),
-        FOnGetContent::CreateLambda([&, BindingStatus]()
+        FOnGetContent::CreateLambda([&, BindingStatus, InContextObject]()
         {
+            ContextObject = InContextObject;
             const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
             FMenuBuilder MenuBuilder(true, CommandList);
             if (BindingStatus == NotBound)
@@ -83,10 +87,13 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
     ToolbarBuilder.EndSection();
 }
 
-TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender()
+TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender(UObject* InContextObject)
 {
     TSharedRef<FExtender> ToolbarExtender(new FExtender());
-    const auto ExtensionDelegate = FToolBarExtensionDelegate::CreateRaw(this, &FUnLuaEditorToolbar::BuildToolbar);
+    const auto ExtensionDelegate = FToolBarExtensionDelegate::CreateLambda([this, InContextObject](FToolBarBuilder& ToolbarBuilder)
+    {
+        BuildToolbar(ToolbarBuilder, InContextObject);
+    });
     ToolbarExtender->AddToolBarExtension("Debugging", EExtensionHook::After, CommandList, ExtensionDelegate);
     return ToolbarExtender;
 }
