@@ -558,4 +558,4 @@ FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName,
     return ClassDesc;
 }
 
-FReflectionRegistry GReflectionRegistry;        // global reflection registry
+UNLUA_API FReflectionRegistry GReflectionRegistry;        // global reflection registry
