@@ -391,10 +391,7 @@ void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFun
 
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     UFunction *OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
-    if (GLuaCxt->IsUObjectValid(OverriddenFunc))
-    {   
-        RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
-    }
+    RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
 #endif
 }
 
