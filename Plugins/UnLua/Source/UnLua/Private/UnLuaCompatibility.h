@@ -76,10 +76,13 @@ typedef UMulticastSparseDelegateProperty FMulticastSparseDelegateProperty;
 #define GetChildProperties(Function) (Function)->ChildProperties
 #endif
 
-#if ENGINE_MAJOR_VERSION >=5 && !UE_LARGE_WORLD_COORDINATES_DISABLED
-typedef double unluaReal;
-#else
+#if ENGINE_MAJOR_VERSION >=5
+#include "Misc/LargeWorldCoordinates.h"
+#if UE_LARGE_WORLD_COORDINATES_DISABLED
 typedef float unluaReal;
+#else
+typedef double unluaReal;
+#endif
 #endif
 
 template <typename T>
