@@ -22,22 +22,24 @@ struct FUnLuaTest_Issue276 : FUnLuaTestBase
 {
     virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue276/Issue276"); }
 
+    virtual bool InstantTest() override
+    {
+        return true;
+    }
+
     virtual bool SetUp() override
     {
         FUnLuaTestBase::SetUp();
 
-        AddLatent([&]()
-        {
-            lua_getglobal(L, "Flag");
-            const bool Flag = (bool)lua_toboolean(L, -1);
-            RUNNER_TEST_TRUE(Flag);
-            return true;
-        }, 2.0f);
+        SimulateTick(1.0f);
+        lua_getglobal(L, "Flag");
+        const bool Flag = !!lua_toboolean(L, -1);
+        RUNNER_TEST_TRUE(Flag);
 
         return true;
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue276, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue276, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

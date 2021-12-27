@@ -15,6 +15,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Tickable.h"
+#include "Engine/LatentActionManager.h"
 #include "UnLuaLatentAction.generated.h"
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FUnLuaLatentActionCallback, int32, InLinkage);

@@ -13,30 +13,39 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaTestCommon.h"
+#include "Components/CapsuleComponent.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-struct FUnLuaTest_Issue286 : FUnLuaTestBase
+struct FUnLuaTest_Issue293 : FUnLuaTestBase
 {
-    virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue286/Issue286"); }
-
     virtual bool InstantTest() override
     {
         return true;
     }
-    
+
     virtual bool SetUp() override
     {
         FUnLuaTestBase::SetUp();
 
-        lua_getglobal(L, "Result");
-        const char* Error = lua_tostring(L, -1);
-        RUNNER_TEST_EQUAL(Error, TEXT("passed"));
+        GetTestRunner().AddExpectedError(TEXT("Invalid parameter"), EAutomationExpectedErrorFlags::Contains);
+        const char* Chunk1 = "\
+            return UE.UUnLuaTestFunctionLibrary.TestForIssue293('A', 1)\
+            ";
+        UnLua::RunChunk(L, Chunk1);
+
+        const char* Chunk2 = "\
+            return UE.UUnLuaTestFunctionLibrary.TestForIssue293('A', 1, UE.TArray(UE.FColor))\
+            ";
+        UnLua::RunChunk(L, Chunk2);
+        const auto Actual = (int32)lua_tointeger(L, -1);
+        RUNNER_TEST_EQUAL(Actual, 0);
+
         return true;
     }
 };
 
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue286, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue293, TEXT("UnLua.Regression.Issue293 关闭RPC会导致部分函数在非Editor模式下crash"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

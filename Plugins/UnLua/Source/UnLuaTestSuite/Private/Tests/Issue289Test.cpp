@@ -31,14 +31,7 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 	{
 		FUnLuaTestBase::SetUp();
 
-		const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
-		FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-		WorldContext.SetCurrentWorld(World);
-		FCoreUObjectDelegates::PostLoadMapWithWorld.Broadcast(World);
-
-		const FURL URL;
-		World->InitializeActorsForPlay(URL);
-		World->BeginPlay();
+		const auto World = GetWorld();
 
 		const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/Game/Tests/Regression/Issue289/BP_UnLuaTestActor_Issue289.BP_UnLuaTestActor_Issue289_C"));
 		const auto Actor = World->SpawnActor(ActorClass);
@@ -52,8 +45,6 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 		World->Tick(LEVELTICK_All, SMALL_NUMBER);
 		Actor->Destroy();
 
-		GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains);
-
 		CollectGarbage(RF_NoFlags, true);
 
 		UnLua::RunChunk(L, Chunk);
@@ -63,6 +54,6 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 	}
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue289, TEXT("UnLua.Regression.Issue289 UClass在被UEGC后没有释放相应的绑定"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue289, TEXT("UnLua.Regression.Issue289 UClass在被UEGC后没有释放相应的绑定"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

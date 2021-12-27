@@ -36,6 +36,7 @@ public class UnLuaTestSuite : ModuleRules
 				"Core",
 				"CoreUObject",
 				"Engine",
+				"Slate"
 			}
 		);
 
@@ -43,11 +44,10 @@ public class UnLuaTestSuite : ModuleRules
 			new[]
 			{
 				"Lua",
-				"UnLua",
-				"AITestSuite",
+				"UnLua"
 			}
 		);
-		
+
 		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.Add("UnrealEd");

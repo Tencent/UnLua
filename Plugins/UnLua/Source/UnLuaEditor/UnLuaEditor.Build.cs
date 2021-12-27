@@ -21,42 +21,45 @@ public class UnLuaEditor : ModuleRules
     {
         bEnforceIWYU = false;
 
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-        
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
         PublicIncludePaths.AddRange(
-            new string[] {
+            new string[]
+            {
             }
-            );
-                
-        
+        );
+
         string EngineDir = Path.GetFullPath(Target.RelativeEnginePath);
         PrivateIncludePaths.AddRange(
-            new string[] {
+            new[]
+            {
                 "UnLuaEditor/Private",
                 "UnLua/Private",
-                Path.Combine(EngineDir, @"Source/Editor/AnimationBlueprintEditor/Private"),
+                Path.Combine(EngineDir, "Source/Editor/AnimationBlueprintEditor/Private"),
+                Path.Combine(EngineDir, "Source/Runtime/Slate/Private"),
             }
-            );
-
+        );
 
         PrivateIncludePathModuleNames.AddRange(
-            new string[]
+            new[]
             {
                 "Kismet",
                 "MainFrame",
                 "AnimationBlueprintEditor",
+                "Slate",
+                "SlateCore",
                 "Persona",
             }
-            );
+        );
 
-        
         PrivateDependencyModuleNames.AddRange(
-            new string[]
+            new[]
             {
                 "Core",
                 "CoreUObject",
                 "Engine",
                 "UnrealEd",
+                "ApplicationCore",
                 "Projects",
                 "InputCore",
                 "UMG",
@@ -64,16 +67,15 @@ public class UnLuaEditor : ModuleRules
                 "SlateCore",
                 "UnLua"
             }
-            );
-
+        );
 
         DynamicallyLoadedModuleNames.AddRange(
-            new string[]
+            new[]
             {
                 "Kismet",
                 "MainFrame",
                 "AnimationBlueprintEditor",
             }
-            );
+        );
     }
 }

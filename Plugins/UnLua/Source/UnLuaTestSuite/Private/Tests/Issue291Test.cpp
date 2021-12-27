@@ -29,40 +29,33 @@ struct FUnLuaTest_Issue291 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
-        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-        WorldContext.SetCurrentWorld(World);
-
-        const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/Game/Tests/Regression/Issue291/BP_UnLuaTestActor_Issue291.BP_UnLuaTestActor_Issue291_C"));
-        const auto Actor1 = World->SpawnActor(ActorClass);
-        const auto Actor2 = World->SpawnActor(ActorClass);
-
-        UnLua::PushUObject(L, Actor1);
-        lua_setglobal(L, "G_Actor1");
-        UnLua::PushUObject(L, Actor2);
-        lua_setglobal(L, "G_Actor2");
+        const auto World = GetWorld();
+        UnLua::PushUObject(L, World);
+        lua_setglobal(L, "G_World");
 
         const char* Chunk = "\
-            local function func() end\
-            G_Actor1.Capsule.OnInputTouchBegin:Add(G_Actor2.Capsule, func)\
+            local Flag = false\
+            local function test(x, y, z)\
+                Flag = true\
+            end\
+            local ActorClass = UE.UClass.Load('/Game/Tests/Regression/Issue291/BP_UnLuaTestActor_Issue291.BP_UnLuaTestActor_Issue291_C')\
+            local Actor = G_World:SpawnActor(ActorClass)\
+            Actor.Capsule.OnInputTouchBegin:Add(Actor.Capsule, test)\
+            collectgarbage('collect')\
+            \
+            Actor.Capsule.OnInputTouchBegin:Broadcast(0)\
+            return Flag\
         ";
 
         UnLua::RunChunk(L, Chunk);
 
-        const auto Components = Actor1->GetComponentsByClass(UCapsuleComponent::StaticClass());
-        const auto CapsuleComponent = (UCapsuleComponent*)Components[0];
-
-        RUNNER_TEST_TRUE(CapsuleComponent->OnInputTouchBegin.IsBound());
-
-        lua_gc(L, LUA_GCCOLLECT, 0);
-        CollectGarbage(GARBAGE_COLLECTION_KEEPFLAGS, true);
-
-        RUNNER_TEST_TRUE(CapsuleComponent->OnInputTouchBegin.IsBound());
-
+        const auto Result = !!lua_toboolean(L, -1);
+        RUNNER_TEST_FALSE(Result); // 当前版本设计如此，详细讨论请参考 https://github.com/Tencent/UnLua/issues/291
+        
         return true;
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue291, TEXT("UnLua.Regression.Issue291 delegate绑定本身不在lua里有引用的object会提前销毁"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue291, TEXT("UnLua.Regression.Issue291 delegate绑定本身不在lua里有引用的object，在绑定后触发gc会导致无法调用绑定的函数"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

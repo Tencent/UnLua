@@ -16,6 +16,7 @@
 #include "UnLuaTemplate.h"
 #include "GameFramework/DefaultPawn.h"
 #include "Misc/AutomationTest.h"
+#include "Engine.h"
 #include "UnLuaTestHelpers.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

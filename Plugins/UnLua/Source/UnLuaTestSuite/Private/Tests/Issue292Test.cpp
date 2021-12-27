@@ -29,10 +29,7 @@ struct FUnLuaTest_Issue292 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
-        FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);
-        WorldContext.SetCurrentWorld(World);
-
+        const auto World = GetWorld();
         AActor* Actor = World->SpawnActor(AActor::StaticClass());
         UnLua::PushUObject(L, Actor, false);
         lua_setglobal(L, "G_Actor");
@@ -50,6 +47,6 @@ struct FUnLuaTest_Issue292 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue292, TEXT("UnLua.Regression.Issue292 actor调用K2_DestroyActor后，立刻调用IsValid会返回true"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue292, TEXT("UnLua.Regression.Issue292 actor调用K2_DestroyActor后，立刻调用IsValid会返回true"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

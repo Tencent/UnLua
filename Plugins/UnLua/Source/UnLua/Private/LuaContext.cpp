@@ -87,7 +87,6 @@ void FLuaContext::RegisterDelegates()
 #endif
 
     FWorldDelegates::OnWorldCleanup.AddRaw(this, &FLuaContext::OnWorldCleanup);
-    FCoreDelegates::OnBeginFrame.AddRaw(this, &FLuaContext::OnBeginFrame);
     FCoreDelegates::OnPostEngineInit.AddRaw(this, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
     FCoreDelegates::OnPreExit.AddRaw(this, &FLuaContext::OnPreExit);                 // called before StaticExit()
     FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaContext::OnAsyncLoadingFlushUpdate);
@@ -366,90 +365,100 @@ bool FLuaContext::TryToBindLua(UObjectBaseUtility* Object)
         return false;
     }
 
-    if (!Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))           // filter out CDO and ArchetypeObjects
+    const bool bIsCDO = Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject); 
+    if (bIsCDO)
     {
-        UClass* Class = Object->GetClass();
-        if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>() || Class->HasAnyClassFlags(CLASS_NewerVersionExists))             // filter out UPackage and UClass
+        // filter out class default and template objects
+        return false;
+    }
+    
+    UClass* Class = Object->GetClass();
+    if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>() || Class->HasAnyClassFlags(CLASS_NewerVersionExists))
+    {
+        // filter out UPackage and UClass and recompiled objects
+        return false;
+    }
+
+    static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
+
+    //all bind operation should be in game thread, include dynamic bind
+    if (Class->ImplementsInterface(InterfaceClass))                             // static binding
+    {
+        // fliter some object in bp nest case
+        // RF_WasLoaded & RF_NeedPostLoad?
+        UObject* Outer = Object->GetOuter();
+        if ((Outer)
+            && (Outer->GetFName().IsEqual("WidgetTree")) && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
         {
             return false;
         }
 
-        static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
-
-        //!!!Fix!!!
-        //all bind operation should be in gamethread,include dynamic bind
-        if (Class->ImplementsInterface(InterfaceClass))                             // static binding
+        if (GWorld)
         {
-            // fliter some object in bp nest case
-            // RF_WasLoaded & RF_NeedPostLoad?
-            UObject* Outer = Object->GetOuter();
-            if ((Outer)
-                && (Outer->GetFName().IsEqual("WidgetTree")) && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
+            FString ObjectName;
+            Object->GetFullName(GWorld, ObjectName);
+            if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
             {
+                UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
                 return false;
             }
+        }
 
-            if (GWorld)
+        UFunction* Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
+        if (Func)
+        {
+            // native func may not be bind in level bp
+            if (!Func->GetNativeFunc())
             {
-                FString ObjectName;
-                Object->GetFullName(GWorld, ObjectName);
-                if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
+                Func->Bind();
+                if (!Func->GetNativeFunc())
                 {
-                    UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
+                    UE_LOG(LogUnLua, Warning, TEXT("TryToBindLua: bind native function failed for GetModuleName in object %s"), *Object->GetName());
                     return false;
                 }
             }
 
-            UFunction* Func = Class->FindFunctionByName(FName("GetModuleName"));    // find UFunction 'GetModuleName'. hard coded!!!
-            if (Func)
+            if (IsInGameThread())
             {
-                // native func may not be bind in level bp
-                if (!Func->GetNativeFunc())
+                FString ModuleName;
+                UObject* DefaultObject = Class->GetDefaultObject();             // get CDO
+                DefaultObject->UObject::ProcessEvent(Func, &ModuleName);        // force to invoke UObject::ProcessEvent(...)
+                if (ModuleName.Len() < 1)
                 {
-                    Func->Bind();
-                    if (!Func->GetNativeFunc())
-                    {
-                        UE_LOG(LogUnLua, Warning, TEXT("TryToBindLua: bind native function failed for GetModuleName in object %s"), *Object->GetName());
-                        return false;
-                    }
+                    return false;
                 }
 
-                if (IsInGameThread())
+                if (Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
                 {
-                    FString ModuleName;
-                    UObject* DefaultObject = Class->GetDefaultObject();             // get CDO
-                    DefaultObject->UObject::ProcessEvent(Func, &ModuleName);        // force to invoke UObject::ProcessEvent(...)
-                    if (ModuleName.Len() < 1)
-                    {
-                        return false;
-                    }
+                    OnDelayBindObject((UObject*)Object);
+                    return false;
+                }
 
-                    if (!Object->HasAllFlags(RF_NeedPostLoad | RF_NeedInitialization))
-                    {
-                        return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);   // bind!!!
-                    }
-                    else
-                    {
-                        // PostLoadObjects.Add((UObject*)Object);
-                        OnDelayBindObject((UObject*)Object);
-                    }
-                }
-                else
+#if !UE_BUILD_SHIPPING
+                if (GLuaDynamicBinding.IsValid(Class) && GLuaDynamicBinding.ModuleName != ModuleName)
                 {
-                    if (IsAsyncLoading())
-                    {
-                        // check FAsyncLoadingThread::IsMultithreaded()?
-                        FScopeLock Lock(&Async2MainCS);
-                        Candidates.Add((UObject*)Object);                           // mark the UObject as a candidate
-                    }
+                    UE_LOG(LogUnLua, Warning, TEXT("Dynamic binding '%s' ignored as it conflicts static binding '%s'."), *GLuaDynamicBinding.ModuleName, *ModuleName);
                 }
+#endif
+
+                return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);   // bind!!!
+            }
+            
+            if (IsAsyncLoading())
+            {
+                // check FAsyncLoadingThread::IsMultithreaded()?
+                FScopeLock Lock(&Async2MainCS);
+                Candidates.Add((UObject*)Object);                           // mark the UObject as a candidate
             }
         }
-        else if (GLuaDynamicBinding.IsValid(Class))                                 // dynamic binding
-        {
-            return Manager->Bind(Object, Class, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
-        }
+        return false;
     }
+
+    if (GLuaDynamicBinding.IsValid(Class))                                 // dynamic binding
+    {
+        return Manager->Bind(Object, Class, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
+    }
+
     return false;
 }
 
@@ -526,25 +535,6 @@ void FLuaContext::OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanu
 #endif
 }
 
-
-void FLuaContext::OnBeginFrame()
-{
-    for (int i = PostLoadObjects.Num() - 1; 0 <= i; --i)
-    {
-        UObject* Object = PostLoadObjects[i];
-        if (!IsUObjectValid(Object))
-        {
-            PostLoadObjects.RemoveAt(i);
-        }
-        else if (!Object->HasAnyFlags(RF_NeedPostLoad))
-        {
-            UE_LOG(LogUnLua, Log, TEXT("TryToBindLua[%llu]: Bind object %s,%p"), GFrameCounter, *Object->GetName(), Object);
-            TryToBindLua(Object);
-            PostLoadObjects.RemoveAt(i);
-        }
-    }
-}
-
 /**
  * Callback for FCoreDelegates::OnPostEngineInit
  */
@@ -571,8 +561,6 @@ void FLuaContext::OnPostEngineInit()
 void FLuaContext::OnPreExit()
 {
     Cleanup(true);                                  // full clean up
-
-    DestroyDefaultParamCollection();                // destroy data of default parameters of UFunctions
 }
 
 /**
@@ -637,21 +625,21 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
  */
 void FLuaContext::OnCrash()
 {
-    if (IsInGameThread())
-	{
-        const FString LogStr = UnLua::GetLuaCallStack(L);         // get lua call stack...
+    if (!IsInGameThread())
+        return;
 
-        if (!LogStr.IsEmpty())
-        {
-            UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
-        }
-        else
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("Lua state is not created."));
-        }
+    const FString LogStr = UnLua::GetLuaCallStack(L);
 
-        GLog->Flush();
+    if (LogStr.IsEmpty())
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("Lua state has not been created yet."));
     }
+    else
+    {
+        UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
+    }
+
+    GLog->Flush();
 }
 
 
@@ -1089,7 +1077,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
 
             GReflectionRegistry.Cleanup();                      // clean up reflection registry
 
-            PostLoadObjects.Empty();
             GameInstances.Empty();
             CandidateInputComponents.Empty();
             FCoreUObjectDelegates::GetPostGarbageCollect().Remove(OnPostGarbageCollectHandle);

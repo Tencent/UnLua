@@ -332,7 +332,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #endif
 
     // call the UFuncton...
-#if !SUPPORTS_RPC_CALL && !WITH_EDITOR
+#if !SUPPORTS_RPC_CALL
     if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native) && NumCalls == 1)
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
@@ -453,8 +453,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
 #endif
             CleanupFlags[i] = Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false);
         }
-        else 
-        if (!Property->IsOutParameter())
+        else if (!Property->IsOutParameter())
         {
             if (DefaultParams)
             {
@@ -466,6 +465,16 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
                     Property->CopyValue(Params, ValuePtr);
                     CleanupFlags[i] = true;
                 }
+            }
+            else
+            {
+#if ENABLE_TYPE_CHECK == 1
+                FString ErrorMsg = "";
+                if (!Property->CheckPropertyType(L, FirstParamIndex + ParamIndex, ErrorMsg))
+                {
+                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Invalid parameter type calling ufunction : %s,parameter : %d, error msg : %s"), *FuncName, ParamIndex, *ErrorMsg);
+                }
+#endif
             }
         }
         ++ParamIndex;

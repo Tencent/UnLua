@@ -14,7 +14,6 @@
 
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
-#include "Tests/AutomationCommon.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
@@ -37,6 +36,6 @@ struct FUnLuaTest_Issue284 : FUnLuaTestBase
     }
 };
 
-IMPLEMENT_AI_LATENT_TEST(FUnLuaTest_Issue284, TEXT("UnLua.Regression.Issue284 require不存在的lib会崩"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue284, TEXT("UnLua.Regression.Issue284 require不存在的lib会崩"))
 
 #endif //WITH_DEV_AUTOMATION_TESTS

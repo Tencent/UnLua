@@ -198,36 +198,20 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     NewFunc->Bind();
     NewFunc->StaticLink(true);
 
-    /*NewFunc->PropertiesSize = TemplateFunction->PropertiesSize;
-    NewFunc->PropertiesSize = TemplateFunction->PropertiesSize;
-    NewFunc->MinAlignment = TemplateFunction->MinAlignment;
-    int32 NumParams = NewFunc->NumParms;
-    if (NumParams > 0)
-    {
-        NewFunc->PropertyLink = CastField<FProperty>(GetChildProperties(NewFunc));
-        FProperty *SrcProperty = CastField<FProperty>(GetChildProperties(TemplateFunction));
-        FProperty *DestProperty = NewFunc->PropertyLink;
-        while (true)
-        {
-            check(SrcProperty && DestProperty);
-            DestProperty->Link(Ar);
-            //DestProperty->ArrayDim = SrcProperty->ArrayDim;
-            //DestProperty->ElementSize = SrcProperty->ElementSize;
-            //DestProperty->PropertyFlags = SrcProperty->PropertyFlags;
-            DestProperty->RepIndex = SrcProperty->RepIndex;
-            *((int32*)((uint8*)DestProperty + Offset)) = *((int32*)((uint8*)SrcProperty + Offset)); // set Offset_Internal (Offset_Internal set by DestProperty->Link(Ar) is incorrect because of incorrect Outer class)
-            if (--NumParams < 1)
-            {
-                break;
-            }
-            DestProperty->PropertyLinkNext = CastField<FProperty>(DestProperty->Next);
-            DestProperty = DestProperty->PropertyLinkNext;
-            SrcProperty = SrcProperty->PropertyLinkNext;
-        }
-    }*/
     OuterClass->AddFunctionToFunctionMap(NewFunc, NewFuncName);
     GReflectionRegistry.RegisterFunction(NewFunc);
     NewFunc->ClearInternalFlags(EInternalObjectFlags::Native);
+
+    if (OuterClass->IsRooted() || GUObjectArray.IsDisregardForGC(OuterClass))
+    {
+        NewFunc->AddToRoot();
+    }
+    else
+    {
+        NewFunc->Next = OuterClass->Children;
+        OuterClass->Children = NewFunc;
+    }
+
     return NewFunc;
 }
 
@@ -237,26 +221,29 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
  * 3. Remove from root if necessary
  * 4. Clear 'Native' flag if necessary
  */
-void RemoveUFunction(UFunction *Function, UClass *OuterClass)
+void RemoveUFunction(UFunction* Function, UClass* OuterClass)
 {
-	UE_LOG(UnLuaDelegate, Verbose, TEXT("Clean %s"), *Function->GetName());
+    UE_LOG(UnLuaDelegate, Verbose, TEXT("Clean %s"), *Function->GetName());
 
-    if (OuterClass->IsValidLowLevel() && OuterClass->FindFunctionByName(Function->GetFName()))
+    if (OuterClass->IsValidLowLevel())
     {
 #if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s]"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName());
+        const FString Result = OuterClass->FindFunctionByName(*Function->GetName()) ? "OK" : "Not Exists";
+        UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s] Result=%s"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName(), *Result);
 #endif
         OuterClass->RemoveFunctionFromFunctionMap(Function);
-    }
-    else
-    {
-        if (OuterClass->IsValidLowLevel())
+
+        if(OuterClass->Children == Function)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("RemoveUFunction: [%p], [%s] of Class : [%p] failed for class invalid"), Function, *Function->GetName(), OuterClass);
+            OuterClass->Children = Function->Next;
         }
         else
         {
-            UE_LOG(LogUnLua, Log, TEXT("RemoveUFunction: [%p], [%s] From Class : [%p], [%s] for Class has no that function"), Function, *Function->GetName(), OuterClass, *OuterClass->GetFullName());
+            UField* Previous = OuterClass->Children;
+            while(Previous && Previous->Next != Function)
+                Previous = Previous->Next;
+            if(Previous)
+                Previous->Next = Function->Next;
         }
     }
 

@@ -14,7 +14,6 @@ void FAnimationBlueprintToolbar::Initialize()
 	ToolbarExtenders.Add(IAnimationBlueprintEditorModule::FAnimationBlueprintEditorToolbarExtender::CreateLambda(
 		[&](const TSharedRef<FUICommandList>, const TSharedRef<IAnimationBlueprintEditor> Editor)
 		{
-			BlueprintEditorPtr = Editor;
 			ContextObject = Editor->GetPersonaToolkit()->GetAnimBlueprint();
 			return GetExtender();
 		}));

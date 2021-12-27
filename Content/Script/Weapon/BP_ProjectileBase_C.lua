@@ -10,9 +10,6 @@ end
 
 function BP_ProjectileBase_C:ReceiveBeginPlay()
 	self:SetLifeSpan(4.0)
-	-- UE.EKeys.MouseX = UE.EKeys.MouseY
-	print("EKeys.MouseX=", UE.EKeys.MouseX.KeyName)
-	-- print("FKey(F5)=", UE.FKey("F5"), UE.FKey("F5").KeyName)
 end
 
 function BP_ProjectileBase_C:OnComponentHit_Sphere(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
