@@ -462,6 +462,7 @@ namespace UnLua
                 uint8 *DestData = (uint8*)DestScriptArray->GetData();
                 for (int32 i = 0; i < Num; ++i)
                 {
+                    TypeInterface->Initialize(DestData);
                     TypeInterface->Copy(DestData, SrcData);     // copy data
                     SrcData += ElementSize;
                     DestData += ElementSize;
