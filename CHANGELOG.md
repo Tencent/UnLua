@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.1] - 2021-12-29
+
+### Added
+
+  - 更多的单元测试和回归测试
+  - UDataTableFunctionLibrary.GetDataTableRowFromName
+
+### Fixed
+
+  - 生成Lua模版文件时需要按 `GetModuleName` 指定的路径生成 [#301](https://github.com/Tencent/UnLua/issues/301)
+  - 在蓝图中调用被Lua覆写的蓝图函数，无法拿到正确的返回值 [#300](https://github.com/Tencent/UnLua/issues/300)
+  - 在 `Monolithic` 下Lua不应定义宏 `LUA_BUILD_AS_DLL` [#308](https://github.com/Tencent/UnLua/pull/308)
+  - 真机环境下被覆写的UFunction被GC后，指针重用会导致传参错误或崩溃 [#299](https://github.com/Tencent/UnLua/issues/299)
+  - 打开多个蓝图编辑窗口时，菜单栏操作对象混乱 [#310](https://github.com/Tencent/UnLua/issues/310)
+  - 部分情况下为TArray创建拷贝至lua时会产生崩溃 [#303](https://github.com/Tencent/UnLua/issues/303)
+  - 访问过父类不存在的字段，后续在子类中也只能取到nil [#314](https://github.com/Tencent/UnLua/pull/314)
+
+### Removed
+
+- 移除宏定义 `SUPPORT_COMMANDLET`
+
 ## [2.1.0] - 2021-12-6
 
 ### Added
