@@ -14,8 +14,9 @@
 
 #pragma once
 
-#include "UnLua.h"
+#include "Engine/DataTable.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "UnLua.h"
 #include "UnLuaTestHelpers.generated.h"
 
 namespace UnLuaTestHelpers
