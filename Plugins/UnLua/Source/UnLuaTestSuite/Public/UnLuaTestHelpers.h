@@ -15,6 +15,7 @@
 #pragma once
 
 #include "Engine/DataTable.h"
+#include "GameFramework/Actor.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "UnLua.h"
 #include "UnLuaTestHelpers.generated.h"
