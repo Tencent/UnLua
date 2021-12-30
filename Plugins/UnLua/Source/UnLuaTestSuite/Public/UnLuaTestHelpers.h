@@ -90,6 +90,20 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
         Event.ExecuteIfBound(1, StaticClass());
         return Array.Num();
     }
+
+    UFUNCTION(BlueprintCallable)
+    static bool TestForIssue323(FVector Location = FVector::ZeroVector,
+                                FRotator Rotation = FRotator::ZeroRotator,
+                                FVector2D Vector2D = FVector2D::ZeroVector,
+                                FLinearColor LinearColor = FLinearColor::Green,
+                                FColor Color = FColor::Blue)
+    {
+        return Location == FVector::ZeroVector
+            && Rotation == FRotator::ZeroRotator
+            && Vector2D == FVector2D::ZeroVector
+            && LinearColor == FLinearColor::Green
+            && Color == FColor::Blue;
+    }
 };
 
 #if WITH_DEV_AUTOMATION_TESTS
