@@ -241,7 +241,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     FFileHelper::LoadFileToString(Content, *TemplateName);
     Content = Content.Replace(TEXT("TemplateName"), *ClassName);
 
-    FFileHelper::SaveStringToFile(Content, *FileName);
+    FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
 void FUnLuaEditorToolbar::CopyAsRelativePath_Executed() const
