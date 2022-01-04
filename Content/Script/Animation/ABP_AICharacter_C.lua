@@ -1,9 +1,11 @@
 require "UnLua"
 
 local ABP_AICharacter_C = Class()
+local UBPI_Interfaces_C = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
+local ABP_CharacterBase_C = UE.UClass.Load("/Game/Core/Blueprints/BP_CharacterBase.BP_CharacterBase_C")
 
 function ABP_AICharacter_C:AnimNotify_NotifyPhysics()
-	UE.UBPI_Interfaces_C.ChangeToRagdoll(self.Pawn)
+	UBPI_Interfaces_C.ChangeToRagdoll(self.Pawn)
 end
 
 function ABP_AICharacter_C:BlueprintBeginPlay()
@@ -21,7 +23,7 @@ function ABP_AICharacter_C:BlueprintUpdateAnimation(DeltaTimeX)
 		return
 	end
 	self.Speed = Vel:Size()
-	local Character = Pawn:Cast(UE.ABP_CharacterBase_C)
+	local Character = Pawn:Cast(ABP_CharacterBase_C)
 	if Character then
 		if Character.IsDead and not self.IsDead then
 			self.IsDead = true
