@@ -187,8 +187,16 @@ FClassDesc* FReflectionRegistry::RegisterClass(UStruct *InStruct)
         return nullptr;
     }
 
-	// already registered ?
-	FString ClassName = FString::Printf(TEXT("%s%s"), InStruct->GetPrefixCPP(), *InStruct->GetName());
+    FString ClassName;
+    if(InStruct->IsNative())
+    {
+        ClassName = FString::Printf(TEXT("%s%s"), InStruct->GetPrefixCPP(), *InStruct->GetName());
+    }
+    else
+    {
+        ClassName = InStruct->GetPathName();
+    }
+
 	FClassDesc *ClassDesc = GReflectionRegistry.FindClass(TCHAR_TO_UTF8(*ClassName));
     if (!ClassDesc)
     {

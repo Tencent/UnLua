@@ -148,7 +148,6 @@ void FLuaContext::CreateState()
 
         // register global Lua functions
         lua_register(L, "RegisterEnum", Global_RegisterEnum);
-        lua_register(L, "RegisterClass", Global_RegisterClass);
         lua_register(L, "GetUProperty", Global_GetUProperty);
         lua_register(L, "SetUProperty", Global_SetUProperty);
         lua_register(L, "LoadObject", Global_LoadObject);
@@ -156,7 +155,6 @@ void FLuaContext::CreateState()
         lua_register(L, "NewObject", Global_NewObject);
         lua_register(L, "UnLua_AddToClassWhiteSet", Global_AddToClassWhiteSet);
         lua_register(L, "UnLua_RemoveFromClassWhiteSet", Global_RemoveFromClassWhiteSet);
-        lua_register(L, "UnLua_UnRegisterClass", Global_UnRegisterClass);
 
         lua_register(L, "UEPrint", Global_Print);
 

@@ -270,7 +270,11 @@ void FClassDesc::GetInheritanceChain(TArray<FString> &InNameChain, TArray<UStruc
             UStruct* SuperStruct = Struct->GetInheritanceSuper();
             while (SuperStruct)
             {
-                FString Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
+                FString Name; 
+                if(SuperStruct->IsNative())
+                    Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
+                else
+                    Name = SuperStruct->GetPathName();
                 NameChain.Add(Name);
                 StructChain.Add(SuperStruct);
                 SuperStruct = SuperStruct->GetInheritanceSuper();

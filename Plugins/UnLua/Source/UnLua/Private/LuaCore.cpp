@@ -489,43 +489,23 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
 
 
 FString GetMetatableName(const UObjectBaseUtility* Object)
-{   
+{
     static TMap<FString, FString> Class2Metatable;
 
-	if (!GLuaCxt->IsUObjectValid((UObjectBase*)Object))
-	{
-		return "";
-	}
-
-    const TCHAR* PrefixCPP;
-    FString ClassName;
-    if (Object->IsA<UEnum>()) 
+    if (!GLuaCxt->IsUObjectValid((UObjectBase*)Object))
     {
-        PrefixCPP = TEXT("E");
-        ClassName = Object->GetName();
-    }
-    else if (Object->IsA<UStruct>())
-    {
-        PrefixCPP = ((UStruct*)Object)->GetPrefixCPP();
-        ClassName = Object->GetName();
-    }
-    else 
-    {
-        PrefixCPP = Object->GetClass()->GetPrefixCPP();
-        ClassName = Object->GetClass()->GetName();
+        return "";
     }
 
-    FString MetatableName;
-    if (FString* MetatableNamePtr = Class2Metatable.Find(ClassName))
+    // TODO:UEnum
+
+    const UStruct* Type = Object->IsA<UStruct>() ? (UStruct*)Object : Object->GetClass(); 
+    if (Type->IsNative())
     {
-        MetatableName = *MetatableNamePtr;
-    }
-    else
-    {
-        MetatableName = Class2Metatable.Add(ClassName, FString::Printf(TEXT("%s%s"), PrefixCPP, *ClassName));
+        return FString::Printf(TEXT("%s%s"), Type->GetPrefixCPP(), *Type->GetName());
     }
 
-	return MetatableName;
+    return Type->GetPathName();
 }
 
 
@@ -1755,44 +1735,6 @@ bool RegisterEnum(lua_State *L, UEnum *Enum)
         UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Failed to register UEnum!"), ANSI_TO_TCHAR(__FUNCTION__));
     }
     return bSuccess;
-}
-
-int32 Global_UnRegisterClass(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, -1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    FClassDesc* ClassDesc = GReflectionRegistry.FindClass(ClassName);
-    if (ClassDesc)
-    {
-        GReflectionRegistry.TryUnRegisterClass(ClassDesc);
-    }
-
-    return 0;
-}
-
-int32 Global_RegisterClass(lua_State *L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    RegisterClass(L, lua_tostring(L, 1));
-    return 0;
 }
 
 extern int32 UObject_Identical(lua_State *L);
