@@ -60,6 +60,9 @@ class UNLUATESTSUITE_API AUnLuaTestActor : public AActor
 public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
     int32 TestForIssue300();
+
+    UFUNCTION(BlueprintImplementableEvent)
+    bool TestForIssue328();
 };
 
 USTRUCT(BlueprintType)
