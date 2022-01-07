@@ -653,6 +653,8 @@ void FLuaContext::PostLoadMapWithWorld(UWorld* World)
         return;
     }
 
+#if !WITH_EDITOR
+
     // !!!Fix!!!
     // gameinstance delay bind, muti lua state support
     UGameInstance* GameInstance = World->GetGameInstance();
@@ -662,6 +664,8 @@ void FLuaContext::PostLoadMapWithWorld(UWorld* World)
         TryToBindLua(GameInstance);                     // try to bind Lua module for GameInstance
         GameInstances.Add(GameInstance);
     }
+
+#endif
 
     Manager->OnMapLoaded(World);
 
