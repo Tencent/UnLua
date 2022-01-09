@@ -19,8 +19,12 @@
 
 /**
  * Spawn an actor.
- * for example: World:SpawnActor(WeaponClass, InitialTransform, ESpawnActorCollisionHandlingMethod.AlwaysSpawn, Player, Player, "Weapon.AK47_C", WeaponColor),
- * the last two parameters "Weapon.AK47_C" and 'WeaponColor' and optional.
+ * for example:
+ * World:SpawnActor(
+ *  WeaponClass, InitialTransform, ESpawnActorCollisionHandlingMethod.AlwaysSpawn,
+ *  OwnerActor, Instigator, "Weapon.AK47_C", WeaponColor, ULevel, Name
+ * )
+ * the last four parameters "Weapon.AK47_C", 'WeaponColor', ULevel and Name are optional.
  * see programming guide for detail.
  */
 static int32 UWorld_SpawnActor(lua_State *L)
