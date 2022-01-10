@@ -268,19 +268,18 @@ public:
                         if(Enum)
                         {
                             int64 Value = Enum->GetValueByNameString(ValueStr);
+                            PreAddProperty(Class, Function);
                             if (Value == 0)
                             {
-                                PreAddProperty(Class, Function);
                                 GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedByte_Zero);\r\n"), *Property->GetName(), Value);
                             }
                             else if (Value > 0 && Value <= 255)
                             {
-                                PreAddProperty(Class, Function);
                                 GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FByteParamValue(%d));\r\n"), *Property->GetName(), Value);
                             }
                             else
                             {
-                                // https://github.com/Tencent/UnLua/issues/331
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FRuntimeEnumParamValue(\"%s\",%d));\r\n"), *Property->GetName(), *Enum->CppType, Enum->GetIndexByNameString(ValueStr));
                             }
                         }
                         else
@@ -300,19 +299,18 @@ public:
                         if(Enum)
                         {
                             int64 Value = Enum->GetValueByNameString(ValueStr);
+                            PreAddProperty(Class, Function);
                             if (Value == 0)
                             {
-                                PreAddProperty(Class, Function);
                                 GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedEnum_Zero);\r\n"), *Property->GetName(), Value);
                             }
                             else if (Value > 0 && Value <= 255)
                             {
-                                PreAddProperty(Class, Function);
                                 GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FEnumParamValue(%ld));\r\n"), *Property->GetName(), Value);
                             }
                             else
                             {
-                                // https://github.com/Tencent/UnLua/issues/331
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FRuntimeEnumParamValue(\"%s\",%d));\r\n"), *Property->GetName(), *Enum->CppType, Enum->GetIndexByNameString(ValueStr));
                             }
                         }
                         else

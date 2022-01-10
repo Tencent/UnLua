@@ -41,6 +41,24 @@ private:
     T Value;
 };
 
+class FRuntimeEnumParamValue : public IParamValue
+{
+public:
+    explicit FRuntimeEnumParamValue(const FString& InCppType, int32 InIndex)
+    {
+        UEnum* Enum = FindObjectChecked<UEnum>(ANY_PACKAGE, *InCppType);
+        Value = Enum->GetValueByIndex(InIndex);
+    }
+
+    virtual const void* GetValue() const override 
+    {
+        return &Value;
+    }
+
+private:
+    int64 Value;
+};
+
 class FScriptArrayParamValue : public IParamValue
 {
 public:
