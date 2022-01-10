@@ -22,9 +22,10 @@
  * for example:
  * World:SpawnActor(
  *  WeaponClass, InitialTransform, ESpawnActorCollisionHandlingMethod.AlwaysSpawn,
- *  OwnerActor, Instigator, "Weapon.AK47_C", WeaponColor, ULevel, Name
+ *  OwnerActor, Instigator, "Weapon.AK47_C", WeaponColor, ULevel, Name, bDeferConstruction
  * )
- * the last four parameters "Weapon.AK47_C", 'WeaponColor', ULevel and Name are optional.
+ * the last five parameters "Weapon.AK47_C", 'WeaponColor', ULevel, Name and bDeferConstruction are optional.
+ * Should manually call UGameplayStatics.FinishSpawningActor to run construction script if bDeferConstruction is true.
  * see programming guide for detail.
  */
 static int32 UWorld_SpawnActor(lua_State *L)
@@ -98,6 +99,10 @@ static int32 UWorld_SpawnActor(lua_State *L)
 
     if (NumParams > 9) {
         SpawnParameters.Name = FName(lua_tostring(L, 10));
+    }
+
+    if (NumParams > 10) {
+        SpawnParameters.bDeferConstruction = lua_toboolean(L, 11);
     }
 
     {
