@@ -24,7 +24,7 @@ function BP_PlayerCharacter_C:SpawnWeapon()
 	sp.Owner = self
 	sp.Instigator = self
 
-	local NewWeapon = World:SpawnActor2(
+	local NewWeapon = World:SpawnActorEx(
 		WeaponClass, self:GetTransform(), nil, "Weapon.BP_DefaultWeapon_C", sp)
 	return NewWeapon
 end
