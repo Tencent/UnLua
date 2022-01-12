@@ -162,7 +162,7 @@ FClassDesc* FReflectionRegistry::RegisterClass(const char* InName)
     UStruct *Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);       // find first
     if (!Struct)
     {
-        Struct = LoadObject<UStruct>(nullptr, *Name);                // load if not found
+        Struct = LoadObject<UStruct>(nullptr, *Name, nullptr, LOAD_NoWarn);                // load if not found
     }
     return RegisterClass(Struct);
 }

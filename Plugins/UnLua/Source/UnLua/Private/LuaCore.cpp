@@ -464,27 +464,34 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
         }
         return Type == LUA_TTABLE;
     }
-    else
-    {   
-        // other class,check classdesc
-        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(MetatableName);
-        if (!ClassDesc)
-        {
-            UnLua::FAutoStack AutoStack;
-            ClassDesc = RegisterClass(L, MetatableName);
-        }
-        Type = luaL_getmetatable(L, MetatableName);
-        if (Type != LUA_TTABLE)
-        {
-            lua_pop(L, 1);
-        }
-        else
-        {
-            lua_setmetatable(L, -2);                                    // set the metatable directly
-            ClassDesc->AddRef();
-        }
-        return Type == LUA_TTABLE;
+
+    // other class,check classdesc
+    FClassDesc* ClassDesc = GReflectionRegistry.FindClass(MetatableName);
+    if (!ClassDesc)
+    {
+        UnLua::FAutoStack AutoStack;
+        ClassDesc = RegisterClass(L, MetatableName);
     }
+
+    if(!ClassDesc)
+    {
+        FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(MetatableName);
+        UnLua::FAutoStack AutoStack;
+        if(!EnumDesc)
+            RegisterEnum(L, MetatableName);
+    }
+
+    Type = luaL_getmetatable(L, MetatableName);
+    if (Type != LUA_TTABLE)
+    {
+        lua_pop(L, 1);
+        return false;
+    }
+
+    lua_setmetatable(L, -2);                                    // set the metatable directly
+    if (ClassDesc)
+        ClassDesc->AddRef();
+    return true;
 }
 
 
@@ -497,9 +504,12 @@ FString GetMetatableName(const UObjectBaseUtility* Object)
         return "";
     }
 
-    // TODO:UEnum
+    if (Object->IsA<UEnum>())
+    {
+        return Object->IsNative() ? ((UEnum*)Object)->CppType : Object->GetPathName();
+    }
 
-    const UStruct* Type = Object->IsA<UStruct>() ? (UStruct*)Object : Object->GetClass(); 
+    const UStruct* Type = Object->IsA<UStruct>() ? (UStruct*)Object : Object->GetClass();
     if (Type->IsNative())
     {
         return FString::Printf(TEXT("%s%s"), Type->GetPrefixCPP(), *Type->GetName());
@@ -1925,7 +1935,7 @@ FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *Super
         return nullptr;
     }
 
-    FClassDesc *ClassDesc = nullptr;
+    FClassDesc *ClassDesc;
     if (SuperClassName)
     {
         ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
@@ -1935,6 +1945,9 @@ FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *Super
     {
         ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
     }
+
+    if (ClassDesc == nullptr)
+        return nullptr;
 
     if (!RegisterClassInternal(L, ClassDesc))
     {
