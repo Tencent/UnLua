@@ -150,6 +150,14 @@ void FUnLuaBaseSpec::Define()
             UnLua::Push<FVector>(L, &VectorValue);
             TEST_EQUAL(UnLua::Get(L, -1, UnLua::TType<FVector>()), VectorValue);
         });
+
+        It(TEXT("正确传入UEnum到Lua堆栈"), EAsyncExecution::ThreadPool, [this]()
+        {
+            UEnum* Expected = FindObject<UEnum>(ANY_PACKAGE, TEXT("EBlendMode"));
+            UnLua::PushUObject(L, Expected, false);
+            UObject* Actual = UnLua::GetUObject(L, -1);
+            TEST_EQUAL((void*)Expected, (void*)Actual);
+        });
     });
 
     Describe(TEXT("UnLua::RunChunk"), [this]

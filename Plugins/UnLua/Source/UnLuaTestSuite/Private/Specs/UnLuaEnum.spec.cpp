@@ -31,36 +31,137 @@ void FUnLuaEnumSpec::Define()
         L = UnLua::CreateState();
     });
 
-    Describe(TEXT("GetNameByValue"), [this]()
+    Describe(TEXT("Cpp Enum"), [this]()
     {
-        It(TEXT("获取枚举的名称"), EAsyncExecution::ThreadPool, [this]()
+        Describe(TEXT("GetValue"), [this]()
         {
-            const char* Chunk = "\
-            return UE.ECollisionResponse:GetNameByValue(UE.ECollisionResponse.ECR_Overlap)\
-            ";
-            UnLua::RunChunk(L, Chunk);
-            TEST_EQUAL(lua_tostring(L, -1), "Overlap");
+            It(TEXT("获取枚举的值"), EAsyncExecution::ThreadPool, [this]()
+            {
+                const char* Chunk = "\
+                return UE.EBlendMode.BLEND_Masked\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL((int32)lua_tointeger(L, -1), 1);
+            });
+
+            It(TEXT("不存在的枚举值返回-1"), EAsyncExecution::ThreadPool, [this]()
+            {
+                const char* Chunk = "\
+                return UE.EBlendMode.NotExists\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL((int32)lua_tonumber(L, -1), -1);
+            });
         });
 
-        It(TEXT("不存在的枚举值返回nil"), EAsyncExecution::ThreadPool, [this]()
+        Describe(TEXT("GetNameByValue"), [this]()
         {
-            UnLua::Push(L, static_cast<int16>(0x7FFF));
-            TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<int16>()));
-            TEST_EQUAL(lua_tointeger(L, -1), 0x7FFFLL);
+            It(TEXT("获取枚举的名称"), EAsyncExecution::ThreadPool, [this]()
+            {
+                const char* Chunk = "\
+                return UE.ECollisionResponse:GetNameByValue(UE.ECollisionResponse.ECR_Overlap)\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL(lua_tostring(L, -1), "Overlap");
+            });
+
+            It(TEXT("不存在的枚举值返回空字符串"), EAsyncExecution::ThreadPool, [this]()
+            {
+                const char* Chunk = "\
+                return UE.ECollisionResponse:GetNameByValue(9999)\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL(lua_tostring(L, -1), "");
+            });
+        });
+
+        Describe(TEXT("GetMaxValue"), [this]
+        {
+            It(TEXT("获取枚举类型的最大值"), EAsyncExecution::ThreadPool, [this]()
+            {
+                const char* Chunk = "\
+                return UE.ECollisionResponse:GetMaxValue()\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                const auto Actual = (int32)lua_tointeger(L, -1);
+                const auto Expected = (int32)ECollisionResponse::ECR_MAX;
+                TEST_EQUAL(Actual, Expected);
+            });
         });
     });
 
-    Describe(TEXT("GetMaxValue"), [this]
+    Describe(TEXT("User Defined Enum"), [this]()
     {
-        It(TEXT("获取枚举类型的最大值"), EAsyncExecution::ThreadPool, [this]()
+        Describe(TEXT("GetValue"), [this]()
+        {
+            It(TEXT("自定义枚举的数值Value实际等同于Index"), EAsyncExecution::TaskGraphMainThread, [this]()
+            {
+                const char* Chunk = "\
+                local Enum = UE.UObject.Load('/Game/Tests/Misc/Enum_UserDefined')\
+                return Enum.A\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL((int32)lua_tointeger(L, -1), 0);
+            });
+
+            It(TEXT("不存在的枚举值返回-1"), EAsyncExecution::TaskGraphMainThread, [this]()
+            {
+                const char* Chunk = "\
+                local Enum = UE.UObject.Load('/Game/Tests/Misc/Enum_UserDefined')\
+                return Enum.NotExists\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL((int32)lua_tonumber(L, -1), -1);
+            });
+        });
+
+        Describe(TEXT("GetNameByValue"), [this]()
+        {
+            It(TEXT("获取枚举的名称"), EAsyncExecution::TaskGraphMainThread, [this]()
+            {
+                const char* Chunk = "\
+                local Enum = UE.UObject.Load('/Game/Tests/Misc/Enum_UserDefined')\
+                return Enum:GetNameByValue('A')\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL(lua_tostring(L, -1), "A");
+            });
+
+            It(TEXT("不存在的枚举值返回空字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
+            {
+                const char* Chunk = "\
+                local Enum = UE.UObject.Load('/Game/Tests/Misc/Enum_UserDefined')\
+                return Enum:GetNameByValue(9999)\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                TEST_EQUAL(lua_tostring(L, -1), "");
+            });
+        });
+
+        Describe(TEXT("GetMaxValue"), [this]
+        {
+            It(TEXT("获取枚举类型的最大值"), EAsyncExecution::TaskGraphMainThread, [this]()
+            {
+                const char* Chunk = "\
+                local Enum = UE.UObject.Load('/Game/Tests/Misc/Enum_UserDefined')\
+                return Enum:GetMaxValue()\
+                ";
+                UnLua::RunChunk(L, Chunk);
+                const auto Actual = (int32)lua_tointeger(L, -1);
+                const auto Expected = 2;
+                TEST_EQUAL(Actual, Expected);
+            });
+        });
+
+        It(TEXT("直接访问UE XXX，和UObject Load的对象为同一个"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            return UE.ECollisionResponse:GetMaxValue()\
+            local Enum = UE.UObject.Load('/Game/Tests/Misc/Enum_UserDefined')\
+            return Enum == UE.Enum_UserDefined\
             ";
             UnLua::RunChunk(L, Chunk);
-            const auto Actual = (int32)lua_tointeger(L, -1);
-            const auto Expected = (int32)ECollisionResponse::ECR_MAX;
-            TEST_EQUAL(Actual, Expected);
+            const auto Result = (bool)lua_toboolean(L, -1);
+            TEST_TRUE(Result);
         });
     });
 
