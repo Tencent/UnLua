@@ -192,9 +192,11 @@ BEGIN_EXPORT_CLASS(FActorSpawnParameters)
     ADD_PROPERTY(Instigator)
     ADD_PROPERTY(OverrideLevel)
 #if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
     ADD_PROPERTY(OverridePackage)
     ADD_PROPERTY(OverrideParentComponent)
     ADD_PROPERTY(OverrideActorGuid)
+#endif
 #endif
     ADD_PROPERTY(SpawnCollisionHandlingOverride)
     ADD_FUNCTION(IsRemoteOwned)
@@ -204,7 +206,9 @@ BEGIN_EXPORT_CLASS(FActorSpawnParameters)
 #if WITH_EDITOR
     ADD_BITFIELD_BOOL_PROPERTY(bTemporaryEditorActor)
     ADD_BITFIELD_BOOL_PROPERTY(bHideFromSceneOutliner)
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
     ADD_BITFIELD_BOOL_PROPERTY(bCreateActorPackage)
+#endif
     ADD_PROPERTY(NameMode)
     ADD_PROPERTY(ObjectFlags)
 #endif
