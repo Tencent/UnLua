@@ -30,6 +30,14 @@ DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
 
+UENUM()
+enum EEnumForIssue331
+{
+    RECORD_NONE = 0,
+    RECORD_TO_FILE = 1 + 2,
+    RECORD_TO_LOG = 4,
+};
+
 UCLASS()
 class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
 {
@@ -60,6 +68,9 @@ class UNLUATESTSUITE_API AUnLuaTestActor : public AActor
 public:
     UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
     int32 TestForIssue300();
+
+    UFUNCTION(BlueprintImplementableEvent)
+    bool TestForIssue328();
 };
 
 USTRUCT(BlueprintType)
@@ -103,6 +114,12 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
             && Vector2D == FVector2D::ZeroVector
             && LinearColor == FLinearColor::Green
             && Color == FColor::Blue;
+    }
+
+    UFUNCTION(BlueprintCallable)
+    static bool TestForIssue331(EEnumForIssue331 InEnum = EEnumForIssue331::RECORD_TO_FILE)
+    {
+        return InEnum == EEnumForIssue331::RECORD_TO_FILE;
     }
 };
 

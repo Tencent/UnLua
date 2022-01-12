@@ -18,7 +18,14 @@ function BP_PlayerCharacter_C:SpawnWeapon()
 		return
 	end
 	local WeaponClass = UE.UClass.Load("/Game/Core/Blueprints/Weapon/BP_DefaultWeapon.BP_DefaultWeapon")
-	local NewWeapon = World:SpawnActor(WeaponClass, self:GetTransform(), UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, self, self, "Weapon.BP_DefaultWeapon_C")
+	-- local NewWeapon = World:SpawnActor(WeaponClass, self:GetTransform(), UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, self, self, "Weapon.BP_DefaultWeapon_C")
+	local sp = UE.FActorSpawnParameters()
+	sp.SpawnCollisionHandlingOverride = UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn
+	sp.Owner = self
+	sp.Instigator = self
+
+	local NewWeapon = World:SpawnActorEx(
+		WeaponClass, self:GetTransform(), nil, "Weapon.BP_DefaultWeapon_C", sp)
 	return NewWeapon
 end
 

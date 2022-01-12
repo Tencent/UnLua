@@ -265,23 +265,63 @@ public:
                     else if (Property->IsA(FByteProperty::StaticClass())) // byte
                     {
                         const UEnum* Enum = CastField<FByteProperty>(Property)->Enum;
-                        int32 Value = Enum ? (int32)Enum->GetValueByNameString(ValueStr) : TCString<TCHAR>::Atoi(*ValueStr);
-                        check(Value >= 0 && Value <= 255);
-                        PreAddProperty(Class, Function);
-                        if (Value == 0)
-                            GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedByte_Zero);\r\n"), *Property->GetName(), Value);
+                        if(Enum)
+                        {
+                            int64 Value = Enum->GetValueByNameString(ValueStr);
+                            PreAddProperty(Class, Function);
+                            if (Value == 0)
+                            {
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedByte_Zero);\r\n"), *Property->GetName(), Value);
+                            }
+                            else if (Value > 0 && Value <= 255)
+                            {
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FByteParamValue(%d));\r\n"), *Property->GetName(), Value);
+                            }
+                            else
+                            {
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FRuntimeEnumParamValue(\"%s\",%d));\r\n"), *Property->GetName(), *Enum->CppType, Enum->GetIndexByNameString(ValueStr));
+                            }
+                        }
                         else
-                            GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FByteParamValue(%d));\r\n"), *Property->GetName(), Value);
+                        {
+                            int32 Value = TCString<TCHAR>::Atoi(*ValueStr);
+                            check(Value >= 0 && Value <= 255)
+                            PreAddProperty(Class, Function);
+                            if (Value == 0)
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedByte_Zero);\r\n"), *Property->GetName(), Value);
+                            else
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FByteParamValue(%d));\r\n"), *Property->GetName(), Value);
+                        }
                     }
                     else if (Property->IsA(FEnumProperty::StaticClass())) // enum
                     {
                         const UEnum* Enum = CastField<FEnumProperty>(Property)->GetEnum();
-                        int64 Value = Enum ? Enum->GetValueByNameString(ValueStr) : TCString<TCHAR>::Atoi64(*ValueStr);
-                        PreAddProperty(Class, Function);
-                        if (Value == 0)
-                            GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedEnum_Zero);\r\n"), *Property->GetName(), Value);
+                        if(Enum)
+                        {
+                            int64 Value = Enum->GetValueByNameString(ValueStr);
+                            PreAddProperty(Class, Function);
+                            if (Value == 0)
+                            {
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedEnum_Zero);\r\n"), *Property->GetName(), Value);
+                            }
+                            else if (Value > 0 && Value <= 255)
+                            {
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FEnumParamValue(%ld));\r\n"), *Property->GetName(), Value);
+                            }
+                            else
+                            {
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FRuntimeEnumParamValue(\"%s\",%d));\r\n"), *Property->GetName(), *Enum->CppType, Enum->GetIndexByNameString(ValueStr));
+                            }
+                        }
                         else
-                            GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FEnumParamValue(%ld));\r\n"), *Property->GetName(), Value);
+                        {
+                            int64 Value = TCString<TCHAR>::Atoi64(*ValueStr);
+                            PreAddProperty(Class, Function);
+                            if (Value == 0)
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedEnum_Zero);\r\n"), *Property->GetName(), Value);
+                            else
+                                GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), new FEnumParamValue(%ld));\r\n"), *Property->GetName(), Value);
+                        }
                     }
                     else if (Property->IsA(FFloatProperty::StaticClass())) // float
                     {
