@@ -638,11 +638,33 @@ static int32 TArray_ToTable(lua_State *L)
     return 1;
 }
 
+static int32 TArray_AddDefaultedAndGetRef(lua_State *L) {
+    int32 NumParams = lua_gettop(L);
+    if (NumParams != 1)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    if (!Array)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    int32 Index = Array->AddDefaulted(1);
+    const void *Element = Array->GetData(Index);
+    Array->Inner->Read(L, Element, false);
+    return 1;
+}
+
 static const luaL_Reg TArrayLib[] =
 {
     { "Length", TArray_Length },
     { "Add", TArray_Add },
     { "AddUnique", TArray_AddUnique },
+    { "AddDefaultedAndGetRef", TArray_AddDefaultedAndGetRef },
     { "Find", TArray_Find },
     { "Insert", TArray_Insert },
     { "Remove", TArray_Remove },
