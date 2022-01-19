@@ -65,7 +65,7 @@ Unreal Engine 4.17.x - Unreal Engine 5.x
 
 # Documentation
 * [Programming Guide](Docs/UnLua_Programming_Guide_EN.md)
-* [How to Implement Overriding](Docs/How_To_Implement_Overriding.md)
+* [How to Implement Overriding](Docs/How_To_Implement_Overriding_EN.md)
 
 
 # License
