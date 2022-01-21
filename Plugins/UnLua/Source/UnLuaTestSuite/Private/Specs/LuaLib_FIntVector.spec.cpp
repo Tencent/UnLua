@@ -33,21 +33,21 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("构造FIntVector"), [this]()
     {
-        It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("默认参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FIntVector()");
             const auto& Vector = UnLua::Get<FIntVector>(L, -1, UnLua::TType<FIntVector>());
             TEST_EQUAL(Vector, FIntVector(EForceInit::ForceInitToZero));
         });
 
-        It(TEXT("分别指定X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("分别指定X/Y/Z"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FIntVector(1,2,3)");
             const auto& Vector = UnLua::Get<FIntVector>(L, -1, UnLua::TType<FIntVector>());
             TEST_EQUAL(Vector, FIntVector(1,2,3));
         });
 
-        It(TEXT("同时指定X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("同时指定X/Y/Z"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FIntVector(1)");
             const auto& Vector = UnLua::Get<FIntVector>(L, -1, UnLua::TType<FIntVector>());
@@ -57,7 +57,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("Set"), [this]
     {
-        It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FIntVector()\
@@ -69,7 +69,7 @@ void FUnLuaLibFIntVectorSpec::Define()
             TEST_EQUAL(Vector, FIntVector(1,0,0));
         });
 
-        It(TEXT("设置X/Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X/Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FIntVector()\
@@ -84,7 +84,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("SizeSquared"), [this]
     {
-        It(TEXT("获取平方后的长度"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("获取平方后的长度"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FIntVector(3,4,0)\
@@ -99,7 +99,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("Add"), [this]
     {
-        It(TEXT("向量相加"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量相加"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector1 = UE.FIntVector(1,2,3)\
@@ -114,7 +114,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("Sub"), [this]
     {
-        It(TEXT("向量相减"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量相减"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector1 = UE.FIntVector(1,2,3)\
@@ -129,7 +129,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("Mul"), [this]
     {
-        It(TEXT("向量乘以整数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量乘以整数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FIntVector(1,2,3)\
@@ -143,7 +143,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("Div"), [this]
     {
-        It(TEXT("向量除以整数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量除以整数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FIntVector(2,4,8)\
@@ -157,7 +157,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("unm"), [this]
     {
-        It(TEXT("取反向量"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("取反向量"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FIntVector(1,2,3)\
@@ -171,7 +171,7 @@ void FUnLuaLibFIntVectorSpec::Define()
 
     Describe(TEXT("tostring()"), [this]
     {
-        It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("转为字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE.FIntVector(1,2,3))");
             const auto& Actual =lua_tostring(L, -1);

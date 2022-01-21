@@ -33,7 +33,7 @@ void FUnLuaEnumSpec::Define()
 
     Describe(TEXT("GetNameByValue"), [this]()
     {
-        It(TEXT("获取枚举的名称"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("获取枚举的名称"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             return UE.ECollisionResponse:GetNameByValue(UE.ECollisionResponse.ECR_Overlap)\
@@ -42,7 +42,7 @@ void FUnLuaEnumSpec::Define()
             TEST_EQUAL(lua_tostring(L, -1), "Overlap");
         });
 
-        It(TEXT("不存在的枚举值返回nil"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("不存在的枚举值返回nil"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::Push(L, static_cast<int16>(0x7FFF));
             TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<int16>()));
@@ -52,7 +52,7 @@ void FUnLuaEnumSpec::Define()
 
     Describe(TEXT("GetMaxValue"), [this]
     {
-        It(TEXT("获取枚举类型的最大值"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("获取枚举类型的最大值"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             return UE.ECollisionResponse:GetMaxValue()\

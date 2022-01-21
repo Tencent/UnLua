@@ -33,35 +33,35 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("构造FVector4"), [this]()
     {
-        It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("默认参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector4()");
             const auto& Vector = UnLua::Get<FVector4>(L, -1, UnLua::TType<FVector4>());
             TEST_EQUAL(Vector, FVector4(EForceInit::ForceInitToZero));
         });
 
-        It(TEXT("指定X"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定X"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector4(1)");
             const auto& Vector = UnLua::Get<FVector4>(L, -1, UnLua::TType<FVector4>());
             TEST_EQUAL(Vector, FVector4(1));
         });
 
-        It(TEXT("指定X/Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定X/Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector4(1,2)");
             const auto& Vector = UnLua::Get<FVector4>(L, -1, UnLua::TType<FVector4>());
             TEST_EQUAL(Vector, FVector4(1,2));
         });
 
-        It(TEXT("指定X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定X/Y/Z"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector4(1,2,3)");
             const auto& Vector = UnLua::Get<FVector4>(L, -1, UnLua::TType<FVector4>());
             TEST_EQUAL(Vector, FVector4(1,2,3));
         });
 
-        It(TEXT("指定X/Y/Z/W"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定X/Y/Z/W"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector4(1,2,3,4)");
             const auto& Vector = UnLua::Get<FVector4>(L, -1, UnLua::TType<FVector4>());
@@ -71,7 +71,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("Set"), [this]
     {
-        It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4()\
@@ -83,7 +83,7 @@ void FUnLuaLibFVector4Spec::Define()
             TEST_EQUAL(Vector, FVector4(1,0,0,0));
         });
 
-        It(TEXT("设置X/Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X/Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4()\
@@ -95,7 +95,7 @@ void FUnLuaLibFVector4Spec::Define()
             TEST_EQUAL(Vector, FVector4(1,2,0,0));
         });
 
-        It(TEXT("设置X/Y/Z"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X/Y/Z"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4()\
@@ -107,7 +107,7 @@ void FUnLuaLibFVector4Spec::Define()
             TEST_EQUAL(Vector, FVector4(1,2,3,0));
         });
 
-        It(TEXT("设置X/Y/Z/W"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X/Y/Z/W"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4()\
@@ -122,7 +122,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("Add"), [this]
     {
-        It(TEXT("向量相加"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量相加"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector1 = UE.FVector4(1,2,3,4)\
@@ -137,7 +137,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("Sub"), [this]
     {
-        It(TEXT("向量相减"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量相减"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector1 = UE.FVector4(1,2,3,4)\
@@ -152,7 +152,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("Mul"), [this]
     {
-        It(TEXT("向量乘以浮点数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量乘以浮点数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4(1,2,3,4)\
@@ -166,7 +166,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("Div"), [this]
     {
-        It(TEXT("向量除以浮点数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量除以浮点数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4(2.2,2.2,4.4,8.8)\
@@ -181,7 +181,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("unm"), [this]
     {
-        It(TEXT("取反向量"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("取反向量"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector4(1,2,3,4)\
@@ -196,7 +196,7 @@ void FUnLuaLibFVector4Spec::Define()
 
     Describe(TEXT("tostring()"), [this]
     {
-        It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("转为字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE.FVector4(1,2,3,4))");
             const auto& Actual = lua_tostring(L, -1);
