@@ -174,33 +174,6 @@ int32 Global_AddToClassWhiteSet(lua_State* L);
 int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 
 /**
- * Functions to handle UEnum
- */
-int32 Enum_Index(lua_State *L);
-int32 Enum_Delete(lua_State *L);
-int32 Enum_GetMaxValue(lua_State* L);
-int32 Enum_GetNameByValue(lua_State* L);
-
-/**
- * Functions to handle UClass
- */
-int32 Class_Index(lua_State* L);
-int32 Class_NewIndex(lua_State* L);
-int32 Class_CallUFunction(lua_State *L);
-int32 Class_CallLatentFunction(lua_State *L);
-int32 Class_StaticClass(lua_State *L);
-int32 Class_Cast(lua_State* L);
-
-/**
- * Functions to handle UScriptStruct
- */
-int32 ScriptStruct_New(lua_State *L);
-int32 ScriptStruct_Delete(lua_State *L);
-int32 ScriptStruct_Copy(lua_State *L);
-int32 ScriptStruct_CopyFrom(lua_State *L);
-int32 ScriptStruct_Compare(lua_State *L);
-
-/**
  * Create a type interface
  */
 TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index);
