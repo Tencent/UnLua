@@ -663,6 +663,13 @@ void FLuaContext::PostLoadMapWithWorld(UWorld* World)
     {
         TryToBindLua(GameInstance);                     // try to bind Lua module for GameInstance
         GameInstances.Add(GameInstance);
+
+        // try to bind Lua module for UGameInstanceSubsystem
+        auto Subsystems= GameInstance->GetSubsystemArray<UGameInstanceSubsystem>();
+        for (auto Subsystem: Subsystems)
+        { 
+            TryToBindLua(Subsystem);
+        }
     }
 
 #endif
