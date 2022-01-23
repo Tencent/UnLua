@@ -135,6 +135,7 @@ public class UnLua : ModuleRules
             PublicDefinitions.Add("UNLUA_ENABLE_DEBUG=0");
         }
 
+        PublicDefinitions.Add("UNLUA_LEGACY_GLOBALS=1");
     }
 
     private void SetupScripts()

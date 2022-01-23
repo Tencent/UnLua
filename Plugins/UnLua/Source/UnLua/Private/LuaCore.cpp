@@ -93,29 +93,6 @@ FString GetFullPathFromRelativePath(const FString& RelativePath)
 }
 
 /**
- * Create 'UE' namespace (a Lua table)
- */
-void CreateNamespaceForUE(lua_State *L)
-{
-#if WITH_UE4_NAMESPACE
-    lua_newtable(L);
-    lua_pushstring(L, "__index");
-    lua_pushcfunction(L, UE4_Index);
-    lua_rawset(L, -3);
-    lua_pushvalue(L, -1);
-    lua_setmetatable(L, -2);
-    lua_pushvalue(L, -1);
-    lua_setglobal(L, "UE4");    // for legacy support only, will be removed in future release
-    lua_setglobal(L, "UE");
-
-    lua_pushboolean(L, true);
-#else
-    lua_pushboolean(L, false);
-#endif
-    lua_setglobal(L, "WITH_UE4_NAMESPACE");
-}
-
-/**
  * Set the name for a Lua table which on the top of the stack
  */
 void SetTableForClass(lua_State *L, const char *Name)
@@ -2870,4 +2847,132 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
     }
 
     return TypeInterface;
+}
+
+void CreateUnLua(lua_State* L)
+{
+    const char* INIT_UNLUA = R"(
+    local rawget = rawget
+    local rawset = rawset
+    local type = type
+    local getmetatable = getmetatable
+    local setmetatable = setmetatable
+    
+    local NOT_EXISTS = {}
+    local GetUProperty = UnLua.GetUProperty
+    local SetUProperty = UnLua.SetUProperty
+
+    local function index(t, k)
+        local mt = getmetatable(t)
+        local super = mt
+        while super do
+            local v = rawget(super, k)
+            if v ~= nil and not rawequal(v, NOT_EXISTS) then
+                rawset(t, k, v)
+                return v
+            end
+            super = rawget(super, "Super")
+        end
+
+        local p = mt[k]
+        if p == nil then
+            rawset(mt, k, NOT_EXISTS)
+        else
+            if type(p) == "userdata" then
+                return GetUProperty(t, p)
+            elseif type(p) == "function" then
+                rawset(t, k, p)
+            elseif rawequal(p, NOT_EXISTS) then
+                return nil
+            end
+        end
+
+        return p
+    end
+
+    local function newindex(t, k, v)
+        local mt = getmetatable(t)
+        local p = mt[k]
+        if type(p) == "userdata" then
+            return SetUProperty(t, p, v)
+        end
+        rawset(t, k, v)
+    end
+
+    local function class(super_class)
+        if type(super_class) == "table" then
+        elseif type(super_class) == "string" then
+            super_class = require(super_class)
+        end
+
+	    local new_class = {}
+	    new_class.__index = index
+	    new_class.__newindex = newindex
+	    new_class.Super = super_class
+
+      return new_class
+    end
+    
+    UnLua.Index = index
+    UnLua.NewIndex = newindex
+    UnLua.Class = class
+    )";
+    
+    static const luaL_Reg LibFuncs[] = {
+        {"RegisterEnum", Global_RegisterEnum},
+        {"RegisterClass", Global_RegisterClass},
+        {"GetUProperty", Global_GetUProperty},
+        {"SetUProperty", Global_SetUProperty},
+        {"LoadObject", Global_LoadObject},
+        {"LoadClass", Global_LoadClass},
+        {"NewObject", Global_NewObject},
+        {"UnLua_AddToClassWhiteSet", Global_AddToClassWhiteSet},
+        {"UnLua_RemoveFromClassWhiteSet", Global_RemoveFromClassWhiteSet},
+        {"UnLua_UnRegisterClass", Global_UnRegisterClass},
+        {"Print", Global_Print},
+        {NULL, NULL}
+    };
+
+    luaL_newlib(L, LibFuncs);
+    lua_setglobal(L, "UnLua");
+    luaL_dostring(L, INIT_UNLUA);
+
+#if UNLUA_LEGACY_GLOBALS
+    const char* INIT_UNLUA_LEGACY = R"(
+    print = UnLua.Print
+    Class = UnLua.Class
+    LoadObject = UnLua.LoadObject
+    NewObject = UnLua.NewObject
+    )";
+
+    luaL_dostring(L, INIT_UNLUA_LEGACY);
+#endif
+}
+
+void CreateUE(lua_State* L)
+{
+    lua_newtable(L);
+    lua_pushstring(L, "__index");
+    lua_pushcfunction(L, UE4_Index);
+    lua_rawset(L, -3);
+    lua_pushvalue(L, -1);
+    lua_setmetatable(L, -2);
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, "UE4");    // for legacy support only, will be removed in future release
+    lua_setglobal(L, "UE");
+
+#if !WITH_UE4_NAMESPACE
+    // setmetatable(_G, { __index = UE })
+    lua_getglobal(L, "_G");
+    lua_newtable(L);
+    lua_getglobal(L, "UE");
+    lua_setfield(L, -2, "__index");
+    lua_setmetatable(L, -2);
+#endif
+}
+
+void InitGlobalTables(lua_State* L)
+{
+    CreateUE(L);
+    CreateUnLua(L);
 }
