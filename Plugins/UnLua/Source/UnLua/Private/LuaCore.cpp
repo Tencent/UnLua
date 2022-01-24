@@ -1634,8 +1634,7 @@ int32 Global_RegisterClass(lua_State *L)
 /**
  * Register a class
  */
-
-static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDesc *InSuperClass, UnLua::IExportedClass **ExportedClasses, int32 NumExportedClasses)
+static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDesc *InSuperClass, TArray<UnLua::IExportedClass*>& ExportedClasses)
 {
     if (!GReflectionRegistry.IsDescValid(InClass, DESC_CLASS))
     {
@@ -1686,12 +1685,9 @@ static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDes
     lua_pushvalue(L, -1);                                   // set metatable to self
     lua_setmetatable(L, -2);
 
-    if (ExportedClasses)
+    for (int32 i = 0; i < ExportedClasses.Num(); ++i)
     {
-        for (int32 i = 0; i < NumExportedClasses; ++i)
-        {
-            ExportedClasses[i]->Register(L);
-        }
+        ExportedClasses[i]->Register(L);
     }
 
     SetTableForClass(L, ClassName.Get());
@@ -1732,7 +1728,7 @@ static bool RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
         {
             ExportedClasses.Add(ExportedClass);
         }
-        RegisterClassCore(L, ClassDescChain.Last(), nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
+        RegisterClassCore(L, ClassDescChain.Last(), nullptr, ExportedClasses);
 
         for (int32 i = ClassDescChain.Num() - 2; i > -1; --i)
         {
@@ -1741,7 +1737,7 @@ static bool RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
             {
                 ExportedClasses.Add(ExportedClass);
             }
-            RegisterClassCore(L, ClassDescChain[i], ClassDescChain[i + 1], ExportedClasses.GetData(), ExportedClasses.Num());
+            RegisterClassCore(L, ClassDescChain[i], ClassDescChain[i + 1], ExportedClasses);
         }
 
         return true;
