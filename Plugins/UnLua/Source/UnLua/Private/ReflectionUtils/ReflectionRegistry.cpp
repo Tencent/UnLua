@@ -109,9 +109,7 @@ void FReflectionRegistry::TryUnRegisterClass(FClassDesc* ClassDesc)
                 {
                     if (!ClassDesc->IsNative())
                     {
-#if ENABLE_AUTO_CLEAN_NNATCLASS != 0
                         bNeedClean = true;
-#endif
                     }
                 }
 

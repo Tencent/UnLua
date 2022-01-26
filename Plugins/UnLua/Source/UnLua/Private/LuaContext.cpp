@@ -79,13 +79,6 @@ FLuaContext* FLuaContext::Create()
  */
 void FLuaContext::RegisterDelegates()
 {
-#if SUPPORTS_COMMANDLET == 0
-    if (IsRunningCommandlet())
-    {
-        return;
-    }
-#endif
-
     FWorldDelegates::OnWorldCleanup.AddRaw(this, &FLuaContext::OnWorldCleanup);
     FCoreDelegates::OnPostEngineInit.AddRaw(this, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
     FCoreDelegates::OnPreExit.AddRaw(this, &FLuaContext::OnPreExit);                 // called before StaticExit()
@@ -110,13 +103,6 @@ void FLuaContext::RegisterDelegates()
  */
 void FLuaContext::CreateState()
 {
-#if SUPPORTS_COMMANDLET == 0
-    if (IsRunningCommandlet())
-    {
-        return;
-    }
-#endif
-
     if (!L)
     {
 
