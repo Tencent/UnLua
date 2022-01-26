@@ -122,8 +122,6 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
 
         FString RealModuleName = *ModuleNames.Find(Class);
 
-        GLuaCxt->AddModuleName(*RealModuleName);                                       // record this required module
-
         // create a Lua instance for this UObject
         int32 ObjectRef = NewLuaObject(L, Object, bDerivedClassBinded ? Class : nullptr, TCHAR_TO_UTF8(*RealModuleName));
 

@@ -1691,12 +1691,6 @@ static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDes
     }
 
     SetTableForClass(L, ClassName.Get());
-
-    if (!InClass->IsNative())
-    {
-        GLuaCxt->AddLibraryName(*StrClassName);
-    }
-
     return true;
 }
 

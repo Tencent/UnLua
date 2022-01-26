@@ -869,9 +869,6 @@ UUnLuaManager* FLuaContext::GetUnLuaManager()
 FLuaContext::FLuaContext()
     : L(nullptr), Manager(nullptr), bEnable(false)
 {
-#if WITH_EDITOR
-    LuaHandle = nullptr;
-#endif
 }
 
 FLuaContext::~FLuaContext()
@@ -1010,9 +1007,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
             //thread need refine
             CleanupThreads();                                   // lua thread
 
-            LibraryNames.Empty();                               // metatables and lua module
-            ModuleNames.Empty();
-
             FDelegateHelper::Cleanup(bFullCleanup);                 // clean up delegates
 
             Manager->Cleanup(NULL, bFullCleanup);                  // clean up UnLuaManager
@@ -1032,15 +1026,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
                 Manager->RemoveFromRoot();
                 Manager = nullptr;
             }
-
-#if WITH_EDITOR
-            if (LuaHandle)
-            {
-                FPlatformProcess::FreeDllHandle(LuaHandle);     // unload Lua dynamic lib
-                LuaHandle = nullptr;
-            }
-#endif
-
         }
 
         FUnLuaDelegates::OnPostLuaContextCleanup.Broadcast(bFullCleanup);

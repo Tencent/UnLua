@@ -43,8 +43,6 @@ public:
 
     bool TryToBindLua(UObject *Object);
 
-    void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
-    void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
     void AddSearcher(int (*Searcher)(lua_State *), int Index);
     void AddBuiltinLoader(const TCHAR *Name, int (*Loader)(lua_State *)) { BuiltinLoaders.Add(Name, Loader); }
 
@@ -113,9 +111,6 @@ private:
     FDelegateHandle OnWorldTickStartHandle;
     FDelegateHandle OnPostGarbageCollectHandle;
 
-    TArray<FString> LibraryNames;       // metatables for classes/enums
-    TArray<FString> ModuleNames;        // required Lua modules
-
     TArray<FWeakObjectPtr> Candidates;        // binding candidates during async loading
 
     TArray<UnLua::IExportedFunction*> ExportedFunctions;                // statically exported global functions
@@ -134,10 +129,6 @@ private:
 	TMap<UObjectBase *, int32> UObjPtr2Idx;                             // UObject pointer -> index in GUObjectArray
     TMap<UObjectBase*, FString> UObjPtr2Name;                           // UObject pointer -> Name for debug purpose
     FCriticalSection Async2MainCS;                                      // async loading thread and main thread sync lock
-
-#if WITH_EDITOR
-    void *LuaHandle;
-#endif
 
     TArray<class UInputComponent*> CandidateInputComponents;
     TArray<UGameInstance*> GameInstances;

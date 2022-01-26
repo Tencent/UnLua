@@ -151,8 +151,6 @@ void UnLua::CoreLib::RegisterEnum(lua_State* L, FEnumDesc* EnumDesc)
         lua_setmetatable(L, -2);
 
         SetTableForClass(L, EnumName.Get());
-
-        GLuaCxt->AddLibraryName(*EnumDesc->GetName());
     }
     lua_pop(L, 1);
 }
