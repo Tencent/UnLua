@@ -361,8 +361,8 @@ public:
         }
         else
         {
-#if ENABLE_TYPE_CHECK == 1
             UObject* Object = UnLua::GetUObject(L, IndexInStack);
+#if ENABLE_TYPE_CHECK == 1
             if (Object)
             {
                 if (!Object->GetClass()->IsChildOf(ObjectBaseProperty->PropertyClass))
