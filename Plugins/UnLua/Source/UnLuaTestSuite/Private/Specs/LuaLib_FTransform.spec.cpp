@@ -33,7 +33,7 @@ void FUnLuaLibFTransformSpec::Define()
 
     Describe(TEXT("构造FTransform"), [this]()
     {
-        It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("默认参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             return UE.FTransform()\
@@ -44,7 +44,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        xIt(TEXT("指定Translation"), EAsyncExecution::ThreadPool, [this]()
+        xIt(TEXT("指定Translation"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             // TODO: not supported currently
             const char* Chunk = "\
@@ -57,7 +57,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        It(TEXT("指定Rotation(FQuat)"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定Rotation(FQuat)"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Rotation = UE.FQuat(0,0,0,1)\
@@ -69,7 +69,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        xIt(TEXT("指定Rotation(FRotator)"), EAsyncExecution::ThreadPool, [this]()
+        xIt(TEXT("指定Rotation(FRotator)"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             // TODO: not supported currently
             const char* Chunk = "\
@@ -82,7 +82,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        It(TEXT("指定Rotation(FQuat)/Translation"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定Rotation(FQuat)/Translation"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Rotation = UE.FQuat(0,0,0,1)\
@@ -95,7 +95,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        xIt(TEXT("指定Rotation(FRotator)/Translation"), EAsyncExecution::ThreadPool, [this]()
+        xIt(TEXT("指定Rotation(FRotator)/Translation"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             // TODO: not supported currently
             const char* Chunk = "\
@@ -109,7 +109,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        It(TEXT("指定Rotation(FQuat)/Translation/Scale"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("指定Rotation(FQuat)/Translation/Scale"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Rotation = UE.FQuat(0,0,0,1)\
@@ -123,7 +123,7 @@ void FUnLuaLibFTransformSpec::Define()
             TEST_TRUE(Actual.Equals(Expected));
         });
 
-        xIt(TEXT("指定Rotation(FRotator)/Translation/Scale"), EAsyncExecution::ThreadPool, [this]()
+        xIt(TEXT("指定Rotation(FRotator)/Translation/Scale"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             // TODO: not supported currently
             const char* Chunk = "\
@@ -141,7 +141,7 @@ void FUnLuaLibFTransformSpec::Define()
 
     Describe(TEXT("BlendWith"), [this]
     {
-        It(TEXT("将当前Transform与目标Transform混合"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("将当前Transform与目标Transform混合"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Transform1 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,1))\
@@ -163,7 +163,7 @@ void FUnLuaLibFTransformSpec::Define()
 
     Describe(TEXT("BlendWith"), [this]
     {
-        It(TEXT("将当前Transform与目标两个Transform混合"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("将当前Transform与目标两个Transform混合"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Transform1 = UE.FTransform(UE.FQuat(0,0,0,1), UE.FVector(0,0,1))\
@@ -187,7 +187,7 @@ void FUnLuaLibFTransformSpec::Define()
 
     Describe(TEXT("tostring()"), [this]
     {
-        It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("转为字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE.FTransform())");
             const auto& Actual = lua_tostring(L, -1);

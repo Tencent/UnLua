@@ -34,11 +34,14 @@ void FUnLuaEditorToolbar::BindCommands()
     CommandList->MapAction(Commands.UnbindFromLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::UnbindFromLua_Executed));
 }
 
-void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
+void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject)
 {
+    if (!InContextObject)
+        return;
+
     ToolbarBuilder.BeginSection(NAME_None);
 
-    const auto Blueprint = Cast<UBlueprint>(ContextObject);
+    const auto Blueprint = Cast<UBlueprint>(InContextObject);
     const auto BindingStatus = GetBindingStatus(Blueprint);
     FString InStyleName;
     switch (BindingStatus)
@@ -59,8 +62,9 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
 
     ToolbarBuilder.AddComboButton(
         FUIAction(),
-        FOnGetContent::CreateLambda([&, BindingStatus]()
+        FOnGetContent::CreateLambda([&, BindingStatus, InContextObject]()
         {
+            ContextObject = InContextObject;
             const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
             FMenuBuilder MenuBuilder(true, CommandList);
             if (BindingStatus == NotBound)
@@ -83,10 +87,13 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder)
     ToolbarBuilder.EndSection();
 }
 
-TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender()
+TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender(UObject* InContextObject)
 {
     TSharedRef<FExtender> ToolbarExtender(new FExtender());
-    const auto ExtensionDelegate = FToolBarExtensionDelegate::CreateRaw(this, &FUnLuaEditorToolbar::BuildToolbar);
+    const auto ExtensionDelegate = FToolBarExtensionDelegate::CreateLambda([this, InContextObject](FToolBarBuilder& ToolbarBuilder)
+    {
+        BuildToolbar(ToolbarBuilder, InContextObject);
+    });
     ToolbarExtender->AddToolBarExtension("Debugging", EExtensionHook::After, CommandList, ExtensionDelegate);
     return ToolbarExtender;
 }
@@ -181,16 +188,25 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     if (!IsValid(Blueprint))
         return;
 
-    const UClass* Class = Blueprint->GeneratedClass;
-    const FString ClassName = Class->GetName();
-    FString OuterPath = Class->GetPathName();
-    int32 LastIndex;
-    if (OuterPath.FindLastChar('/', LastIndex))
-    {
-        OuterPath = OuterPath.Left(LastIndex + 1);
-    }
-    OuterPath = OuterPath.RightChop(6); // ignore "/Game/"
-    const FString FileName = FString::Printf(TEXT("%s%s%s.lua"), *GLuaSrcFullPath, *OuterPath, *ClassName);
+    UClass* Class = Blueprint->GeneratedClass;
+
+    const auto Func = Class->FindFunctionByName(FName("GetModuleName"));
+    if (!IsValid(Func))
+        return;
+
+    FString ModuleName;
+    Class->ProcessEvent(Func, &ModuleName);
+
+    if (ModuleName.IsEmpty())
+        return;
+
+    TArray<FString> ModuleNameParts;
+    ModuleName.ParseIntoArray(ModuleNameParts, TEXT("."));
+    const auto ClassName = ModuleNameParts.Last();
+
+    const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/"));
+    const auto FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *RelativePath);
+
     if (FPaths::FileExists(FileName))
     {
         UE_LOG(LogUnLua, Warning, TEXT("Lua file (%s) is already existed!"), *ClassName);
@@ -225,7 +241,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     FFileHelper::LoadFileToString(Content, *TemplateName);
     Content = Content.Replace(TEXT("TemplateName"), *ClassName);
 
-    FFileHelper::SaveStringToFile(Content, *FileName);
+    FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
 void FUnLuaEditorToolbar::CopyAsRelativePath_Executed() const

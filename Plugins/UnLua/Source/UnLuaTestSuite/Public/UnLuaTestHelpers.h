@@ -14,8 +14,10 @@
 
 #pragma once
 
-#include "UnLua.h"
+#include "Engine/DataTable.h"
+#include "GameFramework/Actor.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "UnLua.h"
 #include "UnLuaTestHelpers.generated.h"
 
 namespace UnLuaTestHelpers
@@ -25,6 +27,16 @@ namespace UnLuaTestHelpers
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
 
 DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
+
+UENUM()
+enum EEnumForIssue331
+{
+    RECORD_NONE = 0,
+    RECORD_TO_FILE = 1 + 2,
+    RECORD_TO_LOG = 4,
+};
 
 UCLASS()
 class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
@@ -39,10 +51,38 @@ public:
     FUnLuaTestSimpleHandler SimpleHandler;
 
     UPROPERTY()
+    FIssue304Event Issue304Event;
+
+    UPROPERTY()
     int32 Counter;
 
     UFUNCTION(BlueprintCallable)
     void AddCount() { Counter++; }
+};
+
+UCLASS()
+class UNLUATESTSUITE_API AUnLuaTestActor : public AActor
+{
+    GENERATED_BODY()
+
+public:
+    UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+    int32 TestForIssue300();
+
+    UFUNCTION(BlueprintImplementableEvent)
+    bool TestForIssue328();
+};
+
+USTRUCT(BlueprintType)
+struct UNLUATESTSUITE_API FUnLuaTestTableRow : public FTableRowBase
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    FString Title;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    int32 Level;
 };
 
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FIssule294Event, int32, Value1, UObject*, Value2);
@@ -60,6 +100,26 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
     {
         Event.ExecuteIfBound(1, StaticClass());
         return Array.Num();
+    }
+
+    UFUNCTION(BlueprintCallable)
+    static bool TestForIssue323(FVector Location = FVector::ZeroVector,
+                                FRotator Rotation = FRotator::ZeroRotator,
+                                FVector2D Vector2D = FVector2D::ZeroVector,
+                                FLinearColor LinearColor = FLinearColor::Green,
+                                FColor Color = FColor::Blue)
+    {
+        return Location == FVector::ZeroVector
+            && Rotation == FRotator::ZeroRotator
+            && Vector2D == FVector2D::ZeroVector
+            && LinearColor == FLinearColor::Green
+            && Color == FColor::Blue;
+    }
+
+    UFUNCTION(BlueprintCallable)
+    static bool TestForIssue331(EEnumForIssue331 InEnum = EEnumForIssue331::RECORD_TO_FILE)
+    {
+        return InEnum == EEnumForIssue331::RECORD_TO_FILE;
     }
 };
 

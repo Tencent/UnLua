@@ -367,25 +367,35 @@ void UUnLuaManager::OnClassCleanup(UClass *Class)
  */
 void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr)
 {
-    Function->SetNativeFunc(NativeFuncPtr);
-    GReflectionRegistry.UnRegisterFunction(Function);
-    if (Function->Script.Num() > 0 && Function->Script[0] == EX_CallLua)
+    if (GLuaCxt->IsUObjectValid(Function))
     {
-        Function->Script.Empty();
-    }
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    UFunction *OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
-    if (GLuaCxt->IsUObjectValid(OverriddenFunc))
-    {   
-        RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
-    }
-#endif
+        Function->SetNativeFunc(NativeFuncPtr);
 
-    TArray<uint8> Script;
-    if (CachedScripts.RemoveAndCopyValue(Function, Script))
-    {
-        Function->Script = Script;
+        if (Function->Script.Num() > 0 && Function->Script[0] == EX_CallLua)
+        {
+            Function->Script.Empty();
+        }
+
+        TArray<uint8> Script;
+        if (CachedScripts.RemoveAndCopyValue(Function, Script))
+        {
+            Function->Script = Script;
+        }
     }
+    else
+    {
+        CachedScripts.Remove(Function);
+    }
+
+    GReflectionRegistry.UnRegisterFunction(Function);
+
+#if ENABLE_CALL_OVERRIDDEN_FUNCTION
+    UFunction* OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
+    if (OverriddenFunc->IsValidLowLevel())
+        RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
+    else
+        GReflectionRegistry.UnRegisterFunction(OverriddenFunc);
+#endif
 }
 
 /**
@@ -757,6 +767,9 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
  */
 void UUnLuaManager::ReplaceFunction(UFunction *TemplateFunction, UClass *OuterClass)
 {
+    if (TemplateFunction->GetNativeFunc() == FLuaInvoker::execCallLua)
+        return;
+
     FNativeFuncPtr *NativePtr = CachedNatives.Find(TemplateFunction);
     if (!NativePtr)
     {

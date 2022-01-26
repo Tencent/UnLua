@@ -11,7 +11,7 @@ void FBlueprintToolbar::Initialize()
 	ExtenderDelegates.Add(FAssetEditorExtender::CreateLambda(
 		[&](const TSharedRef<FUICommandList>, const TArray<UObject*> ContextSensitiveObjects)
 		{
-			ContextObject = ContextSensitiveObjects.Num() < 1 ? nullptr : Cast<UBlueprint>(ContextSensitiveObjects[0]);
-			return GetExtender();
+			const auto TargetObject = ContextSensitiveObjects.Num() < 1 ? nullptr : Cast<UBlueprint>(ContextSensitiveObjects[0]);
+			return GetExtender(TargetObject);
 		}));
 }

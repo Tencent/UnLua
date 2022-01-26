@@ -497,7 +497,7 @@ public:
         {
             if (Type != LUA_TUSERDATA)
             {
-                ErrorMsg = FString::Printf(TEXT("userdata is needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, IndexInStack)));
+                ErrorMsg = FString::Printf(TEXT("userdata is needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
                 return false;
             }
 

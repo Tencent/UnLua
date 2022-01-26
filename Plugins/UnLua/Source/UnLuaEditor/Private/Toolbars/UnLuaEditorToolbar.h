@@ -25,9 +25,9 @@ public:
 protected:
 	virtual void BindCommands();
 
-	void BuildToolbar(FToolBarBuilder& ToolbarBuilder);
+	void BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject);
 
-	TSharedRef<FExtender> GetExtender();
+	TSharedRef<FExtender> GetExtender(UObject* InContextObject);
 
 	const TSharedRef<FUICommandList> CommandList;
 

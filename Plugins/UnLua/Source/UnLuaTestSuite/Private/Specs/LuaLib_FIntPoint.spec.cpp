@@ -33,21 +33,21 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("构造FIntPoint"), [this]()
     {
-        It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("默认参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FIntPoint()");
             const auto& Point = UnLua::Get<FIntPoint>(L, -1, UnLua::TType<FIntPoint>());
             TEST_EQUAL(Point, FIntPoint(EForceInit::ForceInit));
         });
 
-        It(TEXT("分别指定X和Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("分别指定X和Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FIntPoint(1,2)");
             const auto& Point = UnLua::Get<FIntPoint>(L, -1, UnLua::TType<FIntPoint>());
             TEST_EQUAL(Point, FIntPoint(1,2));
         });
 
-        It(TEXT("同时指定X和Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("同时指定X和Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FIntPoint(1)");
             const auto& Point = UnLua::Get<FIntPoint>(L, -1, UnLua::TType<FIntPoint>());
@@ -57,7 +57,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("Set"), [this]
     {
-        It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point = UE.FIntPoint()\
@@ -69,7 +69,7 @@ void FUnLuaLibFIntPointSpec::Define()
             TEST_EQUAL(Point, FIntPoint(1,0));
         });
 
-        It(TEXT("设置XY"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置XY"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point = UE.FIntPoint()\
@@ -84,7 +84,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("Add"), [this]
     {
-        It(TEXT("两点相加"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("两点相加"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point1 = UE.FIntPoint(2,4)\
@@ -99,7 +99,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("Sub"), [this]
     {
-        It(TEXT("两点相减"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("两点相减"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point1 = UE.FIntPoint(2,4)\
@@ -114,7 +114,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("Mul"), [this]
     {
-        It(TEXT("两点相乘"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("两点相乘"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point1 = UE.FIntPoint(1,2)\
@@ -129,7 +129,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("Div"), [this]
     {
-        It(TEXT("两点相除"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("两点相除"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point1 = UE.FIntPoint(2,4)\
@@ -144,7 +144,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("unm"), [this]
     {
-        It(TEXT("取相反数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("取相反数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Point = UE.FIntPoint(1,2)\
@@ -158,7 +158,7 @@ void FUnLuaLibFIntPointSpec::Define()
 
     Describe(TEXT("tostring()"), [this]
     {
-        It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("转为字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE.FIntPoint(1,2))");
             const auto& Actual = lua_tostring(L, -1);

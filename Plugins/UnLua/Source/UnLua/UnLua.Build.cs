@@ -65,16 +65,6 @@ public class UnLua : ModuleRules
             PrivateDependencyModuleNames.Add("UnrealEd");
         }
 
-        bool bSupportCommandlet = true;
-        if (bSupportCommandlet)
-        {
-            PublicDefinitions.Add("SUPPORT_COMMANDLET=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("SUPPORT_COMMANDLET=0");
-        }
-
         bool bAutoStartup = true;
         if (bAutoStartup)
         {

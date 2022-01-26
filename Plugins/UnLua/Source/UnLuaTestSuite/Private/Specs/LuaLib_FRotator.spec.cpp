@@ -33,7 +33,7 @@ void FUnLuaLibFRotatorSpec::Define()
 
     Describe(TEXT("构造FRotator"), [this]()
     {
-        It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("默认参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FRotator()");
             const auto& Actual = UnLua::Get<FRotator>(L, -1, UnLua::TType<FRotator>());
@@ -41,7 +41,7 @@ void FUnLuaLibFRotatorSpec::Define()
             TEST_EQUAL(Actual, Expected);
         });
 
-        It(TEXT("同时指定Pitch/Yaw/Roll"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("同时指定Pitch/Yaw/Roll"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FRotator(1)");
             const auto& Actual = UnLua::Get<FRotator>(L, -1, UnLua::TType<FRotator>());
@@ -49,7 +49,7 @@ void FUnLuaLibFRotatorSpec::Define()
             TEST_EQUAL(Actual, Expected);
         });
 
-        It(TEXT("分别指定Pitch/Yaw/Roll"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("分别指定Pitch/Yaw/Roll"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FRotator(1,2,3)");
             const auto& Actual = UnLua::Get<FRotator>(L, -1, UnLua::TType<FRotator>());
@@ -60,7 +60,7 @@ void FUnLuaLibFRotatorSpec::Define()
 
     Describe(TEXT("Set"), [this]
     {
-        It(TEXT("设置Pitch"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置Pitch"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Rotator = UE.FRotator()\
@@ -73,7 +73,7 @@ void FUnLuaLibFRotatorSpec::Define()
             TEST_EQUAL(Actual, Expected);
         });
 
-        It(TEXT("设置Pitch/Yaw"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置Pitch/Yaw"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Rotator = UE.FRotator()\
@@ -86,7 +86,7 @@ void FUnLuaLibFRotatorSpec::Define()
             TEST_EQUAL(Actual, Expected);
         });
 
-        It(TEXT("设置Pitch/Yaw/Roll"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置Pitch/Yaw/Roll"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Rotator = UE.FRotator()\
@@ -102,7 +102,7 @@ void FUnLuaLibFRotatorSpec::Define()
 
     Describe(TEXT("tostring()"), [this]
     {
-        It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("转为字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE.FRotator(1,2,3))");
             const auto& Actual = lua_tostring(L, -1);

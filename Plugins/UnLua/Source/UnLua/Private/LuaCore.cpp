@@ -2443,6 +2443,28 @@ int32 Class_Index(lua_State *L)
     return 1;
 }
 
+bool IsPropertyOwnerTypeValid(UnLua::ITypeOps* InProperty, void* InContainerPtr)
+{
+    if (InProperty->StaticExported)
+        return true;
+
+    UnLua::ITypeInterface* TypeInterface = (UnLua::ITypeInterface*)InProperty;
+    FProperty* Property = TypeInterface->GetUProperty();
+    if (!Property)
+        return true;
+
+    UObject* Object = (UObject*)InContainerPtr;
+    UClass* OwnerClass = Property->GetOwnerClass();
+    if (!OwnerClass)
+        return true;
+
+    if (Object->IsA(OwnerClass))
+        return true;
+
+    UE_LOG(LogUnLua, Error, TEXT("Writing property to invalid owner. %s should be a %s."), *Object->GetName(), *OwnerClass->GetName());
+    return false;
+}
+
 /**
  * __newindex meta methods for class
  */
@@ -2451,28 +2473,20 @@ int32 Class_NewIndex(lua_State *L)
     GetField(L);
     if (lua_islightuserdata(L, -1))
     {
-        bool bValid = false;
         UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
         if (Property)
         {
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
-
-			if ((!bValid)
-				&& (Property->StaticExported))
-			{
-				bValid = true;
-			}
-
-			void* ContainerPtr = GetCppInstance(L, 1);
-
-			if ((bValid)
-				&& (ContainerPtr))
-			{
-				Property->Write(L, ContainerPtr, 3);
-			}
+            const bool bValid = GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY) || Property->StaticExported;
+            void* ContainerPtr = GetCppInstance(L, 1);
+            if (bValid && ContainerPtr)
+            {
+#if ENABLE_TYPE_CHECK
+                if (IsPropertyOwnerTypeValid(Property, ContainerPtr))
+                    Property->Write(L, ContainerPtr, 3);
+#else
+                Property->Write(L, ContainerPtr, 3);
+#endif
+            }
         }
     }
     else

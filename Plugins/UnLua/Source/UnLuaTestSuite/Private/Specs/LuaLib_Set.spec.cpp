@@ -33,7 +33,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("构造TSet"), [this]()
     {
-        It(TEXT("构造TSet<int32>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TSet<int32>"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -48,7 +48,7 @@ void FUnLuaLibSetSpec::Define()
             TEST_TRUE(Set->Contains(2));
         });
 
-        It(TEXT("构造TSet<FString>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TSet<FString>"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet('')\
@@ -63,7 +63,7 @@ void FUnLuaLibSetSpec::Define()
             TEST_TRUE(Set->Contains("B"));
         });
 
-        It(TEXT("构造TSet<FVector>"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("构造TSet<FVector>"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(UE.FVector)\
@@ -81,7 +81,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("Length"), [this]()
     {
-        It(TEXT("获取Set长度"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("获取Set长度"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -96,7 +96,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("Add"), [this]()
     {
-        It(TEXT("元素不存在，新增"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("元素不存在，新增"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -111,7 +111,7 @@ void FUnLuaLibSetSpec::Define()
             TEST_TRUE(Set->Contains(2));
         });
 
-        It(TEXT("不增加重复的元素"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("不增加重复的元素"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -128,7 +128,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("Remove"), [this]()
     {
-        It(TEXT("元素不存在，返回false"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("元素不存在，返回false"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -139,7 +139,7 @@ void FUnLuaLibSetSpec::Define()
             TEST_FALSE(lua_toboolean(L, -1));
         });
 
-        It(TEXT("元素存在，移除并返回true"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("元素存在，移除并返回true"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -155,7 +155,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("Contains"), [this]()
     {
-        It(TEXT("查找元素存在，返回true"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("查找元素存在，返回true"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -166,7 +166,7 @@ void FUnLuaLibSetSpec::Define()
             TEST_TRUE(lua_toboolean(L, -1));
         });
 
-        It(TEXT("查找元素不存在，返回false"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("查找元素不存在，返回false"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -180,7 +180,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("Clear"), [this]()
     {
-        It(TEXT("清除，移除所有元素"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("清除，移除所有元素"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -196,7 +196,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("ToArray"), [this]()
     {
-        It(TEXT("获取所有元素的数组"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("获取所有元素的数组"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\
@@ -216,7 +216,7 @@ void FUnLuaLibSetSpec::Define()
 
     Describe(TEXT("ToTable"), [this]()
     {
-        It(TEXT("将Set内容转为LuaTable"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("将Set内容转为LuaTable"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Set = UE.TSet(0)\

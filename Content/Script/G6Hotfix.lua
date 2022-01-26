@@ -14,7 +14,7 @@ local HotAllReloadMark = "_Hot_All_Reload_Mark_"
 local G6HotFix = {
 	--此标记位决定在HotFix后，是将新的table中的函数赋给老的table来保持状态
 	--还是使用新的table替换全局中老的table
-	UseNewModuleWhenHotifx = false,
+	UseNewModuleWhenHotfix = false,
 	--是否删除旧table中有，新table没有的值
 	DelOldAddedValue = false,
 	m_Loaded = setmetatable({}, { __mode = "v" }),
@@ -121,15 +121,18 @@ local function SelfLoadFile(strname, bnotprinterr)
 	return func, err, env
 end
 
---- 先检测require的Moudule是否存在
+--- 先检测require的Module是否存在
 --- @return boolean
-local function IsMouduleInPackage(strname)
+local function IsModuleInPackage(strname)
 	if package.loaded[strname] ~= nil then
 		--print("package.loaded 已包含 : " .. strname)
 		return true
 	end
+	-- Searchers in UnLua2.1+ , see in LuaContext.cpp
+	-- 1:package.preload 2:UnLua CustomLoader 3:UnLua FileSystem 4:UnLua BuiltinLibs 5:Lua loader 6:C Loader 7:all-in-one loader
 	for i, loader in ipairs(package.searchers) do
-		if i ~= 2 then	--不使用Lua loader
+		--不使用Lua loader
+		if i ~= 3 and i ~= 5 then
 			local f , extra = loader(strname)
 			local t = type(f)
 			if t == "function" then
@@ -175,7 +178,7 @@ local function SelfLoadFileAndRecord(strName)
 
 	-- loadfile使用全路径
 	if not string.find( strName, "/") then
-		if IsMouduleInPackage(strName) then
+		if IsModuleInPackage(strName) then
 			print(" find " .. strName .. "in package. use ori require")
 			return OriRequire(strName)
 		end
@@ -537,7 +540,7 @@ local function UpdateGlobal(ChangeValueMap)
 	Exclude[ChangeValueMap] = true
 	Exclude[G6HotFix.UpdateModule] = true
 
-	if G6HotFix.UseNewModuleWhenHotifx == false then
+	if G6HotFix.UseNewModuleWhenHotfix == false then
 		Exclude[package] = true
 		Exclude[package.loaded] = true
 		Exclude[G6HotFix.m_Loaded] = true
@@ -636,7 +639,7 @@ local function UpdateGlobal(ChangeValueMap)
 				else
 					local nv = ChangeValueMap[v]
 					if nv then
-						if G6HotFix.UseNewModuleWhenHotifx then
+						if G6HotFix.UseNewModuleWhenHotfix then
 							ReplaceCount = ReplaceCount + 1
 							--print("ReplaceCount3 : ", name, tostring(root), tostring(v), tostring(nv), ReplaceCount)
 							debug.setupvalue(root, i, nv)
@@ -700,7 +703,7 @@ function G6HotFix.UpdateModule(listoldmodule, listnewmudule, listnewmuduleenv)
 
 			moduleres.tValueMap = MatchModule(NewModuleInfo, OldModule)
 			--keep ori table value
-			if G6HotFix.UseNewModuleWhenHotifx then
+			if G6HotFix.UseNewModuleWhenHotfix then
 				for oldk, oldv in pairs(OldModule) do
 					if type(oldv) ~= "function" then
 						NewModule[oldk] = oldv
@@ -808,7 +811,7 @@ function G6HotFix.HotFixOneFile(strOldFile, strNewFile)
 		end	
 		G6HotFix.UpdateModule({G6HotFix.m_Loaded[strOldFile]}, {_newModlue}, {_fileenv})
 
-		if G6HotFix.UseNewModuleWhenHotifx then
+		if G6HotFix.UseNewModuleWhenHotfix then
 			--change to new or will be nil
 			G6HotFix.m_Loaded[strOldFile] = _newModlue
 			package.loaded[strOldFile] = _newModlue
@@ -911,7 +914,7 @@ function G6HotFix.HotFixFile(listOldFile, listNewFile)
 	G6HotFix.HotFixCount = G6HotFix.HotFixCount + 1
 
 	for i,strOldFile in ipairs(listOldFile) do
-		if G6HotFix.UseNewModuleWhenHotifx then
+		if G6HotFix.UseNewModuleWhenHotfix then
 			--change to new or will be nil
 			G6HotFix.m_Loaded[strOldFile] = listNewModule[i]
 			package.loaded[strOldFile] = listNewModule[i]

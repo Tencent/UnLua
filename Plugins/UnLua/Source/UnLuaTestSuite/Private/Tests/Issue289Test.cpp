@@ -45,8 +45,6 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 		World->Tick(LEVELTICK_All, SMALL_NUMBER);
 		Actor->Destroy();
 
-		GetTestRunner().AddExpectedError(TEXT("for class invalid"), EAutomationExpectedErrorFlags::Contains);
-
 		CollectGarbage(RF_NoFlags, true);
 
 		UnLua::RunChunk(L, Chunk);

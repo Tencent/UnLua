@@ -33,21 +33,21 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("构造FVector2D"), [this]()
     {
-        It(TEXT("默认参数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("默认参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector2D()");
             const auto& Vector = UnLua::Get<FVector2D>(L, -1, UnLua::TType<FVector2D>());
             TEST_EQUAL(Vector, FVector2D(EForceInit::ForceInitToZero));
         });
 
-        It(TEXT("分别指定X/Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("分别指定X/Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector2D(1.1,2.2)");
             const auto& Vector = UnLua::Get<FVector2D>(L, -1, UnLua::TType<FVector2D>());
             TEST_EQUAL(Vector, FVector2D(1.1f,2.2f));
         });
 
-        It(TEXT("同时指定X/Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("同时指定X/Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.FVector2D(1.1)");
             const auto& Vector = UnLua::Get<FVector2D>(L, -1, UnLua::TType<FVector2D>());
@@ -57,7 +57,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("Set"), [this]
     {
-        It(TEXT("设置X"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D()\
@@ -69,7 +69,7 @@ void FUnLuaLibFVector2DSpec::Define()
             TEST_EQUAL(Vector, FVector2D(1.1f,0));
         });
 
-        It(TEXT("设置X/Y"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("设置X/Y"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D()\
@@ -84,7 +84,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("Normalize"), [this]
     {
-        It(TEXT("大于等于容差，归一化"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("大于等于容差，归一化"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D(3.3,3.3)\
@@ -97,7 +97,7 @@ void FUnLuaLibFVector2DSpec::Define()
             Expected.Normalize();
             TEST_EQUAL(Vector, Expected);
         });
-        It(TEXT("小于容差，不归一化"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("小于容差，不归一化"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D(3.3,3.3)\
@@ -114,7 +114,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("Add"), [this]
     {
-        It(TEXT("向量相加"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量相加"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector1 = UE.FVector2D(1.1,2.2)\
@@ -129,7 +129,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("Sub"), [this]
     {
-        It(TEXT("向量相减"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量相减"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector1 = UE.FVector2D(1.1,2.2)\
@@ -144,7 +144,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("Mul"), [this]
     {
-        It(TEXT("向量乘以浮点数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量乘以浮点数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D(1.1,2.2)\
@@ -158,7 +158,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("Div"), [this]
     {
-        It(TEXT("向量除以浮点数"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("向量除以浮点数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D(2.2,4.4)\
@@ -172,7 +172,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("unm"), [this]
     {
-        It(TEXT("取反向量"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("取反向量"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Vector = UE.FVector2D(1.1,2.2)\
@@ -186,7 +186,7 @@ void FUnLuaLibFVector2DSpec::Define()
 
     Describe(TEXT("tostring()"), [this]
     {
-        It(TEXT("转为字符串"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("转为字符串"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return tostring(UE.FVector2D(1,2))");
             const auto& Actual = lua_tostring(L, -1);

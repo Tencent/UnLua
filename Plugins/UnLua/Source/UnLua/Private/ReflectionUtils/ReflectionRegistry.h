@@ -36,7 +36,7 @@ enum EDescType
 /**
  * Reflection registry
  */
-class FReflectionRegistry
+class UNLUA_API FReflectionRegistry
 {
 public:
     ~FReflectionRegistry() { Cleanup(); }
@@ -97,4 +97,4 @@ private:
     TMap<const FString, bool> ClassWhiteSet;
 };
 
-extern FReflectionRegistry GReflectionRegistry;
+extern UNLUA_API FReflectionRegistry GReflectionRegistry;

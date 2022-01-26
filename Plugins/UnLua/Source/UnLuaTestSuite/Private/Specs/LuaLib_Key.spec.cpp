@@ -33,7 +33,7 @@ void FUnLuaLibEKeySpec::Define()
 
     Describe(TEXT("访问EKeys"), [this]()
     {
-        It(TEXT("F1"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("F1"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.EKeys.F1.KeyName");
             TEST_EQUAL(lua_tostring(L, -1), "F1");
@@ -42,14 +42,14 @@ void FUnLuaLibEKeySpec::Define()
 
     Describe(TEXT("比较FKey"), [this]()
     {
-        It(TEXT("相等"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("相等"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.EKeys.A == UE.EKeys.A");
             const auto Actual = !!lua_toboolean(L, -1);
             TEST_TRUE(Actual);
         });
 
-        It(TEXT("不相等"), EAsyncExecution::ThreadPool, [this]()
+        It(TEXT("不相等"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::RunChunk(L, "return UE.EKeys.A == UE.EKeys.Invalid");
             const auto Actual = !!lua_toboolean(L, -1);

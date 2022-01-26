@@ -48,7 +48,11 @@ namespace UnLua
 
 		void* RowPtr = Table->FindRowUnchecked(RowName);
 
-		if (RowPtr != nullptr)
+		if (RowPtr == nullptr)
+		{
+			lua_pushnil(L);
+		}
+		else
 		{
 			const UScriptStruct* StructType = Table->GetRowStruct();
 
@@ -80,6 +84,7 @@ namespace UnLua
 	//export GetTableDataRowFromName
 	BEGIN_EXPORT_REFLECTED_CLASS(UDataTableFunctionLibrary)
 	ADD_STATIC_FUNCTION_EX("GetTableDataRowFromName", bool, Generic_GetDataTableRowFromName, const UDataTable*, FName, void*)
+	ADD_STATIC_FUNCTION_EX("GetDataTableRowFromName", bool, Generic_GetDataTableRowFromName, const UDataTable*, FName, void*)
 	ADD_LIB(UDataTableLib)
 	END_EXPORT_CLASS()
 	IMPLEMENT_EXPORTED_CLASS(UDataTableFunctionLibrary)
