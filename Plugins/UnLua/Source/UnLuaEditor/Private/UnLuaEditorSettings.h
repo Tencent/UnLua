@@ -39,12 +39,27 @@ class UNLUAEDITOR_API UUnLuaEditorSettings : public UObject
 {
     GENERATED_BODY()
 
-    UPROPERTY(config, EditAnywhere, Category = "Setting", meta = (DisplayName = "Update Mode", defaultValue = 0))
-    EUpdateMode UpdateMode;
-
-    UPROPERTY(config, EditAnywhere, Category = "Setting", meta = (DisplayName = "Hot Reload Mode", defaultValue = 0))
+    UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Hot Reload Mode", defaultValue = 0))
     EHotReloadMode HotReloadMode;
 
-    UPROPERTY(config, EditAnywhere, Category = "Setting", meta = (DisplayName = "Generate IntelliSense Files", defaultValue = true))
-    bool bGenerateIntelliSense;
+    UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Generate IntelliSense Files"))
+    bool bGenerateIntelliSense = true;
+
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Auto Startup"))
+    bool bAutoStart = true;
+
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug"))
+    bool bEnableDebug = false;
+
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking"))
+    bool bEnableTypeChecking = true;
+
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated)"))
+    bool bEnableRPCCall = true;
+
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated)"))
+    bool bWithUENamespace = true;
+
+    UPROPERTY(config, EditAnywhere, Category = "System", meta = (DisplayName = "Update Mode", defaultValue = 0))
+    EUpdateMode UpdateMode;
 };

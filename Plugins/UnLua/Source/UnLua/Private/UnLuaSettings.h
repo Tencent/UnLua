@@ -22,11 +22,4 @@ UCLASS(config=UnLua, defaultconfig, meta=(DisplayName="UnLua"))
 class UNLUA_API UUnLuaSettings : public UObject
 {
     GENERATED_BODY()
-
-public:
-    UPROPERTY(config, EditAnywhere, Category = "Setting", meta = (DisplayName = "Generate IntelliSense Files", defaultValue = false))
-    bool bGenerateIntelliSense;
-
-    UPROPERTY(config, EditAnywhere, Category = "Setting", meta = (DisplayName = "Enable Hot Reload", defaultValue = false))
-    bool bEnableHotReload;
 };

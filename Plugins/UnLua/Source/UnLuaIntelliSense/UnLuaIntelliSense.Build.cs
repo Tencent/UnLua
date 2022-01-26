@@ -12,8 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-using UnrealBuildTool;
-using System.IO;
+using System;
 
 namespace UnrealBuildTool.Rules
 {
@@ -23,32 +22,46 @@ namespace UnrealBuildTool.Rules
         {
             bEnforceIWYU = false;
 
-            PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+            PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
             PublicIncludePaths.AddRange(
-                new string[] {
+                new[]
+                {
                     "Programs/UnrealHeaderTool/Public",
                 }
-                );
+            );
 
 
             PrivateIncludePaths.AddRange(
-                new string[] {
+                new[]
+                {
                     "UnLuaIntelliSense/Private",
                     "UnLua/Private",
                 }
-                );
+            );
 
 
             PrivateDependencyModuleNames.AddRange(
-                new string[]
+                new[]
                 {
                     "Core",
                     "CoreUObject",
                 }
-                );
+            );
 
-            PublicDefinitions.Add("ENABLE_INTELLISENSE=0");
+            var projectDir = Target.ProjectFile.Directory;
+            var config = ConfigCache.ReadHierarchy(ConfigHierarchyType.Game, projectDir, Target.Platform);
+            const string Section = "/Script/UnLuaEditor.UnLuaEditorSettings";
+
+            Action<string, string, bool> loadBoolConfig = (key, macro, defaultValue) =>
+            {
+                bool flag;
+                if (!config.GetBool(Section, key, out flag))
+                    flag = defaultValue;
+                PublicDefinitions.Add(string.Format("{0}={1}", macro, (flag ? "1" : "0")));
+            };
+
+            loadBoolConfig("bGenerateIntelliSense", "ENABLE_INTELLISENSE", true);
 
             PublicDefinitions.Add("HACK_HEADER_GENERATOR=1");
         }
