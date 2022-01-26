@@ -1052,7 +1052,11 @@ void UUnLuaManager::AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRe
  * Get lua ref of a recorded binded UObject
  */
 void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
-{   
+{
+    check(Object);
+    
+    GObjectReferencer.RemoveObjectRef((UObject*)Object);
+    
     int32* ObjectLuaRef = AttachedObjects.Find(Object);
     if ((ObjectLuaRef)
         &&(*ObjectLuaRef != LUA_REFNIL))
