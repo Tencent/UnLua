@@ -22,6 +22,9 @@
 #include "Animation/AnimBlueprint.h"
 #include "BlueprintEditorModule.h"
 #include "AnimationBlueprintEditorModule.h"
+#include "ISettingsModule.h"
+#include "ISettingsSection.h"
+#include "UnLuaEditorSettings.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
@@ -32,7 +35,7 @@
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
 // copy dependency file to plugin's content dir
-static bool CopyDependencyFile(const TCHAR *FileName)
+static bool CopyDependencyFile(const TCHAR* FileName)
 {
     static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
     FString SrcFilePath = ContentDir / FileName;
@@ -86,32 +89,37 @@ public:
         FCoreDelegates::OnPostEngineInit.Remove(OnPostEngineInitHandle);
         FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
         FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
+
+        UnregisterSettings();
     }
 
 private:
     void OnPostEngineInit()
     {
+        RegisterSettings();
+
         BlueprintToolbar->Initialize();
         AnimationBlueprintToolbar->Initialize();
-        
-        IMainFrameModule &MainFrameModule = FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT("MainFrame"));
+
+        IMainFrameModule& MainFrameModule = FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT("MainFrame"));
         MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
     }
 
     void PostPIEStarted(bool bIsSimulating)
     {
-        bIsPIE = true;      // raise PIE flag
+        bIsPIE = true; // raise PIE flag
     }
 
     void PrePIEEnded(bool bIsSimulating)
     {
-        bIsPIE = false;     // clear PIE flag
+        bIsPIE = false; // clear PIE flag
     }
 
     void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
     {
         // register default key input to 'Hotfix' Lua
-        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(FUnLuaEditorCommands::Get().HotfixLua, FExecuteAction::CreateLambda([]() { HotfixLua(); }), FCanExecuteAction::CreateRaw(this, &FUnLuaEditorModule::CanHotfixLua));
+        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(FUnLuaEditorCommands::Get().HotfixLua, FExecuteAction::CreateLambda([]() { HotfixLua(); }),
+                                                              FCanExecuteAction::CreateRaw(this, &FUnLuaEditorModule::CanHotfixLua));
 
         // copy dependency files
         bool bSuccess = CopyDependencyFile(TEXT("UnLua.lua"));
@@ -122,7 +130,32 @@ private:
 
     bool CanHotfixLua() const
     {
-        return bIsPIE;      // enable Lua 'Hotfix' in PIE
+        return bIsPIE; // enable Lua 'Hotfix' in PIE
+    }
+
+    void RegisterSettings() const
+    {
+        ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
+        if (SettingsModule)
+        {
+            const TSharedPtr<ISettingsSection> Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua",
+                                                                                          LOCTEXT("UnLuaEditorSettingsName", "UnLua Editor"),
+                                                                                          LOCTEXT("UnLuaEditorSettingsDescription", "UnLua Editor Settings"),
+                                                                                          GetMutableDefault<UUnLuaEditorSettings>());
+            Section->OnModified().BindRaw(this, &FUnLuaEditorModule::OnSettingsModified);
+        }
+    }
+
+    void UnregisterSettings() const
+    {
+        ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
+        if (SettingsModule)
+            SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua");
+    }
+
+    bool OnSettingsModified() const
+    {
+        return true;
     }
 
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
