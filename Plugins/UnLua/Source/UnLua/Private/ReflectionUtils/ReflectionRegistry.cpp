@@ -19,6 +19,20 @@
 #include "PropertyDesc.h"
 #include "UnLua.h"
 
+FReflectionRegistry::FReflectionRegistry()
+{
+    PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([this]()
+    {
+        this->PostGarbageCollect();
+    });
+}
+
+FReflectionRegistry::~FReflectionRegistry()
+{
+    Cleanup();
+    FCoreUObjectDelegates::GetPostGarbageCollect().Remove(PostGarbageCollectHandle);
+}
+
 /**
  * Clean up
  */
@@ -34,13 +48,6 @@ void FReflectionRegistry::Cleanup()
     for (TMap<FName, FEnumDesc*>::TIterator It(Enums); It; ++It)
     {
         delete It.Value();
-    }
-    for (TMap<UFunction*, FFunctionDesc*>::TIterator It(Functions); It; ++It)
-    {  
-        if (GReflectionRegistry.IsDescValid(It.Value(), DESC_FUNCTION))
-        {
-            delete It.Value();
-        }
     }
     Name2Classes.Empty();
     Struct2Classes.Empty();
@@ -309,56 +316,31 @@ bool FReflectionRegistry::UnRegisterEnum(const FEnumDesc* EnumDesc)
 /**
  * Register a UFunction
  */
-FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction *InFunction, int32 InFunctionRef)
+FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction* InFunction, int32 InFunctionRef)
 {
-    FFunctionDesc **FunctionPtr = Functions.Find(InFunction);
-    if ((FunctionPtr)
-        && (!IsDescValid(*FunctionPtr, DESC_FUNCTION)))
-    {   
-        Functions.Remove(InFunction);
-        FunctionPtr = nullptr;
-    }
-
-    if ((FunctionPtr)
-        &&((*FunctionPtr)->GetFunction() != InFunction))
+    TSharedPtr<FFunctionDesc> Desc = Functions.FindRef(InFunction);
+    if (Desc)
     {
-        UnRegisterFunction(InFunction);
-        FunctionPtr = nullptr;
-    }
-
-    FFunctionDesc* Function = nullptr;
-    if (FunctionPtr)
-    {
-        Function = *FunctionPtr;
         if (InFunctionRef != INDEX_NONE)
         {
-            check(Function->FunctionRef == INDEX_NONE || Function->FunctionRef == InFunctionRef);
-            Function->FunctionRef = InFunctionRef;
+            checkf(Desc->FunctionRef == INDEX_NONE || Desc->FunctionRef == InFunctionRef, TEXT("Function(%p %s) Owner=%s Desc(%s))"), InFunction, *InFunction->GetName(),
+                   *InFunction->GetOwnerClass()->GetName(), *Desc->FuncName)
+            Desc->FunctionRef = InFunctionRef;
         }
+        return Desc.Get();
     }
-    else
-    {
-        Function = new FFunctionDesc(InFunction, nullptr, InFunctionRef);
-        Functions.Add(InFunction, Function);
-    }
-    return Function;
+
+    Desc = MakeShareable(new FFunctionDesc(InFunction, nullptr, InFunctionRef));
+    Functions.Add(InFunction, Desc);
+    return Desc.Get();
 }
 
-bool FReflectionRegistry::UnRegisterFunction(UFunction *InFunction)
+bool FReflectionRegistry::UnRegisterFunction(UFunction* InFunction)
 {
-    FFunctionDesc** FunctionDesc = Functions.Find(InFunction);
-    if (FunctionDesc)
-    {   
-        Functions.Remove(InFunction);
-
-        if (IsDescValid(*FunctionDesc, DESC_FUNCTION))
-        {
-            delete *FunctionDesc;
-            return true;
-        }
-    }
-
-    return false;
+    if (!GUObjectArray.IsValidIndex(InFunction))
+        return false;
+    TSharedPtr<FFunctionDesc> FunctionDesc;
+    return Functions.RemoveAndCopyValue(InFunction, FunctionDesc);
 }
 
 bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
@@ -558,4 +540,14 @@ FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName,
     return ClassDesc;
 }
 
+void FReflectionRegistry::PostGarbageCollect()
+{
+    for (auto It = Functions.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid())
+        {
+            It.RemoveCurrent();
+        }
+    }
+}
 UNLUA_API FReflectionRegistry GReflectionRegistry;        // global reflection registry
