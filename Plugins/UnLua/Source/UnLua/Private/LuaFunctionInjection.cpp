@@ -210,6 +210,7 @@ UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, F
     {
         NewFunc->Next = OuterClass->Children;
         OuterClass->Children = NewFunc;
+        NewFunc->AddToCluster(OuterClass);
     }
 
     return NewFunc;
