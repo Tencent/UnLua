@@ -37,6 +37,8 @@ FUnLuaEditorStyle::FUnLuaEditorStyle()
     Set("UnLuaEditor.CopyAsRelativePath", new IMAGE_BRUSH("Icons/icon_copy_40x", Icon40x40));
     Set("UnLuaEditor.BindToLua", new IMAGE_BRUSH("Icons/icon_bind_to_lua_40x", Icon40x40));
     Set("UnLuaEditor.UnbindFromLua", new IMAGE_BRUSH("Icons/icon_unbind_from_lua_40x", Icon40x40));
+    Set("UnLuaEditor.HotReload", new IMAGE_BRUSH("Icons/icon_reload_40x", Icon40x40));
+    Set("UnLuaEditor.GenerateIntelliSense", new IMAGE_BRUSH("Icons/icon_intellisense_40x", Icon40x40));
 
     FSlateStyleRegistry::RegisterSlateStyle(*this);
 }

@@ -14,24 +14,21 @@
 
 #pragma once
 
-#include "Framework/Commands/Commands.h"
+#include "CoreMinimal.h"
 
-class FUnLuaEditorCommands : public TCommands<FUnLuaEditorCommands>
+class FMainMenuToolbar
 {
 public:
-    FUnLuaEditorCommands()
-        : TCommands<FUnLuaEditorCommands>(TEXT("UnLuaEditor"), NSLOCTEXT("Contexts", "UnLuaEditor", "UnLua Editor"), NAME_None, "UnLuaEditorStyle")
-    {
-    }
+	FMainMenuToolbar();
+	virtual ~FMainMenuToolbar() = default;
 
-    virtual void RegisterCommands() override;
+	void Initialize();
+    
+	void AddToolbarExtension(FToolBarBuilder& Builder);
 
-    TSharedPtr<FUICommandInfo> CreateLuaTemplate;
-    TSharedPtr<FUICommandInfo> CopyAsRelativePath;
-    TSharedPtr<FUICommandInfo> BindToLua;
-    TSharedPtr<FUICommandInfo> UnbindFromLua;
-    TSharedPtr<FUICommandInfo> HotReload;
-    TSharedPtr<FUICommandInfo> ReportIssue;
-    TSharedPtr<FUICommandInfo> About;
-    TSharedPtr<FUICommandInfo> GenerateIntelliSense;
+    void ReportIssue();
+	
+    void About();
+
+    const TSharedRef<FUICommandList> CommandList;
 };

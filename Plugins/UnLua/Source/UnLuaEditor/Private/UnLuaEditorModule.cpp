@@ -31,6 +31,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Toolbars/AnimationBlueprintToolbar.h"
 #include "Toolbars/BlueprintToolbar.h"
+#include "Toolbars/MainMenuToolbar.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -77,6 +78,7 @@ public:
         PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaEditorModule::PostPIEStarted);
         PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FUnLuaEditorModule::PrePIEEnded);
 
+        MainMenuToolbar = MakeShareable(new FMainMenuToolbar);
         BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
         AnimationBlueprintToolbar = MakeShareable(new FAnimationBlueprintToolbar);
     }
@@ -98,6 +100,7 @@ private:
     {
         RegisterSettings();
 
+        MainMenuToolbar->Initialize();
         BlueprintToolbar->Initialize();
         AnimationBlueprintToolbar->Initialize();
 
@@ -118,7 +121,7 @@ private:
     void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
     {
         // register default key input to 'Hotfix' Lua
-        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(FUnLuaEditorCommands::Get().HotfixLua, FExecuteAction::CreateLambda([]() { HotfixLua(); }),
+        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateLambda([]() { HotfixLua(); }),
                                                               FCanExecuteAction::CreateRaw(this, &FUnLuaEditorModule::CanHotfixLua));
 
         // copy dependency files
@@ -160,6 +163,7 @@ private:
 
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
     TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
+    TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
     TSharedPtr<ISlateStyle> Style;
 
     FDelegateHandle OnPostEngineInitHandle;
