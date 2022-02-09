@@ -41,7 +41,7 @@ public:
     bool AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface> TypeInterface);
     TSharedPtr<UnLua::ITypeInterface> FindTypeInterface(FName Name);
 
-    bool TryToBindLua(UObjectBaseUtility *Object);
+    bool TryToBindLua(UObject *Object);
 
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
     void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
@@ -56,11 +56,9 @@ public:
     void OnWorldCleanup(UWorld *World, bool bSessionEnded, bool bCleanupResources);
     void OnPostEngineInit();
     void OnPreExit();
-    void OnAsyncLoadingFlushUpdate();
     void OnCrash();
     void PostLoadMapWithWorld(UWorld *World);
     void OnPostGarbageCollect();
-    void OnDelayBindObject(UObject* Object);
 
 #if WITH_EDITOR
     void PreBeginPIE(bool bIsSimulating);
@@ -104,8 +102,8 @@ private:
     void Initialize();
     void Cleanup(bool bFullCleanup = false, UWorld *World = nullptr);
 
+    void OnAsyncLoadingFlushUpdate();
     bool OnGameViewportInputKey(FKey InKey, FModifierKeysState ModifierKeyState, EInputEvent EventType);
-
 
     lua_State *L;
 
@@ -118,7 +116,7 @@ private:
     TArray<FString> LibraryNames;       // metatables for classes/enums
     TArray<FString> ModuleNames;        // required Lua modules
 
-    TArray<UObject*> Candidates;        // binding candidates during async loading
+    TArray<FWeakObjectPtr> Candidates;        // binding candidates during async loading
 
     TArray<UnLua::IExportedFunction*> ExportedFunctions;                // statically exported global functions
     TArray<UnLua::IExportedEnum*> ExportedEnums;                        // statically exported enums
