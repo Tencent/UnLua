@@ -58,7 +58,6 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
     default:
         check(false);
     }
-    UE_LOG(LogUnLua, Log, TEXT("InStyleName=%s"), *InStyleName);
 
     ToolbarBuilder.AddComboButton(
         FUIAction(),
