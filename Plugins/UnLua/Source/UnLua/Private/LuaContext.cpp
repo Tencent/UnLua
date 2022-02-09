@@ -584,13 +584,14 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
             //!!!Fix!!!
             // check object is load completed?
             // copy fully loaded object to local cache for bind
+            static constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags::AsyncLoading | EInternalObjectFlags::Async;
             for (int32 i = Candidates.Num() - 1; i >= 0; --i)
             {
                 UObject* Object = Candidates[i];
                 if ((GLuaCxt->IsUObjectValid(Object))
                     && (!Object->HasAnyFlags(RF_NeedPostLoad))
-                    && (!Object->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading))
-                    && (!Object->GetClass()->HasAnyInternalFlags(EInternalObjectFlags::AsyncLoading)))
+                    && (!Object->HasAnyInternalFlags(AsyncObjectFlags))
+                    && (!Object->GetClass()->HasAnyInternalFlags(AsyncObjectFlags)))
                 {
                     LocalCandidates.Add(Object);
                     Candidates.RemoveAt(i);
@@ -614,6 +615,12 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
                 {
                     continue;
                 }
+                
+#if UNLUA_ENABLE_DEBUG != 0
+                UE_LOG(LogUnLua, Log, TEXT(">> OnAsyncLoadingFlushUpdate, Bind: Object[%s] Class[%s] ModuleNameModuleName[%s]."),
+                    *GetNameSafe(Object), *GetNameSafe(Object->GetClass()), *ModuleName);
+#endif
+                
                 Manager->Bind(Object, Object->GetClass(), *ModuleName);
             }
         }
