@@ -18,6 +18,9 @@
 
 enum ELuaBindingStatus
 {
+    // 未编译，未知
+    Unknown,
+
     // 未绑定
     NotBound,
 

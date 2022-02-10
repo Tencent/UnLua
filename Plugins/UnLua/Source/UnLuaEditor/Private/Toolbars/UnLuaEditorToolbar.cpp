@@ -10,8 +10,10 @@
 #include "BlueprintEditor.h"
 #include "SBlueprintEditorToolbar.h"
 #include "Framework/Docking/SDockingTabWell.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Layout/Children.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -42,29 +44,12 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
     ToolbarBuilder.BeginSection(NAME_None);
 
     const auto Blueprint = Cast<UBlueprint>(InContextObject);
-    const auto BindingStatus = GetBindingStatus(Blueprint);
-    FString InStyleName;
-    switch (BindingStatus)
-    {
-    case NotBound:
-        InStyleName = "UnLuaEditor.Status_NotBound";
-        break;
-    case Bound:
-        InStyleName = "UnLuaEditor.Status_Bound";
-        break;
-    case BoundButInvalid:
-        InStyleName = "UnLuaEditor.Status_BoundButInvalid";
-        break;
-    default:
-        check(false);
-    }
-    UE_LOG(LogUnLua, Log, TEXT("InStyleName=%s"), *InStyleName);
-
     ToolbarBuilder.AddComboButton(
         FUIAction(),
-        FOnGetContent::CreateLambda([&, BindingStatus, InContextObject]()
+        FOnGetContent::CreateLambda([&, Blueprint, InContextObject]()
         {
             ContextObject = InContextObject;
+            const auto BindingStatus = GetBindingStatus(Blueprint);
             const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
             FMenuBuilder MenuBuilder(true, CommandList);
             if (BindingStatus == NotBound)
@@ -81,7 +66,30 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
         }),
         LOCTEXT("UnLua_Label", "UnLua"),
         LOCTEXT("UnLua_ToolTip", "UnLua"),
-        FSlateIcon("UnLuaEditorStyle", *InStyleName)
+        TAttribute<FSlateIcon>::Create([Blueprint]
+        {
+            const auto BindingStatus = GetBindingStatus(Blueprint);
+            FString InStyleName;
+            switch (BindingStatus)
+            {
+            case Unknown:
+                InStyleName = "UnLuaEditor.Status_Unknown";
+                break;
+            case NotBound:
+                InStyleName = "UnLuaEditor.Status_NotBound";
+                break;
+            case Bound:
+                InStyleName = "UnLuaEditor.Status_Bound";
+                break;
+            case BoundButInvalid:
+                InStyleName = "UnLuaEditor.Status_BoundButInvalid";
+                break;
+            default:
+                check(false);
+            }
+
+            return FSlateIcon("UnLuaEditorStyle", *InStyleName);
+        })
     );
 
     ToolbarBuilder.EndSection();
@@ -198,7 +206,12 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     Class->ProcessEvent(Func, &ModuleName);
 
     if (ModuleName.IsEmpty())
+    {
+        FNotificationInfo Info(FText::FromString("Please specify a module name first"));
+        Info.ExpireDuration = 5;
+        FSlateNotificationManager::Get().AddNotification(Info);
         return;
+    }
 
     TArray<FString> ModuleNameParts;
     ModuleName.ParseIntoArray(ModuleNameParts, TEXT("."));
