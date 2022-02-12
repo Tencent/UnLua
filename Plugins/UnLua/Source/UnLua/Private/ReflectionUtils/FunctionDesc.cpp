@@ -490,20 +490,6 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
 {
     int32 NumReturnValues = 0;
 
-    // !!!Fix!!!
-    // out parameters always use return format, copyback is better,but some parameters such 
-    // as int can not be copy back
-    // c++ may has return and out params, we must push it on stack
-    for (int32 Index : OutPropertyIndices)
-    {
-        FPropertyDesc *Property = Properties[Index];
-        if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
-        {
-            Property->GetValue(L, Params, true);
-            ++NumReturnValues;
-        }
-    }
-
     if (ReturnPropertyIndex > INDEX_NONE)
     {
         FPropertyDesc *Property = Properties[ReturnPropertyIndex];
@@ -519,6 +505,20 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
             Property->GetValue(L, Params, true);
         }
         ++NumReturnValues;
+    }
+
+    // !!!Fix!!!
+    // out parameters always use return format, copyback is better,but some parameters such 
+    // as int can not be copy back
+    // c++ may has return and out params, we must push it on stack
+    for (int32 Index : OutPropertyIndices)
+    {
+        FPropertyDesc *Property = Properties[Index];
+        if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
+        {
+            Property->GetValue(L, Params, true);
+            ++NumReturnValues;
+        }
     }
 
     for (int32 i = 0; i < Properties.Num(); ++i)

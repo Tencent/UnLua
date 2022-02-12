@@ -186,8 +186,8 @@ namespace UnLua
         static int32 Invoke(lua_State *L, const TFunction<RetType(ArgType...)> &Func, TTuple<typename TArgTypeTraits<ArgType>::Type...> &Args, TIndices<N...> ParamIndices)
         {
             RetType RetVal = UnLua::Invoke(Func, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
-            int32 Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
             UnLua::Push(L, Forward<RetType>(RetVal), true);
+            int32 Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
             return Num + 1;
         }
     };
@@ -209,8 +209,8 @@ namespace UnLua
             else
             {
                 RetType RetVal = UnLua::Invoke(Func, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
-                Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
                 UnLua::Push(L, Forward<typename std::add_lvalue_reference<RetType>::type>(RetVal), true);
+                Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
             }
             return Num + 1;
         }
