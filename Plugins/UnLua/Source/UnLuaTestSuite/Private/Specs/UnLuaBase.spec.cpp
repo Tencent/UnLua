@@ -222,6 +222,91 @@ void FUnLuaBaseSpec::Define()
         });
     });
 
+    Describe(TEXT("支持调用包含按引用传递参数的函数"), [this]
+    {
+        It(TEXT("蓝图：调用的函数本身没有返回值，依次返回参数"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const auto Chunk = R"(
+            A = 10 -- int32
+            B = 20 -- int32&
+            C = 30 -- const int32&
+            D = 'Test' -- FString&
+            B, D = UE.UUnLuaTestFunctionLibrary.TestForBaseSpec1(A, B, C, D)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            lua_getglobal(L, "B");
+            const auto B = (int32)lua_tointeger(L, -1);
+            TEST_EQUAL(B, 21);
+
+            lua_getglobal(L, "D");
+            const auto D = lua_tostring(L, -1);
+            TEST_EQUAL(D, "TestFlag");
+        });
+
+        It(TEXT("蓝图：调用的函数本身有返回值，先返回返回值再依次返回参数"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const auto Chunk = R"(
+            A = 10 -- int32
+            B = 20 -- int32&
+            C = 30 -- int32&
+            Ret, B, C = UE.UUnLuaTestFunctionLibrary.TestForBaseSpec2(A, B, C)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            lua_getglobal(L, "Ret");
+            const auto Ret = (bool)lua_toboolean(L, -1);
+            TEST_TRUE(Ret);
+
+            lua_getglobal(L, "B");
+            const auto B = (int32)lua_tointeger(L, -1);
+            TEST_EQUAL(B, 21);
+
+            lua_getglobal(L, "C");
+            const auto C = (int32)lua_tointeger(L, -1);
+            TEST_EQUAL(C, 31);
+        });
+
+        It(TEXT("原生：调用的函数本身没有返回值，依次返回参数"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const auto Chunk = R"(
+            A = 10 -- int32
+            B = 20 -- int32&
+            C = 30 -- const int32&
+            D = 'Test' -- FString&
+            B, D = UE.FUnLuaTestLib.TestForBaseSpec1(A, B, C, D)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            lua_getglobal(L, "B");
+            const auto B = (int32)lua_tointeger(L, -1);
+            TEST_EQUAL(B, 21);
+
+            lua_getglobal(L, "D");
+            const auto D = lua_tostring(L, -1);
+            TEST_EQUAL(D, "TestFlag");
+        });
+
+        It(TEXT("原生：调用的函数本身有返回值，先返回返回值再依次返回参数"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const auto Chunk = R"(
+            A = 10 -- int32
+            B = 20 -- int32&
+            C = 30 -- int32&
+            Ret, B, C = UE.FUnLuaTestLib.TestForBaseSpec2(A, B, C)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            lua_getglobal(L, "Ret");
+            const auto Ret = (bool)lua_toboolean(L, -1);
+            TEST_TRUE(Ret);
+
+            lua_getglobal(L, "B");
+            const auto B = (int32)lua_tointeger(L, -1);
+            TEST_EQUAL(B, 21);
+
+            lua_getglobal(L, "C");
+            const auto C = (int32)lua_tointeger(L, -1);
+            TEST_EQUAL(C, 31);
+        });
+    });
+
     AfterEach([this]
     {
         UnLua::Shutdown();
