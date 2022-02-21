@@ -12,18 +12,31 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "UnLuaTestHelpers.h"
-#include "UnLua.h"
-#include "UnLuaEx.h"
+#include "UnLuaTestCommon.h"
+#include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_EXPORT_CLASS(FUnLuaTestLib)
-    ADD_SHARED_PTR_CONSTRUCTOR(ESPMode::NotThreadSafe)
-    ADD_STATIC_FUNCTION(TestForBaseSpec1)
-    ADD_STATIC_FUNCTION(TestForBaseSpec2)
-END_EXPORT_CLASS()
+struct FUnLuaTest_Issue366 : FUnLuaTestBase
+{
+    virtual bool InstantTest() override
+    {
+        return true;
+    }
 
-IMPLEMENT_EXPORTED_CLASS(FUnLuaTestLib)
+    virtual bool SetUp() override
+    {
+        FUnLuaTestBase::SetUp();
 
-#endif
+        const auto Chunk = R"(
+                UE.FUnLuaTestLib()
+            )";
+        UnLua::RunChunk(L, Chunk);
+
+        return true;
+    }
+};
+
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue366, TEXT("UnLua.Regression.Issue366 使用ADD_SHARED_PTR_CONSTRUCTOR后启动直接崩溃"))
+
+#endif //WITH_DEV_AUTOMATION_TESTS
