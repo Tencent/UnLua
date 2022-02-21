@@ -243,10 +243,8 @@ static int32 UObject_Release(lua_State *L)
     if (LUA_TTABLE == lua_type(L, -1))
     {
         UObject* Object = UnLua::GetUObject(L, -1);
-        if (GLuaCxt->IsUObjectValid(Object))
-        {
+        if (Object)
             GLuaCxt->GetManager()->ReleaseAttachedObjectLuaRef(Object);
-        }
     }
 
     return 0;
