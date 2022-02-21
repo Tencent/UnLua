@@ -226,7 +226,7 @@ void RemoveUFunction(UFunction* Function, UClass* OuterClass)
 {
     UE_LOG(UnLuaDelegate, Verbose, TEXT("Clean %s"), *Function->GetName());
 
-    if (OuterClass->IsValidLowLevel())
+    if (OuterClass->IsValidLowLevel() && Function->IsValidLowLevel())
     {
 #if UNLUA_ENABLE_DEBUG != 0
         const FString Result = OuterClass->FindFunctionByName(*Function->GetName()) ? "OK" : "Not Exists";
