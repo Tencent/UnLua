@@ -30,7 +30,7 @@ function BP_PlayerCharacter_C:SpawnWeapon()
 end
 
 function BP_PlayerCharacter_C:ReceiveBeginPlay()
-	self.Super.ReceiveBeginPlay(self)
+	BP_PlayerCharacter_C.Super.ReceiveBeginPlay(self)
 	self.DefaultFOV = self.Camera.FieldOfView
 	self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({self, BP_PlayerCharacter_C.FallCheck}, 1.0, true)
 	local InterpFloats = self.ZoomInOut.TheTimeline.InterpFloats

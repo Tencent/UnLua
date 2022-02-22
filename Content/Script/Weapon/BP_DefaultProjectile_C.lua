@@ -9,12 +9,12 @@ function BP_DefaultProjectile_C:Initialize(Initializer)
 end
 
 function BP_DefaultProjectile_C:UserConstructionScript()
-	self.Super.UserConstructionScript(self)
+	BP_DefaultProjectile_C.Super.UserConstructionScript(self)
 	self.DamageType = UE.UClass.Load("/Game/Core/Blueprints/BP_DamageType.BP_DamageType_C")
 end
 
 function BP_DefaultProjectile_C:ReceiveBeginPlay()
-	self.Super.ReceiveBeginPlay(self)
+	BP_DefaultProjectile_C.Super.ReceiveBeginPlay(self)
 	local MID = self.StaticMesh:CreateDynamicMaterialInstance(0)
 	if MID then
 		MID:SetVectorParameterValue("BaseColor", self.BaseColor)

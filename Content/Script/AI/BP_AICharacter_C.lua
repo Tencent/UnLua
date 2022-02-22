@@ -3,7 +3,7 @@ require "UnLua"
 local BP_AICharacter_C= Class("BP_CharacterBase_C")
 
 function BP_AICharacter_C:Initialize(Initializer)
-	self.Super.Initialize(self)
+	BP_AICharacter_C.Super.Initialize(self)
 	self.Damage = 128.0
 	--self.DamageType = UE.UClass.Load("/Script/Engine.DamageType")
 	self.DamageType = UE.UClass.Load("UDamageType")
@@ -13,12 +13,12 @@ end
 --end
 
 function BP_AICharacter_C:ReceiveBeginPlay()
-	self.Super.ReceiveBeginPlay(self)
+	BP_AICharacter_C.Super.ReceiveBeginPlay(self)
 	self.Sphere.OnComponentBeginOverlap:Add(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
 end
 
 function BP_AICharacter_C:Died(DamageType)
-	self.Super.Died(self, DamageType)
+	BP_AICharacter_C.Super.Died(self, DamageType)
 	self.Sphere:SetCollisionEnabled(UE.ECollisionEnabled.NoCollision)
 	local NewLocation = UE.FVector(0.0, 0.0, self.CapsuleComponent.CapsuleHalfHeight)
 	local SweepHitResult = UE.FHitResult()
