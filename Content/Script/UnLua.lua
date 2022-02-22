@@ -53,15 +53,17 @@ local function NewIndex(t, k, v)
 end
 
 local function Class(super_name)
-	local super_class = nil
+	local new_class = nil
 	if super_name ~= nil then
-		super_class = require(super_name)
+		local super_class = require(super_name)
+	 	new_class = setmetatable({}, super_class)
+		new_class.Super = super_class
+	else
+		new_class = {}
 	end
 
-	local new_class = {}
 	new_class.__index = Index
 	new_class.__newindex = NewIndex
-	new_class.Super = super_class
 
   return new_class
 end
