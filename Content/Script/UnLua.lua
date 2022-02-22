@@ -56,7 +56,7 @@ local function Class(super_name)
 	local new_class = nil
 	if super_name ~= nil then
 		local super_class = require(super_name)
-	 	new_class = setmetatable({}, super_class)
+	 	new_class = setmetatable({}, { __index = super_class })
 		new_class.Super = super_class
 	else
 		new_class = {}
