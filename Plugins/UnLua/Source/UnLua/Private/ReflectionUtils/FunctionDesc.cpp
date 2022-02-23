@@ -337,6 +337,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
         uint8* ReturnValueAddress = FinalFunction->ReturnValueOffset != MAX_uint16 ? (uint8*)Params + FinalFunction->ReturnValueOffset : nullptr;
+        FMemory::Memcpy(Buffer, Params, Function->ParmsSize);
         FFrame NewStack(Object, FinalFunction, Params, nullptr, GetChildProperties(Function));
         NewStack.OutParms = OutParmRec;
         FinalFunction->Invoke(Object, NewStack, ReturnValueAddress);
