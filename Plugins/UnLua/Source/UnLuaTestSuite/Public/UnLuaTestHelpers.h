@@ -30,6 +30,8 @@ DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
 
+DECLARE_DYNAMIC_DELEGATE_OneParam(FIssue362Delegate, TArray<int32>&, Array);
+
 UENUM()
 enum EEnumForIssue331
 {
@@ -52,6 +54,9 @@ public:
 
     UPROPERTY()
     FIssue304Event Issue304Event;
+
+    UPROPERTY()
+    FIssue362Delegate Issue362Delegate;
 
     UPROPERTY()
     int32 Counter;
