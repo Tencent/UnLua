@@ -543,7 +543,8 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
 
     int32 Num = AttachedActors.Remove(Actor);
     if (Num > 0)
-    {   
+    {
+        ReleaseAttachedObjectLuaRef(Actor);
         DeleteUObjectRefs(UnLua::GetState(),Actor);   // remove record of this actor
     }
 }
