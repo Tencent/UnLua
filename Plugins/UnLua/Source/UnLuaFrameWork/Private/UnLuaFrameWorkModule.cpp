@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #include <pthread.h>
 #elif PLATFORM_WINDOWS
+#include "Windows/PreWindowsApi.h"
 #include <Windows.h>
 #ifdef min
 #undef min
@@ -28,6 +29,7 @@
 #ifdef max
 #undef max
 #endif
+#include "Windows/PostWindowsApi.h"
 #endif
 
 #define LOCTEXT_NAMESPACE "UnLuaFrameWorkModule"
