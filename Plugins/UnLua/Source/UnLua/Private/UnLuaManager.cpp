@@ -270,7 +270,9 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
         OverridableFunctions.RemoveAndCopyValue(Class, FunctionMap);
         for (TMap<FName, UFunction*>::TIterator It(FunctionMap); It; ++It)
         {
-            UFunction *Function = It.Value();
+            UFunction* Function = It.Value();
+            if (Function->GetOuter() != Class)
+                continue;
             FNativeFuncPtr NativeFuncPtr = nullptr;
             if (CachedNatives.RemoveAndCopyValue(Function, NativeFuncPtr))
             {
