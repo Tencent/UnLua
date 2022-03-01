@@ -78,6 +78,10 @@ typedef UMulticastSparseDelegateProperty FMulticastSparseDelegateProperty;
 
 #if ENGINE_MAJOR_VERSION >=5
 #include "Misc/LargeWorldCoordinates.h"
+#ifndef UE_LARGE_WORLD_COORDINATES_DISABLED
+#define UE_LARGE_WORLD_COORDINATES_DISABLED 0
+#endif
+
 #if UE_LARGE_WORLD_COORDINATES_DISABLED
 typedef float unluaReal;
 #else
