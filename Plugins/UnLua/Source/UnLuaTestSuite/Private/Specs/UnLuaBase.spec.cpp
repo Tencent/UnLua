@@ -126,7 +126,7 @@ void FUnLuaBaseSpec::Define()
 
         It(TEXT("正确传入中文FString到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            UnLua::Push(L, FString("虚幻引擎"));
+            UnLua::Push(L, FString(TEXT("虚幻引擎")));
             TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<FString>()));
             TEST_EQUAL(lua_tostring(L, -1), "虚幻引擎");
         });
