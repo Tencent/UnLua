@@ -360,15 +360,17 @@ public:
             ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, Value);
         }
         else
-        {   
+        {
             UObject* Object = UnLua::GetUObject(L, IndexInStack);
+#if ENABLE_TYPE_CHECK == 1
             if (Object)
             {
                 if (!Object->GetClass()->IsChildOf(ObjectBaseProperty->PropertyClass))
                 {
-                    Object = nullptr;
+                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Invalid value type : property.type=%s, value.type=%s"), *ObjectBaseProperty->PropertyClass->GetName(), *Object->GetClass()->GetName());
                 }
             }
+#endif
             ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, Object);
         }
         return true;

@@ -270,7 +270,9 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
         OverridableFunctions.RemoveAndCopyValue(Class, FunctionMap);
         for (TMap<FName, UFunction*>::TIterator It(FunctionMap); It; ++It)
         {
-            UFunction *Function = It.Value();
+            UFunction* Function = It.Value();
+            if (Function->GetOuter() != Class)
+                continue;
             FNativeFuncPtr NativeFuncPtr = nullptr;
             if (CachedNatives.RemoveAndCopyValue(Function, NativeFuncPtr))
             {
@@ -543,7 +545,8 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
 
     int32 Num = AttachedActors.Remove(Actor);
     if (Num > 0)
-    {   
+    {
+        ReleaseAttachedObjectLuaRef(Actor);
         DeleteUObjectRefs(UnLua::GetState(),Actor);   // remove record of this actor
     }
 }
@@ -1052,7 +1055,11 @@ void UUnLuaManager::AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRe
  * Get lua ref of a recorded binded UObject
  */
 void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
-{   
+{
+    check(Object);
+    
+    GObjectReferencer.RemoveObjectRef((UObject*)Object);
+    
     int32* ObjectLuaRef = AttachedObjects.Find(Object);
     if ((ObjectLuaRef)
         &&(*ObjectLuaRef != LUA_REFNIL))

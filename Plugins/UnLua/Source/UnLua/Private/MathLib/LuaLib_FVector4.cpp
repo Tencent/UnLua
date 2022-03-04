@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
@@ -29,31 +30,31 @@ static int32 FVector4_New(lua_State* L)
         }
     case 2:
         {
-            const float& X = lua_tonumber(L, 2);
+            const unluaReal& X = lua_tonumber(L, 2);
             new(Userdata) FVector4(X);
             return 1;
         }
     case 3:
         {
-            const float& X = lua_tonumber(L, 2);
-            const float& Y = lua_tonumber(L, 3);
+            const unluaReal& X = lua_tonumber(L, 2);
+            const unluaReal& Y = lua_tonumber(L, 3);
             new(Userdata) FVector4(X, Y);
             return 1;
         }
     case 4:
         {
-            const float& X = lua_tonumber(L, 2);
-            const float& Y = lua_tonumber(L, 3);
-            const float& Z = lua_tonumber(L, 4);
+            const unluaReal& X = lua_tonumber(L, 2);
+            const unluaReal& Y = lua_tonumber(L, 3);
+            const unluaReal& Z = lua_tonumber(L, 4);
             new(Userdata) FVector4(X, Y, Z);
             return 1;
         }
     case 5:
         {
-            const float& X = lua_tonumber(L, 2);
-            const float& Y = lua_tonumber(L, 3);
-            const float& Z = lua_tonumber(L, 4);
-            const float& W = lua_tonumber(L, 5);
+            const unluaReal& X = lua_tonumber(L, 2);
+            const unluaReal& Y = lua_tonumber(L, 3);
+            const unluaReal& Z = lua_tonumber(L, 4);
+            const unluaReal& W = lua_tonumber(L, 5);
             new(Userdata) FVector4(X, Y, Z, W);
             return 1;
         }
@@ -79,7 +80,7 @@ static int32 FVector4_Set(lua_State* L)
         return 0;
     }
 
-    UnLua::TFieldSetter4<float>::Set(L, NumParams, &V->X);
+    UnLua::TFieldSetter4<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
 }
 
@@ -100,26 +101,32 @@ static int32 FVector4_UNM(lua_State* L)
 static const luaL_Reg FVector4Lib[] =
 {
     {"Set", FVector4_Set},
-    {"Add", UnLua::TMathCalculation<FVector4, UnLua::TAdd<float>, true>::Calculate},
-    {"Sub", UnLua::TMathCalculation<FVector4, UnLua::TSub<float>, true>::Calculate},
-    {"Mul", UnLua::TMathCalculation<FVector4, UnLua::TMul<float>, true>::Calculate},
-    {"Div", UnLua::TMathCalculation<FVector4, UnLua::TDiv<float>, true>::Calculate},
-    {"__add", UnLua::TMathCalculation<FVector4, UnLua::TAdd<float>>::Calculate},
-    {"__sub", UnLua::TMathCalculation<FVector4, UnLua::TSub<float>>::Calculate},
-    {"__mul", UnLua::TMathCalculation<FVector4, UnLua::TMul<float>>::Calculate},
-    {"__div", UnLua::TMathCalculation<FVector4, UnLua::TDiv<float>>::Calculate},
+    {"Add", UnLua::TMathCalculation<FVector4, UnLua::TAdd<unluaReal>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FVector4, UnLua::TSub<unluaReal>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FVector4, UnLua::TMul<unluaReal>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FVector4, UnLua::TDiv<unluaReal>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FVector4, UnLua::TAdd<unluaReal>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FVector4, UnLua::TSub<unluaReal>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FVector4, UnLua::TMul<unluaReal>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FVector4, UnLua::TDiv<unluaReal>>::Calculate},
     {"__tostring", UnLua::TMathUtils<FVector4>::ToString},
     {"__unm", FVector4_UNM},
     {"__call", FVector4_New},
     {nullptr, nullptr}
 };
 
+#if ENGINE_MAJOR_VERSION < 5
 float Dot3(const FVector4& V1, const FVector4& V2);
 float Dot4(const FVector4& V1, const FVector4& V2);
+#endif
 
 BEGIN_EXPORT_REFLECTED_CLASS(FVector4)
+#if ENGINE_MAJOR_VERSION < 5
     ADD_EXTERNAL_FUNCTION(float, Dot3, const FVector4&, const FVector4&)
     ADD_EXTERNAL_FUNCTION(float, Dot4, const FVector4&, const FVector4&)
+#else
+    ADD_EXTERNAL_FUNCTION_EX("Dot3", unluaReal, Dot3<unluaReal>, const FVector4&, const FVector4&)
+#endif
     ADD_CONST_FUNCTION_EX("Cross", FVector4, operator^, const FVector4&)
     ADD_FUNCTION(Size)
     ADD_FUNCTION(Size3)

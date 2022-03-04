@@ -243,10 +243,8 @@ static int32 UObject_Release(lua_State *L)
     if (LUA_TTABLE == lua_type(L, -1))
     {
         UObject* Object = UnLua::GetUObject(L, -1);
-        if (GLuaCxt->IsUObjectValid(Object))
-        {
+        if (Object)
             GLuaCxt->GetManager()->ReleaseAttachedObjectLuaRef(Object);
-        }
     }
 
     return 0;
@@ -297,9 +295,22 @@ int32 UObject_Delete(lua_State *L)
         FClassDesc* ClassDesc = (FClassDesc*)Userdata;
 
         lua_pushstring(L, "__name");
-        int32 Type = lua_rawget(L, 1);
+        lua_rawget(L, 1);
         FString MetaTableName = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        lua_pop(L, 1);
+        luaL_getmetatable(L, lua_tostring(L, -1));
+        int Type = lua_type(L, -1);
+        if (Type == LUA_TTABLE)
+        {
+            // https://github.com/Tencent/UnLua/issues/367
+            FClassDesc* CurrentClassDesc = (FClassDesc*)GetUserdata(L, -1);
+            lua_pop(L, 2);
+            if (CurrentClassDesc == ClassDesc)
+                return 0;
+        }
+        else
+        {
+            lua_pop(L, 2);
+        }
 
         if (GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)
             && ClassDesc->GetName().Equals(MetaTableName))

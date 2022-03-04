@@ -337,6 +337,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     {
         //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
         uint8* ReturnValueAddress = FinalFunction->ReturnValueOffset != MAX_uint16 ? (uint8*)Params + FinalFunction->ReturnValueOffset : nullptr;
+        FMemory::Memcpy(Buffer, Params, Function->ParmsSize);
         FFrame NewStack(Object, FinalFunction, Params, nullptr, GetChildProperties(Function));
         NewStack.OutParms = OutParmRec;
         FinalFunction->Invoke(Object, NewStack, ReturnValueAddress);
@@ -490,20 +491,6 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
 {
     int32 NumReturnValues = 0;
 
-    // !!!Fix!!!
-    // out parameters always use return format, copyback is better,but some parameters such 
-    // as int can not be copy back
-    // c++ may has return and out params, we must push it on stack
-    for (int32 Index : OutPropertyIndices)
-    {
-        FPropertyDesc *Property = Properties[Index];
-        if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
-        {
-            Property->GetValue(L, Params, true);
-            ++NumReturnValues;
-        }
-    }
-
     if (ReturnPropertyIndex > INDEX_NONE)
     {
         FPropertyDesc *Property = Properties[ReturnPropertyIndex];
@@ -519,6 +506,20 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
             Property->GetValue(L, Params, true);
         }
         ++NumReturnValues;
+    }
+
+    // !!!Fix!!!
+    // out parameters always use return format, copyback is better,but some parameters such 
+    // as int can not be copy back
+    // c++ may has return and out params, we must push it on stack
+    for (int32 Index : OutPropertyIndices)
+    {
+        FPropertyDesc *Property = Properties[Index];
+        if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
+        {
+            Property->GetValue(L, Params, true);
+            ++NumReturnValues;
+        }
     }
 
     for (int32 i = 0; i < Properties.Num(); ++i)
@@ -572,9 +573,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             continue;
         }
 
-        // !!!Fix!!!
-        // out parameters include return? out/ref and not const
-        if (Property->IsOutParameter())
+        if (Property->IsConstOutParameter())
         {
             OutParam = FindOutParmRec(OutParam, Property->GetProperty());
             if (OutParam)
@@ -585,7 +584,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             }
         }
 
-        Property->GetValue(L, InParams, !Property->IsReferenceParameter());
+        Property->GetValue(L, InParams, !(Property->GetProperty()->PropertyFlags & CPF_OutParm));
     }
 
     // object is also pushed, return is push when return

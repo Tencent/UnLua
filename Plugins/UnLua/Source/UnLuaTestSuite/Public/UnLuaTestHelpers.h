@@ -30,6 +30,8 @@ DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
 
+DECLARE_DYNAMIC_DELEGATE_OneParam(FIssue362Delegate, TArray<int32>&, Array);
+
 UENUM()
 enum EEnumForIssue331
 {
@@ -52,6 +54,9 @@ public:
 
     UPROPERTY()
     FIssue304Event Issue304Event;
+
+    UPROPERTY()
+    FIssue362Delegate Issue362Delegate;
 
     UPROPERTY()
     int32 Counter;
@@ -85,6 +90,22 @@ struct UNLUATESTSUITE_API FUnLuaTestTableRow : public FTableRowBase
     int32 Level;
 };
 
+struct UNLUATESTSUITE_API FUnLuaTestLib
+{
+    static void TestForBaseSpec1(int32 A, int32& B, const int32& C, FString& D)
+    {
+        B++;
+        D += "Flag";
+    }
+
+    static bool TestForBaseSpec2(int32 A, int32& B, int32& C)
+    {
+        B++;
+        C++;
+        return true;
+    }
+};
+
 DECLARE_DYNAMIC_DELEGATE_TwoParams(FIssule294Event, int32, Value1, UObject*, Value2);
 
 UCLASS()
@@ -92,6 +113,21 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
 {
     GENERATED_BODY()
 
+    UFUNCTION(BlueprintCallable)
+    static void TestForBaseSpec1(int32 A, int32& B, const int32& C, FString& D)
+    {
+        B++;
+        D += "Flag";
+    }
+
+    UFUNCTION(BlueprintCallable)
+    static bool TestForBaseSpec2(int32 A, int32& B, int32& C)
+    {
+        B++;
+        C++;
+        return true;
+    }
+    
     UFUNCTION(BlueprintCallable)
     static int32 TestForIssue293(const FString& A, int32 B, const TArray<FColor>& C) { return C.Num(); }
 

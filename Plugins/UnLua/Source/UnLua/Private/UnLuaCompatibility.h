@@ -76,6 +76,11 @@ typedef UMulticastSparseDelegateProperty FMulticastSparseDelegateProperty;
 #define GetChildProperties(Function) (Function)->ChildProperties
 #endif
 
+#if ENGINE_MAJOR_VERSION < 5
+typedef float unluaReal;
+#else
+typedef double unluaReal;
+#endif
 
 template <typename T>
 struct TMulticastDelegateTraits

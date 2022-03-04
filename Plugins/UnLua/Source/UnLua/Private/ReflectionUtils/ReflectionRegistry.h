@@ -39,7 +39,8 @@ enum EDescType
 class UNLUA_API FReflectionRegistry
 {
 public:
-    ~FReflectionRegistry() { Cleanup(); }
+    FReflectionRegistry();
+    ~FReflectionRegistry();
 
     void Cleanup();
 
@@ -82,12 +83,15 @@ public:
     bool IsInClassWhiteSet(const FString& ClassName);
 
 private:
+    FDelegateHandle PostGarbageCollectHandle;
+    void PostGarbageCollect();
+    
     FClassDesc* RegisterClassInternal(const FString &ClassName, UStruct *Struct, FClassDesc::EType Type);
 
     TMap<FName, FClassDesc*> Name2Classes;
     TMap<UStruct*, FClassDesc*> Struct2Classes;
     TMap<FName, FEnumDesc*> Enums;
-    TMap<UFunction*, FFunctionDesc*> Functions;
+    TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     TMap<UFunction*, UFunction*> OverriddenFunctions;
 #endif

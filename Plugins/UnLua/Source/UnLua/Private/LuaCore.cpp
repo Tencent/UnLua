@@ -2708,6 +2708,24 @@ int32 ScriptStruct_Delete(lua_State *L)
     }
     else
     {
+        lua_pushstring(L, "__name");
+        lua_rawget(L, 1);
+        FString MetaTableName = UTF8_TO_TCHAR(lua_tostring(L, -1));
+        luaL_getmetatable(L, lua_tostring(L, -1));
+        int Type = lua_type(L, -1);
+        if (Type == LUA_TTABLE)
+        {
+            // https://github.com/Tencent/UnLua/issues/367
+            FClassDesc* CurrentClassDesc = (FClassDesc*)GetUserdata(L, -1);
+            lua_pop(L, 2);
+            if (CurrentClassDesc == ClassDesc)
+                return 0;
+        }
+        else
+        {
+            lua_pop(L, 2);
+        }
+
         if (!ScriptStruct->IsNative())
         {
             GObjectReferencer.RemoveObjectRef(ScriptStruct);
