@@ -170,6 +170,7 @@ BEGIN_EXPORT_REFLECTED_CLASS(FVector2D)
     ADD_FUNCTION(SizeSquared)
     ADD_STATIC_FUNCTION_EX("Dist", unluaReal, Distance, const FVector2D&, const FVector2D&)
     ADD_STATIC_FUNCTION(DistSquared)
+    ADD_STATIC_PROPERTY(ZeroVector)
     ADD_LIB(FVector2DLib)
 END_EXPORT_CLASS()
 

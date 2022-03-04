@@ -135,6 +135,8 @@ static const luaL_Reg FColorLib[] =
 BEGIN_EXPORT_REFLECTED_CLASS(FColor)
     ADD_FUNCTION_EX("Add", void, operator+=, const FColor&)
     ADD_NAMED_FUNCTION("ToLinearColor", ReinterpretAsLinear)
+    ADD_STATIC_PROPERTY(White)
+    ADD_STATIC_PROPERTY(Black)
     ADD_LIB(FColorLib)
 END_EXPORT_CLASS()
 
