@@ -65,7 +65,9 @@ public class UnLuaEditor : ModuleRules
                 "UMG",
                 "Slate",
                 "SlateCore",
-                "UnLua"
+                "DirectoryWatcher",
+                "UnLua",
+                "Lua"
             }
         );
 
