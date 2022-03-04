@@ -337,7 +337,7 @@ FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction* InFunction, int3
 
 bool FReflectionRegistry::UnRegisterFunction(UFunction* InFunction)
 {
-    if (!GUObjectArray.IsValidIndex(InFunction))
+    if (InFunction->HasAnyFlags(RF_BeginDestroyed))
         return false;
     TSharedPtr<FFunctionDesc> FunctionDesc;
     return Functions.RemoveAndCopyValue(InFunction, FunctionDesc);
@@ -420,6 +420,8 @@ bool FReflectionRegistry::AddOverriddenFunction(UFunction *NewFunc, UFunction *O
 
 UFunction* FReflectionRegistry::RemoveOverriddenFunction(UFunction *NewFunc)
 {
+    if (NewFunc->HasAnyFlags(RF_BeginDestroyed))
+        return nullptr;
     UFunction *OverriddenFunc = nullptr;
     OverriddenFunctions.RemoveAndCopyValue(NewFunc, OverriddenFunc);
     return OverriddenFunc;
@@ -543,6 +545,14 @@ FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName,
 void FReflectionRegistry::PostGarbageCollect()
 {
     for (auto It = Functions.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid())
+        {
+            It.RemoveCurrent();
+        }
+    }
+
+    for (auto It = OverriddenFunctions.CreateIterator(); It; ++It)
     {
         if (!It.Key().IsValid())
         {
