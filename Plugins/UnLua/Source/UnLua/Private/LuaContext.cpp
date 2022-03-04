@@ -190,6 +190,16 @@ void FLuaContext::CreateState()
             Enum->Register(L);
         }
 
+        UnLua::RunChunk(L, R"(
+            local ok, m = pcall(require, "UnLuaHotReload")
+            if not ok then
+                return
+            end
+            m.config.script_root_path = UE.UUnLuaEditorFunctionLibrary.GetScriptRootPath()
+            require = m.require
+            UnLuaHotReload = m.reload
+        )");
+
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
 }
