@@ -20,37 +20,48 @@
 #include "LuaCore.h"
 #include "LuaContext.h"
 #include "DefaultParamCollection.h"
+#include "UEObjectReferencer.h"
 #include "UnLuaManager.h"
 #include "UnLua.h"
 
 /**
  * Class descriptor constructor
  */
-FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName, EType InType)
-    : Struct(InStruct), ClassName(InName), Type(InType), UserdataPadding(0), Size(0), RefCount(0), Locked(false),FunctionCollection(nullptr)
+FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
+    : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
 {   
 	GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
 
-    if (InType == EType::CLASS)
+    bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
+    bIsClass = InStruct->IsA(UClass::StaticClass());
+    bIsInterface = bIsClass && static_cast<UClass*>(InStruct)->HasAnyClassFlags(CLASS_Interface) && InStruct != UInterface::StaticClass();
+    bIsNative = InStruct->IsNative();
+    
+    if (bIsClass)
     {
+        UClass* Class = AsClass();
         Size = Struct->GetStructureSize();
 
         // register implemented interfaces
         for (FImplementedInterface &Interface : Class->Interfaces)
         {
-            FClassDesc *InterfaceClass = GReflectionRegistry.RegisterClass(Interface.Class);
+            GReflectionRegistry.RegisterClass(Interface.Class);
             RegisterClass(*GLuaCxt, Interface.Class);
         }
 
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
     }
-    else if (InType == EType::SCRIPTSTRUCT)
+    else if (bIsScriptStruct)
     {
+        UScriptStruct* ScriptStruct = AsScriptStruct();
         UScriptStruct::ICppStructOps *CppStructOps = ScriptStruct->GetCppStructOps();
         int32 Alignment = CppStructOps ? CppStructOps->GetAlignment() : ScriptStruct->GetMinAlignment();
         Size = CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
         UserdataPadding = CalcUserdataPadding(Alignment);       // calculate padding size for userdata
     }
+
+    if (!bIsNative)
+        GObjectReferencer.AddObjectRef(Struct);
 }
 
 /**
@@ -62,48 +73,19 @@ FClassDesc::~FClassDesc()
     UE_LOG(LogUnLua, Log, TEXT("~FClassDesc : %s,%p,%d"), *GetName(), this, RefCount);
 #endif
     
-    UnLua::FAutoStack  AutoStack;              // make sure lua stack is cleaned
-
 	GReflectionRegistry.RemoveFromDescSet(this);
 
     // remove refs to class,etc ufunction/delegate
-    // if (GLuaCxt->IsUObjectValid(Class))
+    if (Struct)
     {
         UUnLuaManager* UnLuaManager = GLuaCxt->GetManager();
         if (UnLuaManager)
         {
-            UnLuaManager->CleanUpByClass(Class);
+            UnLuaManager->CleanUpByClass((UClass*)Struct);
         }
     }
 
-    // remove lua side class tables
-    FTCHARToUTF8 Utf8ClassName(*ClassName);
-    ClearLibrary(*GLuaCxt, Utf8ClassName.Get());            // clean up related Lua meta table
-    ClearLoadedModule(*GLuaCxt, Utf8ClassName.Get());       // clean up required Lua module
-
-    // remove descs within classdesc,etc property/function
-    for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
-    {
-        delete It.Value();
-    }
-    for (FPropertyDesc *Property : Properties)
-    {   
-        if (GReflectionRegistry.IsDescValid(Property,DESC_PROPERTY))
-        {
-            delete Property;
-        }
-    }
-    for (FFunctionDesc *Function : Functions)
-    {
-        if (GReflectionRegistry.IsDescValid(Function,DESC_FUNCTION))
-        {   
-            delete Function;
-        }
-    }
-
-    Fields.Empty();
-    Properties.Empty();
-    Functions.Empty();
+    UnLoad();
 }
 
 void FClassDesc::AddRef()
@@ -130,38 +112,10 @@ void FClassDesc::SubRef()
     }
 }
 
-
-void FClassDesc::AddLock()
-{
-    TArray<FClassDesc*> DescChain;
-    GetInheritanceChain(DescChain);
-
-    DescChain.Insert(this, 0);   // add self
-    for (int i = 0; i < DescChain.Num(); ++i)
-    {
-        DescChain[i]->Locked = true;
-    }
-}
-
-void FClassDesc::ReleaseLock()
-{
-    TArray<FClassDesc*> DescChain;
-    GetInheritanceChain(DescChain);
-
-    DescChain.Insert(this, 0);   // add self
-    for (int i = 0; i < DescChain.Num(); ++i)
-    {
-        DescChain[i]->Locked = false;
-    }
-}
-
-bool FClassDesc::IsLocked()
-{
-    return Locked;
-}
-
 FFieldDesc* FClassDesc::FindField(const char* FieldName)
 {
+    Load();
+
     FFieldDesc** FieldDescPtr = Fields.Find(FieldName);
     return FieldDescPtr ? *FieldDescPtr : nullptr;
 }
@@ -171,10 +125,7 @@ FFieldDesc* FClassDesc::FindField(const char* FieldName)
  */
 FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
 {
-    if (!Struct)
-    {
-        return nullptr;
-    }
+    Load();
 
     FFieldDesc *FieldDesc = nullptr;
     FFieldDesc **FieldDescPtr = Fields.Find(FieldName);
@@ -186,9 +137,9 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
     {
         // a property or a function ?
         FProperty *Property = Struct->FindPropertyByName(FieldName);
-        UFunction *Function = (!Property && Type == EType::CLASS) ? Class->FindFunctionByName(FieldName) : nullptr;
+        UFunction *Function = (!Property && bIsClass) ? AsClass()->FindFunctionByName(FieldName) : nullptr;
         bool bValid = Property || Function;
-        if (!bValid && Type == EType::SCRIPTSTRUCT && !Struct->IsNative())
+        if (!bValid && bIsScriptStruct && !Struct->IsNative())
         {
             FString FieldNameStr = FieldName.ToString();
             const int32 GuidStrLen = 32;
@@ -258,32 +209,31 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
  */
 void FClassDesc::GetInheritanceChain(TArray<FString> &InNameChain, TArray<UStruct*> &InStructChain)
 {
-    check(Type != EType::UNKNOWN);
+    Load();
 
     InNameChain.Empty();
     InStructChain.Empty();
 
-    if (GLuaCxt->IsUObjectValid(Struct))
-    {   
-        if (NameChain.Num() <= 0)
+    if (NameChain.Num() <= 0)
+    {
+        UStruct* SuperStruct = Struct->GetInheritanceSuper();
+        while (SuperStruct)
         {
-            UStruct* SuperStruct = Struct->GetInheritanceSuper();
-            while (SuperStruct)
-            {
-                FString Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
-                NameChain.Add(Name);
-                StructChain.Add(SuperStruct);
-                SuperStruct = SuperStruct->GetInheritanceSuper();
-            }
+            FString Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
+            NameChain.Add(Name);
+            StructChain.Add(SuperStruct);
+            SuperStruct = SuperStruct->GetInheritanceSuper();
         }
-
-        InNameChain = NameChain;
-        InStructChain = StructChain;
     }
+
+    InNameChain = NameChain;
+    InStructChain = StructChain;
 }
 
 void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
 {
+    Load();
+    
     TArray<FString> InNameChain;
     TArray<UStruct*> InStructChain;
     GetInheritanceChain(InNameChain, InStructChain);
@@ -302,21 +252,39 @@ void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
     }
 }
 
-FClassDesc::EType FClassDesc::GetType(UStruct* InStruct)
+void FClassDesc::Load()
 {
-    EType Type = EType::UNKNOWN;
-    UScriptStruct* ScriptStruct = Cast<UScriptStruct>(InStruct);
-    if (ScriptStruct)
-    {
-        Type = EType::SCRIPTSTRUCT;
-    }
-    else
-    {
-        UClass* Class = Cast<UClass>(InStruct);
-        if (Class)
-        {
-            Type = EType::CLASS;
-        }
-    }
-    return Type;
+    if (Struct)
+        return;
+
+    FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F' || ClassName[0] == 'E') ? ClassName.RightChop(1) : ClassName;
+    Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);
+    if (!Struct)
+        Struct = LoadObject<UStruct>(nullptr, *Name);
+
+    check(Struct);
+
+    GObjectReferencer.AddObjectRef(Struct);
+    RegisterClass(*GLuaCxt, Struct);
+}
+
+void FClassDesc::UnLoad()
+{
+    if (bIsNative || !Struct)
+        return;
+
+    for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
+        delete It.Value();
+    for (FPropertyDesc* Property : Properties)
+        delete Property;
+    for (FFunctionDesc* Function : Functions)
+        delete Function;
+
+    Fields.Empty();
+    Properties.Empty();
+    Functions.Empty();
+
+    GObjectReferencer.RemoveObjectRef(Struct);
+    Struct = nullptr;
+    ClearLibrary(*GLuaCxt, TCHAR_TO_UTF8(*ClassName));
 }

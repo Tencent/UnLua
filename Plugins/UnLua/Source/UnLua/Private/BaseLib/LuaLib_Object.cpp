@@ -281,7 +281,6 @@ int32 UObject_Delete(lua_State *L)
         return 0;
     }
 
-    UObject *Object = nullptr;
     bool bTwoLvlPtr = false;
     bool bClassMetatable = false;
     void *Userdata = GetUserdata(L, 1, &bTwoLvlPtr, &bClassMetatable);
@@ -290,52 +289,13 @@ int32 UObject_Delete(lua_State *L)
         return 0;
     }
 
-    if (bClassMetatable)
+    if (!bClassMetatable)
     {
-        FClassDesc* ClassDesc = (FClassDesc*)Userdata;
-
-        lua_pushstring(L, "__name");
-        lua_rawget(L, 1);
-        FString MetaTableName = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        luaL_getmetatable(L, lua_tostring(L, -1));
-        int Type = lua_type(L, -1);
-        if (Type == LUA_TTABLE)
-        {
-            // https://github.com/Tencent/UnLua/issues/367
-            FClassDesc* CurrentClassDesc = (FClassDesc*)GetUserdata(L, -1);
-            lua_pop(L, 2);
-            if (CurrentClassDesc == ClassDesc)
-                return 0;
-        }
-        else
-        {
-            lua_pop(L, 2);
-        }
-
-        if (GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)
-            && ClassDesc->GetName().Equals(MetaTableName))
-        {
-            // remove class ref 
-            if ((ClassDesc->IsValid())
-                &&(!ClassDesc->IsNative()))
-            {
-                GObjectReferencer.RemoveObjectRef(ClassDesc->AsStruct());
-            }
-            
-            // class,ignore ref count
-            GReflectionRegistry.UnRegisterClass(ClassDesc);
-        }
-    }
-    else
-    {
-        Object = bTwoLvlPtr ? (UObject*)(*((void**)Userdata)) : (UObject*)Userdata;
+        UObject* Object = bTwoLvlPtr ? (UObject*)*(void**)Userdata : (UObject*)Userdata;
         if (Object)
-        {
             GReflectionRegistry.AddToGCSet(Object);
-            DeleteUObjectRefs(L,Object);
-        }
     }
-       
+
     return 0;
 }
 

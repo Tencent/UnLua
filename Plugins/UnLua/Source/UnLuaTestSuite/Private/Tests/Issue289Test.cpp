@@ -46,6 +46,7 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 		Actor->Destroy();
 
 		CollectGarbage(RF_NoFlags, true);
+		CollectGarbage(RF_NoFlags, true);
 
 		UnLua::RunChunk(L, Chunk);
 		RUNNER_TEST_EQUAL(luaL_typename(L, -1), "nil");

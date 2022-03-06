@@ -47,8 +47,7 @@ public:
     // all other place should use this to found desc!
     FClassDesc* FindClass(const char* InName);
 
-    void TryUnRegisterClass(FClassDesc* ClassDesc);
-    bool UnRegisterClass(FClassDesc *ClassDesc);
+    void TryUnRegisterClass(FClassDesc* ClassDesc, bool bForce = false);
     FClassDesc* RegisterClass(const char* InName);
     FClassDesc* RegisterClass(UStruct *InStruct);
 
@@ -74,10 +73,7 @@ public:
 	bool IsDescValid(void* Desc, EDescType type);
     bool IsDescValidWithObjectCheck(void* Desc, EDescType type);
 
-    void AddToGCSet(const UObject* InObject);
-    void RemoveFromGCSet(const UObject* InObject);
-    bool IsInGCSet(const UObject* InObject);
-
+    void AddToGCSet(UObject* InObject);
     void AddToClassWhiteSet(const FString& ClassName);
     void RemoveFromClassWhiteSet(const FString& ClassName);
     bool IsInClassWhiteSet(const FString& ClassName);
@@ -86,10 +82,10 @@ private:
     FDelegateHandle PostGarbageCollectHandle;
     void PostGarbageCollect();
     
-    FClassDesc* RegisterClassInternal(const FString &ClassName, UStruct *Struct, FClassDesc::EType Type);
+    FClassDesc* RegisterClassInternal(const FString &ClassName, UStruct *Struct);
 
+    TMap<UStruct*, FClassDesc*> Classes;
     TMap<FName, FClassDesc*> Name2Classes;
-    TMap<UStruct*, FClassDesc*> Struct2Classes;
     TMap<FName, FEnumDesc*> Enums;
     TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION

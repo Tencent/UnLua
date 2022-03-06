@@ -153,7 +153,6 @@ void FLuaContext::CreateState()
         lua_register(L, "NewObject", Global_NewObject);
         lua_register(L, "UnLua_AddToClassWhiteSet", Global_AddToClassWhiteSet);
         lua_register(L, "UnLua_RemoveFromClassWhiteSet", Global_RemoveFromClassWhiteSet);
-        lua_register(L, "UnLua_UnRegisterClass", Global_UnRegisterClass);
 
         lua_register(L, "UEPrint", Global_Print);
 

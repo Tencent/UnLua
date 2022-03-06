@@ -473,6 +473,7 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
             UnLua::FAutoStack AutoStack;
             ClassDesc = RegisterClass(L, MetatableName);
         }
+        ClassDesc->Load();
         Type = luaL_getmetatable(L, MetatableName);
         if (Type != LUA_TTABLE)
         {
@@ -1294,7 +1295,6 @@ static int32 GetField(lua_State* L)
         }
         else
         {
-            FScopedSafeClass SafeClass(ClassDesc);
             FFieldDesc* Field = ClassDesc->RegisterField(FieldName, ClassDesc);
             if (Field && Field->IsValid())
             {
@@ -1757,31 +1757,6 @@ bool RegisterEnum(lua_State *L, UEnum *Enum)
     return bSuccess;
 }
 
-int32 Global_UnRegisterClass(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, -1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    FClassDesc* ClassDesc = GReflectionRegistry.FindClass(ClassName);
-    if (ClassDesc)
-    {
-        GReflectionRegistry.TryUnRegisterClass(ClassDesc);
-    }
-
-    return 0;
-}
-
 int32 Global_RegisterClass(lua_State *L)
 {
     int32 NumParams = lua_gettop(L);
@@ -1804,11 +1779,6 @@ extern int32 UObject_Delete(lua_State *L);
 
 static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDesc *InSuperClass, UnLua::IExportedClass **ExportedClasses, int32 NumExportedClasses)
 {
-    if (!GReflectionRegistry.IsDescValid(InClass, DESC_CLASS))
-    {
-        return false;
-    }
-
     FString StrClassName = InClass->GetName();
     FTCHARToUTF8 ClassName(*StrClassName);
 
@@ -1912,7 +1882,7 @@ static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDes
 
     lua_pushvalue(L, -1);                                   // set metatable to self
     lua_setmetatable(L, -2);
-
+    
     if (ExportedClasses)
     {
         for (int32 i = 0; i < NumExportedClasses; ++i)
@@ -1931,49 +1901,39 @@ static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDes
     return true;
 }
 
-static bool RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
+static void RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
 {
-    if (GReflectionRegistry.IsDescValid((void*)ClassDesc,DESC_CLASS))
+    const FString &Name = ClassDesc->GetName();
+
+    int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*Name));
+    bool bSuccess = Type == LUA_TTABLE;
+    lua_pop(L, 1);
+    if (bSuccess)
+        return;
+
+    TArray<FClassDesc*> ClassDescChain;
+    ClassDesc->GetInheritanceChain(ClassDescChain);
+
+    // add self
+    ClassDescChain.Insert((FClassDesc*)ClassDesc, 0);
+
+    TArray<UnLua::IExportedClass*> ExportedClasses;
+    UnLua::IExportedClass *ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain.Last()->GetName());   // find statically exported stuff...
+    if (ExportedClass)
     {
-        FScopedSafeClass SafeClasses((FClassDesc*)ClassDesc);
+        ExportedClasses.Add(ExportedClass);
+    }
+    RegisterClassCore(L, ClassDescChain.Last(), nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
 
-        const FString &Name = ClassDesc->GetName();
-
-        int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*Name));
-        bool bSuccess = Type == LUA_TTABLE;
-        lua_pop(L, 1);
-        if (bSuccess)
-        {
-            return true;
-        }
-
-        TArray<FClassDesc*> ClassDescChain;
-        ClassDesc->GetInheritanceChain(ClassDescChain);
-
-        // add self
-        ClassDescChain.Insert((FClassDesc*)ClassDesc, 0);
-
-        TArray<UnLua::IExportedClass*> ExportedClasses;
-        UnLua::IExportedClass *ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain.Last()->GetName());   // find statically exported stuff...
+    for (int32 i = ClassDescChain.Num() - 2; i > -1; --i)
+    {
+        ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain[i]->GetName());                          // find statically exported stuff...
         if (ExportedClass)
         {
             ExportedClasses.Add(ExportedClass);
         }
-        RegisterClassCore(L, ClassDescChain.Last(), nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
-
-        for (int32 i = ClassDescChain.Num() - 2; i > -1; --i)
-        {
-            ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain[i]->GetName());                          // find statically exported stuff...
-            if (ExportedClass)
-            {
-                ExportedClasses.Add(ExportedClass);
-            }
-            RegisterClassCore(L, ClassDescChain[i], ClassDescChain[i + 1], ExportedClasses.GetData(), ExportedClasses.Num());
-        }
-
-        return true;
+        RegisterClassCore(L, ClassDescChain[i], ClassDescChain[i + 1], ExportedClasses.GetData(), ExportedClasses.Num());
     }
-    return false;
 }
 
 FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName)
@@ -1983,7 +1943,7 @@ FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *Super
         return nullptr;
     }
 
-    FClassDesc *ClassDesc = nullptr;
+    FClassDesc *ClassDesc;
     if (SuperClassName)
     {
         ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
@@ -1994,10 +1954,8 @@ FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *Super
         ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
     }
 
-    if (!RegisterClassInternal(L, ClassDesc))
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to register class %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(ClassName));
-    }
+    RegisterClassInternal(L, ClassDesc);
+
     return ClassDesc;
 }
 
@@ -2008,7 +1966,7 @@ FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct)
         return nullptr;
     }
 
-    FClassDesc *ClassDesc = nullptr;
+    FClassDesc *ClassDesc;
     if (SuperStruct)
     {
         ClassDesc = GReflectionRegistry.RegisterClass(Struct);
@@ -2019,11 +1977,8 @@ FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct)
         ClassDesc = GReflectionRegistry.RegisterClass(Struct);
     }
 
+    RegisterClassInternal(L, ClassDesc);
 
-    if (!RegisterClassInternal(L, ClassDesc))
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to register UStruct!"), ANSI_TO_TCHAR(__FUNCTION__));
-    }
     return ClassDesc;
 }
 
@@ -2558,17 +2513,9 @@ int32 Class_CallLatentFunction(lua_State *L)
 FClassDesc* Class_CheckParam(lua_State *L)
 {
     FClassDesc *ClassDesc = (FClassDesc*)lua_touserdata(L, lua_upvalueindex(1));
-    if ((!ClassDesc)
-        || (!GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)))
+    if (!ClassDesc)
     {
         UE_LOG(LogUnLua, Log, TEXT("Class : Invalid FClassDesc!"));
-        return NULL;
-    }
-
-    if (!ClassDesc->IsValid())
-    {
-        //UE_LOG(LogUnLua, Log, TEXT("Class : Try to release empty FClassDesc(Name : %s, Address : %p)!"),*ClassDesc->GetName(),ClassDesc);
-        //GReflectionRegistry.UnRegisterClass(ClassDesc);
         return NULL;
     }
 
@@ -2632,16 +2579,9 @@ int32 Class_Cast(lua_State* L)
 FClassDesc* ScriptStruct_CheckParam(lua_State *L)
 {
     FClassDesc *ClassDesc = (FClassDesc*)lua_touserdata(L, lua_upvalueindex(1));
-    if ((!ClassDesc)
-        || (!GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)))
+    if (!ClassDesc)
     {
         UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : Invalid FClassDesc!"));
-        return NULL;
-    }
-    if (!ClassDesc->IsValid())
-    {
-        //UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : Try to release empty FClassDesc(Name : %s, Address : %p)!"),*ClassDesc->GetName(),ClassDesc);
-        //GReflectionRegistry.UnRegisterClass(ClassDesc);
         return NULL;
     }
 
@@ -2698,40 +2638,8 @@ int32 ScriptStruct_Delete(lua_State *L)
                 ScriptStruct->DestroyStruct(Userdata);
             }
         }
-            
-        ClassDesc->SubRef();
 
-#if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogTemp, Log, TEXT("ScriptStruct_Delete : %s"), *ClassDesc->GetName());
-#endif
         GReflectionRegistry.TryUnRegisterClass(ClassDesc);
-    }
-    else
-    {
-        lua_pushstring(L, "__name");
-        lua_rawget(L, 1);
-        FString MetaTableName = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        luaL_getmetatable(L, lua_tostring(L, -1));
-        int Type = lua_type(L, -1);
-        if (Type == LUA_TTABLE)
-        {
-            // https://github.com/Tencent/UnLua/issues/367
-            FClassDesc* CurrentClassDesc = (FClassDesc*)GetUserdata(L, -1);
-            lua_pop(L, 2);
-            if (CurrentClassDesc == ClassDesc)
-                return 0;
-        }
-        else
-        {
-            lua_pop(L, 2);
-        }
-
-        if (!ScriptStruct->IsNative())
-        {
-            GObjectReferencer.RemoveObjectRef(ScriptStruct);
-        }
-
-        GReflectionRegistry.UnRegisterClass(ClassDesc);
     }
     return 0;
 }

@@ -520,7 +520,11 @@ void FDelegateHelper::Cleanup(bool bFullCleanup)
 }
 
 void FDelegateHelper::NotifyUObjectDeleted(UObject* InObject)
-{   
+{
+    UClass* Class = Cast<UClass>(InObject);
+    if (Class)
+        CleanUpByClass(Class);
+
     Remove(InObject);
 }
 

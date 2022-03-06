@@ -219,7 +219,16 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
 {
     if (bClass)
     {
-        //OnClassCleanup((UClass*)Object);
+        UClass* Class = (UClass*)Object;
+
+        FString ModuleName;
+        if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
+        {
+            Classes.Remove(ModuleName);
+            ClearLoadedModule(*GLuaCxt, TCHAR_TO_UTF8(*ModuleName));
+        }
+        OverridableFunctions.Remove(Class);
+        DuplicatedFunctions.Remove(Class);
     }
     else
     {
@@ -255,9 +264,7 @@ void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
 void UUnLuaManager::CleanUpByClass(UClass *Class)
 {
     if (!Class)
-    {
         return;
-    }
 
     const FString *ModuleNamePtr = ModuleNames.Find(Class);
     if (!ModuleNamePtr)
@@ -289,12 +296,6 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
         if (!Class->HasAnyFlags(RF_BeginDestroyed))
             RemoveDuplicatedFunctions(Class, Functions);
     }
-
-    OnClassCleanup(Class);
-
-    FDelegateHelper::CleanUpByClass(Class);
-
-    ClearLoadedModule(*GLuaCxt, TCHAR_TO_UTF8(*ModuleName));
 
     ModuleNames.Remove(Class);
 }
@@ -572,7 +573,7 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
     if (Num > 0)
     {
         ReleaseAttachedObjectLuaRef(Actor);
-        DeleteUObjectRefs(UnLua::GetState(),Actor);   // remove record of this actor
+        GReflectionRegistry.AddToGCSet(Actor);
     }
 }
 

@@ -45,8 +45,8 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 		";
         UnLua::RunChunk(L, Chunk2);
 
-
         lua_gc(L, LUA_GCCOLLECT, 0);
+        CollectGarbage(RF_NoFlags, true);
         CollectGarbage(RF_NoFlags, true);
 
         Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));

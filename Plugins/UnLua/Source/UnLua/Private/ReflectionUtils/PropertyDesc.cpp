@@ -1204,25 +1204,6 @@ public:
         bFirstPropOfScriptStruct = false;
     }
 
-    ~FScriptStructPropertyDesc()
-    {
-        /*FClassDesc* ClassDesc = GReflectionRegistry.FindClass(StructName.Get());
-        if (ClassDesc)
-        {
-            ClassDesc->SubRef();
-            if (ClassDesc->GetRefCount() <= 0)
-            {   
-                // give a chance to release scriptstruct
-                UScriptStruct* ScriptStruct = StructProperty->Struct;
-                if (!ScriptStruct->IsNative())
-                {
-                    GObjectReferencer.RemoveObjectRef(ScriptStruct);
-                }
-                GReflectionRegistry.UnRegisterClass(ClassDesc);
-            }
-        }*/
-    }
-
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
     {
         void *Src = GetCppInstanceFast(L, SrcIndexInStack);
