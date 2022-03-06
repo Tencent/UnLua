@@ -283,7 +283,7 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
         }
     }
 
-    TArray<UFunction*> Functions;
+    TArray<TWeakObjectPtr<UFunction>> Functions;
     if (DuplicatedFunctions.RemoveAndCopyValue(Class, Functions))
     {
         if (!Class->HasAnyFlags(RF_BeginDestroyed))
@@ -304,7 +304,7 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
  */
 void UUnLuaManager::CleanupDuplicatedFunctions()
 {
-    for (TMap<UClass*, TArray<UFunction*>>::TIterator It(DuplicatedFunctions); It; ++It)
+    for (TMap<UClass*, TArray<TWeakObjectPtr<UFunction>>>::TIterator It(DuplicatedFunctions); It; ++It)
     {
         OnClassCleanup(It.Key());
         if (!It.Key()->HasAnyFlags(RF_BeginDestroyed))
@@ -407,13 +407,15 @@ void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFun
 /**
  * Remove duplicated UFunctions
  */
-void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions)
+void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<TWeakObjectPtr<UFunction>> &Functions)
 {
-    for (UFunction* Function : Functions)
+    for (auto Function : Functions)
     {
-        RemoveUFunction(Function, Class); // clean up duplicated UFunction
+        if (!Function.IsValid())
+            continue;
+        RemoveUFunction(Function.Get(), Class); // clean up duplicated UFunction
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        GReflectionRegistry.RemoveOverriddenFunction(Function);
+        GReflectionRegistry.RemoveOverriddenFunction(Function.Get());
 #endif
     }
 }
@@ -778,7 +780,7 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
             NewFunc->Script.Empty(3);                               // insert opcodes for non-native UFunction only
         }
         OverrideUFunction(NewFunc, (FNativeFuncPtr)&FLuaInvoker::execCallLua, GReflectionRegistry.RegisterFunction(NewFunc));   // replace thunk function and insert opcodes
-        TArray<UFunction*> &DuplicatedFuncs = DuplicatedFunctions.FindOrAdd(OuterClass);
+        TArray<TWeakObjectPtr<UFunction>> &DuplicatedFuncs = DuplicatedFunctions.FindOrAdd(OuterClass);
         DuplicatedFuncs.AddUnique(NewFunc);
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
         GReflectionRegistry.AddOverriddenFunction(NewFunc, TemplateFunction);
