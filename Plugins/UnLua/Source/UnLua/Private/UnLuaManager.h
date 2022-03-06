@@ -106,7 +106,7 @@ private:
 
     void OnClassCleanup(UClass *Class);
     void ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr);
-    void RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions);
+    void RemoveDuplicatedFunctions(UClass *Class, TArray<TWeakObjectPtr<UFunction>> &Functions);
 
     FDelegateHandle PostGarbageCollectHandle;
     void PostGarbageCollect();
@@ -115,7 +115,7 @@ private:
     TMap<FString, int16> RealModuleNames;
     TMap<FString, UClass*> Classes;
     TMap<UClass*, TMap<FName, UFunction*>> OverridableFunctions;
-    TMap<UClass*, TArray<UFunction*>> DuplicatedFunctions;
+    TMap<UClass*, TArray<TWeakObjectPtr<UFunction>>> DuplicatedFunctions;
     TMap<FString, TSet<FName>> ModuleFunctions;
     TMap<TWeakObjectPtr<UFunction>, FNativeFuncPtr> CachedNatives;
     TMap<TWeakObjectPtr<UFunction>, TArray<uint8>> CachedScripts;
