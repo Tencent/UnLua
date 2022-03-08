@@ -204,6 +204,7 @@ void FLuaContext::CreateState()
             Enum->Register(L);
         }
 
+#if WITH_EDITOR
         UnLua::RunChunk(L, R"(
             local ok, m = pcall(require, "UnLuaHotReload")
             if not ok then
@@ -213,6 +214,7 @@ void FLuaContext::CreateState()
             require = m.require
             UnLuaHotReload = m.reload
         )");
+#endif
 
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
