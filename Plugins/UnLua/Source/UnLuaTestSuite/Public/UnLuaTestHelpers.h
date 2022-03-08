@@ -157,6 +157,12 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
     {
         return InEnum == EEnumForIssue331::RECORD_TO_FILE;
     }
+
+    UFUNCTION(BlueprintCallable)
+    static void TestForIssue376(UPARAM(ref) FUnLuaTestTableRow& Struct)
+    {
+        Struct.Level = 100;
+    }
 };
 
 #if WITH_DEV_AUTOMATION_TESTS
