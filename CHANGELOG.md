@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.3] - 2021-3-9
+
+### Added
+
+- 支持 UE5.0 Preview 1
+- 支持 Blueprint Clustering [#355](https://github.com/Tencent/UnLua/issues/355)
+- 在通过UProperty赋值时对Owner的检测，避免写坏到错误的Owner [#344](https://github.com/Tencent/UnLua/issues/344)
+- UGameInstanceSubsystem绑定支持 [#345](https://github.com/Tencent/UnLua/pull/345)
+- 内置一些常见的导出
+
+### Fixed
+
+- ENABLE_TYPE_CHECK开启情况下，应该只做类型检查，类型兼容的话支持Value设置，跟之前的版本保持一致 [#353](https://github.com/Tencent/UnLua/pull/353)
+- UE5地图中放置绑定Lua覆写函数的Actor,在打包后客户端加载时会奔溃 [#325](https://github.com/Tencent/UnLua/issues/325)
+- LevelStreaming导致延迟绑定的Actor无法触发ReceiveBeginPlay [#343](https://github.com/Tencent/UnLua/issues/343)
+- 引用参数和函数返回值的返回顺序错误 [#361](https://github.com/Tencent/UnLua/issues/361)
+- 类型元表被LuaGC时，可能意外导致正在使用的FClassDesc被错误delete [#367](https://github.com/Tencent/UnLua/issues/367)
+- 关闭SUPPORTS_RPC_CALL后，参数需要拷贝到重用的Buffer中，避免无法进行引用传递 [#364](https://github.com/Tencent/UnLua/issues/364)
+- 委托参数是TArray&时，在lua中修改无效 [#362](https://github.com/Tencent/UnLua/issues/362)
+- Actor调用K2_DestroyActor销毁时，lua部分会在注册表残留 [#372](https://github.com/Tencent/UnLua/issues/372)
+- 子类被销毁时，可能会令父类的Lua绑定失效 [#375](https://github.com/Tencent/UnLua/issues/375)
+- 4.27在不启用Async Loading Thread Enabled的情况下打包后加载地图会导致Crash的问题 [#365](https://github.com/Tencent/UnLua/issues/365)
+
 ## [2.1.2] - 2021-1-17
 
 ### Added
