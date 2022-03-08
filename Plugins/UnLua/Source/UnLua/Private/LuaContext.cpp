@@ -352,7 +352,7 @@ bool FLuaContext::TryToBindLua(UObject* Object)
         return false;
     }
 
-    if (!IsInGameThread())
+    if (!IsInGameThread() || IsAsyncLoading())
     {
         // all bind operation should be in game thread, include dynamic bind
         FScopeLock Lock(&Async2MainCS);
