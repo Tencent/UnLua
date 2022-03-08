@@ -1,4 +1,4 @@
-// Tencent is pleased to support the open source community by making UnLua available.
+﻿// Tencent is pleased to support the open source community by making UnLua available.
 // 
 // Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
 //
@@ -246,6 +246,47 @@ void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
 #if !ENABLE_CALL_OVERRIDDEN_FUNCTION
     New2TemplateFunctions.Empty();
 #endif
+}
+
+/*
+ * Cleanup actors for level
+ */
+void UUnLuaManager::Cleanup(class ULevel* Level)
+{
+    if (!GLuaCxt->IsEnable())
+    {
+        return;
+    }
+    TArray<AActor*> RemovedActors;
+    for (AActor* Actor : AttachedActors)
+    {
+        if (Actor->GetLevel() == Level)
+        {
+            RemovedActors.Add(Actor);
+        }
+    }
+
+    for(AActor* Actor : RemovedActors)
+    {
+        int32 Num = AttachedActors.Remove(Actor);
+        if (Num > 0)
+        {
+            NotifyUObjectDeleted(Actor);            // remove record of this actor
+        }
+        bool CleanupClass = true;
+        for (auto p : AttachedObjects)
+        {
+            if (p.Key->GetClass() == Actor->GetClass())
+            {
+                CleanupClass = false;//Has save class
+                break;
+            }
+        }
+        if (CleanupClass)
+        {
+            NotifyUObjectDeleted(Actor->GetClass(), true);    
+        }
+    }
 }
 
 /**

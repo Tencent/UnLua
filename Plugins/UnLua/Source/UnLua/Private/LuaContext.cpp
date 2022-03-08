@@ -28,6 +28,7 @@
 #include "ReflectionUtils/ReflectionRegistry.h"
 #include "Interfaces/IPluginManager.h"
 #include "DelegateHelper.h"
+#include "Engine/LevelScriptActor.h"
 
 #if WITH_EDITOR
 #include "Editor.h"
@@ -94,6 +95,8 @@ void FLuaContext::RegisterDelegates()
     FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FLuaContext::OnCrash);
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FLuaContext::PostLoadMapWithWorld);
     //FCoreUObjectDelegates::GetPreGarbageCollectDelegate().AddRaw(this, &FLuaContext::OnPreGarbageCollect);
+	FWorldDelegates::LevelRemovedFromWorld.AddRaw(GLuaCxt, &FLuaContext::OnLevelRemovedFromWorld);  // Level streaming
+    FWorldDelegates::LevelAddedToWorld.AddRaw(GLuaCxt, &FLuaContext::OnLevelAddedToWorld);
 
 #if WITH_EDITOR
     FEditorDelegates::PreBeginPIE.AddRaw(this, &FLuaContext::PreBeginPIE);
@@ -1121,4 +1124,24 @@ bool FLuaContext::OnGameViewportInputKey(FKey InKey, FModifierKeysState Modifier
         return HotfixLua();
     }
     return false;
+}
+
+void FLuaContext::OnLevelRemovedFromWorld(ULevel* Level, UWorld* World)
+{
+    if (Level)
+    {
+        Manager->Cleanup(Level);
+    }
+}
+
+void FLuaContext::OnLevelAddedToWorld(ULevel* Level, UWorld* World)
+{
+    if (Level)
+    {
+        ALevelScriptActor* LSA = Level->GetLevelScriptActor();
+        if (LSA && LSA->InputEnabled() && LSA->InputComponent)
+        {
+            Manager->ReplaceInputs(LSA, LSA->InputComponent);
+        }
+    }
 }

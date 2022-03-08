@@ -1,4 +1,4 @@
-// Tencent is pleased to support the open source community by making UnLua available.
+﻿// Tencent is pleased to support the open source community by making UnLua available.
 // 
 // Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
 //
@@ -61,6 +61,8 @@ public:
     void PostLoadMapWithWorld(UWorld *World);
     void OnPostGarbageCollect();
     void OnDelayBindObject(UObject* Object);
+    void OnLevelRemovedFromWorld(ULevel* Level, UWorld* World);
+    void OnLevelAddedToWorld(ULevel* Level, UWorld* World);
 
 #if WITH_EDITOR
     void PreBeginPIE(bool bIsSimulating);
