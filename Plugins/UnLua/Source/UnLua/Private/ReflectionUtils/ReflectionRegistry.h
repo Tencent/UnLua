@@ -93,7 +93,7 @@ private:
     TMap<FName, FEnumDesc*> Enums;
     TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    TMap<UFunction*, UFunction*> OverriddenFunctions;
+    TMap<TWeakObjectPtr<UFunction>, UFunction*> OverriddenFunctions;
 #endif
 
 	TMap<void*, EDescType> DescSet;
