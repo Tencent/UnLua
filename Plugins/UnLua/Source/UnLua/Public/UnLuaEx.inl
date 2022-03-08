@@ -538,17 +538,13 @@ namespace UnLua
     template <typename ClassType, typename RetType, typename... ArgType>
     TExportedMemberFunction<ClassType, RetType, ArgType...>::TExportedMemberFunction(const FString &InName, RetType(ClassType::*InFunc)(ArgType...), const FString &InClassName)
         : Name(InName), Func([InFunc](ClassType *Obj, ArgType&&... Args) -> RetType { return (Obj->*InFunc)(Forward<ArgType>(Args)...); })
-#if WITH_EDITOR
         , ClassName(InClassName)
-#endif
     {}
 
     template <typename ClassType, typename RetType, typename... ArgType>
     TExportedMemberFunction<ClassType, RetType, ArgType...>::TExportedMemberFunction(const FString &InName, RetType(ClassType::*InFunc)(ArgType...) const, const FString &InClassName)
         : Name(InName), Func([InFunc](ClassType *Obj, ArgType&&... Args) -> RetType { return (Obj->*InFunc)(Forward<ArgType>(Args)...); })
-#if WITH_EDITOR
         , ClassName(InClassName)
-#endif
     {}
 
     template <typename ClassType, typename RetType, typename... ArgType>
@@ -601,9 +597,7 @@ namespace UnLua
     template <typename RetType, typename... ArgType>
     TExportedStaticMemberFunction<RetType, ArgType...>::TExportedStaticMemberFunction(const FString &InName, RetType(*InFunc)(ArgType...), const FString &InClassName)
         : Super(InName, InFunc)
-#if WITH_EDITOR
         , ClassName(InClassName)
-#endif
     {}
 
     template <typename RetType, typename... ArgType>

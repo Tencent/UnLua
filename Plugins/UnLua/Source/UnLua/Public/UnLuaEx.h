@@ -168,10 +168,7 @@ namespace UnLua
     private:
         FString Name;
         TFunction<RetType(ClassType*, ArgType...)> Func;
-
-#if WITH_EDITOR
         FString ClassName;
-#endif
     };
 
     /**
@@ -191,9 +188,7 @@ namespace UnLua
 #endif
 
     private:
-#if WITH_EDITOR
         FString ClassName;
-#endif
     };
 
 
