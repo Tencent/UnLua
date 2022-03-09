@@ -25,6 +25,7 @@
 #include "DelegateHelper.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "DefaultParamCollection.h"
+#include "UnLuaFunctionLibrary.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
 #if WITH_EDITOR
@@ -190,17 +191,14 @@ void FLuaContext::CreateState()
             Enum->Register(L);
         }
 
-#if WITH_EDITOR
         UnLua::RunChunk(L, R"(
             local ok, m = pcall(require, "UnLuaHotReload")
             if not ok then
                 return
             end
-            m.config.script_root_path = UE.UUnLuaEditorFunctionLibrary.GetScriptRootPath()
             require = m.require
             UnLuaHotReload = m.reload
         )");
-#endif
 
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
@@ -1070,7 +1068,8 @@ bool FLuaContext::OnGameViewportInputKey(FKey InKey, FModifierKeysState Modifier
     }
     if (InKey == EKeys::L && ModifierKeyState.IsControlDown() && EventType == IE_Released)
     {
-        return HotfixLua();
+        UUnLuaFunctionLibrary::HotReload();
+        return true;
     }
     return false;
 }

@@ -16,12 +16,14 @@
 #include "MainMenuToolbar.h"
 #include "LevelEditor.h"
 #include "UnLuaEditorCommands.h"
+#include "UnLuaFunctionLibrary.h"
 
 #define LOCTEXT_NAMESPACE "UnLuaMainMenuToolbar"
 
 FMainMenuToolbar::FMainMenuToolbar()
     : CommandList(new FUICommandList)
 {
+    CommandList->MapAction(FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
     CommandList->MapAction(FUnLuaEditorCommands::Get().ReportIssue, FExecuteAction::CreateRaw(this, &FMainMenuToolbar::ReportIssue), FCanExecuteAction());
     CommandList->MapAction(FUnLuaEditorCommands::Get().About, FExecuteAction::CreateRaw(this, &FMainMenuToolbar::About), FCanExecuteAction());
 }

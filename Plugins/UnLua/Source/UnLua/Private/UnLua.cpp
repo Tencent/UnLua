@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "UnLuaPrivate.h"
-#include "UnLuaDelegates.h"
 #include "LuaContext.h"
 
 DEFINE_STAT(STAT_UnLua_Lua_Memory);
@@ -362,27 +361,6 @@ namespace UnLua
 #endif
 
 } // namespace UnLua
-
-/**
- * Try to 'hotfix' Lua.
- * 1. Try to execute developers registered callback
- * 2. Try to call global Lua function 'HotFix'
- */
-bool HotfixLua()
-{
-    if (GLuaCxt)
-    {
-        if (FUnLuaDelegates::HotfixLua.IsBound())
-        {
-            FUnLuaDelegates::HotfixLua.Execute(*GLuaCxt);
-            return true;
-        }
-
-        UnLua::FLuaRetValues RetValues = UnLua::Call(*GLuaCxt, "HotFix");
-        return RetValues.IsValid();
-    }
-    return false;
-}
 
 FString GLuaSrcRelativePath = TEXT("Script/");
 FString GLuaSrcFullPath = FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() + GLuaSrcRelativePath);

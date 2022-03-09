@@ -39,25 +39,26 @@ class UNLUAEDITOR_API UUnLuaEditorSettings : public UObject
 {
     GENERATED_BODY()
 
+public:
     UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Hot Reload Mode", defaultValue = 0))
     EHotReloadMode HotReloadMode;
 
     UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Generate IntelliSense Files"))
     bool bGenerateIntelliSense = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Auto Startup"))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Auto Startup. Requires restart to take effect."))
     bool bAutoStart = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug"))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug. Requires restart to take effect."))
     bool bEnableDebug = false;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking"))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking. Requires restart to take effect."))
     bool bEnableTypeChecking = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated)"))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated). Requires restart to take effect."))
     bool bEnableRPCCall = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated)"))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated). Requires restart to take effect."))
     bool bWithUENamespace = true;
 
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (DisplayName = "Update Mode", defaultValue = 0))

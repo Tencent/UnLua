@@ -15,20 +15,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "IDirectoryWatcher.h"
-#include "Kismet/BlueprintFunctionLibrary.h"
-#include "UnLuaEditorFunctionLibrary.generated.h"
+#include "UnLuaFunctionLibrary.generated.h"
 
 UCLASS()
-class UNLUAEDITOR_API UUnLuaEditorFunctionLibrary : public UBlueprintFunctionLibrary
+class UNLUA_API UUnLuaFunctionLibrary : public UBlueprintFunctionLibrary
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	static void WatchScriptDirectory();
+    UFUNCTION(BlueprintCallable)
+    static FString GetScriptRootPath();
 
-private:
-	static void OnLuaFilesModified(const TArray<FFileChangeData>& FileChanges);
+    UFUNCTION(BlueprintCallable)
+    static int64 GetFileLastModifiedTimestamp(FString Path);
 
-	static FDelegateHandle DirectoryWatcherHandle;
+    UFUNCTION(BlueprintCallable)
+    static void HotReload();
 };

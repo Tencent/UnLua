@@ -23,6 +23,7 @@
 #include "ISettingsSection.h"
 #include "UnLuaEditorSettings.h"
 #include "UnLuaEditorFunctionLibrary.h"
+#include "UnLuaFunctionLibrary.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
@@ -60,7 +61,6 @@ class FUnLuaEditorModule : public IModuleInterface
 {
 public:
     FUnLuaEditorModule()
-        : bIsPIE(false)
     {
     }
 
@@ -70,10 +70,7 @@ public:
 
         FUnLuaEditorCommands::Register();
 
-        // register delegates
         OnPostEngineInitHandle = FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnLuaEditorModule::OnPostEngineInit);
-        PostPIEStartedHandle = FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaEditorModule::PostPIEStarted);
-        PrePIEEndedHandle = FEditorDelegates::PrePIEEnded.AddRaw(this, &FUnLuaEditorModule::PrePIEEnded);
 
         MainMenuToolbar = MakeShareable(new FMainMenuToolbar);
         BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
@@ -85,12 +82,7 @@ public:
     virtual void ShutdownModule() override
     {
         FUnLuaEditorCommands::Unregister();
-
-        // unregister delegates
         FCoreDelegates::OnPostEngineInit.Remove(OnPostEngineInitHandle);
-        FEditorDelegates::PostPIEStarted.Remove(PostPIEStartedHandle);
-        FEditorDelegates::PrePIEEnded.Remove(PrePIEEndedHandle);
-
         UnregisterSettings();
     }
 
@@ -107,32 +99,17 @@ private:
         MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
     }
 
-    void PostPIEStarted(bool bIsSimulating)
-    {
-        bIsPIE = true; // raise PIE flag
-    }
-
-    void PrePIEEnded(bool bIsSimulating)
-    {
-        bIsPIE = false; // clear PIE flag
-    }
-
     void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
     {
-        // register default key input to 'Hotfix' Lua
-        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateLambda([]() { HotfixLua(); }),
-                                                              FCanExecuteAction::CreateRaw(this, &FUnLuaEditorModule::CanHotfixLua));
+        // register default key input to 'HotReload' Lua
+        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(
+            FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
 
         // copy dependency files
         bool bSuccess = CopyDependencyFile(TEXT("UnLua.lua"));
         check(bSuccess);
         CopyDependencyFile(TEXT("UnLuaPerformanceTestProxy.lua"));
         check(bSuccess);
-    }
-
-    bool CanHotfixLua() const
-    {
-        return bIsPIE; // enable Lua 'Hotfix' in PIE
     }
 
     void RegisterSettings() const
@@ -160,18 +137,12 @@ private:
         return true;
     }
 
-    FDelegateHandle DirectoryWatcherHandle;
-    
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
     TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
     TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
     TSharedPtr<ISlateStyle> Style;
 
     FDelegateHandle OnPostEngineInitHandle;
-    FDelegateHandle PostPIEStartedHandle;
-    FDelegateHandle PrePIEEndedHandle;
-
-    bool bIsPIE;
 };
 
 #undef LOCTEXT_NAMESPACE

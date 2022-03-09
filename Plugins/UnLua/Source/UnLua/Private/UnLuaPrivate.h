@@ -48,7 +48,5 @@ DECLARE_MEMORY_STAT_EXTERN(TEXT("Persistent Parameter Buffer Memory"), STAT_UnLu
 DECLARE_MEMORY_STAT_EXTERN(TEXT("OutParmRec Memory"), STAT_UnLua_OutParmRec_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
 #endif
 
-UNLUA_API bool HotfixLua();
-
 UNLUA_API extern FString GLuaSrcRelativePath;
 UNLUA_API extern FString GLuaSrcFullPath;
