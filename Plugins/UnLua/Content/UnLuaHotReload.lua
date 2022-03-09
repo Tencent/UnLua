@@ -14,12 +14,15 @@ local loaded_modules = setmetatable({}, { __mode = "v" })
 local ignore_modules = {}
 local config = {
     debug = false,
-    script_root_path = UE.UUnLuaEditorFunctionLibrary.GetScriptRootPath(),
+    script_root_path = UE.UUnLuaFunctionLibrary.GetScriptRootPath(),
     ignore_modules = ignore_modules
 }
-
+local hook = {
+    module_loaded = nil
+}
 local M = {
-    config = config
+    config = config,
+    hook = hook
 }
 
 local dump = function(tbl, max_indent)
@@ -75,9 +78,21 @@ end
 local table = table
 local debug = debug
 local origin_require = require
-local error_msg
+local error_msg = ""
+
 local function error_handler(err)
     print(error_msg .. "  " .. err .. "  " .. debug.traceback())
+end
+
+local function call_hook(name, ...)
+    local func = hook[name]
+    if not func then
+        return
+    end
+    local ok, result = pcall(func, ...)
+    if not ok then
+        print(string.format("calling hook function '%s' failed : %s", name, result))
+    end
 end
 
 --- 脚本加载的修改时间
@@ -86,7 +101,7 @@ local loaded_module_times = {}
 
 local function get_last_modified_time(module_name)
     local filename = config.script_root_path .. module_name:gsub("%.", "/") .. ".lua"
-    return UE.UUnLuaEditorFunctionLibrary.GetFileLastModifiedTimestamp(filename)
+    return UE.UUnLuaFunctionLibrary.GetFileLastModifiedTimestamp(filename)
 end
 
 local function make_sandbox()
@@ -138,6 +153,7 @@ local function make_sandbox()
                 loaded_modules[module_name] = new_module
                 package.loaded[module_name] = new_module
                 loaded_module_times[module_name] = get_last_modified_time(module_name)
+                call_hook("module_loaded", new_module, module_name, false)
                 return new_module
             end
         else
@@ -562,6 +578,7 @@ local function reload_modules(module_names)
                 old_modules[#old_modules+1] = loaded_modules[module_name]
                 new_modules[#new_modules+1] = new_module
                 module_envs[#module_envs+1] = env
+                call_hook("module_loaded", new_module, module_name, true)
             else
                 sandbox.exit()
                 return
