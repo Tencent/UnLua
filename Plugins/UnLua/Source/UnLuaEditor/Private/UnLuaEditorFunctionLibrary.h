@@ -15,6 +15,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "IDirectoryWatcher.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "UnLuaEditorFunctionLibrary.generated.h"
 
@@ -28,4 +29,12 @@ class UNLUAEDITOR_API UUnLuaEditorFunctionLibrary : public UBlueprintFunctionLib
 
 	UFUNCTION(BlueprintCallable)
 	static int64 GetFileLastModifiedTimestamp(FString Path);
+
+public:
+	static void WatchScriptDirectory();
+
+private:
+	static void OnLuaFilesModified(const TArray<FFileChangeData>& FileChanges);
+
+	static FDelegateHandle DirectoryWatcherHandle;
 };

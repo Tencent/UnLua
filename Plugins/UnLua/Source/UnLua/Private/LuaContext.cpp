@@ -190,6 +190,7 @@ void FLuaContext::CreateState()
             Enum->Register(L);
         }
 
+#if WITH_EDITOR
         UnLua::RunChunk(L, R"(
             local ok, m = pcall(require, "UnLuaHotReload")
             if not ok then
@@ -199,6 +200,7 @@ void FLuaContext::CreateState()
             require = m.require
             UnLuaHotReload = m.reload
         )");
+#endif
 
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
@@ -348,7 +350,7 @@ bool FLuaContext::TryToBindLua(UObject* Object)
         return false;
     }
 
-    if (!IsInGameThread())
+    if (!IsInGameThread() || IsAsyncLoading())
     {
         // all bind operation should be in game thread, include dynamic bind
         FScopeLock Lock(&Async2MainCS);

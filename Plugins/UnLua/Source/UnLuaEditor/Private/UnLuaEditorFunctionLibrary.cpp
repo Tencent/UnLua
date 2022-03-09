@@ -14,6 +14,12 @@
 
 
 #include "UnLuaEditorFunctionLibrary.h"
+#include "Modules/ModuleManager.h"
+#include "DirectoryWatcherModule.h"
+#include "IDirectoryWatcher.h"
+#include "Misc/Paths.h"
+#include "HAL/FileManager.h"
+#include "UnLua.h"
 
 FString UUnLuaEditorFunctionLibrary::GetScriptRootPath()
 {
@@ -25,3 +31,49 @@ int64 UUnLuaEditorFunctionLibrary::GetFileLastModifiedTimestamp(FString Path)
 	const FDateTime FileTime = IFileManager::Get().GetTimeStamp(*Path);
 	return FileTime.GetTicks();
 }
+
+void UUnLuaEditorFunctionLibrary::WatchScriptDirectory()
+{
+	FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+	IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
+	if (DirectoryWatcher)
+	{
+		const auto& Delegate = IDirectoryWatcher::FDirectoryChanged::CreateStatic(&UUnLuaEditorFunctionLibrary::OnLuaFilesModified);
+		DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(GetScriptRootPath(), Delegate, DirectoryWatcherHandle);
+	}
+}
+
+void UUnLuaEditorFunctionLibrary::OnLuaFilesModified(const TArray<FFileChangeData>& FileChanges)
+{
+	TArray<FString> Added;
+	TArray<FString> Modified;
+	TArray<FString> Removed;
+        
+	for (auto& FileChange : FileChanges)
+	{
+		const auto ModuleName = FileChange.Filename.Replace(TEXT("/"), TEXT(".")).Replace(TEXT("\\"), TEXT("."));
+		switch (FileChange.Action)
+		{
+		case FFileChangeData::FCA_Added:
+			Added.AddUnique(ModuleName);
+			break;
+		case FFileChangeData::FCA_Modified:
+			Modified.AddUnique(ModuleName);
+			break;
+		case FFileChangeData::FCA_Removed:
+			Removed.AddUnique(ModuleName);
+			break;
+		default:
+			break;
+		}
+	}
+
+	lua_State* L = UnLua::GetState();
+	if (L)
+	{
+		// TODO:refactor with UnLua::GetEnvGroup FLuaEnv
+		UnLua::Call(L, "UnLuaHotReload", Added, Modified, Removed);
+	}
+}
+
+FDelegateHandle UUnLuaEditorFunctionLibrary::DirectoryWatcherHandle;

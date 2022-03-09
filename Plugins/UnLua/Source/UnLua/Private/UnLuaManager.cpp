@@ -46,16 +46,17 @@ UUnLuaManager::UUnLuaManager()
     InputVectorAxisFunc = Class->FindFunctionByName(FName("InputVectorAxis"));
     InputGestureFunc = Class->FindFunctionByName(FName("InputGesture"));
     AnimNotifyFunc = Class->FindFunctionByName(FName("TriggerAnimNotify"));
+
+    PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([this]()
+    {
+        this->PostGarbageCollect();
+    });
 }
 
-//UUnLuaManager::~UUnLuaManager()
-//{
-//    if (HasAnyFlags(RF_ClassDefaultObject))
-//    {
-//        return;
-//    }
-//    CleanupDefaultInputs();
-//}
+UUnLuaManager::~UUnLuaManager()
+{
+    FCoreUObjectDelegates::GetPostGarbageCollect().Remove(PostGarbageCollectHandle);
+}
 
 
 /**
@@ -259,41 +260,43 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
     }
 
     const FString *ModuleNamePtr = ModuleNames.Find(Class);
-    if (ModuleNamePtr)
+    if (!ModuleNamePtr)
+        return;
+
+    FString ModuleName = *ModuleNamePtr;
+
+    Classes.Remove(ModuleName);
+    ModuleFunctions.Remove(ModuleName);
+
+    TMap<FName, UFunction*> FunctionMap;
+    OverridableFunctions.RemoveAndCopyValue(Class, FunctionMap);
+
+    for (TMap<FName, UFunction*>::TIterator It(FunctionMap); It; ++It)
     {
-        FString ModuleName = *ModuleNamePtr;
-
-        Classes.Remove(ModuleName);
-        ModuleFunctions.Remove(ModuleName);
-
-        TMap<FName, UFunction*> FunctionMap;
-        OverridableFunctions.RemoveAndCopyValue(Class, FunctionMap);
-        for (TMap<FName, UFunction*>::TIterator It(FunctionMap); It; ++It)
+        UFunction* Function = It.Value();
+        if (Function->GetOuter() != Class)
+            continue;
+        FNativeFuncPtr NativeFuncPtr = nullptr;
+        if (CachedNatives.RemoveAndCopyValue(Function, NativeFuncPtr))
         {
-            UFunction* Function = It.Value();
-            if (Function->GetOuter() != Class)
-                continue;
-            FNativeFuncPtr NativeFuncPtr = nullptr;
-            if (CachedNatives.RemoveAndCopyValue(Function, NativeFuncPtr))
-            {
-                ResetUFunction(Function, NativeFuncPtr);
-            }
+            ResetUFunction(Function, NativeFuncPtr);
         }
-
-        TArray<UFunction*> Functions;
-        if (DuplicatedFunctions.RemoveAndCopyValue(Class, Functions))
-        {
-            RemoveDuplicatedFunctions(Class, Functions);
-        }
-
-        OnClassCleanup(Class);
-
-        FDelegateHelper::CleanUpByClass(Class);
-
-        ClearLoadedModule(*GLuaCxt, TCHAR_TO_UTF8(*ModuleName));
-
-        ModuleNames.Remove(Class);
     }
+
+    TArray<TWeakObjectPtr<UFunction>> Functions;
+    if (DuplicatedFunctions.RemoveAndCopyValue(Class, Functions))
+    {
+        if (!Class->HasAnyFlags(RF_BeginDestroyed))
+            RemoveDuplicatedFunctions(Class, Functions);
+    }
+
+    OnClassCleanup(Class);
+
+    FDelegateHelper::CleanUpByClass(Class);
+
+    ClearLoadedModule(*GLuaCxt, TCHAR_TO_UTF8(*ModuleName));
+
+    ModuleNames.Remove(Class);
 }
 
 /**
@@ -301,10 +304,11 @@ void UUnLuaManager::CleanUpByClass(UClass *Class)
  */
 void UUnLuaManager::CleanupDuplicatedFunctions()
 {
-    for (TMap<UClass*, TArray<UFunction*>>::TIterator It(DuplicatedFunctions); It; ++It)
+    for (TMap<UClass*, TArray<TWeakObjectPtr<UFunction>>>::TIterator It(DuplicatedFunctions); It; ++It)
     {
         OnClassCleanup(It.Key());
-        RemoveDuplicatedFunctions(It.Key(), It.Value());
+        if (!It.Key()->HasAnyFlags(RF_BeginDestroyed))
+            RemoveDuplicatedFunctions(It.Key(), It.Value());
     }
     DuplicatedFunctions.Empty();
     Base2DerivedClasses.Empty();
@@ -316,12 +320,12 @@ void UUnLuaManager::CleanupDuplicatedFunctions()
  */
 void UUnLuaManager::CleanupCachedNatives()
 {
-    for (TMap<UFunction*, FNativeFuncPtr>::TIterator It(CachedNatives); It; ++It)
-    {   
-        if (GLuaCxt->IsUObjectValid(It.Key()))
-        {
-            ResetUFunction(It.Key(), It.Value());
-        }
+    TArray<TWeakObjectPtr<UFunction>> Functions;
+    CachedNatives.GetKeys(Functions);
+    for (auto It = CachedNatives.CreateIterator(); It; ++It)
+    {
+        if (It.Key().IsValid())
+            ResetUFunction(It.Key().Get(), It.Value());
     }
     CachedNatives.Empty();
 }
@@ -331,10 +335,12 @@ void UUnLuaManager::CleanupCachedNatives()
  */
 void UUnLuaManager::CleanupCachedScripts()
 {
-    for (TMap<UFunction*, TArray<uint8>>::TIterator It(CachedScripts); It; ++It)
+    for (auto It = CachedScripts.CreateIterator(); It; ++It)
     {
-        UFunction *Func = It.Key();
-        Func->Script = It.Value();
+        if (It.Key().IsValid())
+        {
+            It.Key()->Script = It.Value();
+        }
     }
     CachedScripts.Empty();
 }
@@ -369,7 +375,7 @@ void UUnLuaManager::OnClassCleanup(UClass *Class)
  */
 void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr)
 {
-    if (GLuaCxt->IsUObjectValid(Function))
+    if (!Function->HasAllFlags(RF_BeginDestroyed))
     {
         Function->SetNativeFunc(NativeFuncPtr);
 
@@ -384,15 +390,13 @@ void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFun
             Function->Script = Script;
         }
     }
-    else
-    {
-        CachedScripts.Remove(Function);
-    }
 
     GReflectionRegistry.UnRegisterFunction(Function);
 
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     UFunction* OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
+    if (!OverriddenFunc)
+        return;
     if (OverriddenFunc->IsValidLowLevel())
         RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
     else
@@ -403,14 +407,35 @@ void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFun
 /**
  * Remove duplicated UFunctions
  */
-void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions)
+void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<TWeakObjectPtr<UFunction>> &Functions)
 {
-    for (UFunction *Function : Functions)
+    for (auto Function : Functions)
     {
-        RemoveUFunction(Function, Class);                       // clean up duplicated UFunction
+        if (!Function.IsValid())
+            continue;
+        RemoveUFunction(Function.Get(), Class); // clean up duplicated UFunction
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        GReflectionRegistry.RemoveOverriddenFunction(Function);
+        GReflectionRegistry.RemoveOverriddenFunction(Function.Get());
 #endif
+    }
+}
+
+void UUnLuaManager::PostGarbageCollect()
+{
+    for (auto It = CachedScripts.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid())
+        {
+            It.RemoveCurrent();
+        }
+    }
+
+    for (auto It = CachedNatives.CreateIterator(); It; ++It)
+    {
+        if (!It.Key().IsValid())
+        {
+            It.RemoveCurrent();
+        }
     }
 }
 
@@ -755,7 +780,7 @@ void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass,
             NewFunc->Script.Empty(3);                               // insert opcodes for non-native UFunction only
         }
         OverrideUFunction(NewFunc, (FNativeFuncPtr)&FLuaInvoker::execCallLua, GReflectionRegistry.RegisterFunction(NewFunc));   // replace thunk function and insert opcodes
-        TArray<UFunction*> &DuplicatedFuncs = DuplicatedFunctions.FindOrAdd(OuterClass);
+        TArray<TWeakObjectPtr<UFunction>> &DuplicatedFuncs = DuplicatedFunctions.FindOrAdd(OuterClass);
         DuplicatedFuncs.AddUnique(NewFunc);
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
         GReflectionRegistry.AddOverriddenFunction(NewFunc, TemplateFunction);

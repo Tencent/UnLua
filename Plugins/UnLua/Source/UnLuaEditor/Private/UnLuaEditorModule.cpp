@@ -18,12 +18,11 @@
 #include "Misc/CoreDelegates.h"
 #include "Editor.h"
 #include "BlueprintEditorModule.h"
-#include "DirectoryWatcherModule.h"
-#include "IDirectoryWatcher.h"
 #include "UnLua.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
 #include "UnLuaEditorSettings.h"
+#include "UnLuaEditorFunctionLibrary.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
@@ -80,13 +79,7 @@ public:
         BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
         AnimationBlueprintToolbar = MakeShareable(new FAnimationBlueprintToolbar);
 
-        FDirectoryWatcherModule& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-        IDirectoryWatcher* DirectoryWatcher = DirectoryWatcherModule.Get();
-        if (DirectoryWatcher)
-        {
-            const auto& Delegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FUnLuaEditorModule::OnLuaFilesModified);
-            DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(GetWatchingScriptPath(), Delegate, DirectoryWatcherHandle);
-        }
+        UUnLuaEditorFunctionLibrary::WatchScriptDirectory();
     }
 
     virtual void ShutdownModule() override
@@ -140,44 +133,6 @@ private:
     bool CanHotfixLua() const
     {
         return bIsPIE; // enable Lua 'Hotfix' in PIE
-    }
-
-    FString GetWatchingScriptPath()
-    {
-        return FPaths::ProjectContentDir() / "Script";
-    }
-
-    void OnLuaFilesModified(const TArray<FFileChangeData>& FileChanges)
-    {
-        TArray<FString> Added;
-        TArray<FString> Modified;
-        TArray<FString> Removed;
-
-        for (auto& FileChange : FileChanges)
-        {
-            const auto ModuleName = FileChange.Filename.Replace(TEXT("/"), TEXT(".")).Replace(TEXT("\\"), TEXT("."));
-            switch (FileChange.Action)
-            {
-            case FFileChangeData::FCA_Added:
-                Added.AddUnique(ModuleName);
-                break;
-            case FFileChangeData::FCA_Modified:
-                Modified.AddUnique(ModuleName);
-                break;
-            case FFileChangeData::FCA_Removed:
-                Removed.AddUnique(ModuleName);
-                break;
-            default:
-                break;
-            }
-        }
-
-        lua_State* L = UnLua::GetState();
-        if (L)
-        {
-            // TODO:refactor with UnLua::GetEnvGroup FLuaEnv
-            UnLua::Call(L, "UnLuaHotReload", Added, Modified, Removed);
-        }
     }
 
     void RegisterSettings() const

@@ -51,7 +51,7 @@ FString GetMetatableName(const UObjectBaseUtility* Object);
  */
 void* NewUserdataWithTwoLvPtrTag(lua_State* L, int Size, void* Object);
 void MarkUserdataTwoLvPtrTag(void* Userdata);
-uint8 CalcUserdataPadding(int32 Alignment);
+UNLUA_API uint8 CalcUserdataPadding(int32 Alignment);
 template <typename T> uint8 CalcUserdataPadding() { return CalcUserdataPadding(alignof(T)); }
 UNLUA_API void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
 UNLUA_API void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr);

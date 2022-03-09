@@ -27,7 +27,7 @@ class UUnLuaManager : public UObject
 
 public:
     UUnLuaManager();
-    //~UUnLuaManager();
+    ~UUnLuaManager();
 
     bool Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = INDEX_NONE);
 
@@ -106,16 +106,19 @@ private:
 
     void OnClassCleanup(UClass *Class);
     void ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr);
-    void RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions);
+    void RemoveDuplicatedFunctions(UClass *Class, TArray<TWeakObjectPtr<UFunction>> &Functions);
+
+    FDelegateHandle PostGarbageCollectHandle;
+    void PostGarbageCollect();
 
     TMap<UClass*, FString> ModuleNames;
     TMap<FString, int16> RealModuleNames;
     TMap<FString, UClass*> Classes;
     TMap<UClass*, TMap<FName, UFunction*>> OverridableFunctions;
-    TMap<UClass*, TArray<UFunction*>> DuplicatedFunctions;
+    TMap<UClass*, TArray<TWeakObjectPtr<UFunction>>> DuplicatedFunctions;
     TMap<FString, TSet<FName>> ModuleFunctions;
-    TMap<UFunction*, FNativeFuncPtr> CachedNatives;
-    TMap<UFunction*, TArray<uint8>> CachedScripts;
+    TMap<TWeakObjectPtr<UFunction>, FNativeFuncPtr> CachedNatives;
+    TMap<TWeakObjectPtr<UFunction>, TArray<uint8>> CachedScripts;
 
 #if !ENABLE_CALL_OVERRIDDEN_FUNCTION
     TMap<UFunction*, UFunction*> New2TemplateFunctions;
