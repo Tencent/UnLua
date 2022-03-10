@@ -81,13 +81,17 @@ public:
 USTRUCT(BlueprintType)
 struct UNLUATESTSUITE_API FUnLuaTestTableRow : public FTableRowBase
 {
-    GENERATED_BODY()
+    GENERATED_USTRUCT_BODY()
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     FString Title;
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     int32 Level;
+
+    FUnLuaTestTableRow() : Level(0)
+    {
+    }
 };
 
 struct UNLUATESTSUITE_API FUnLuaTestLib
