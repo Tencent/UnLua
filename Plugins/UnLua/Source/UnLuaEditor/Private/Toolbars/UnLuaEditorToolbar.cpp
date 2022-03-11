@@ -54,13 +54,13 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
             FMenuBuilder MenuBuilder(true, CommandList);
             if (BindingStatus == NotBound)
             {
-                MenuBuilder.AddMenuEntry(Commands.BindToLua);
+                MenuBuilder.AddMenuEntry(Commands.BindToLua, NAME_None, LOCTEXT("Bind", "Bind"));
             }
             else
             {
-                MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath);
-                MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate);
-                MenuBuilder.AddMenuEntry(Commands.UnbindFromLua);
+                MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath, NAME_None, LOCTEXT("CopyAsRelativePath", "Copy as Relative Path"));
+                MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate, NAME_None, LOCTEXT("CreateLuaTemplate", "Create Lua Template"));
+                MenuBuilder.AddMenuEntry(Commands.UnbindFromLua, NAME_None, LOCTEXT("Unbind", "Unbind"));
             }
             return MenuBuilder.MakeWidget();
         }),
@@ -207,7 +207,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
 
     if (ModuleName.IsEmpty())
     {
-        FNotificationInfo Info(FText::FromString("Please specify a module name first"));
+        FNotificationInfo Info(LOCTEXT("ModuleNameRequired", "Please specify a module name first"));
         Info.ExpireDuration = 5;
         FSlateNotificationManager::Get().AddNotification(Info);
         return;
@@ -222,7 +222,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
 
     if (FPaths::FileExists(FileName))
     {
-        UE_LOG(LogUnLua, Warning, TEXT("Lua file (%s) is already existed!"), *ClassName);
+        UE_LOG(LogUnLua, Warning, TEXT("%s"), *FText::Format(LOCTEXT("FileAlreadyExists", "Lua file ({0}) is already existed!"), FText::FromString(ClassName)).ToString());
         return;
     }
 

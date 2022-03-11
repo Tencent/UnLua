@@ -64,13 +64,13 @@ void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)
                                FMenuBuilder MenuBuilder(true, CommandList);
 
                                MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Action", "Action"));
-                               MenuBuilder.AddMenuEntry(Commands.GenerateIntelliSense);
-                               MenuBuilder.AddMenuEntry(Commands.HotReload);
+                               MenuBuilder.AddMenuEntry(Commands.GenerateIntelliSense, NAME_None, LOCTEXT("GenerateIntelliSense", "Generate IntelliSense"));
+                               MenuBuilder.AddMenuEntry(Commands.HotReload, NAME_None, LOCTEXT("HotReload", "Hot Reload"));
                                MenuBuilder.EndSection();
 
                                MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Help", "Help"));
-                               MenuBuilder.AddMenuEntry(Commands.ReportIssue);
-                               MenuBuilder.AddMenuEntry(Commands.About);
+                               MenuBuilder.AddMenuEntry(Commands.ReportIssue, NAME_None, LOCTEXT("ReportIssue", "Report Issue"));
+                               MenuBuilder.AddMenuEntry(Commands.About, NAME_None, LOCTEXT("About", "About"));
                                MenuBuilder.EndSection();
 
                                return MenuBuilder.MakeWidget();
