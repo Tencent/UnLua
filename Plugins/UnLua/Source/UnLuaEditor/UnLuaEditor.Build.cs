@@ -63,6 +63,8 @@ public class UnLuaEditor : ModuleRules
                 "Projects",
                 "InputCore",
                 "UMG",
+                "UMGEditor",
+                "BlueprintGraph",
                 "Slate",
                 "SlateCore",
                 "DirectoryWatcher",

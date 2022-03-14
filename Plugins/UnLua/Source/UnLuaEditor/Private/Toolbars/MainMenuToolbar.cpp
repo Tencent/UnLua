@@ -14,6 +14,8 @@
 
 
 #include "MainMenuToolbar.h"
+
+#include "BlueprintIntelliSenseGenerator.h"
 #include "LevelEditor.h"
 #include "UnLuaEditorCommands.h"
 #include "UnLuaFunctionLibrary.h"
@@ -24,8 +26,25 @@ FMainMenuToolbar::FMainMenuToolbar()
     : CommandList(new FUICommandList)
 {
     CommandList->MapAction(FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
-    CommandList->MapAction(FUnLuaEditorCommands::Get().ReportIssue, FExecuteAction::CreateRaw(this, &FMainMenuToolbar::ReportIssue), FCanExecuteAction());
-    CommandList->MapAction(FUnLuaEditorCommands::Get().About, FExecuteAction::CreateRaw(this, &FMainMenuToolbar::About), FCanExecuteAction());
+    
+    CommandList->MapAction(FUnLuaEditorCommands::Get().GenerateIntelliSense, FExecuteAction::CreateLambda([]
+    {
+        FBlueprintIntelliSenseGenerator::Get()->UpdateAll();
+    }), FCanExecuteAction());
+
+    CommandList->MapAction(FUnLuaEditorCommands::Get().ReportIssue, FExecuteAction::CreateLambda([]
+    {
+        const TCHAR* URL = TEXT("cmd");
+        const TCHAR* Params = TEXT("/k start https://github.com/Tencent/UnLua/issues/new/choose");
+        FPlatformProcess::ExecProcess(URL, Params, nullptr, nullptr, nullptr);
+    }), FCanExecuteAction());
+
+    CommandList->MapAction(FUnLuaEditorCommands::Get().About, FExecuteAction::CreateLambda([]
+    {
+        const TCHAR* URL = TEXT("cmd");
+        const TCHAR* Params = TEXT("/k start https://github.com/Tencent/UnLua");
+        FPlatformProcess::ExecProcess(URL, Params, nullptr, nullptr, nullptr);
+    }), FCanExecuteAction());
 }
 
 void FMainMenuToolbar::Initialize()
@@ -39,20 +58,6 @@ void FMainMenuToolbar::Initialize()
     LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(Extender);
 }
 
-void FMainMenuToolbar::About()
-{
-    const TCHAR* URL = TEXT("cmd");
-    const TCHAR* Params = TEXT("/k start https://github.com/Tencent/UnLua");
-    FPlatformProcess::ExecProcess(URL, Params, nullptr, nullptr, nullptr);
-}
-
-void FMainMenuToolbar::ReportIssue()
-{
-    const TCHAR* URL = TEXT("cmd");
-    const TCHAR* Params = TEXT("/k start https://github.com/Tencent/UnLua/issues/new/choose");
-    FPlatformProcess::ExecProcess(URL, Params, nullptr, nullptr, nullptr);
-}
-
 void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)
 {
     Builder.BeginSection(NAME_None);
@@ -64,8 +69,8 @@ void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)
                                FMenuBuilder MenuBuilder(true, CommandList);
 
                                MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Action", "Action"));
-                               MenuBuilder.AddMenuEntry(Commands.GenerateIntelliSense, NAME_None, LOCTEXT("GenerateIntelliSense", "Generate IntelliSense"));
                                MenuBuilder.AddMenuEntry(Commands.HotReload, NAME_None, LOCTEXT("HotReload", "Hot Reload"));
+                               MenuBuilder.AddMenuEntry(Commands.GenerateIntelliSense, NAME_None, LOCTEXT("GenerateIntelliSense", "Generate IntelliSense"));
                                MenuBuilder.EndSection();
 
                                MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Help", "Help"));

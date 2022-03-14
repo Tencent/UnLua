@@ -38,11 +38,6 @@
             "LoadingPhase": "PostConfigInit"
         },
         {
-            "Name": "UnLuaIntelliSenseBP",
-            "Type": "Editor",
-            "LoadingPhase": "Default"
-        },
-        {
             "Name": "UnLuaTestSuite",
             "Type": "Runtime",
             "LoadingPhase": "Default"

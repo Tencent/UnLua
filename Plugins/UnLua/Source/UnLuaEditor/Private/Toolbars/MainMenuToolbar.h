@@ -26,9 +26,5 @@ public:
     
 	void AddToolbarExtension(FToolBarBuilder& Builder);
 
-    void ReportIssue();
-	
-    void About();
-
     const TSharedRef<FUICommandList> CommandList;
 };
