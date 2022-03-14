@@ -24,7 +24,7 @@
 #include "Interfaces/IPluginManager.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 
-#define LOCTEXT_NAMESPACE "FUnLuaIntelliSenseModuleBP"
+#define LOCTEXT_NAMESPACE "BlueprintIntelliSenseGenerator"
 
 static const FName NAME_ToolTip(TEXT("ToolTip"));           // key of ToolTip meta data
 static const FName NAME_LatentInfo = TEXT("LatentInfo");    // tag of latent function
@@ -62,7 +62,6 @@ void FBlueprintIntelliSenseGenerator::UpdateAll()
 	Filter.ClassNames.Add(UBlueprint::StaticClass()->GetFName());
 	Filter.ClassNames.Add(UWidgetBlueprint::StaticClass()->GetFName());
 
-	CatalogInit();
 	TArray<FAssetData> BlueprintList;
 
 	if (AssetRegistryModule.Get().GetAssets(Filter, BlueprintList))
@@ -228,40 +227,6 @@ void FBlueprintIntelliSenseGenerator::DeleteFile(const FString& ModuleName, cons
 	}
 }
 
-void FBlueprintIntelliSenseGenerator::CatalogInit()
-{
-	CatalogContent = "";
-	CatalogFileUpdate();
-}
-
-void FBlueprintIntelliSenseGenerator::CatalogAdd(const FString& BPName)
-{
-	FString BPContent = "	---@type " + BPName + "\r\n";
-	BPContent += "	" + BPName + " = nil\r\n\r\n";
-
-	if(!CatalogContent.Contains(BPContent))
-		CatalogContent += BPContent;
-	CatalogFileUpdate();
-}
-
-void FBlueprintIntelliSenseGenerator::CatalogRemove(const FString& BPName)
-{
-	FString BPContent = "	---@type " + BPName + "\r\n";
-	BPContent += "	" + BPName + " = nil\r\n\r\n";
-
-	CatalogContent = CatalogContent.Replace(*BPContent, TEXT(""));
-	CatalogFileUpdate();
-}
-
-void FBlueprintIntelliSenseGenerator::CatalogFileUpdate()
-{
-	FString CatelogFileContent = ("_G.UE4 = {\r\n\r\n");
-	CatelogFileContent += CatalogContent;
-	CatelogFileContent += TEXT("    _UE4_BP_END_ = nil\r\n\r\n}\r\n");
-
-	SaveFile(FString(""), FString("UE4_BP"), CatelogFileContent);
-}
-
 void FBlueprintIntelliSenseGenerator::OnAssetAdded(const FAssetData& AssetData)
 {
 	OnAssetUpdated(AssetData);
@@ -274,7 +239,6 @@ void FBlueprintIntelliSenseGenerator::OnAssetRemoved(const FAssetData& AssetData
 		AssetData.AssetClass == UWidgetBlueprint::StaticClass()->GetFName())
 	{
 		BPVariablesMap.Remove(AssetData.AssetName.ToString());
-		CatalogRemove(AssetData.AssetName.ToString());
 		DeleteFile(FString("Blueprints"), AssetData.AssetName.ToString());
 	}
 }
@@ -288,7 +252,6 @@ void FBlueprintIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData
 		//remove old Blueprint name
 		const FString OldPackageName = FPackageName::GetShortName(OldPath);
 		BPVariablesMap.Remove(OldPackageName);
-		CatalogRemove(OldPackageName);
 		DeleteFile(FString("Blueprints"), OldPackageName);
 		
 		//update new name 
@@ -307,7 +270,6 @@ void FBlueprintIntelliSenseGenerator::OnAssetUpdated(const FAssetData& AssetData
 		if (Blueprint)
 		{
 			ExportBPSyntax(Blueprint);
-			CatalogAdd(AssetData.AssetName.ToString());
 		}
 	}
 }

@@ -46,10 +46,6 @@ private:
     //File helper
     void SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent);
     void DeleteFile(const FString& ModuleName, const FString& FileName);
-    void CatalogInit();
-    void CatalogAdd(const FString& BPName);
-    void CatalogRemove(const FString& BPName);
-    void CatalogFileUpdate();
 
     //Handle asset event
     void OnAssetAdded(const FAssetData& AssetData);
@@ -69,6 +65,5 @@ private:
     TMap<FString, TArray<FString>> BPVariablesMap;
     TMap<FString, TArray<FString>> BPFunctionMap;
     FString OutputDir;
-    FString CatalogContent;
     bool bInitialized;
 };

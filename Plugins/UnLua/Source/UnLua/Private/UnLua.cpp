@@ -355,8 +355,8 @@ namespace UnLua
             Buffer += FString::Printf(TEXT("---@field %s %s %s\r\n"), TEXT("public"), *It.Key(), TEXT("integer"));
         }
 
-        Buffer += FString::Printf(TEXT("local %s = {}\r\n\r\n"), *Name);
-        Buffer += FString::Printf(TEXT("return %s\r\n"), *Name);
+        Buffer += TEXT("local M = {}\r\n\r\n");
+        Buffer += TEXT("return M\r\n");
     }
 #endif
 

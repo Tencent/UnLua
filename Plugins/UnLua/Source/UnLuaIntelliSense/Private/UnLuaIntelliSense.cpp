@@ -42,7 +42,7 @@ public:
     virtual void Initialize(const FString& RootLocalPath, const FString& RootBuildPath, const FString& OutputDirectory, const FString& IncludeBase) override
     {
         OutputDir = IncludeBase + TEXT("../Intermediate/");     // export symbol (IntelliSense) files to plugin's 'Intermediate' dir
-        UE4Namespace = TEXT("_G.UE = {\r\n\r\n");
+        UENamespace = TEXT("_G.UE = {\r\n\r\n");
     }
 
     virtual void ExportClass(UClass* Class, const FString& SourceHeaderFilename, const FString& GeneratedHeaderFilename, bool bHasChanged) override
@@ -62,8 +62,8 @@ public:
         }
 
         FString ClassName = FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
-        int32 Num = UE4Names.Num();
-        int32 Idx = UE4Names.AddUnique(ClassName);
+        int32 Num = UENames.Num();
+        int32 Idx = UENames.AddUnique(ClassName);
         if (Idx < Num)
         {
             return;
@@ -87,11 +87,11 @@ public:
             ExportProperties(Function, Properties, GeneratedFileContent);
             
             // function definition
-            GeneratedFileContent += FString::Printf(TEXT("function %s%s%s(%s) end\r\n\r\n"), *ClassName, Function->HasAnyFunctionFlags(FUNC_Static) ? TEXT(".") : TEXT(":"), *Function->GetName(), *Properties);
+            GeneratedFileContent += FString::Printf(TEXT("function M%s%s(%s) end\r\n\r\n"), Function->HasAnyFunctionFlags(FUNC_Static) ? TEXT(".") : TEXT(":"), *Function->GetName(), *Properties);
         }
 
         // return
-        GeneratedFileContent += FString::Printf(TEXT("return %s\r\n"), *ClassName);
+        GeneratedFileContent += TEXT("return M\r\n");
 
         // save to lua file
         SaveFile(ModuleName, ClassName, GeneratedFileContent);
@@ -113,7 +113,7 @@ public:
             }
 
             FString StructName = FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
-            UE4Names.Add(StructName);
+            UENames.Add(StructName);
 
             FString ModuleName = GetModuleName(Package);
 
@@ -122,7 +122,7 @@ public:
             ExportUStructDefinition(Struct, GeneratedFileContent);
 
             // return
-            GeneratedFileContent += FString::Printf(TEXT("return %s\r\n"), *StructName);
+            GeneratedFileContent += TEXT("return M\r\n");
 
             // save to lua file
             SaveFile(ModuleName, StructName, GeneratedFileContent);
@@ -142,7 +142,7 @@ public:
             }
 
             FString EnumName = Enum->GetName();
-            UE4Names.Add(EnumName);
+            UENames.Add(EnumName);
 
             FString ModuleName = GetModuleName(Package);
             FString GeneratedFileContent;
@@ -161,24 +161,24 @@ public:
             }
 
             // definition
-            GeneratedFileContent += FString::Printf(TEXT("\r\nlocal %s = {}\r\n\r\n"), *EnumName);
+            GeneratedFileContent += TEXT("\r\nlocal M = {}\r\n\r\n");
 
             // return
-            GeneratedFileContent += FString::Printf(TEXT("return %s\r\n"), *EnumName);
+            GeneratedFileContent += TEXT("return M\r\n");
 
             // save to lua file
             SaveFile(ModuleName, EnumName, GeneratedFileContent);
         }
 
-        // save 'UE4Namespace' to lua file
-        UE4Names.Sort();
-        for (const FString &Name : UE4Names)
+        // save 'UENamespace' to lua file
+        UENames.Sort();
+        for (const FString &Name : UENames)
         {
-            UE4Namespace += FString::Printf(TEXT("    ---@type %s\r\n"), *Name);
-            UE4Namespace += FString::Printf(TEXT("    %s = nil,\r\n\r\n"), *Name);
+            UENamespace += FString::Printf(TEXT("    ---@type %s\r\n"), *Name);
+            UENamespace += FString::Printf(TEXT("    %s = nil,\r\n\r\n"), *Name);
         }
-        UE4Namespace += TEXT("    _UE4_END_ = nil\r\n\r\n}\r\n");
-        SaveFile(TEXT(""), TEXT("UE4"), UE4Namespace);
+        UENamespace += TEXT("}\r\n\r\n");
+        SaveFile(TEXT(""), TEXT("UE"), UENamespace);
     }
 
     virtual FString GetGeneratorName() const override
@@ -235,7 +235,7 @@ private:
         }
 
         // definition
-        GeneratedFileContent += FString::Printf(TEXT("\r\nlocal %s = {}\r\n\r\n"), *StructName);
+        GeneratedFileContent += TEXT("\r\nlocal M = {}\r\n\r\n");
     }
 
     void ExportProperties(UFunction *Function, FString &Properties, FString &GeneratedFileContent)
@@ -547,8 +547,8 @@ private:
     }
 
     FString OutputDir;
-    FString UE4Namespace;
-    TArray<FString> UE4Names;
+    FString UENamespace;
+    TArray<FString> UENames;
 };
 
 #undef LOCTEXT_NAMESPACE
