@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "BlueprintIntelliSenseGenerator.h"
 #include "CoreUObject.h"
 #include "Features/IModularFeatures.h"
 #include "IScriptGeneratorPluginInterface.h"
@@ -42,7 +43,6 @@ public:
     virtual void Initialize(const FString& RootLocalPath, const FString& RootBuildPath, const FString& OutputDirectory, const FString& IncludeBase) override
     {
         OutputDir = IncludeBase + TEXT("../Intermediate/");     // export symbol (IntelliSense) files to plugin's 'Intermediate' dir
-        UENamespace = TEXT("_G.UE = {\r\n\r\n");
     }
 
     virtual void ExportClass(UClass* Class, const FString& SourceHeaderFilename, const FString& GeneratedHeaderFilename, bool bHasChanged) override
@@ -171,6 +171,7 @@ public:
         }
 
         // save 'UENamespace' to lua file
+        UENamespace = TEXT("_G.UE = {\r\n\r\n");
         UENames.Sort();
         for (const FString &Name : UENames)
         {
@@ -194,45 +195,7 @@ private:
         // comment
         ExportMultiLineComments(Struct->GetMetaData(NAME_ToolTip), GeneratedFileContent);
 
-        // struct name
-        GeneratedFileContent += FString::Printf(TEXT("---@class %s"), *StructName);
-        UStruct *ParentStruct = Struct->GetSuperStruct();
-        if (ParentStruct)
-        {
-            GeneratedFileContent += FString::Printf(TEXT(" : %s%s"), ParentStruct->GetPrefixCPP(), *ParentStruct->GetName());
-        }
-
-        // fields
-        for (TFieldIterator<FProperty> PropertyIt(Struct, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); PropertyIt; ++PropertyIt)
-        {
-            FProperty *Property = *PropertyIt;
-
-            // access level
-            FString AccessLevel;
-            if (Property->HasAnyPropertyFlags(CPF_NativeAccessSpecifierPublic))
-            {
-                AccessLevel = TEXT("public");
-            }
-            else if (Property->HasAllPropertyFlags(CPF_NativeAccessSpecifierProtected))
-            {
-                AccessLevel = TEXT("protected");
-            }
-            else
-            {
-                AccessLevel = TEXT("private");
-            }
-
-            FString TypeName = GetTypeName(Property);
-            GeneratedFileContent += FString::Printf(TEXT("\r\n---@field %s %s %s"), *AccessLevel, *Property->GetName(), *TypeName);
-
-            // comment
-            const FString &PropertyComment = Property->GetMetaData(NAME_ToolTip);
-            if (PropertyComment.Len() > 0)
-            {
-                ExportPropertyComment(PropertyComment, GeneratedFileContent);
-                //GeneratedFileContent += FString::Printf(TEXT(" @%s"), *PropertyComment.Replace(TEXT("\n"), TEXT(", ")));
-            }
-        }
+        GeneratedFileContent += FBlueprintIntelliSenseGenerator::GetAnnotations(Struct);
 
         // definition
         GeneratedFileContent += TEXT("\r\nlocal M = {}\r\n\r\n");

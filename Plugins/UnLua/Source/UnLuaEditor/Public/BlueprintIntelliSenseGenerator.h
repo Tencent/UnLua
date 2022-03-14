@@ -28,8 +28,8 @@ public:
     }
 
     static TSharedRef<FBlueprintIntelliSenseGenerator> Get();
-
-    //Update all Blueprints from command
+    
+    // Update all Blueprints from command
     void UpdateAll();
 
     void Initialize();
@@ -37,33 +37,20 @@ public:
 private:
     static TSharedPtr<FBlueprintIntelliSenseGenerator> Singleton;
 
-    //Export bp variables
-    void ExportBPFunctions(const UBlueprint* Blueprint);
-    void ExportBPSyntax(const UBlueprint* Blueprint);
-    void ExportWidgetBPSyntax(const UWidgetBlueprint* WidgetBlueprint);
-    void ExportSyntaxToFile(const FString& BPName);
+    static bool IsBlueprint(const FAssetData& AssetData);
 
-    //File helper
+    void Export(const UBlueprint* Blueprint);
+
+    // File helper
     void SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent);
     void DeleteFile(const FString& ModuleName, const FString& FileName);
 
-    //Handle asset event
+    // Handle asset event
     void OnAssetAdded(const FAssetData& AssetData);
     void OnAssetRemoved(const FAssetData& AssetData);
     void OnAssetRenamed(const FAssetData& AssetData, const FString& OldPath);
     void OnAssetUpdated(const FAssetData& AssetData);
 
-    // Get function IntelliSense
-    FString GetFunctionStr(const UFunction* Function, FString ClassName) const;
-
-    // Get function properties string
-    FString GetFunctionProperties(const UFunction* Function, FString& Properties) const;
-
-    // Get readable type name for a UPROPERTY
-    FString GetTypeName(const FProperty* Property) const;
-
-    TMap<FString, TArray<FString>> BPVariablesMap;
-    TMap<FString, TArray<FString>> BPFunctionMap;
     FString OutputDir;
     bool bInitialized;
 };

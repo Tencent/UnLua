@@ -28,6 +28,7 @@ namespace UnrealBuildTool.Rules
                 new[]
                 {
                     "Programs/UnrealHeaderTool/Public",
+                    "UnLuaEditor/Public"
                 }
             );
 
@@ -36,7 +37,7 @@ namespace UnrealBuildTool.Rules
                 new[]
                 {
                     "UnLuaIntelliSense/Private",
-                    "UnLua/Private",
+                    "UnLua/Private"
                 }
             );
 
@@ -45,7 +46,7 @@ namespace UnrealBuildTool.Rules
                 new[]
                 {
                     "Core",
-                    "CoreUObject",
+                    "CoreUObject"
                 }
             );
 
