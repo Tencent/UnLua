@@ -15,7 +15,7 @@
 
 #include "MainMenuToolbar.h"
 
-#include "BlueprintIntelliSenseGenerator.h"
+#include "UnLuaIntelliSenseGenerator.h"
 #include "LevelEditor.h"
 #include "UnLuaEditorCommands.h"
 #include "UnLuaFunctionLibrary.h"
@@ -29,7 +29,7 @@ FMainMenuToolbar::FMainMenuToolbar()
     
     CommandList->MapAction(FUnLuaEditorCommands::Get().GenerateIntelliSense, FExecuteAction::CreateLambda([]
     {
-        FBlueprintIntelliSenseGenerator::Get()->UpdateAll();
+        FUnLuaIntelliSenseGenerator::Get()->UpdateAll();
     }), FCanExecuteAction());
 
     CommandList->MapAction(FUnLuaEditorCommands::Get().ReportIssue, FExecuteAction::CreateLambda([]

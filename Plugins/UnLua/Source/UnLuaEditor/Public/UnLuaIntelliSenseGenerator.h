@@ -19,15 +19,15 @@
 class UBlueprint;
 class UWidgetBlueprint;
 
-class FBlueprintIntelliSenseGenerator
+class FUnLuaIntelliSenseGenerator
 {
 public:
-    FBlueprintIntelliSenseGenerator()
+    FUnLuaIntelliSenseGenerator()
         : bInitialized(false)
     {
     }
 
-    static TSharedRef<FBlueprintIntelliSenseGenerator> Get();
+    static TSharedRef<FUnLuaIntelliSenseGenerator> Get();
     
     // Update all Blueprints from command
     void UpdateAll();
@@ -35,12 +35,14 @@ public:
     void Initialize();
 
 private:
-    static TSharedPtr<FBlueprintIntelliSenseGenerator> Singleton;
+    static TSharedPtr<FUnLuaIntelliSenseGenerator> Singleton;
 
     static bool IsBlueprint(const FAssetData& AssetData);
 
     void Export(const UBlueprint* Blueprint);
 
+    void Export(const UField* Field);
+    
     // File helper
     void SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent);
     void DeleteFile(const FString& ModuleName, const FString& FileName);

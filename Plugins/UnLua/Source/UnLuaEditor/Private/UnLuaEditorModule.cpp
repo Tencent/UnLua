@@ -18,7 +18,7 @@
 #include "Misc/CoreDelegates.h"
 #include "Editor.h"
 #include "BlueprintEditorModule.h"
-#include "BlueprintIntelliSenseGenerator.h"
+#include "UnLuaIntelliSenseGenerator.h"
 #include "UnLua.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
@@ -95,7 +95,7 @@ private:
         MainMenuToolbar->Initialize();
         BlueprintToolbar->Initialize();
         AnimationBlueprintToolbar->Initialize();
-        FBlueprintIntelliSenseGenerator::Get()->Initialize();
+        FUnLuaIntelliSenseGenerator::Get()->Initialize();
 
         IMainFrameModule& MainFrameModule = FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT("MainFrame"));
         MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
@@ -142,7 +142,7 @@ private:
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
     TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
     TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
-    TSharedPtr<FBlueprintIntelliSenseGenerator> BlueprintIntelliSenseGenerator;
+    TSharedPtr<FUnLuaIntelliSenseGenerator> IntelliSenseGenerator;
     TSharedPtr<ISlateStyle> Style;
 
     FDelegateHandle OnPostEngineInitHandle;

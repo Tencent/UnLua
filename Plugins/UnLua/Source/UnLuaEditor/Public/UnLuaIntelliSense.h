@@ -20,20 +20,28 @@ namespace UnLua
 {
     namespace IntelliSense
     {
-        FString Get(const UBlueprint* Blueprint);
+        UNLUAEDITOR_API FString Get(const UBlueprint* Blueprint);
 
-        FString Get(const UStruct* Struct);
+        UNLUAEDITOR_API FString Get(const UField* Field);
 
-        FString Get(const UFunction* Function);
+        UNLUAEDITOR_API FString Get(const UEnum* Enum);
+        
+        UNLUAEDITOR_API FString Get(const UStruct* Struct);
 
-        FString Get(const FProperty* Property);
+        UNLUAEDITOR_API FString Get(const UScriptStruct* ScriptStruct);
+        
+        UNLUAEDITOR_API FString Get(const UClass* Class);
+        
+        UNLUAEDITOR_API FString Get(const UFunction* Function);
 
-        FString GetTypeName(const UObject* Field);
+        UNLUAEDITOR_API FString Get(const FProperty* Property);
 
-        FString GetTypeName(const FProperty* Property);
+        UNLUAEDITOR_API FString GetTypeName(const UObject* Field);
 
-        FString EscapeComments(const FString Comments);
+        UNLUAEDITOR_API FString GetTypeName(const FProperty* Property);
 
-        bool IsValid(const UFunction* Function);
+        UNLUAEDITOR_API FString EscapeComments(const FString Comments, bool bSingleLine);
+
+        UNLUAEDITOR_API bool IsValid(const UFunction* Function);
     }
 }

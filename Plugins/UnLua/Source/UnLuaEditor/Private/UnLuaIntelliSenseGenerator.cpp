@@ -12,7 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "BlueprintIntelliSenseGenerator.h"
+#include "UnLuaIntelliSenseGenerator.h"
 #include "AssetRegistryModule.h"
 #include "CoreUObject.h"
 #include "ToolMenus.h"
@@ -23,18 +23,18 @@
 #include "Engine/Blueprint.h"
 #include "Interfaces/IPluginManager.h"
 
-#define LOCTEXT_NAMESPACE "BlueprintIntelliSenseGenerator"
+#define LOCTEXT_NAMESPACE "UnLuaIntelliSenseGenerator"
 
-TSharedPtr<FBlueprintIntelliSenseGenerator> FBlueprintIntelliSenseGenerator::Singleton;
+TSharedPtr<FUnLuaIntelliSenseGenerator> FUnLuaIntelliSenseGenerator::Singleton;
 
-TSharedRef<FBlueprintIntelliSenseGenerator> FBlueprintIntelliSenseGenerator::Get()
+TSharedRef<FUnLuaIntelliSenseGenerator> FUnLuaIntelliSenseGenerator::Get()
 {
     if (!Singleton.IsValid())
-        Singleton = MakeShareable(new FBlueprintIntelliSenseGenerator);
+        Singleton = MakeShareable(new FUnLuaIntelliSenseGenerator);
     return Singleton.ToSharedRef();
 }
 
-void FBlueprintIntelliSenseGenerator::Initialize()
+void FUnLuaIntelliSenseGenerator::Initialize()
 {
     if (bInitialized)
         return;
@@ -42,17 +42,17 @@ void FBlueprintIntelliSenseGenerator::Initialize()
     OutputDir = IPluginManager::Get().FindPlugin("UnLua")->GetBaseDir() + "/Intermediate/";
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-    AssetRegistryModule.Get().OnAssetAdded().AddRaw(this, &FBlueprintIntelliSenseGenerator::OnAssetAdded);
-    AssetRegistryModule.Get().OnAssetRemoved().AddRaw(this, &FBlueprintIntelliSenseGenerator::OnAssetRemoved);
-    AssetRegistryModule.Get().OnAssetRenamed().AddRaw(this, &FBlueprintIntelliSenseGenerator::OnAssetRenamed);
-    AssetRegistryModule.Get().OnAssetUpdated().AddRaw(this, &FBlueprintIntelliSenseGenerator::OnAssetUpdated);
+    AssetRegistryModule.Get().OnAssetAdded().AddRaw(this, &FUnLuaIntelliSenseGenerator::OnAssetAdded);
+    AssetRegistryModule.Get().OnAssetRemoved().AddRaw(this, &FUnLuaIntelliSenseGenerator::OnAssetRemoved);
+    AssetRegistryModule.Get().OnAssetRenamed().AddRaw(this, &FUnLuaIntelliSenseGenerator::OnAssetRenamed);
+    AssetRegistryModule.Get().OnAssetUpdated().AddRaw(this, &FUnLuaIntelliSenseGenerator::OnAssetUpdated);
 
     bInitialized = true;
 }
 
-void FBlueprintIntelliSenseGenerator::UpdateAll()
+void FUnLuaIntelliSenseGenerator::UpdateAll()
 {
-    FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+    const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
     FARFilter Filter;
     Filter.ClassNames.Add(UBlueprint::StaticClass()->GetFName());
@@ -73,82 +73,114 @@ void FBlueprintIntelliSenseGenerator::UpdateAll()
             SlowTask.EnterProgressFrame();
         }
     }
+
+    for (TObjectIterator<UClass> It; It; ++It)
+    {
+        const UClass* Class = *It;
+        const FString ClassName = Class->GetName();
+        // ReSharper disable StringLiteralTypo
+        if (ClassName.StartsWith("SKEL_")
+            || ClassName.StartsWith("PLACEHOLDER-CLASS")
+            || ClassName.StartsWith("REINST_")
+            || ClassName.StartsWith("TRASHCLASS_")
+            || ClassName.StartsWith("HOTRELOADED_")
+        )
+        {
+            // skip nonsense types
+            continue;
+        }
+        // ReSharper restore StringLiteralTypo
+        Export(Class);
+    }
+
+    for (TObjectIterator<UScriptStruct> It; It; ++It)
+    {
+        const UScriptStruct* ScriptStruct = *It;
+        Export(ScriptStruct);
+    }
+
+    for (TObjectIterator<UEnum> It; It; ++It)
+    {
+        const UEnum* Enum = *It;
+        Export(Enum);
+    }
 }
 
-bool FBlueprintIntelliSenseGenerator::IsBlueprint(const FAssetData& AssetData)
+bool FUnLuaIntelliSenseGenerator::IsBlueprint(const FAssetData& AssetData)
 {
     const FName AssetClass = AssetData.AssetClass;
     return AssetClass == UBlueprint::StaticClass()->GetFName() || AssetClass == UWidgetBlueprint::StaticClass()->GetFName();
 }
 
-void FBlueprintIntelliSenseGenerator::Export(const UBlueprint* Blueprint)
+void FUnLuaIntelliSenseGenerator::Export(const UBlueprint* Blueprint)
 {
-    FString BPName = Blueprint->GetName();
-    FString Content = UnLua::IntelliSense::Get(Blueprint);
-    SaveFile(FString("Blueprints"), BPName, Content);
+    const FString BPName = Blueprint->GetName();
+    const FString Content = UnLua::IntelliSense::Get(Blueprint);
+    SaveFile("/Game", BPName, Content);
 }
 
-void FBlueprintIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent)
+void FUnLuaIntelliSenseGenerator::Export(const UField* Field)
+{
+    const UPackage* Package = Field->GetPackage();
+    const FString ModuleName = Package->GetName();
+    const FString FileName = UnLua::IntelliSense::GetTypeName(Field);
+    const FString Content = UnLua::IntelliSense::Get(Field);
+    SaveFile(ModuleName, FileName, Content);
+}
+
+void FUnLuaIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent)
 {
     IFileManager& FileManager = IFileManager::Get();
-    FString Directory = FString::Printf(TEXT("%sIntelliSense/%s"), *OutputDir, *ModuleName);
+    const FString Directory = FString::Printf(TEXT("%sIntelliSense%s"), *OutputDir, *ModuleName);
     if (!FileManager.DirectoryExists(*Directory))
-    {
         FileManager.MakeDirectory(*Directory);
-    }
 
     const FString FilePath = FString::Printf(TEXT("%s/%s.lua"), *Directory, *FileName);
     FString FileContent;
     FFileHelper::LoadFileToString(FileContent, *FilePath);
     if (FileContent != GeneratedFileContent)
-    {
-        bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
-        //check(bResult);
-    }
+        FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
 }
 
-void FBlueprintIntelliSenseGenerator::DeleteFile(const FString& ModuleName, const FString& FileName)
+void FUnLuaIntelliSenseGenerator::DeleteFile(const FString& ModuleName, const FString& FileName)
 {
     IFileManager& FileManager = IFileManager::Get();
-    FString Directory = FString::Printf(TEXT("%sIntelliSense/%s"), *OutputDir, *ModuleName);
+    const FString Directory = FString::Printf(TEXT("%sIntelliSense/%s"), *OutputDir, *ModuleName);
     if (!FileManager.DirectoryExists(*Directory))
-    {
         FileManager.MakeDirectory(*Directory);
-    }
+
     const FString FilePath = FString::Printf(TEXT("%s/%s.lua"), *Directory, *FileName);
     if (FileManager.FileExists(*FilePath))
-    {
         FileManager.Delete(*FilePath);
-    }
 }
 
-void FBlueprintIntelliSenseGenerator::OnAssetAdded(const FAssetData& AssetData)
+void FUnLuaIntelliSenseGenerator::OnAssetAdded(const FAssetData& AssetData)
 {
     OnAssetUpdated(AssetData);
 }
 
-void FBlueprintIntelliSenseGenerator::OnAssetRemoved(const FAssetData& AssetData)
+void FUnLuaIntelliSenseGenerator::OnAssetRemoved(const FAssetData& AssetData)
 {
     if (!IsBlueprint(AssetData))
         return;
 
-    DeleteFile(FString("Blueprints"), AssetData.AssetName.ToString());
+    DeleteFile(FString("/Game"), AssetData.AssetName.ToString());
 }
 
-void FBlueprintIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData, const FString& OldPath)
+void FUnLuaIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData, const FString& OldPath)
 {
     if (!IsBlueprint(AssetData))
         return;
 
     //remove old Blueprint name
     const FString OldPackageName = FPackageName::GetShortName(OldPath);
-    DeleteFile(FString("Blueprints"), OldPackageName);
+    DeleteFile("/Game", OldPackageName);
 
     //update new name 
     OnAssetUpdated(AssetData);
 }
 
-void FBlueprintIntelliSenseGenerator::OnAssetUpdated(const FAssetData& AssetData)
+void FUnLuaIntelliSenseGenerator::OnAssetUpdated(const FAssetData& AssetData)
 {
     if (!IsBlueprint(AssetData))
         return;
