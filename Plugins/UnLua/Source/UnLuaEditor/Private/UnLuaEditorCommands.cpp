@@ -23,6 +23,7 @@ void FUnLuaEditorCommands::RegisterCommands()
     UI_COMMAND(BindToLua, "Bind", "Implement UnLuaInterface", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(UnbindFromLua, "Unbind", "Remove the implementation of UnLuaInterface", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(HotReload, "Hot Reload", "Hot reload all lua states", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Alt, EKeys::L));
+    UI_COMMAND(OpenEditorSettings, "Open Editor Settings", "Open UnLua Editor settings", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(ReportIssue, "Report issue", "Create an issue on github", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(About, "About", "About this version", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(GenerateIntelliSense, "Generate IntelliSense", "Generate intelliSense files", EUserInterfaceActionType::Button, FInputChord());

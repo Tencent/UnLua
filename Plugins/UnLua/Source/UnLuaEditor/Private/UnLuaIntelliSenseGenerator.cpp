@@ -17,6 +17,7 @@
 #include "CoreUObject.h"
 #include "ToolMenus.h"
 #include "UnLua.h"
+#include "UnLuaEditorSettings.h"
 #include "UnLuaIntelliSense.h"
 #include "WidgetBlueprint.h"
 #include "Blueprint/WidgetTree.h"
@@ -182,10 +183,13 @@ void FUnLuaIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData, co
 
 void FUnLuaIntelliSenseGenerator::OnAssetUpdated(const FAssetData& AssetData)
 {
+    const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
+    if (!Settings.bGenerateIntelliSense)
+        return;
+    
     if (!IsBlueprint(AssetData))
         return;
 
-    //UE_LOG(LogTemp, Warning, TEXT("updated bp name is %s"), *AssetData.GetFullName());
     UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *AssetData.ObjectPath.ToString());
     if (!Blueprint)
         return;

@@ -46,19 +46,19 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Generate IntelliSense Files"))
     bool bGenerateIntelliSense = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Auto Startup. Requires restart to take effect."))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Auto Startup", ToolTip = "Requires restart to take effect."))
     bool bAutoStart = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug. Requires restart to take effect."))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug", ToolTip = "Requires restart to take effect."))
     bool bEnableDebug = false;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking. Requires restart to take effect."))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking", ToolTip = "Requires restart to take effect."))
     bool bEnableTypeChecking = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated). Requires restart to take effect."))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated).", ToolTip = "Requires restart to take effect."))
     bool bEnableRPCCall = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated). Requires restart to take effect."))
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated)", ToolTip = "Requires restart to take effect."))
     bool bWithUENamespace = true;
 
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (DisplayName = "Update Mode", defaultValue = 0))

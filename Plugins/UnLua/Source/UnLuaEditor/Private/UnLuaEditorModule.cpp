@@ -119,7 +119,7 @@ private:
         ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
         if (SettingsModule)
         {
-            const TSharedPtr<ISettingsSection> Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua",
+            const TSharedPtr<ISettingsSection> Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua Editor",
                                                                                           LOCTEXT("UnLuaEditorSettingsName", "UnLua Editor"),
                                                                                           LOCTEXT("UnLuaEditorSettingsDescription", "UnLua Editor Settings"),
                                                                                           GetMutableDefault<UUnLuaEditorSettings>());

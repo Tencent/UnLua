@@ -15,6 +15,8 @@
 
 #include "MainMenuToolbar.h"
 
+#include "ISettingsModule.h"
+#include "ISettingsViewer.h"
 #include "UnLuaIntelliSenseGenerator.h"
 #include "LevelEditor.h"
 #include "UnLuaEditorCommands.h"
@@ -26,10 +28,16 @@ FMainMenuToolbar::FMainMenuToolbar()
     : CommandList(new FUICommandList)
 {
     CommandList->MapAction(FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
-    
+
     CommandList->MapAction(FUnLuaEditorCommands::Get().GenerateIntelliSense, FExecuteAction::CreateLambda([]
     {
         FUnLuaIntelliSenseGenerator::Get()->UpdateAll();
+    }), FCanExecuteAction());
+
+    CommandList->MapAction(FUnLuaEditorCommands::Get().OpenEditorSettings, FExecuteAction::CreateLambda([]
+    {
+        if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+            SettingsModule->ShowViewer("Project", "Plugins", "UnLua Editor");
     }), FCanExecuteAction());
 
     CommandList->MapAction(FUnLuaEditorCommands::Get().ReportIssue, FExecuteAction::CreateLambda([]
@@ -74,6 +82,7 @@ void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)
                                MenuBuilder.EndSection();
 
                                MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Help", "Help"));
+                               MenuBuilder.AddMenuEntry(Commands.OpenEditorSettings, NAME_None, LOCTEXT("OpenEditorSettings", "Settings"));
                                MenuBuilder.AddMenuEntry(Commands.ReportIssue, NAME_None, LOCTEXT("ReportIssue", "Report Issue"));
                                MenuBuilder.AddMenuEntry(Commands.About, NAME_None, LOCTEXT("About", "About"));
                                MenuBuilder.EndSection();
