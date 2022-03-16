@@ -32,6 +32,7 @@
 #include "Editor.h"
 #endif
 
+static constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags::AsyncLoading | EInternalObjectFlags::Async;
 
 /**
  * Statically exported callback for 'Hotfix'
@@ -348,7 +349,7 @@ bool FLuaContext::TryToBindLua(UObject* Object)
         return false;
     }
 
-    if (!IsInGameThread() || IsAsyncLoading())
+    if (!IsInGameThread() || Object->HasAnyInternalFlags(AsyncObjectFlags))
     {
         // all bind operation should be in game thread, include dynamic bind
         FScopeLock Lock(&Async2MainCS);
@@ -532,7 +533,6 @@ void FLuaContext::OnAsyncLoadingFlushUpdate()
     {
         FScopeLock Lock(&Async2MainCS);
 
-        static constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags::AsyncLoading | EInternalObjectFlags::Async;
         for (int32 i = Candidates.Num() - 1; i >= 0; --i)
         {
             FWeakObjectPtr ObjectPtr = Candidates[i];
