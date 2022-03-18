@@ -1701,8 +1701,18 @@ static bool RegisterEnumInternal(lua_State *L, FEnumDesc *EnumDesc)
 
 			lua_pushstring(L, "GetNameByValue");
 			lua_pushvalue(L, -2);                     
-			lua_pushcclosure(L, Enum_GetNameByValue, 1);       
+			lua_pushcclosure(L, Enum_GetNameStringByValue, 1);       
 			lua_rawset(L, -3);
+
+            lua_pushstring(L, "GetNameStringByValue");
+            lua_pushvalue(L, -2);
+            lua_pushcclosure(L, Enum_GetNameStringByValue, 1);
+            lua_rawset(L, -3);
+
+            lua_pushstring(L, "GetDisplayNameTextByValue");
+            lua_pushvalue(L, -2);
+            lua_pushcclosure(L, Enum_GetDisplayNameTextByValue, 1);
+            lua_rawset(L, -3);
 
             lua_pushvalue(L, -1);               // set metatable to self
             lua_setmetatable(L, -2);
@@ -2363,7 +2373,46 @@ int32 Enum_GetMaxValue(lua_State* L)
     return 1;
 }
 
-int32 Enum_GetNameByValue(lua_State* L)
+int32 Enum_GetNameStringByValue(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        return 0;
+    }
+
+    FString ValueName;
+
+    lua_pushvalue(L, lua_upvalueindex(1));
+    if (lua_type(L, -1) == LUA_TTABLE)
+    {
+        // enum value
+        int64 Value = lua_tointegerx(L, -2, nullptr);
+
+        lua_pushstring(L, "__name");
+        int32 Type = lua_rawget(L, -2);
+        if (Type == LUA_TSTRING)
+        {
+            const char* EnumName = lua_tostring(L, -1);
+            const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+            if (EnumDesc)
+            {
+                UEnum* Enum = EnumDesc->GetEnum();
+                if (Enum)
+                {   
+                    ValueName = Enum->GetNameStringByValue(Value);
+                }
+            }
+        }
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    UnLua::Push(L, ValueName);
+
+    return 1;
+}
+
+int32 Enum_GetDisplayNameTextByValue(lua_State* L)
 {
     if (lua_gettop(L) < 1)
     {
@@ -2375,25 +2424,25 @@ int32 Enum_GetNameByValue(lua_State* L)
     lua_pushvalue(L, lua_upvalueindex(1));
     if (lua_type(L, -1) == LUA_TTABLE)
     {
-		// enum value
-		int64 Value = lua_tointegerx(L, -2, nullptr);
+        // enum value
+        int64 Value = lua_tointegerx(L, -2, nullptr);
 
-		lua_pushstring(L, "__name");
-		int32 Type = lua_rawget(L, -2);
-		if (Type == LUA_TSTRING)
-		{
-			const char* EnumName = lua_tostring(L, -1);
-			const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
-			if (EnumDesc)
-			{
-				UEnum* Enum = EnumDesc->GetEnum();
-				if (Enum)
-				{   
-					ValueName = Enum->GetDisplayNameTextByValue(Value);
-				}
-			}
-		}
-		lua_pop(L, 1);
+        lua_pushstring(L, "__name");
+        int32 Type = lua_rawget(L, -2);
+        if (Type == LUA_TSTRING)
+        {
+            const char* EnumName = lua_tostring(L, -1);
+            const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+            if (EnumDesc)
+            {
+                UEnum* Enum = EnumDesc->GetEnum();
+                if (Enum)
+                {   
+                    ValueName = Enum->GetDisplayNameTextByValue(Value);
+                }
+            }
+        }
+        lua_pop(L, 1);
     }
     lua_pop(L, 1);
 
