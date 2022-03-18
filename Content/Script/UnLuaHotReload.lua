@@ -107,8 +107,8 @@ end
 local function make_sandbox()
     local reloading
     local loaded
-    local proxy = setmetatable({}, { __index = _G })
-    local env_mt = { __index = proxy }
+    local proxy = setmetatable({}, { __index = _G, __newindex = _G })
+    local env_mt = { __index = proxy, __newindex = proxy }
 
     local function load(module_name)
         local found, chunk
