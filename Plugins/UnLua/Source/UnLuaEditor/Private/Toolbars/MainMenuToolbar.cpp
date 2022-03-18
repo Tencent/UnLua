@@ -96,3 +96,5 @@ void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)
 
     Builder.EndSection();
 }
+
+#undef LOCTEXT_NAMESPACE
