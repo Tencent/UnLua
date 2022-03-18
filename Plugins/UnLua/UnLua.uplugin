@@ -37,11 +37,6 @@
             "Name": "UnLuaDefaultParamCollector",
             "Type": "Program",
             "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaTestSuite",
-            "Type": "Runtime",
-            "LoadingPhase": "Default"
         }
     ]
 }
