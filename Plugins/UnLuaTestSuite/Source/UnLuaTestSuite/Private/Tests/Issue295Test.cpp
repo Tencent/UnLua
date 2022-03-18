@@ -27,7 +27,7 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
 
     virtual FString GetMapName() override
     {
-        return "/Game/Tests/Regression/Issue295/Issue295_1";
+        return "/UnLuaTestSuite/Tests/Regression/Issue295/Issue295_1";
     }
 
     virtual bool SetUp() override
@@ -38,7 +38,7 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
         lua_setglobal(L, "G_World");
 
         const char* Chunk1 = "\
-            local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
+            local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
             local Outer = G_World\
             \
             local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')\
@@ -52,13 +52,13 @@ struct FUnLuaTest_Issue295 : FUnLuaTestBase
         lua_gc(L, LUA_GCCOLLECT, 0);
         CollectGarbage(RF_NoFlags, true);
 
-        LoadMap("/Game/Tests/Regression/Issue295/Issue295_2");
+        LoadMap("/UnLuaTestSuite/Tests/Regression/Issue295/Issue295_2");
 
         UnLua::PushUObject(L, GetWorld());
         lua_setglobal(L, "G_World");
 
         const char* Chunk2 = "\
-            local UMGClass = UE.UClass.Load('/Game/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
+            local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
             local Outer = G_World\
             \
             local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')\

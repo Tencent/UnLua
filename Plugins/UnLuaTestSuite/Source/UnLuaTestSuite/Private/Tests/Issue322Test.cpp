@@ -31,7 +31,7 @@ struct FUnLuaTest_Issue322 : FUnLuaTestBase
 
         const auto World = GetWorld();
 
-        const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/Game/Tests/Regression/Issue322/测试中文蓝图.测试中文蓝图_C"));
+        const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/UnLuaTestSuite/Tests/Regression/Issue322/测试中文蓝图.测试中文蓝图_C"));
         World->SpawnActor(ActorClass);
 
         const char* Chunk = "\

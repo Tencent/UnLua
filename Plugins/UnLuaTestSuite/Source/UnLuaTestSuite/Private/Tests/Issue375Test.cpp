@@ -33,10 +33,10 @@ struct FUnLuaTest_Issue375 : FUnLuaTestBase
         lua_setglobal(L, "World");
 
         const auto Chunk = R"(
-        local ParentClass = UE.UClass.Load("/Game/Tests/Regression/Issue375/BP_ParentActor.BP_ParentActor_C")
+        local ParentClass = UE.UClass.Load("/UnLuaTestSuite/Tests/Regression/Issue375/BP_ParentActor.BP_ParentActor_C")
         ParentActor = World:SpawnActor(ParentClass)
         
-        local ChildClass = UE.UClass.Load("/Game/Tests/Regression/Issue375/BP_ChildActor.BP_ChildActor_C")
+        local ChildClass = UE.UClass.Load("/UnLuaTestSuite/Tests/Regression/Issue375/BP_ChildActor.BP_ChildActor_C")
         local ChildActor = World:SpawnActor(ChildClass)
         ChildActor:K2_DestroyActor()
         return ParentActor

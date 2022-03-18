@@ -36,8 +36,8 @@ void FUnLuaLibDataTableSpec::Define()
         It(TEXT("获取数据表中指定行的数据（蓝图）"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local DataTable = UE.UObject.Load('/Game/Tests/Misc/DataTable_BPTest.DataTable_BPTest')\
-            local RowStruct = UE.UObject.Load('/Game/Tests/Misc/Struct_TableRow.Struct_TableRow')\
+            local DataTable = UE.UObject.Load('/UnLuaTestSuite/Tests/Misc/DataTable_BPTest.DataTable_BPTest')\
+            local RowStruct = UE.UObject.Load('/UnLuaTestSuite/Tests/Misc/Struct_TableRow.Struct_TableRow')\
             local Row = RowStruct()\
             local Result = UE.UDataTableFunctionLibrary.GetDataTableRowFromName(DataTable, 'Row_1', Row)\
             return Row.TestString\
@@ -49,7 +49,7 @@ void FUnLuaLibDataTableSpec::Define()
         It(TEXT("获取数据表中指定行的数据（C++）"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
-            local DataTable = UE.UObject.Load('/Game/Tests/Misc/DataTable_CppTest.DataTable_CppTest')\
+            local DataTable = UE.UObject.Load('/UnLuaTestSuite/Tests/Misc/DataTable_CppTest.DataTable_CppTest')\
             local Row = UE.FUnLuaTestTableRow()\
             local Result = UE.UDataTableFunctionLibrary.GetDataTableRowFromName(DataTable, 'Row_1', Row)\
             return Row.Title\

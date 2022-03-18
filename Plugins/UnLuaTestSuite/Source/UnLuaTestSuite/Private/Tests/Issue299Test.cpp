@@ -27,7 +27,7 @@ struct FUnLuaTest_Issue299 : FUnLuaTestBase
 
     virtual FString GetMapName() override
     {
-        return "/Game/Tests/Regression/Issue299/Issue299_1";
+        return "/UnLuaTestSuite/Tests/Regression/Issue299/Issue299_1";
     }
     
     virtual bool SetUp() override
@@ -39,7 +39,7 @@ struct FUnLuaTest_Issue299 : FUnLuaTestBase
         lua_setglobal(L, "G_World");
 
         const auto Chunk = "\
-        local ActorClass = UE.UClass.Load('/Game/Tests/Regression/Issue299/BP_UnLuaTestActor_Issue299.BP_UnLuaTestActor_Issue299_C')\
+        local ActorClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue299/BP_UnLuaTestActor_Issue299.BP_UnLuaTestActor_Issue299_C')\
         local TestActor = G_World:SpawnActor(ActorClass)\
         return TestActor\
         \
@@ -53,7 +53,7 @@ struct FUnLuaTest_Issue299 : FUnLuaTestBase
         lua_gc(L, LUA_GCCOLLECT, 0);
         CollectGarbage(RF_NoFlags, true);
 
-        LoadMap("/Game/Tests/Regression/Issue299/Issue299_2");
+        LoadMap("/UnLuaTestSuite/Tests/Regression/Issue299/Issue299_2");
 
         lua_gc(L, LUA_GCCOLLECT, 0);
         CollectGarbage(RF_NoFlags, true);

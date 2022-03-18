@@ -33,7 +33,7 @@ struct FUnLuaTest_Issue289 : FUnLuaTestBase
 
 		const auto World = GetWorld();
 
-		const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/Game/Tests/Regression/Issue289/BP_UnLuaTestActor_Issue289.BP_UnLuaTestActor_Issue289_C"));
+		const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/UnLuaTestSuite/Tests/Regression/Issue289/BP_UnLuaTestActor_Issue289.BP_UnLuaTestActor_Issue289_C"));
 		const auto Actor = World->SpawnActor(ActorClass);
 
 		const char* Chunk = "\

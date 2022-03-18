@@ -20,7 +20,7 @@
 
 struct FUnLuaTest_Issue300 : FUnLuaTestBase
 {
-    virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue300/Issue300"); }
+    virtual FString GetMapName() override { return TEXT("/UnLuaTestSuite/Tests/Regression/Issue300/Issue300"); }
 
     virtual bool InstantTest() override
     {

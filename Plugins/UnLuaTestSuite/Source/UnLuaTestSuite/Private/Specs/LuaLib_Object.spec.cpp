@@ -50,9 +50,9 @@ void FUnLuaLibObjectSpec::Define()
     {
         It(TEXT("加载一个对象"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            UClass* Expected = LoadObject<UClass>(nullptr, TEXT("/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C"));
+            UClass* Expected = LoadObject<UClass>(nullptr, TEXT("/UnLuaTestSuite/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C"));
             const char* Chunk = "\
-            local ActorClass = UE.UObject.Load('/Game/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C')\
+            local ActorClass = UE.UObject.Load('/UnLuaTestSuite/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C')\
             return ActorClass\
             ";
             UnLua::RunChunk(L, Chunk);

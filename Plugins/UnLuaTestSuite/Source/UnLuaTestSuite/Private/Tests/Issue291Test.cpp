@@ -38,7 +38,7 @@ struct FUnLuaTest_Issue291 : FUnLuaTestBase
             local function test(x, y, z)\
                 Flag = true\
             end\
-            local ActorClass = UE.UClass.Load('/Game/Tests/Regression/Issue291/BP_UnLuaTestActor_Issue291.BP_UnLuaTestActor_Issue291_C')\
+            local ActorClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue291/BP_UnLuaTestActor_Issue291.BP_UnLuaTestActor_Issue291_C')\
             local Actor = G_World:SpawnActor(ActorClass)\
             Actor.Capsule.OnInputTouchBegin:Add(Actor.Capsule, test)\
             collectgarbage('collect')\

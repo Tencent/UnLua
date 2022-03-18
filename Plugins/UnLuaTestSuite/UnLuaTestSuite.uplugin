@@ -4,7 +4,7 @@
     "VersionName": "1.0.0",
     "FriendlyName": "UnLuaTestSuite",
     "Description": "Test suite for UnLua",
-    "Category": "Scripting",
+    "Category": "Testing",
     "CreatedBy": "Tencent",
     "CreatedByURL": "https://www.tencent.com/",
     "DocsURL": "",
@@ -14,6 +14,12 @@
     "IsBetaVersion": false,
     "Installed": false,
     "CanBeUsedWithUnrealHeaderTool": true,
+    "Plugins": [
+        {
+            "Name": "UnLua",
+            "Enabled": true
+        }
+    ],
     "Modules": [
         {
             "Name": "UnLuaTestSuite",

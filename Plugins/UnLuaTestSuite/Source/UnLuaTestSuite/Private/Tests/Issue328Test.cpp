@@ -37,7 +37,7 @@ struct FUnLuaTest_Issue328 : FUnLuaTestBase
         World->BeginPlay();
         World->bBegunPlay = true;
         
-        const auto ActorClass = LoadClass<AUnLuaTestActor>(World, TEXT("/Game/Tests/Regression/Issue328/BP_UnLuaTestActor_Issue328.BP_UnLuaTestActor_Issue328_C"));
+        const auto ActorClass = LoadClass<AUnLuaTestActor>(World, TEXT("/UnLuaTestSuite/Tests/Regression/Issue328/BP_UnLuaTestActor_Issue328.BP_UnLuaTestActor_Issue328_C"));
         const auto Actor = (AUnLuaTestActor*)World->SpawnActor(ActorClass);
         const auto Result = Actor->TestForIssue328();
         RUNNER_TEST_TRUE(Result);

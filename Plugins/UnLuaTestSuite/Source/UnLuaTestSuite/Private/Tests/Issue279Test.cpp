@@ -34,7 +34,7 @@ struct FUnLuaTest_Issue279 : FUnLuaTestBase
         lua_setglobal(L, "World");
 
         const auto Chunk1 = R"(
-            local ActorClass = UE.UClass.Load("/Game/Tests/Regression/Issue279/BP_TestActor.BP_TestActor_C")
+            local ActorClass = UE.UClass.Load("/UnLuaTestSuite/Tests/Regression/Issue279/BP_TestActor.BP_TestActor_C")
             Actor = World:SpawnActor(ActorClass)
             Actor:Run()
         )";

@@ -19,7 +19,7 @@
 
 struct FUnLuaTest_Issue372 : FUnLuaTestBase
 {
-    virtual FString GetMapName() override { return TEXT("/Game/Tests/Regression/Issue372/Issue372"); }
+    virtual FString GetMapName() override { return TEXT("/UnLuaTestSuite/Tests/Regression/Issue372/Issue372"); }
 
     virtual bool InstantTest() override
     {
@@ -39,7 +39,7 @@ struct FUnLuaTest_Issue372 : FUnLuaTestBase
         luaL_unref(L, LUA_REGISTRYINDEX, NextRef);
 
         const auto Chunk = R"(
-        local ActorClass = UE.UClass.Load("/Game/Tests/Binding/BP_UnLuaTestActor_StaticBinding.BP_UnLuaTestActor_StaticBinding_C")
+        local ActorClass = UE.UClass.Load("/UnLuaTestSuite/Tests/Binding/BP_UnLuaTestActor_StaticBinding.BP_UnLuaTestActor_StaticBinding_C")
         Actor = World:SpawnActor(ActorClass)
         )";
         UnLua::RunChunk(L, Chunk);
