@@ -36,6 +36,8 @@ namespace UnLua
 
         UNLUAEDITOR_API FString Get(const FProperty* Property);
 
+        UNLUAEDITOR_API FString GetUE(const TArray<const UField*> AllTypes);
+        
         UNLUAEDITOR_API FString GetTypeName(const UObject* Field);
 
         UNLUAEDITOR_API FString GetTypeName(const FProperty* Property);

@@ -63,13 +63,7 @@ FString UnLua::IntelliSense::Get(const UEnum* Enum)
     }
 
     // declaration
-    Ret += FString::Printf(TEXT("\r\nlocal %s = {}\r\n\r\n"), *TypeName);
-
-    // export to UE namespace
-    if (Enum->IsNative())
-        Ret += FString::Printf(TEXT("UE.%s = %s\r\n"), *TypeName, *TypeName);
-
-    Ret += "\r\n";
+    Ret += FString::Printf(TEXT("\r\nlocal %s = {}\r\n"), *TypeName);
 
     return Ret;
 }
@@ -112,11 +106,6 @@ FString UnLua::IntelliSense::Get(const UScriptStruct* ScriptStruct)
     // declaration
     Ret += FString::Printf(TEXT("local %s = {}\r\n"), *TypeName);
 
-    // export to UE namespace
-    if (ScriptStruct->IsNative())
-        Ret += FString::Printf(TEXT("UE.%s = %s\r\n"), *TypeName, *TypeName);
-
-    Ret += "\r\n";
 
     return Ret;
 }
@@ -152,10 +141,6 @@ FString UnLua::IntelliSense::Get(const UClass* Class)
             continue;
         Ret += Get(Function) + "\r\n";
     }
-
-    // export to UE namespace
-    if (Class->IsNative())
-        Ret += FString::Printf(TEXT("UE.%s = %s\r\n"), *TypeName, *TypeName);
 
     return Ret;
 }
@@ -254,6 +239,24 @@ FString UnLua::IntelliSense::Get(const FProperty* Property)
         Ret += " @" + EscapeComments(ToolTip, true);
 
     return Ret;
+}
+
+FString UnLua::IntelliSense::GetUE(const TArray<const UField*> AllTypes)
+{
+    FString Content = "UE = {";
+
+    for (const auto Type : AllTypes)
+    {
+        if (!Type->IsNative())
+            continue;
+
+        const auto Name = GetTypeName(Type);
+        Content += FString::Printf(TEXT("\r\n    ---@type %s\r\n"), *Name);
+        Content += FString::Printf(TEXT("    %s = nil,\r\n"), *Name);
+    }
+
+    Content += "}\r\n";
+    return Content;
 }
 
 FString UnLua::IntelliSense::GetTypeName(const UObject* Field)

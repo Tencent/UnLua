@@ -75,42 +75,30 @@ void FUnLuaIntelliSenseGenerator::UpdateAll()
         }
     }
 
-    for (TObjectIterator<UClass> It; It; ++It)
-    {
-        const UClass* Class = *It;
-        const FString ClassName = Class->GetName();
-        // ReSharper disable StringLiteralTypo
-        if (ClassName.StartsWith("SKEL_")
-            || ClassName.StartsWith("PLACEHOLDER-CLASS")
-            || ClassName.StartsWith("REINST_")
-            || ClassName.StartsWith("TRASHCLASS_")
-            || ClassName.StartsWith("HOTRELOADED_")
-        )
-        {
-            // skip nonsense types
-            continue;
-        }
-        // ReSharper restore StringLiteralTypo
-        Export(Class);
-    }
+    TArray<const UField*> Types;
+    CollectTypes(Types);
+    for (const auto Type : Types)
+        Export(Type);
 
-    for (TObjectIterator<UScriptStruct> It; It; ++It)
-    {
-        const UScriptStruct* ScriptStruct = *It;
-        Export(ScriptStruct);
-    }
-
-    for (TObjectIterator<UEnum> It; It; ++It)
-    {
-        const UEnum* Enum = *It;
-        Export(Enum);
-    }
+    ExportUE(Types);
 }
 
 bool FUnLuaIntelliSenseGenerator::IsBlueprint(const FAssetData& AssetData)
 {
     const FName AssetClass = AssetData.AssetClass;
     return AssetClass == UBlueprint::StaticClass()->GetFName() || AssetClass == UWidgetBlueprint::StaticClass()->GetFName();
+}
+
+bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData)
+{
+    const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
+    if (!Settings.bGenerateIntelliSense)
+        return false;
+
+    if (!IsBlueprint(AssetData))
+        return false;
+
+    return true;
 }
 
 void FUnLuaIntelliSenseGenerator::Export(const UBlueprint* Blueprint)
@@ -127,6 +115,46 @@ void FUnLuaIntelliSenseGenerator::Export(const UField* Field)
     const FString FileName = UnLua::IntelliSense::GetTypeName(Field);
     const FString Content = UnLua::IntelliSense::Get(Field);
     SaveFile(ModuleName, FileName, Content);
+}
+
+void FUnLuaIntelliSenseGenerator::ExportUE(const TArray<const UField*> Types)
+{
+    const FString Content = UnLua::IntelliSense::GetUE(Types);
+    SaveFile("", "UE", Content);
+}
+
+void FUnLuaIntelliSenseGenerator::CollectTypes(TArray<const UField*>& Types)
+{
+    for (TObjectIterator<UClass> It; It; ++It)
+    {
+        const UClass* Class = *It;
+        const FString ClassName = Class->GetName();
+        // ReSharper disable StringLiteralTypo
+        if (ClassName.StartsWith("SKEL_")
+            || ClassName.StartsWith("PLACEHOLDER-CLASS")
+            || ClassName.StartsWith("REINST_")
+            || ClassName.StartsWith("TRASHCLASS_")
+            || ClassName.StartsWith("HOTRELOADED_")
+        )
+        {
+            // skip nonsense types
+            continue;
+        }
+        // ReSharper restore StringLiteralTypo
+        Types.Add(Class);
+    }
+
+    for (TObjectIterator<UScriptStruct> It; It; ++It)
+    {
+        const UScriptStruct* ScriptStruct = *It;
+        Types.Add(ScriptStruct);
+    }
+
+    for (TObjectIterator<UEnum> It; It; ++It)
+    {
+        const UEnum* Enum = *It;
+        Types.Add(Enum);
+    }
 }
 
 void FUnLuaIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent)
@@ -157,12 +185,19 @@ void FUnLuaIntelliSenseGenerator::DeleteFile(const FString& ModuleName, const FS
 
 void FUnLuaIntelliSenseGenerator::OnAssetAdded(const FAssetData& AssetData)
 {
+    if (!ShouldExport(AssetData))
+        return;
+    
     OnAssetUpdated(AssetData);
+
+    TArray<const UField*> Types;
+    CollectTypes(Types);
+    ExportUE(Types);
 }
 
 void FUnLuaIntelliSenseGenerator::OnAssetRemoved(const FAssetData& AssetData)
 {
-    if (!IsBlueprint(AssetData))
+    if (!ShouldExport(AssetData))
         return;
 
     DeleteFile(FString("/Game"), AssetData.AssetName.ToString());
@@ -170,7 +205,7 @@ void FUnLuaIntelliSenseGenerator::OnAssetRemoved(const FAssetData& AssetData)
 
 void FUnLuaIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData, const FString& OldPath)
 {
-    if (!IsBlueprint(AssetData))
+    if (!ShouldExport(AssetData))
         return;
 
     //remove old Blueprint name
@@ -183,11 +218,7 @@ void FUnLuaIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData, co
 
 void FUnLuaIntelliSenseGenerator::OnAssetUpdated(const FAssetData& AssetData)
 {
-    const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
-    if (!Settings.bGenerateIntelliSense)
-        return;
-    
-    if (!IsBlueprint(AssetData))
+    if (!ShouldExport(AssetData))
         return;
 
     UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *AssetData.ObjectPath.ToString());

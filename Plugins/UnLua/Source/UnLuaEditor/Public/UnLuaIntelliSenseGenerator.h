@@ -39,9 +39,15 @@ private:
 
     static bool IsBlueprint(const FAssetData& AssetData);
 
+    static bool ShouldExport(const FAssetData& AssetData);
+
     void Export(const UBlueprint* Blueprint);
 
     void Export(const UField* Field);
+
+    void ExportUE(const TArray<const UField*> Types);
+
+    void CollectTypes(TArray<const UField*> &Types);
     
     // File helper
     void SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent);
