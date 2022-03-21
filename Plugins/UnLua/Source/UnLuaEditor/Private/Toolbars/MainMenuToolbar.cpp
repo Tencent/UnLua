@@ -16,11 +16,14 @@
 #include "MainMenuToolbar.h"
 
 #include "ISettingsModule.h"
-#include "ISettingsViewer.h"
+#include "UnLuaAboutScreen.h"
 #include "UnLuaIntelliSenseGenerator.h"
 #include "LevelEditor.h"
 #include "UnLuaEditorCommands.h"
+#include "UnLuaEditorFunctionLibrary.h"
+#include "UnLuaEditorSettings.h"
 #include "UnLuaFunctionLibrary.h"
+#include "Interfaces/IMainFrameModule.h"
 
 #define LOCTEXT_NAMESPACE "UnLuaMainMenuToolbar"
 
@@ -49,9 +52,25 @@ FMainMenuToolbar::FMainMenuToolbar()
 
     CommandList->MapAction(FUnLuaEditorCommands::Get().About, FExecuteAction::CreateLambda([]
     {
-        const TCHAR* URL = TEXT("cmd");
-        const TCHAR* Params = TEXT("/k start https://github.com/Tencent/UnLua");
-        FPlatformProcess::ExecProcess(URL, Params, nullptr, nullptr, nullptr);
+        const FText AboutWindowTitle = LOCTEXT("AboutUnLua", "About UnLua");
+
+        TSharedPtr<SWindow> AboutWindow =
+            SNew(SWindow)
+            .Title(AboutWindowTitle)
+            .ClientSize(FVector2D(600.f, 200.f))
+            .SupportsMaximize(false).SupportsMinimize(false)
+            .SizingRule(ESizingRule::FixedSize)
+            [
+                SNew(SUnLuaAboutScreen)
+            ];
+
+        IMainFrameModule& MainFrame = FModuleManager::LoadModuleChecked<IMainFrameModule>("MainFrame");
+        TSharedPtr<SWindow> ParentWindow = MainFrame.GetParentWindow();
+
+        if (ParentWindow.IsValid())
+            FSlateApplication::Get().AddModalWindow(AboutWindow.ToSharedRef(), ParentWindow.ToSharedRef());
+        else
+            FSlateApplication::Get().AddWindow(AboutWindow.ToSharedRef());
     }), FCanExecuteAction());
 }
 
@@ -64,6 +83,10 @@ void FMainMenuToolbar::Initialize()
 
     FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
     LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(Extender);
+
+    const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
+    if (Settings.UpdateMode == EUpdateMode::Start)
+        UUnLuaEditorFunctionLibrary::FetchNewVersion();
 }
 
 void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)

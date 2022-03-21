@@ -59,6 +59,7 @@ public class UnLuaEditor : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "UnrealEd",
+                "EditorStyle",
                 "ApplicationCore",
                 "Projects",
                 "InputCore",
@@ -68,6 +69,8 @@ public class UnLuaEditor : ModuleRules
                 "Slate",
                 "SlateCore",
                 "DirectoryWatcher",
+                "Networking",
+                "Sockets",
                 "UnLua",
                 "Lua"
             }

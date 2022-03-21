@@ -22,9 +22,13 @@
 #define TTF_FONT(RelativePath, ...) FSlateFontInfo(RootToContentDir(RelativePath, TEXT(".ttf")), __VA_ARGS__)
 #define OTF_FONT(RelativePath, ...) FSlateFontInfo(RootToContentDir(RelativePath, TEXT(".otf")), __VA_ARGS__)
 
+TSharedPtr<ISlateStyle> FUnLuaEditorStyle::Instance = nullptr;
+
 FUnLuaEditorStyle::FUnLuaEditorStyle()
     : FSlateStyleSet("UnLuaEditorStyle")
 {
+    Instance = MakeShareable(this);
+    
     const FVector2D Icon40x40(40.0f, 40.0f);
 
     SetContentRoot(IPluginManager::Get().FindPlugin("UnLua")->GetBaseDir() / TEXT("Resources"));

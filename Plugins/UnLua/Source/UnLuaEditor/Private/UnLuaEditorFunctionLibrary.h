@@ -27,6 +27,10 @@ class UNLUAEDITOR_API UUnLuaEditorFunctionLibrary : public UBlueprintFunctionLib
 public:
 	static void WatchScriptDirectory();
 
+	static void FetchNewVersion();
+
+	static FString GetCurrentVersion();
+
 private:
 	static void OnLuaFilesModified(const TArray<FFileChangeData>& FileChanges);
 
