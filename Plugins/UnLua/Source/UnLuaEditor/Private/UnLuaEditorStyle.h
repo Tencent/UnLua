@@ -21,4 +21,12 @@ class FUnLuaEditorStyle : public FSlateStyleSet
 public:
     FUnLuaEditorStyle();
     ~FUnLuaEditorStyle();
+
+    static ISlateStyle& GetInstance()
+    {
+        return *Instance.Get();
+    }
+
+private:
+    static TSharedPtr<ISlateStyle> Instance;
 };

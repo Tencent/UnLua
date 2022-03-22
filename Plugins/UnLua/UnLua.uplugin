@@ -14,6 +14,12 @@
     "IsBetaVersion": false,
     "Installed": false,
     "CanBeUsedWithUnrealHeaderTool": true,
+    "LocalizationTargets": [
+        {
+            "Name": "UnLua",
+            "LoadingPolicy": "Editor"
+        }
+    ],
     "Modules": [
         {
             "Name": "UnLua",
@@ -31,26 +37,6 @@
             "Name": "UnLuaDefaultParamCollector",
             "Type": "Program",
             "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaIntelliSense",
-            "Type": "Program",
-            "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaIntelliSenseBP",
-            "Type": "Editor",
-            "LoadingPhase": "Default"
-        },
-        {
-            "Name": "UnLuaFrameWork",
-            "Type": "Runtime",
-            "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaTestSuite",
-            "Type": "Runtime",
-            "LoadingPhase": "Default"
         }
     ]
 }

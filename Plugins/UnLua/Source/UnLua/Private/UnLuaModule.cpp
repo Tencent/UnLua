@@ -12,7 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#if WITH_EDITOR
 #include "Modules/ModuleManager.h"
+#endif
+
 #include "LuaContext.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaModule"
@@ -22,7 +25,11 @@ class FUnLuaModule : public IModuleInterface
 public:
     virtual void StartupModule() override
     {
-    	FLuaContext::Create();
+#if WITH_EDITOR
+        FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
+#endif
+
+        FLuaContext::Create();
         GLuaCxt->RegisterDelegates();
     }
 

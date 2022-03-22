@@ -80,6 +80,9 @@ ELuaBindingStatus GetBindingStatus(const UBlueprint* Blueprint)
     if (!Blueprint)
         return ELuaBindingStatus::NotBound;
 
+    if (Blueprint->Status == EBlueprintStatus::BS_Dirty)
+        return ELuaBindingStatus::Unknown;
+
     const auto Target = Blueprint->GeneratedClass;
 
     if (!IsValid(Target))

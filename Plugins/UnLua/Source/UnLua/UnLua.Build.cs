@@ -12,129 +12,78 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+using System;
 using System.IO;
 using UnrealBuildTool;
 
 public class UnLua : ModuleRules
 {
-	public UnLua(ReadOnlyTargetRules Target) : base(Target)
+    public UnLua(ReadOnlyTargetRules Target) : base(Target)
     {
         SetupScripts();
 
         bEnforceIWYU = false;
 
-        PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicIncludePaths.AddRange(
-			new string[] {
+            new string[]
+            {
             }
-			);
+        );
 
 
-		PrivateIncludePaths.AddRange(
-			new string[] {
+        PrivateIncludePaths.AddRange(
+            new[]
+            {
                 "UnLua/Private",
             }
-            );
+        );
 
 
         PublicIncludePathModuleNames.AddRange(
-            new string[] {
+            new[]
+            {
                 "ApplicationCore",
             }
         );
 
 
         PrivateDependencyModuleNames.AddRange(
-			new string[]
-			{
+            new[]
+            {
                 "Core",
                 "CoreUObject",
-				"Engine",
+                "Engine",
                 "Slate",
                 "InputCore",
                 "Projects",
                 "Lua"
-			}
-			);
-		
+            }
+        );
+
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
-		
-        if (Target.bBuildEditor == true)
-        {
+
+        if (Target.bBuildEditor)
             PrivateDependencyModuleNames.Add("UnrealEd");
-        }
 
-        bool bAutoStartup = true;
-        if (bAutoStartup)
-        {
-            PublicDefinitions.Add("AUTO_UNLUA_STARTUP=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("AUTO_UNLUA_STARTUP=0");
-        }
+        var projectDir = Target.ProjectFile.Directory;
+        var config = ConfigCache.ReadHierarchy(ConfigHierarchyType.Game, projectDir, Target.Platform);
+        const string Section = "/Script/UnLuaEditor.UnLuaEditorSettings";
 
-        bool bWithUE4Namespace = true;
-        if (bWithUE4Namespace)
+        Action<string, string, bool> loadBoolConfig = (key, macro, defaultValue) =>
         {
-            PublicDefinitions.Add("WITH_UE4_NAMESPACE=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("WITH_UE4_NAMESPACE=0");
-        }
-    
-        bool bSupportsRpcCall = true;
-        if (bSupportsRpcCall)
-        {
-            PublicDefinitions.Add("SUPPORTS_RPC_CALL=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("SUPPORTS_RPC_CALL=0");
-        }
+            bool flag;
+            if (!config.GetBool(Section, key, out flag))
+                flag = defaultValue;
+            PublicDefinitions.Add(string.Format("{0}={1}", macro, (flag ? "1" : "0")));
+        };
 
-        bool bSupportsCommandlet = true;
-        if (bSupportsCommandlet)
-        {
-            PublicDefinitions.Add("SUPPORTS_COMMANDLET=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("SUPPORTS_COMMANDLET=0");
-        }
-
-        bool bEnableAutoCleanNoneNativeClass = true;
-        if (bEnableAutoCleanNoneNativeClass)
-        {
-            PublicDefinitions.Add("ENABLE_AUTO_CLEAN_NNATCLASS=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("ENABLE_AUTO_CLEAN_NNATCLASS=0");
-        }
-
-        bool bEnableTypeCheck = true;
-        if (bEnableTypeCheck)
-        {
-            PublicDefinitions.Add("ENABLE_TYPE_CHECK=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("ENABLE_TYPE_CHECK=0");
-        }
-
-        bool bEnableDebug = false;
-        if (bEnableDebug)
-        {
-            PublicDefinitions.Add("UNLUA_ENABLE_DEBUG=1");
-        }
-        else
-        {
-            PublicDefinitions.Add("UNLUA_ENABLE_DEBUG=0");
-        }
-
+        loadBoolConfig("bAutoStartup", "AUTO_UNLUA_STARTUP", true);
+        loadBoolConfig("bEnableDebug", "UNLUA_ENABLE_DEBUG", false);
+        loadBoolConfig("bEnableTypeChecking", "ENABLE_TYPE_CHECK", true);
+        loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
+        loadBoolConfig("bWithUENamespace", "WITH_UE4_NAMESPACE", true);
     }
 
     private void SetupScripts()

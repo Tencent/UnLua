@@ -178,7 +178,8 @@ int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 int32 Enum_Index(lua_State *L);
 int32 Enum_Delete(lua_State *L);
 int32 Enum_GetMaxValue(lua_State* L);
-int32 Enum_GetNameByValue(lua_State* L);
+int32 Enum_GetNameStringByValue(lua_State* L);
+int32 Enum_GetDisplayNameTextByValue(lua_State* L);
 
 /**
  * Functions to handle UClass

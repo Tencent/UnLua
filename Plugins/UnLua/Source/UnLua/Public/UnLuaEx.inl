@@ -900,7 +900,10 @@ namespace UnLua
     void TExportedClassBase<bIsReflected>::GenerateIntelliSenseInternal(FString &Buffer, FFalse NotReflected) const
     {
         // class name
-        Buffer = FString::Printf(TEXT("---@class %s\r\n"), *Name);
+        Buffer = FString::Printf(TEXT("---@class %s"), *Name);
+        if (!SuperClassName.IsNone())
+            Buffer += TEXT(": ") + SuperClassName.ToString();
+        Buffer += TEXT("\r\n");
 
         // fields
         for (IExportedProperty *Property : Properties)
@@ -909,7 +912,7 @@ namespace UnLua
         }
 
         // definition
-        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *Name);
+        Buffer += TEXT("local M = {}\r\n");
 
         // functions
         for (IExportedFunction *Function : Functions)
@@ -918,7 +921,7 @@ namespace UnLua
         }
 
         // return
-        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *Name);
+        Buffer += TEXT("\r\n\r\nreturn M\r\n");
     }
 
     template <bool bIsReflected>
@@ -926,7 +929,7 @@ namespace UnLua
     {
         // class name
         Buffer = FString::Printf(TEXT("---@type %s\r\n"), *Name);
-        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *Name);
+        Buffer += TEXT("local M = {}\r\n");
 
         // fields
         for (IExportedProperty *Property : Properties)
@@ -949,7 +952,7 @@ namespace UnLua
         }
 
         // return
-        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *Name);
+        Buffer += TEXT("\r\n\r\nreturn M\r\n");
     }
 #endif
 

@@ -25,6 +25,7 @@
 #include "DelegateHelper.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "DefaultParamCollection.h"
+#include "UnLuaFunctionLibrary.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
 #if WITH_EDITOR
@@ -77,13 +78,6 @@ FLuaContext* FLuaContext::Create()
  */
 void FLuaContext::RegisterDelegates()
 {
-#if SUPPORTS_COMMANDLET == 0
-    if (IsRunningCommandlet())
-    {
-        return;
-    }
-#endif
-
     FWorldDelegates::OnWorldCleanup.AddRaw(this, &FLuaContext::OnWorldCleanup);
     FCoreDelegates::OnPostEngineInit.AddRaw(this, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
     FCoreDelegates::OnPreExit.AddRaw(this, &FLuaContext::OnPreExit);                 // called before StaticExit()
@@ -108,13 +102,6 @@ void FLuaContext::RegisterDelegates()
  */
 void FLuaContext::CreateState()
 {
-#if SUPPORTS_COMMANDLET == 0
-    if (IsRunningCommandlet())
-    {
-        return;
-    }
-#endif
-
     if (!L)
     {
 
@@ -203,6 +190,15 @@ void FLuaContext::CreateState()
         {
             Enum->Register(L);
         }
+
+        UnLua::RunChunk(L, R"(
+            local ok, m = pcall(require, "UnLuaHotReload")
+            if not ok then
+                return
+            end
+            require = m.require
+            UnLuaHotReload = m.reload
+        )");
 
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
@@ -1071,7 +1067,8 @@ bool FLuaContext::OnGameViewportInputKey(FKey InKey, FModifierKeysState Modifier
     }
     if (InKey == EKeys::L && ModifierKeyState.IsControlDown() && EventType == IE_Released)
     {
-        return HotfixLua();
+        UUnLuaFunctionLibrary::HotReload();
+        return true;
     }
     return false;
 }
