@@ -52,11 +52,13 @@ void UUnLuaEditorFunctionLibrary::FetchNewVersion()
             return;
         }
 
+        PRAGMA_DISABLE_DEPRECATION_WARNINGS
         const FString Msg = FString::Printf(TEXT("cmd=3&tag=glcoud.unlua.update&version=%s&engine=%s&machine_name=%s"),
                                             *GetCurrentVersion(),
                                             *FEngineVersion::Current().ToString(),
                                             *FPlatformMisc::GetHashedMacAddressString()
         );
+        PRAGMA_ENABLE_DEPRECATION_WARNINGS
         const FTCHARToUTF8 Converted(*Msg);
         int32 Sent;
         if (!Client->Send((uint8*)Converted.Get(), Converted.Length(), Sent))
