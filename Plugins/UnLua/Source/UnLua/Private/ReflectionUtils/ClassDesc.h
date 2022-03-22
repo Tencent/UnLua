@@ -15,7 +15,6 @@
 #pragma once
 
 #include "CoreUObject.h"
-#include "LuaContext.h"
 
 class FPropertyDesc;
 class FFunctionDesc;
@@ -26,42 +25,43 @@ class FFieldDesc;
  */
 class FClassDesc
 {
-    friend class FReflectionRegistry;
-
 public:
-    enum class EType
-    {
-        SCRIPTSTRUCT,
-        CLASS,
-        UNKNOWN
-    };
-
-    FClassDesc(UStruct *InStruct, const FString &InName, EType InType);
+    FClassDesc(UStruct *InStruct, const FString &InName);
     ~FClassDesc();
 
-    FORCEINLINE bool IsValid() const { return Type != EType::UNKNOWN && Struct && GLuaCxt->IsUObjectValid(Struct); }
+    FORCEINLINE bool IsValid() const { return true; }
 
-    FORCEINLINE bool IsScriptStruct() const { return Type == EType::SCRIPTSTRUCT; }
+    FORCEINLINE bool IsScriptStruct() const { return bIsScriptStruct; }
 
-    FORCEINLINE bool IsClass() const { return Type == EType::CLASS; }
+    FORCEINLINE bool IsClass() const { return bIsClass; }
 
-    FORCEINLINE bool IsInterface() const { return Type == EType::CLASS && Class->HasAnyClassFlags(CLASS_Interface) && Class != UInterface::StaticClass(); }
+    FORCEINLINE bool IsInterface() const { return bIsInterface; }
 
-    FORCEINLINE bool IsNative() const { return Struct->IsNative(); }
+    FORCEINLINE bool IsNative() const { return bIsInterface; }
 
-    FORCEINLINE UStruct* AsStruct() const { return Struct; }
+    FORCEINLINE UStruct* AsStruct()
+    {
+        Load();
+        return Struct;
+    }
 
-    FORCEINLINE UScriptStruct* AsScriptStruct() const { return Type == EType::SCRIPTSTRUCT ? ScriptStruct : nullptr; }
+    FORCEINLINE UScriptStruct* AsScriptStruct()
+    {
+        if (!bIsScriptStruct)
+            return nullptr;
+        Load();
+        return static_cast<UScriptStruct*>(Struct);
+    }
 
-    FORCEINLINE UClass* AsClass() const { return Type == EType::CLASS ? Class : nullptr; }
-
-    //FORCEINLINE FClassDesc* GetParent() const { return Parent; }
-
-    //FORCEINLINE const FString& GetName() const { return ClassFName.ToString(); }
+    FORCEINLINE UClass* AsClass()
+    {
+        if (!bIsClass)
+            return nullptr;
+        Load();
+        return static_cast<UClass*>(Struct);
+    }
 
     FORCEINLINE FString GetName() const { return ClassName; }
-
-    //FORCEINLINE const char* GetAnsiName() const { return ClassAnsiName.Get(); }
 
     FORCEINLINE int32 GetSize() const { return Size; }
 
@@ -77,12 +77,6 @@ public:
 
     void SubRef();
 
-    void AddLock();
-
-    void ReleaseLock();
-
-    bool IsLocked();
-
     FFieldDesc* FindField(const char* FieldName);
 
     FFieldDesc* RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
@@ -91,27 +85,25 @@ public:
 
     void GetInheritanceChain(TArray<FClassDesc*>& Chain);
 
-    static EType GetType(UStruct* InStruct);
+    void Load();
+    
+    void UnLoad();
 
 private:
-    union
-    {
-        UStruct *Struct;
-        UScriptStruct *ScriptStruct;
-        UClass *Class;
-    };
+    UStruct* Struct;
 
     FString ClassName;
 
-    EType Type;
+    uint8 bIsScriptStruct : 1;
+    uint8 bIsClass : 1;
+    uint8 bIsInterface : 1;
+    uint8 bIsNative : 1;
+
     int32 UserdataPadding : 8;            // only used for UScriptStruct
     int32 Size : 24;
     int32 RefCount;
-    bool  Locked;
 
-    //FClassDesc *Parent;
     TArray<FClassDesc*> Interfaces;
-
     TMap<FName, FFieldDesc*> Fields;
     TArray<FPropertyDesc*> Properties;
     TArray<FFunctionDesc*> Functions;
@@ -120,28 +112,4 @@ private:
     TArray<UStruct*> StructChain;
 
     struct FFunctionCollection *FunctionCollection;
-};
-
-/**
- * Helper class to prevent releasing class descriptors
- */
-class FScopedSafeClass
-{
-public:
-    explicit FScopedSafeClass(FClassDesc *InClass)
-    {  
-        Class = InClass;
-        Class->AddLock();
-    }
-
-    ~FScopedSafeClass()
-    {   
-        if (Class)
-        {
-            Class->ReleaseLock();
-        }
-    }
-
-private:
-    FClassDesc* Class;
 };
