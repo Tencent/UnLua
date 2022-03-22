@@ -24,7 +24,7 @@
         {
             "Name": "UnLua",
             "Type": "Runtime",
-            "LoadingPhase": "PostConfigInit",
+            "LoadingPhase": "PreDefault",
             "WhitelistPlatforms": [ "Win64", "Mac", "IOS", "Android", "Linux" ]
         },
         {

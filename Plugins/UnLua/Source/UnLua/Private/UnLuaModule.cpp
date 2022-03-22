@@ -31,6 +31,10 @@ public:
 
         FLuaContext::Create();
         GLuaCxt->RegisterDelegates();
+
+#if AUTO_UNLUA_STARTUP && !WITH_EDITOR
+        GLuaCxt->SetEnable(true);
+#endif
     }
 
     virtual void ShutdownModule() override

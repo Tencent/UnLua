@@ -497,10 +497,6 @@ void FLuaContext::OnWorldCleanup(UWorld* World, bool bSessionEnded, bool bCleanu
  */
 void FLuaContext::OnPostEngineInit()
 {
-#if AUTO_UNLUA_STARTUP && !WITH_EDITOR
-    SetEnable(true);
-#endif
-
     CreateDefaultParamCollection();                 // create data for default parameters of UFunctions
 
 #if WITH_EDITOR
@@ -835,38 +831,8 @@ void FLuaContext::OnUObjectArrayShutdown()
 bool FLuaContext::IsUObjectValid(UObjectBase* UObjPtr)
 {
     if (!UObjPtr)
-    {
         return false;
-    }
-
-    int32 UObjIdx = -1;
-    {
-        FScopeLock Lock(&Async2MainCS);
-        if (UObjPtr2Idx.Contains(UObjPtr))
-        {
-            UObjIdx = UObjPtr2Idx[UObjPtr];
-        }
-    }
-
-    if (-1 != UObjIdx)
-    {
-        FUObjectItem* UObjectItem = GUObjectArray.IndexToObject(UObjIdx);
-        if (!UObjectItem)
-        {
-            return false;
-        }
-        else
-        {
-            return (UObjPtr == UObjectItem->Object) && ((UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0)
-                    && !UObjectItem->IsUnreachable();
-        }
-    }
-    else
-    {
-        //!!!Fix!!!
-        //all should be false here?
-        return false;
-    }
+    return (UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0;
 }
 
 UUnLuaManager* FLuaContext::GetUnLuaManager()
