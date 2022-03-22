@@ -92,6 +92,12 @@ private:
     {
         RegisterSettings();
 
+        if (IsRunningGame())
+        {
+            // Loading MainFrame module with '-game' is not supported
+            return;
+        }
+
         MainMenuToolbar->Initialize();
         BlueprintToolbar->Initialize();
         AnimationBlueprintToolbar->Initialize();
