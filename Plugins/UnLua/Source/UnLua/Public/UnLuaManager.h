@@ -15,13 +15,11 @@
 #pragma once
 
 #include "InputCoreTypes.h"
-#include "Engine/EngineBaseTypes.h"
 #include "UnLuaCompatibility.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 #include "UnLuaManager.generated.h"
 
 UCLASS()
-class UUnLuaManager : public UObject
+class UNLUA_API UUnLuaManager : public UObject
 {
     GENERATED_BODY()
 
@@ -35,7 +33,7 @@ public:
 
     void NotifyUObjectDeleted(const UObjectBase *Object, bool bClass = false);
 
-    void Cleanup(class UWorld *World, bool bFullCleanup);
+    void Cleanup();
 
     void CleanUpByClass(UClass *Class);
 
@@ -140,4 +138,5 @@ private:
     UFunction *InputVectorAxisFunc;
     UFunction *InputGestureFunc;
     UFunction *AnimNotifyFunc;
+
 };

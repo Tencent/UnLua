@@ -81,7 +81,7 @@ void FLuaContext::RegisterDelegates()
     FWorldDelegates::OnWorldCleanup.AddRaw(this, &FLuaContext::OnWorldCleanup);
     FCoreDelegates::OnPostEngineInit.AddRaw(this, &FLuaContext::OnPostEngineInit);   // called before FCoreDelegates::OnFEngineLoopInitComplete.Broadcast(), after GEngine->Init(...)
     FCoreDelegates::OnPreExit.AddRaw(this, &FLuaContext::OnPreExit);                 // called before StaticExit()
-    FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaContext::OnAsyncLoadingFlushUpdate);
+
     FCoreDelegates::OnHandleSystemError.AddRaw(this, &FLuaContext::OnCrash);
     FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FLuaContext::OnCrash);
     FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FLuaContext::PostLoadMapWithWorld);
@@ -102,106 +102,11 @@ void FLuaContext::RegisterDelegates()
  */
 void FLuaContext::CreateState()
 {
-    if (!L)
-    {
+    if (Env)
+        return;
 
-        L = lua_newstate(FLuaContext::LuaAllocator, nullptr);       // create main Lua thread
-        check(L);
-        luaL_openlibs(L);                                           // open all standard Lua libraries
-
-        AddSearcher(LoadFromCustomLoader, 2);
-        AddSearcher(LoadFromFileSystem, 3);
-        AddSearcher(LoadFromBuiltinLibs, 4);
-
-        lua_pushstring(L, "ObjectMap");                             // create weak table 'ObjectMap'
-        CreateWeakValueTable(L);
-        lua_rawset(L, LUA_REGISTRYINDEX);
-
-        lua_pushstring(L, "StructMap");                             // create weak table 'StructMap'
-        CreateWeakValueTable(L);
-        lua_rawset(L, LUA_REGISTRYINDEX);
-
-        lua_pushstring(L, "ScriptContainerMap");                    // create weak table 'ScriptContainerMap'
-        CreateWeakValueTable(L);
-        lua_rawset(L, LUA_REGISTRYINDEX);
-
-        lua_pushstring(L, "ArrayMap");                              // create weak table 'ArrayMap'
-        CreateWeakValueTable(L);
-        lua_rawset(L, LUA_REGISTRYINDEX);
-
-        CreateNamespaceForUE(L);                                    // create 'UE' namespace (table)
-
-        // register global Lua functions
-        lua_register(L, "RegisterEnum", Global_RegisterEnum);
-        lua_register(L, "RegisterClass", Global_RegisterClass);
-        lua_register(L, "GetUProperty", Global_GetUProperty);
-        lua_register(L, "SetUProperty", Global_SetUProperty);
-        lua_register(L, "LoadObject", Global_LoadObject);
-        lua_register(L, "LoadClass", Global_LoadClass);
-        lua_register(L, "NewObject", Global_NewObject);
-        lua_register(L, "UnLua_AddToClassWhiteSet", Global_AddToClassWhiteSet);
-        lua_register(L, "UnLua_RemoveFromClassWhiteSet", Global_RemoveFromClassWhiteSet);
-
-        lua_register(L, "UEPrint", Global_Print);
-
-        // register collision related enums
-        FCollisionHelper::Initialize();     // initialize collision helper stuff
-        RegisterECollisionChannel(L);
-        RegisterEObjectTypeQuery(L);
-        RegisterETraceTypeQuery(L);
-
-        if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
-        {
-            FUnLuaDelegates::ConfigureLuaGC.Execute(L);
-        }
-        else
-        {
-#if 504 == LUA_VERSION_NUM
-            lua_gc(L, LUA_GCGEN);
-#else
-            // default Lua GC config in UnLua
-            lua_gc(L, LUA_GCSETPAUSE, 100);
-            lua_gc(L, LUA_GCSETSTEPMUL, 5000);
-#endif
-        }
-
-        // add new package path
-        FString LuaSrcPath = GLuaSrcFullPath + TEXT("?.lua");
-        AddPackagePath(L, TCHAR_TO_UTF8(*LuaSrcPath));
-
-        FUnLuaDelegates::OnPreStaticallyExport.Broadcast();
-
-        RegisterClass(L, "UClass", "UObject");                      // register base class
-
-        // register statically exported classes
-        for (TMap<FName, UnLua::IExportedClass*>::TIterator It(ExportedNonReflectedClasses); It; ++It)
-        {
-            It.Value()->Register(L);
-        }
-
-        // register statically exported global functions
-        for (UnLua::IExportedFunction* Function : ExportedFunctions)
-        {
-            Function->Register(L);
-        }
-
-        // register statically exported enums
-        for (UnLua::IExportedEnum* Enum : ExportedEnums)
-        {
-            Enum->Register(L);
-        }
-
-        UnLua::RunChunk(L, R"(
-            local ok, m = pcall(require, "UnLuaHotReload")
-            if not ok then
-                return
-            end
-            require = m.require
-            UnLuaHotReload = m.reload
-        )");
-
-        FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
-    }
+    Env = MakeUnique<UnLua::FLuaEnv>();
+    Env->Initialize();
 }
 
 /**
@@ -224,79 +129,7 @@ void FLuaContext::SetEnable(bool InEnable)
  */
 bool FLuaContext::IsEnable() const
 {
-    return L && bEnable;
-}
-
-/**
- * Statically export a global functions
- */
-bool FLuaContext::ExportFunction(UnLua::IExportedFunction* Function)
-{
-    if (Function)
-    {
-        ExportedFunctions.Add(Function);
-        return true;
-    }
-    return false;
-}
-
-/**
- * Statically export an enum
- */
-bool FLuaContext::ExportEnum(UnLua::IExportedEnum* Enum)
-{
-    if (Enum)
-    {
-        ExportedEnums.Add(Enum);
-        return true;
-    }
-    return false;
-}
-
-/**
- * Statically export a class
- */
-bool FLuaContext::ExportClass(UnLua::IExportedClass* Class)
-{
-    if (Class)
-    {
-        TMap<FName, UnLua::IExportedClass*>& ExportedClasses = Class->IsReflected() ? ExportedReflectedClasses : ExportedNonReflectedClasses;
-        ExportedClasses.Add(Class->GetName(), Class);
-        return true;
-    }
-    return false;
-}
-
-/**
- * Find a statically exported class
- */
-UnLua::IExportedClass* FLuaContext::FindExportedClass(FName Name)
-{
-    UnLua::IExportedClass** Class = ExportedReflectedClasses.Find(Name);
-    if (Class)
-    {
-        return *Class;
-    }
-    Class = ExportedNonReflectedClasses.Find(Name);
-    return Class ? *Class : nullptr;
-}
-
-/**
- * Find a statically exported reflected class
- */
-UnLua::IExportedClass* FLuaContext::FindExportedReflectedClass(FName Name)
-{
-    UnLua::IExportedClass** Class = ExportedReflectedClasses.Find(Name);
-    return Class ? *Class : nullptr;
-}
-
-/**
- * Find a statically exported non reflected class
- */
-UnLua::IExportedClass* FLuaContext::FindExportedNonReflectedClass(FName Name)
-{
-    UnLua::IExportedClass** Class = ExportedNonReflectedClasses.Find(Name);
-    return Class ? *Class : nullptr;
+    return Env.IsValid();
 }
 
 /**
@@ -334,114 +167,7 @@ bool FLuaContext::TryToBindLua(UObject* Object)
     if (!bEnable || !IsUObjectValid(Object))
         return false;
 
-    const bool bIsCDO = Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject);
-    if (bIsCDO)
-    {
-        // filter out class default and template objects
-        return false;
-    }
-
-    UClass* Class = Object->GetClass();
-    if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>() || Class->HasAnyClassFlags(CLASS_NewerVersionExists))
-    {
-        // filter out UPackage and UClass and recompiled objects
-        return false;
-    }
-
-    if (!IsInGameThread() || Object->HasAnyInternalFlags(AsyncObjectFlags))
-    {
-        // all bind operation should be in game thread, include dynamic bind
-        FScopeLock Lock(&Async2MainCS);
-        Candidates.AddUnique(Object);
-        return false;
-    }
-
-    static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
-
-    if (!Class->ImplementsInterface(InterfaceClass))
-    {
-        // dynamic binding
-        if (!GLuaDynamicBinding.IsValid(Class))
-            return false;
-
-        return Manager->Bind(Object, Class, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
-    }
-
-    // filter some object in bp nest case
-    // RF_WasLoaded & RF_NeedPostLoad?
-    UObject* Outer = Object->GetOuter();
-    if (Outer
-        && Outer->GetFName().IsEqual("WidgetTree")
-        && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
-    {
-        return false;
-    }
-
-    if (GWorld)
-    {
-        FString ObjectName;
-        Object->GetFullName(GWorld, ObjectName);
-        if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
-            return false;
-        }
-    }
-
-    UFunction* Func = Class->FindFunctionByName(FName("GetModuleName")); // find UFunction 'GetModuleName'. hard coded!!!
-    if (!Func)
-        return false;
-
-    // native func may not be bind in level bp
-    if (!Func->GetNativeFunc())
-    {
-        Func->Bind();
-        if (!Func->GetNativeFunc())
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("TryToBindLua: bind native function failed for GetModuleName in object %s"), *Object->GetName());
-            return false;
-        }
-    }
-
-    FString ModuleName;
-    UObject* CDO = Class->GetDefaultObject();
-    CDO->ProcessEvent(Func, &ModuleName);
-    if (ModuleName.IsEmpty())
-        return false;
-
-#if !UE_BUILD_SHIPPING
-    if (GLuaDynamicBinding.IsValid(Class) && GLuaDynamicBinding.ModuleName != ModuleName)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("Dynamic binding '%s' ignored as it conflicts static binding '%s'."), *GLuaDynamicBinding.ModuleName, *ModuleName);
-    }
-#endif
-
-    return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);
-}
-
-void FLuaContext::AddSearcher(int (*Searcher)(lua_State *), int Index)
-{
-    // if #package.searchers 
-    lua_getglobal(L, "package");
-    lua_getfield(L, -1, "searchers");
-    lua_remove(L, -2);
-    if(!lua_istable(L, -1))
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("Invalid package.serachers!"));
-        return;
-    }
-
-    const uint32 Len = lua_rawlen(L, -1);
-    Index = Index < 0 ? (int)(Len + Index + 2) : Index;
-    for (int e = (int)Len + 1; e > Index; e--)
-    {
-        lua_rawgeti(L, -1, e - 1);
-        lua_rawseti(L, -2, e);
-    }
-    
-    lua_pushcfunction(L, Searcher);
-    lua_rawseti(L, -2, Index);
-    lua_pop(L, 1);
+    return Env->TryBind(Object);
 }
 
 /**
@@ -453,10 +179,12 @@ void FLuaContext::OnWorldTickStart(UWorld* World, ELevelTick TickType, float Del
 void FLuaContext::OnWorldTickStart(ELevelTick TickType, float DeltaTime)
 #endif
 {
-    if (!Manager)
-    {
+    if (!Env)
         return;
-    }
+
+    const auto Manager = Env->GetManager();
+    if (!Manager)
+        return;
 
     for (UInputComponent* InputComponent : CandidateInputComponents)
     {
@@ -516,48 +244,6 @@ void FLuaContext::OnPreExit()
     Cleanup(true);                                  // full clean up
 }
 
-/**
- * Callback for FCoreDelegates::OnAsyncLoadingFlushUpdate
- */
-void FLuaContext::OnAsyncLoadingFlushUpdate()
-{
-    if (!Manager)
-        return;
-
-    TArray<UObject*> LocalCandidates;
-    {
-        FScopeLock Lock(&Async2MainCS);
-
-        for (int32 i = Candidates.Num() - 1; i >= 0; --i)
-        {
-            FWeakObjectPtr ObjectPtr = Candidates[i];
-            if (!ObjectPtr.IsValid())
-            {
-                // discard invalid objects
-                Candidates.RemoveAt(i);
-                continue;
-            }
-
-            UObject* Object = ObjectPtr.Get();
-            if (Object->HasAnyFlags(RF_NeedPostLoad)
-                || Object->HasAnyInternalFlags(AsyncObjectFlags)
-                || Object->GetClass()->HasAnyInternalFlags(AsyncObjectFlags))
-            {
-                // delay bind on next update 
-                continue;
-            }
-            
-            LocalCandidates.Add(Object);
-            Candidates.RemoveAt(i);
-        }
-    }
-
-    for (int32 i = 0; i < LocalCandidates.Num(); ++i)
-    {
-        UObject* Object = LocalCandidates[i];
-        TryToBindLua(Object);
-    }
-}
 
 /**
  * Callback for FCoreDelegates::OnHandleSystemError and FCoreDelegates::OnHandleSystemEnsure
@@ -567,17 +253,12 @@ void FLuaContext::OnCrash()
     if (!IsInGameThread())
         return;
 
-    const FString LogStr = UnLua::GetLuaCallStack(L);
+    if (!Env)
+        return;
 
-    if (LogStr.IsEmpty())
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("Lua state has not been created yet."));
-    }
-    else
-    {
-        UE_LOG(LogUnLua, Error, TEXT("%s"), *LogStr);
-    }
-
+    const auto L = Env->GetMainState();
+    const FString Msg = UnLua::GetLuaCallStack(L);
+    UE_LOG(LogUnLua, Error, TEXT("%s"), *Msg);
     GLog->Flush();
 }
 
@@ -613,6 +294,7 @@ void FLuaContext::PostLoadMapWithWorld(UWorld* World)
 
 #endif
 
+    const auto Manager = Env->GetManager();
     Manager->OnMapLoaded(World);
 
     // !!!Fix!!!
@@ -679,6 +361,7 @@ void FLuaContext::ResumeThread(int32 ThreadRef)
     if (ThreadPtr)
     {
         lua_State* Thread = *ThreadPtr;
+        const auto L = Env->GetMainState();
 #if 504 == LUA_VERSION_NUM
         int NResults = 0;
         int32 State = lua_resume(Thread, L, 0, &NResults);
@@ -719,7 +402,6 @@ void FLuaContext::NotifyUObjectCreated(const UObjectBase* InObject, int32 Index)
 {
     {
         FScopeLock Lock(&Async2MainCS);
-        UObjPtr2Idx.Add(const_cast<UObjectBase*>(InObject), Index);
 #if UNLUA_ENABLE_DEBUG != 0
         UObjPtr2Name.Add(const_cast<UObjectBase*>(InObject), InObject->GetFName().ToString());
 #endif
@@ -772,7 +454,6 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
     if (!bEnable)
     {
         FScopeLock Lock(&Async2MainCS);
-        UObjPtr2Idx.Remove(InObject);
 
 #if UNLUA_ENABLE_DEBUG != 0
         UObjPtr2Name.Remove(InObject);
@@ -786,7 +467,7 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
 #endif
 
     bool bClass = GReflectionRegistry.NotifyUObjectDeleted(InObject);
-    Manager->NotifyUObjectDeleted(InObject, bClass);
+    GetUnLuaManager()->NotifyUObjectDeleted(InObject, bClass);
     FDelegateHelper::NotifyUObjectDeleted((UObject*)InObject);
 
     if (CandidateInputComponents.Num() > 0)
@@ -799,7 +480,6 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
     }
 
     FScopeLock Lock(&Async2MainCS);
-    UObjPtr2Idx.Remove(InObject);
     UObjPtr2Name.Remove(InObject);
 }
 
@@ -810,18 +490,6 @@ void FLuaContext::NotifyUObjectDeleted(const UObjectBase* InObject, int32 Index)
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
 void FLuaContext::OnUObjectArrayShutdown()
 {
-#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 23)
-    bool bEngineExit = IsEngineExitRequested();
-#else
-    bool bEngineExit = GIsRequestingExit;
-#endif
-
-    if (bEngineExit)
-    {
-        // when exiting, remove listeners for creating/deleting UObject
-        GUObjectArray.RemoveUObjectCreateListener(GLuaCxt);
-        GUObjectArray.RemoveUObjectDeleteListener(GLuaCxt);
-    }
 }
 #endif
 
@@ -837,32 +505,21 @@ bool FLuaContext::IsUObjectValid(UObjectBase* UObjPtr)
 
 UUnLuaManager* FLuaContext::GetUnLuaManager()
 {
-    return Manager;
+    return Env ? Env->GetManager() : nullptr;
 }
 
 
 FLuaContext::FLuaContext()
-    : L(nullptr), Manager(nullptr), bEnable(false)
+    : Env(nullptr), bEnable(false)
 {
-#if WITH_EDITOR
-    LuaHandle = nullptr;
-#endif
 }
 
 FLuaContext::~FLuaContext()
 {
     Cleanup(true);
 
-    if (Manager)
-    {
-        Manager->RemoveFromRoot();
-        Manager = nullptr;
-    }
-
-    if (L)
-    {
-        L = NULL;
-    }
+    if (Env)
+        Env = nullptr;
 
 #if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 23
     // when exiting, remove listeners for creating/deleting UObject
@@ -871,56 +528,10 @@ FLuaContext::~FLuaContext()
 #endif
 
     FScopeLock Lock(&Async2MainCS);
-    UObjPtr2Idx.Empty();
 
 #if UNLUA_ENABLE_DEBUG != 0
     UObjPtr2Name.Empty();
 #endif
-}
-
-/**
- * Allocator for Lua VM
- */
-void* FLuaContext::LuaAllocator(void* ud, void* ptr, size_t osize, size_t nsize)
-{
-    if (nsize == 0)
-    {
-#if STATS
-        const uint32 Size = FMemory::GetAllocSize(ptr);
-        DEC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, Size);
-#endif
-        FMemory::Free(ptr);
-        return nullptr;
-    }
-
-    void* Buffer;
-    if (!ptr)
-    {
-        Buffer = FMemory::Malloc(nsize);
-#if STATS
-        const uint32 Size = FMemory::GetAllocSize(Buffer);
-        INC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, Size);
-#endif
-    }
-    else
-    {
-#if STATS
-        const uint32 OldSize = FMemory::GetAllocSize(ptr);
-#endif
-        Buffer = FMemory::Realloc(ptr, nsize);
-#if STATS
-        const uint32 NewSize = FMemory::GetAllocSize(Buffer);
-        if (NewSize > OldSize)
-        {
-            INC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, NewSize - OldSize);
-        }
-        else
-        {
-            DEC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, OldSize - NewSize);
-        }
-#endif
-    }
-    return Buffer;
 }
 
 /**
@@ -932,11 +543,7 @@ void FLuaContext::Initialize()
     {
         CreateState();  // create Lua main thread
 
-        // create UnLuaManager and add it to root
-        Manager = NewObject<UUnLuaManager>();
-        Manager->AddToRoot();
-
-        if (L)
+        if (Env)
         {
             GPropertyCreator.Cleanup();
             bEnable = true;
@@ -955,26 +562,18 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
         return;
     }
 
-    if (L)
+    if (Env)
     {
         FUnLuaDelegates::OnPreLuaContextCleanup.Broadcast(bFullCleanup);
 
         if (!bFullCleanup)
         {
-            // force full lua gc
-            lua_gc(L, LUA_GCCOLLECT, 0);
-            lua_gc(L, LUA_GCCOLLECT, 0);
-
-            //!!!Fix!!!
-            // do some check work here
+            Env->GC();
         }
         else
         {
             bEnable = false;
-
-            // close lua state first
-            lua_close(L);
-            L = nullptr;
+            Env = nullptr;
 
             // clean ue side modules,es static data structs
             FCollisionHelper::Cleanup();                        // clean up collision helper stuff
@@ -990,8 +589,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
 
             FDelegateHelper::Cleanup(bFullCleanup);                 // clean up delegates
 
-            Manager->Cleanup(NULL, bFullCleanup);                  // clean up UnLuaManager
-
             GPropertyCreator.Cleanup();                             // clean up dynamically created UProperties
 
             GReflectionRegistry.Cleanup();                      // clean up reflection registry
@@ -1000,22 +597,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
             CandidateInputComponents.Empty();
             FCoreUObjectDelegates::GetPostGarbageCollect().Remove(OnPostGarbageCollectHandle);
             FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
-
-            // old manager
-            if (Manager)
-            {
-                Manager->RemoveFromRoot();
-                Manager = nullptr;
-            }
-
-#if WITH_EDITOR
-            if (LuaHandle)
-            {
-                FPlatformProcess::FreeDllHandle(LuaHandle);     // unload Lua dynamic lib
-                LuaHandle = nullptr;
-            }
-#endif
-
         }
 
         FUnLuaDelegates::OnPostLuaContextCleanup.Broadcast(bFullCleanup);

@@ -434,7 +434,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
             }
 
             // bind a callback to the latent function
-            FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)GLuaCxt->GetManager());
+            FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)GLuaCxt->GetUnLuaManager());
             Property->CopyValue(Params, &LatentActionInfo);
             continue;
         }

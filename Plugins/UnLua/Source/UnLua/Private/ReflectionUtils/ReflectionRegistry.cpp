@@ -97,9 +97,11 @@ FClassDesc* FReflectionRegistry::RegisterClass(const char* InName)
     FString Name = (InName[0] == 'U' || InName[0] == 'A' || InName[0] == 'F' || InName[0] == 'E') ? UTF8_TO_TCHAR(InName + 1) : UTF8_TO_TCHAR(InName);
     UStruct *Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);       // find first
     if (!Struct)
-    {
         Struct = LoadObject<UStruct>(nullptr, *Name);                // load if not found
-    }
+
+    if (!Struct)
+        return nullptr;
+    
     return RegisterClass(Struct);
 }
 

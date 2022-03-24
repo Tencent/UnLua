@@ -16,7 +16,8 @@
 
 #include "CoreUObject.h"
 #include "Engine/UserDefinedEnum.h"
-#include "LuaContext.h"
+#include "HAL/Platform.h"
+#include "UnLuaBase.h"
 
 /**
  * Enum descriptor
@@ -34,7 +35,7 @@ public:
 
     ~FEnumDesc();
 
-    FORCEINLINE bool IsValid() const { return Enum && GLuaCxt->IsUObjectValid(Enum); }
+    FORCEINLINE bool IsValid() const { return Enum && UnLua::IsUObjectValid(Enum); }
 
     FORCEINLINE const FString& GetName() const { return EnumName; }
 

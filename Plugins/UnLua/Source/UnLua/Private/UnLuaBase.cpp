@@ -27,35 +27,17 @@ DEFINE_LOG_CATEGORY(UnLuaDelegate);
 
 namespace UnLua
 {
-
+    bool IsUObjectValid(UObjectBase* ObjPtr)
+    {
+        if (!ObjPtr)
+            return false;
+        return (ObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0;
+    }
+    
     bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface)
     {
         FLuaContext::Create();
         return GLuaCxt->AddTypeInterface(Name, TypeInterface);
-    }
-
-    IExportedClass* FindExportedClass(FName Name)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->FindExportedClass(Name);
-    }
-
-    bool ExportClass(IExportedClass *Class)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportClass(Class);
-    }
-
-    bool ExportFunction(IExportedFunction *Function)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportFunction(Function);
-    }
-
-    bool ExportEnum(IExportedEnum *Enum)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportEnum(Enum);
     }
 
     lua_State* CreateState()

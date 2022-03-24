@@ -767,7 +767,7 @@ namespace UnLua
      */
     template <bool bIsReflected>
     TExportedClassBase<bIsReflected>::TExportedClassBase(const char *InName, const char *InSuperClassName)
-        : Name(InName), ClassFName(InName), SuperClassName(InSuperClassName)
+        : Name(InName), SuperClassName(InSuperClassName)
     {}
 
     template <bool bIsReflected>
@@ -792,10 +792,10 @@ namespace UnLua
     {
         // make sure the meta table is on the top of the stack if 'bIsReflected' is true
 
-        TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ClassName(*Name);
+        const auto ClassName = TCHAR_TO_UTF8(*Name);
         if (!bIsReflected)
         {
-            int32 Type = luaL_getmetatable(L, ClassName.Get());
+            int32 Type = luaL_getmetatable(L, ClassName);
             lua_pop(L, 1);
             if (Type == LUA_TTABLE)
             {
@@ -803,7 +803,7 @@ namespace UnLua
             }
             else
             {
-                if (SuperClassName != NAME_None)
+                if (!SuperClassName.IsEmpty())
                 {
                     IExportedClass *SuperClass = UnLua::FindExportedClass(SuperClassName);
                     if (SuperClass)
@@ -812,23 +812,23 @@ namespace UnLua
                     }
                     else
                     {
-                        SuperClassName = NAME_None;
+                        SuperClassName = "";
                     }
                 }
 
-                luaL_newmetatable(L, ClassName.Get());
+                luaL_newmetatable(L, ClassName);
 
-                if (SuperClassName != NAME_None)
+                if (!SuperClassName.IsEmpty())
                 {
                     lua_pushstring(L, "Super");
-                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperClassName.ToString()));
+                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperClassName));
                     check(Type == LUA_TTABLE);
                     lua_rawset(L, -3);
                 }
 
                 lua_pushstring(L, "__index");
                 lua_pushvalue(L, -2);
-                if (Properties.Num() > 0 || SuperClassName != NAME_None)
+                if (Properties.Num() > 0 || !SuperClassName.IsEmpty())
                 {
                     lua_pushcclosure(L, UnLua::Index, 1);
                 }
@@ -836,7 +836,7 @@ namespace UnLua
 
                 lua_pushstring(L, "__newindex");
                 lua_pushvalue(L, -2);
-                if (Properties.Num() > 0 || SuperClassName != NAME_None)
+                if (Properties.Num() > 0 || !SuperClassName.IsEmpty())
                 {
                     lua_pushcclosure(L, UnLua::NewIndex, 1);
                 }
@@ -866,12 +866,12 @@ namespace UnLua
         {
 #if WITH_UE4_NAMESPACE
             lua_getglobal(L, "UE");
-            lua_pushstring(L, ClassName.Get());
+            lua_pushstring(L, ClassName);
             lua_pushvalue(L, -3);
             lua_rawset(L, -3);
             lua_pop(L, 2);
 #else
-            lua_setglobal(L, ClassName.Get());
+            lua_setglobal(L, ClassName);
 #endif
         }
     }
@@ -901,8 +901,8 @@ namespace UnLua
     {
         // class name
         Buffer = FString::Printf(TEXT("---@class %s"), *Name);
-        if (!SuperClassName.IsNone())
-            Buffer += TEXT(": ") + SuperClassName.ToString();
+        if (!SuperClassName.IsEmpty())
+            Buffer += TEXT(": ") + SuperClassName;
         Buffer += TEXT("\r\n");
 
         // fields

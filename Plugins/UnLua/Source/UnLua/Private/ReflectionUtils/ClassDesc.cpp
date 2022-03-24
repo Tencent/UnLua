@@ -78,7 +78,7 @@ FClassDesc::~FClassDesc()
     // remove refs to class,etc ufunction/delegate
     if (Struct)
     {
-        UUnLuaManager* UnLuaManager = GLuaCxt->GetManager();
+        UUnLuaManager* UnLuaManager = GLuaCxt->GetUnLuaManager();
         if (UnLuaManager)
         {
             UnLuaManager->CleanUpByClass((UClass*)Struct);
@@ -257,6 +257,10 @@ void FClassDesc::Load()
     if (Struct)
         return;
 
+    lua_State *L = *GLuaCxt;
+    if (!L)
+        return;
+
     FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F' || ClassName[0] == 'E') ? ClassName.RightChop(1) : ClassName;
     Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);
     if (!Struct)
@@ -265,7 +269,7 @@ void FClassDesc::Load()
     check(Struct);
 
     GObjectReferencer.AddObjectRef(Struct);
-    RegisterClass(*GLuaCxt, Struct);
+    RegisterClass(L, Struct);
 }
 
 void FClassDesc::UnLoad()

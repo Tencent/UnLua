@@ -41,7 +41,7 @@ struct luaL_Reg;
 
 namespace UnLua
 {   
-    //!!!Fix!!!
+    bool IsUObjectValid(UObjectBase* ObjPtr);
 
     /**
      * Interface to manage Lua stack for a C++ type
@@ -121,7 +121,7 @@ namespace UnLua
         virtual void Register(lua_State *L) = 0;
         virtual void AddLib(const luaL_Reg *Lib) = 0;
         virtual bool IsReflected() const = 0;
-        virtual FName GetName() const = 0;
+        virtual FString GetName() const = 0;
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const = 0;
@@ -152,39 +152,6 @@ namespace UnLua
      * @return - true if type interface is added successfully, false otherwise
      */
     UNLUA_API bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface);
-
-    /**
-     * Find the exported class with its name
-     *
-     * @param Name - name of the exported class
-     * @return - the exported class
-     */
-    UNLUA_API IExportedClass* FindExportedClass(FName Name);
-
-    /**
-     * Export a class
-     *
-     * @param Class - exported class instance
-     * @return - true if the class is exported successfully, false otherwise
-     */
-    UNLUA_API bool ExportClass(IExportedClass *Class);
-
-    /**
-     * Export a global function
-     *
-     * @param Function - exported function instance
-     * @return - true if the global function is exported successfully, false otherwise
-     */
-    UNLUA_API bool ExportFunction(IExportedFunction *Function);
-
-    /**
-     * Export an enum
-     *
-     * @param Enum - exported enum instance
-     * @return - true if the enum is exported successfully, false otherwise
-     */
-    UNLUA_API bool ExportEnum(IExportedEnum *Enum);
-
 
     /**
      * Create Lua state

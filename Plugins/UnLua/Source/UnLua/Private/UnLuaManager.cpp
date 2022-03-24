@@ -18,12 +18,13 @@
 #include "LuaCore.h"
 #include "LuaContext.h"
 #include "LuaFunctionInjection.h"
-#include "DelegateHelper.h"
 #include "UEObjectReferencer.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Engine/LevelScriptActor.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
+
 
 static const TCHAR* SReadableInputEvent[] = { TEXT("Pressed"), TEXT("Released"), TEXT("Repeat"), TEXT("DoubleClick"), TEXT("Axis"), TEXT("Max") };
 
@@ -239,7 +240,7 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
 /**
  * Clean up...
  */
-void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
+void UUnLuaManager::Cleanup()
 {
     AttachedObjects.Empty();
     AttachedActors.Empty();

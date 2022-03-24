@@ -15,6 +15,7 @@
 #pragma once
 
 #include "UnLua.h"
+#include "Binding.h"
 
 namespace UnLua
 {
@@ -317,7 +318,7 @@ namespace UnLua
         virtual void Register(lua_State *L) override;
         virtual void AddLib(const luaL_Reg *InLib) override;
         virtual bool IsReflected() const override { return bIsReflected; }
-        virtual FName GetName() const override { return ClassFName; }
+        virtual FString GetName() const override { return Name; }
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;
@@ -331,8 +332,7 @@ namespace UnLua
 
     protected:
         FString Name;
-        FName ClassFName;
-        FName SuperClassName;
+        FString SuperClassName;
         TArray<IExportedProperty*> Properties;
         TArray<IExportedFunction*> Functions;
         TArray<IExportedFunction*> GlueFunctions;

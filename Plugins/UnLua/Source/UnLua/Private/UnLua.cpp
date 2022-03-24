@@ -22,7 +22,6 @@ DEFINE_STAT(STAT_UnLua_OutParmRec_Memory);
 
 namespace UnLua
 {
-
     /**
      * Lua stack index wrapper
      */

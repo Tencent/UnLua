@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaCore.h"
+
+#include "Binding.h"
 #include "LuaDynamicBinding.h"
 #include "LuaContext.h"
 #include "UnLua.h"
@@ -450,7 +452,7 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
     int32 Type = LUA_TNIL;
 
     // exported non reflected class only need check metatable
-    const UnLua::IExportedClass* ExportedClass = GLuaCxt->FindExportedNonReflectedClass(MetatableName);
+    const UnLua::IExportedClass* ExportedClass = UnLua::FindExportedNonReflectedClass(MetatableName);
     if (ExportedClass)
     {
         Type = luaL_getmetatable(L, MetatableName);
@@ -1928,7 +1930,7 @@ static void RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
     ClassDescChain.Insert((FClassDesc*)ClassDesc, 0);
 
     TArray<UnLua::IExportedClass*> ExportedClasses;
-    UnLua::IExportedClass *ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain.Last()->GetName());   // find statically exported stuff...
+    UnLua::IExportedClass *ExportedClass = UnLua::FindExportedReflectedClass(*ClassDescChain.Last()->GetName());   // find statically exported stuff...
     if (ExportedClass)
     {
         ExportedClasses.Add(ExportedClass);
@@ -1937,7 +1939,7 @@ static void RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
 
     for (int32 i = ClassDescChain.Num() - 2; i > -1; --i)
     {
-        ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain[i]->GetName());                          // find statically exported stuff...
+        ExportedClass = UnLua::FindExportedReflectedClass(*ClassDescChain[i]->GetName());                          // find statically exported stuff...
         if (ExportedClass)
         {
             ExportedClasses.Add(ExportedClass);
@@ -1964,6 +1966,9 @@ FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *Super
         ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
     }
 
+    if (!ClassDesc)
+        return nullptr;
+    
     RegisterClassInternal(L, ClassDesc);
 
     return ClassDesc;
@@ -2155,58 +2160,6 @@ int32 Global_Print(lua_State *L)
         UKismetSystemLibrary::PrintString(GWorld, StrLog, false, false);
     }
     return 0;
-}
-
-int LoadFromBuiltinLibs(lua_State *L)
-{
-    TCHAR* Name = UTF8_TO_TCHAR(lua_tostring(L, 1));
-    const auto Ctx = FLuaContext::Create();
-    const auto BuiltinLoaders = Ctx->GetBuiltinLoaders();
-    const auto Loader = BuiltinLoaders.Find(Name);
-    if(!Loader)
-        return 0;
-    lua_pushcfunction(L, *Loader);
-    return 1;
-}
-
-int LoadFromCustomLoader(lua_State *L)
-{
-    if(!FUnLuaDelegates::CustomLoadLuaFile.IsBound())
-        return 0;
-
-    const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
-    
-    TArray<uint8> Data;
-    FString FullFilePath;
-    if(!FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, FullFilePath))
-        return 0;
-
-    const auto Chunk = (const char*)Data.GetData();
-    const auto ChunkName = TCHAR_TO_UTF8(*FileName);
-    if(!UnLua::LoadChunk(L, Chunk, Data.Num(), ChunkName))
-        return luaL_error(L, "file loading from custom loader error");
-
-    return 1;
-}
-
-int LoadFromFileSystem(lua_State *L)
-{
-    FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
-    FileName.ReplaceInline(TEXT("."), TEXT("/"));
-    const auto RelativePath = FString::Printf(TEXT("%s.lua"), *FileName);
-    const auto FullPath = GetFullPathFromRelativePath(RelativePath);
-    TArray<uint8> Data;
-    if(!FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
-        return 0;
-
-    const auto SkipLen = 3 < Data.Num() && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
-    const auto ChunkName = TCHAR_TO_UTF8(*RelativePath);
-    const auto Chunk = (const char*)(Data.GetData() + SkipLen);
-    const auto ChunkSize = Data.Num() - SkipLen;
-    if(!UnLua::LoadChunk(L, Chunk, ChunkSize, ChunkName))
-        return luaL_error(L, "file loading from file system error");
-
-    return 1;
 }
 
 int32 Global_AddToClassWhiteSet(lua_State* L)

@@ -50,63 +50,63 @@ int32 UUnLuaIntelliSenseCommandlet::Main(const FString &Params)
     TArray<FString> FuncBlackList;
     FuncBlackList.Add("OnModuleHotfixed");
 
-    Context = FLuaContext::Create();
-    const TMap<FName, UnLua::IExportedClass*> &ExportedReflectedClasses = Context->GetExportedReflectedClasses();
-    const TMap<FName, UnLua::IExportedClass*> &ExportedNonReflectedClasses = Context->GetExportedNonReflectedClasses();
-    const TArray<UnLua::IExportedEnum*> &ExportedEnums = Context->GetExportedEnums();
-    const TArray<UnLua::IExportedFunction*> &ExportedFunctions = Context->GetExportedFunctions();
-
-    FString GeneratedFileContent;
-    FString ModuleName(TEXT("StaticallyExports"));
-
-    // reflected classes
-    for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedReflectedClasses); It; ++It)
-    {
-        if (ClassBlackList.Find(It.Key()) != INDEX_NONE)
-        {
-            continue;
-        }
-
-        It.Value()->GenerateIntelliSense(GeneratedFileContent);
-        SaveFile(ModuleName, It.Key().ToString(), GeneratedFileContent);
-    }
-
-    // non-reflected classes
-    for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedNonReflectedClasses); It; ++It)
-    {
-        if (ClassBlackList.Find(It.Key()) != INDEX_NONE)
-        {
-            continue;
-        }
-
-        It.Value()->GenerateIntelliSense(GeneratedFileContent);
-        SaveFile(ModuleName, It.Key().ToString(), GeneratedFileContent);
-    }
-
-    // enums
-    for (UnLua::IExportedEnum *Enum : ExportedEnums)
-    {
-        if (EnumBlackList.Find(Enum->GetName()) != INDEX_NONE)
-        {
-            continue;
-        }
-
-        Enum->GenerateIntelliSense(GeneratedFileContent);
-        SaveFile(ModuleName, Enum->GetName(), GeneratedFileContent);
-    }
-
-    // global functions
-    GeneratedFileContent.Empty();
-    for (UnLua::IExportedFunction *Function : ExportedFunctions)
-    {
-        if (FuncBlackList.Find(Function->GetName()) != INDEX_NONE)
-        {
-            continue;
-        }
-
-        Function->GenerateIntelliSense(GeneratedFileContent);
-    }
-    SaveFile(ModuleName, TEXT("GlobalFunctions"), GeneratedFileContent);
+    // Context = FLuaContext::Create();
+    // const TMap<FName, UnLua::IExportedClass*> &ExportedReflectedClasses = Context->GetExportedReflectedClasses();
+    // const TMap<FName, UnLua::IExportedClass*> &ExportedNonReflectedClasses = Context->GetExportedNonReflectedClasses();
+    // const TArray<UnLua::IExportedEnum*> &ExportedEnums = Context->GetExportedEnums();
+    // const TArray<UnLua::IExportedFunction*> &ExportedFunctions = Context->GetExportedFunctions();
+    //
+    // FString GeneratedFileContent;
+    // FString ModuleName(TEXT("StaticallyExports"));
+    //
+    // // reflected classes
+    // for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedReflectedClasses); It; ++It)
+    // {
+    //     if (ClassBlackList.Find(It.Key()) != INDEX_NONE)
+    //     {
+    //         continue;
+    //     }
+    //
+    //     It.Value()->GenerateIntelliSense(GeneratedFileContent);
+    //     SaveFile(ModuleName, It.Key().ToString(), GeneratedFileContent);
+    // }
+    //
+    // // non-reflected classes
+    // for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedNonReflectedClasses); It; ++It)
+    // {
+    //     if (ClassBlackList.Find(It.Key()) != INDEX_NONE)
+    //     {
+    //         continue;
+    //     }
+    //
+    //     It.Value()->GenerateIntelliSense(GeneratedFileContent);
+    //     SaveFile(ModuleName, It.Key().ToString(), GeneratedFileContent);
+    // }
+    //
+    // // enums
+    // for (UnLua::IExportedEnum *Enum : ExportedEnums)
+    // {
+    //     if (EnumBlackList.Find(Enum->GetName()) != INDEX_NONE)
+    //     {
+    //         continue;
+    //     }
+    //
+    //     Enum->GenerateIntelliSense(GeneratedFileContent);
+    //     SaveFile(ModuleName, Enum->GetName(), GeneratedFileContent);
+    // }
+    //
+    // // global functions
+    // GeneratedFileContent.Empty();
+    // for (UnLua::IExportedFunction *Function : ExportedFunctions)
+    // {
+    //     if (FuncBlackList.Find(Function->GetName()) != INDEX_NONE)
+    //     {
+    //         continue;
+    //     }
+    //
+    //     Function->GenerateIntelliSense(GeneratedFileContent);
+    // }
+    // SaveFile(ModuleName, TEXT("GlobalFunctions"), GeneratedFileContent);
 
     return 0;
 }

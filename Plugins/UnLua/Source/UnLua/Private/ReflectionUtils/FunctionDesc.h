@@ -39,7 +39,7 @@ public:
      *
      * @return - true if the function is valid, false otherwise
      */
-    FORCEINLINE bool IsValid() const { return Function && GLuaCxt->IsUObjectValid(Function); }
+    FORCEINLINE bool IsValid() const { return Function && UnLua::IsUObjectValid(Function); }
 
     /**
      * Test if this function has return property
