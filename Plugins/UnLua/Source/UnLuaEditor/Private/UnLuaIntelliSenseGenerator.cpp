@@ -15,7 +15,6 @@
 #include "UnLuaIntelliSenseGenerator.h"
 #include "AssetRegistryModule.h"
 #include "CoreUObject.h"
-#include "ToolMenus.h"
 #include "UnLua.h"
 #include "UnLuaEditorSettings.h"
 #include "UnLuaIntelliSense.h"
