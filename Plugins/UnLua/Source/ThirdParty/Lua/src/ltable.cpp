@@ -38,6 +38,8 @@
 #include "ltable.h"
 #include "lvm.h"
 
+#pragma warning(disable:4310)
+#pragma warning(disable:4334)
 
 /*
 ** MAXABITS is the largest integer such that MAXASIZE fits in an

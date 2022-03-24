@@ -21,6 +21,7 @@
 #include "lstate.h"
 #include "lstring.h"
 
+#pragma warning(disable:4310)
 
 /*
 ** Maximum size for string table.

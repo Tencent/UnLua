@@ -26,6 +26,7 @@
 #include "ltable.h"
 #include "ltm.h"
 
+#pragma warning(disable:4334)
 
 /*
 ** Maximum number of elements to sweep in each single step.

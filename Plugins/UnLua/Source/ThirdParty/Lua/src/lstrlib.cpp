@@ -25,6 +25,7 @@
 #include "lauxlib.h"
 #include "lualib.h"
 
+#pragma warning(disable:4310)
 
 /*
 ** maximum number of captures that a pattern can do during
