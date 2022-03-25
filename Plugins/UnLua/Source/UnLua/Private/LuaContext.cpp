@@ -137,7 +137,7 @@ bool FLuaContext::IsEnable() const
  */
 bool FLuaContext::TryToBindLua(UObject* Object)
 {
-    if (!bEnable || !IsUObjectValid(Object))
+    if (!bEnable || !UnLua::IsUObjectValid(Object))
         return false;
 
     return Env->TryBind(Object);
@@ -466,16 +466,6 @@ void FLuaContext::OnUObjectArrayShutdown()
 }
 #endif
 
-/**
- * Robust method to verify uobject
- */
-bool FLuaContext::IsUObjectValid(UObjectBase* UObjPtr)
-{
-    if (!UObjPtr)
-        return false;
-    return (UObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0;
-}
-
 UUnLuaManager* FLuaContext::GetUnLuaManager()
 {
     return Env ? Env->GetManager() : nullptr;
@@ -556,7 +546,6 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
             CleanupThreads();                                   // lua thread
 
             LibraryNames.Empty();                               // metatables and lua module
-            ModuleNames.Empty();
 
             FDelegateHelper::Cleanup(bFullCleanup);                 // clean up delegates
 

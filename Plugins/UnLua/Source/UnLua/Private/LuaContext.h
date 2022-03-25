@@ -39,8 +39,6 @@ public:
     bool TryToBindLua(UObject *Object);
 
     void AddLibraryName(const TCHAR *LibraryName) { LibraryNames.Add(LibraryName); }
-    void AddModuleName(const TCHAR *ModuleName) { ModuleNames.AddUnique(ModuleName); }
-    void AddBuiltinLoader(const TCHAR *Name, int (*Loader)(lua_State *)) { Env->AddBuiltInLoader(Name, Loader); }
 
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 23)
     void OnWorldTickStart(UWorld *World, ELevelTick TickType, float DeltaTime);
@@ -74,8 +72,6 @@ public:
 	virtual void OnUObjectArrayShutdown() override;
 #endif
 
-	bool IsUObjectValid(UObjectBase* UObjPtr);
-
     UUnLuaManager* GetUnLuaManager();
 
 private:
@@ -94,7 +90,6 @@ private:
     FDelegateHandle OnPostGarbageCollectHandle;
 
     TArray<FString> LibraryNames;       // metatables for classes/enums
-    TArray<FString> ModuleNames;        // required Lua modules
 
     //!!!Fix!!!
     //thread need refine

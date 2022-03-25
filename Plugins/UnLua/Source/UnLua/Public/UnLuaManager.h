@@ -18,14 +18,21 @@
 #include "UnLuaCompatibility.h"
 #include "UnLuaManager.generated.h"
 
+namespace UnLua
+{
+    class FLuaEnv;
+}
+
 UCLASS()
 class UNLUA_API UUnLuaManager : public UObject
 {
     GENERATED_BODY()
 
 public:
+
+    UnLua::FLuaEnv* Env;
+    
     UUnLuaManager();
-    ~UUnLuaManager();
 
     bool Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = INDEX_NONE);
 

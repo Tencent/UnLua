@@ -48,17 +48,8 @@ UUnLuaManager::UUnLuaManager()
     InputGestureFunc = Class->FindFunctionByName(FName("InputGesture"));
     AnimNotifyFunc = Class->FindFunctionByName(FName("TriggerAnimNotify"));
 
-    PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([this]()
-    {
-        this->PostGarbageCollect();
-    });
+    FCoreUObjectDelegates::GetPostGarbageCollect().AddUObject(this, &UUnLuaManager::PostGarbageCollect);
 }
-
-UUnLuaManager::~UUnLuaManager()
-{
-    FCoreUObjectDelegates::GetPostGarbageCollect().Remove(PostGarbageCollectHandle);
-}
-
 
 /**
  * Bind a Lua module for a UObject
@@ -76,7 +67,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
 #endif
     
     bool bSuccess = true;
-    lua_State *L = *GLuaCxt;
+    lua_State *L = Env->GetMainState();
 
     bool bMultipleLuaBind = false;
     UClass** BindedClass = Classes.Find(InModuleName);
@@ -123,8 +114,6 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
         }
 
         FString RealModuleName = *ModuleNames.Find(Class);
-
-        GLuaCxt->AddModuleName(*RealModuleName);                                       // record this required module
 
         // create a Lua instance for this UObject
         int32 ObjectRef = NewLuaObject(L, Object, bDerivedClassBinded ? Class : nullptr, TCHAR_TO_UTF8(*RealModuleName));
@@ -226,14 +215,14 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
         if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
         {
             Classes.Remove(ModuleName);
-            ClearLoadedModule(*GLuaCxt, TCHAR_TO_UTF8(*ModuleName));
+            ClearLoadedModule(Env->GetMainState(), TCHAR_TO_UTF8(*ModuleName));
         }
         OverridableFunctions.Remove(Class);
         DuplicatedFunctions.Remove(Class);
     }
     else
     {
-        DeleteLuaObject(*GLuaCxt, (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
+        DeleteLuaObject(Env->GetMainState(), (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
     }
 }
 
@@ -541,11 +530,6 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
  */
 void UUnLuaManager::OnActorSpawned(AActor *Actor)
 {
-    if (!GLuaCxt->IsEnable())
-    {
-        return;
-    }
-
     Actor->OnDestroyed.AddDynamic(this, &UUnLuaManager::OnActorDestroyed);      // bind a callback for destroying actor
 }
 
@@ -554,11 +538,6 @@ void UUnLuaManager::OnActorSpawned(AActor *Actor)
  */
 void UUnLuaManager::OnActorDestroyed(AActor *Actor)
 {
-    if (!GLuaCxt->IsEnable())
-    {
-        return;
-    }
-
     int32 Num = AttachedActors.Remove(Actor);
     if (Num > 0)
     {

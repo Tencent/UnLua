@@ -32,6 +32,7 @@ namespace UnLua
         RegisterDelegates();
 
         Manager = NewObject<UUnLuaManager>();
+        Manager->Env = this;
         Manager->AddToRoot();
 
         L = lua_newstate(GetLuaAllocator(), nullptr);
@@ -401,14 +402,14 @@ namespace UnLua
         }
     }
 
-    void FLuaEnv::RegisterDelegates()
+    FORCEINLINE void FLuaEnv::RegisterDelegates()
     {
         OnAsyncLoadingFlushUpdateHandle = FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaEnv::OnAsyncLoadingFlushUpdate);
         GUObjectArray.AddUObjectCreateListener(this);
         GUObjectArray.AddUObjectDeleteListener(this);
     }
 
-    void FLuaEnv::UnRegisterDelegates()
+    FORCEINLINE void FLuaEnv::UnRegisterDelegates()
     {
         FCoreDelegates::OnAsyncLoadingFlushUpdate.Remove(OnAsyncLoadingFlushUpdateHandle);
         GUObjectArray.RemoveUObjectCreateListener(this);
