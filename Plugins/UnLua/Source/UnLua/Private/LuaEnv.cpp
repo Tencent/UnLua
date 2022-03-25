@@ -271,7 +271,7 @@ namespace UnLua
         return DefaultLuaAllocator;
     }
 
-    void FLuaEnv::AddBuiltInLoader(const FString Name, lua_CFunction Loader)
+    void FLuaEnv::AddBuiltInLoader(const FString Name, const lua_CFunction Loader)
     {
         BuiltinLoaders.Add(Name, Loader);
     }

@@ -301,7 +301,7 @@ void FDelegateHelper::Remove(FMulticastDelegateType *ScriptDelegate, UObject *Ob
     if (CallbackFuncPtr && *CallbackFuncPtr)
     {
 
-        if (GLuaCxt->IsUObjectValid((UObjectBase*)Object))
+        if (UnLua::IsUObjectValid((UObjectBase*)Object))
         {
             FMulticastDelegateProperty** Property = MulticastDelegate2Property.Find(ScriptDelegate);
             if ((!Property)

@@ -140,7 +140,7 @@ FEnumDesc* FReflectionRegistry::FindEnum(const char* InName)
         }
         else
         {
-            if (!GLuaCxt->IsUObjectValid((*EnumDesc)->GetEnum()))
+            if (!UnLua::IsUObjectValid((*EnumDesc)->GetEnum()))
             {
                 UnRegisterEnum(*EnumDesc);
                 EnumDesc = nullptr;
@@ -188,7 +188,7 @@ FEnumDesc* FReflectionRegistry::RegisterEnum(const char* InName)
 
 FEnumDesc* FReflectionRegistry::RegisterEnum(UEnum *InEnum)
 {
-    if (!GLuaCxt->IsUObjectValid(InEnum))
+    if (!UnLua::IsUObjectValid(InEnum))
     {
         return nullptr;
     }

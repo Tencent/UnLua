@@ -91,7 +91,7 @@ static int32 UObject_IsValid(lua_State *L)
     }
     
     UObject* Object = UnLua::GetUObject(L, 1);
-    const bool bValid = GLuaCxt->IsUObjectValid(Object) && IsValid(Object);
+    const bool bValid = UnLua::IsUObjectValid(Object) && IsValid(Object);
     lua_pushboolean(L, bValid);
     return 1;
 }
@@ -206,14 +206,14 @@ static int32 UObject_IsA(lua_State *L)
     }
 
     UObject *Object = UnLua::GetUObject(L, 1);
-    if (!GLuaCxt->IsUObjectValid(Object))
+    if (!UnLua::IsUObjectValid(Object))
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
     UObject* ClassObject = UnLua::GetUObject(L, 2);
-    if (!GLuaCxt->IsUObjectValid(ClassObject))
+    if (!UnLua::IsUObjectValid(ClassObject))
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;

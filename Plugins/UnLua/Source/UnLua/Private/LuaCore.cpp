@@ -495,7 +495,7 @@ FString GetMetatableName(const UObjectBaseUtility* Object)
 {   
     static TMap<FString, FString> Class2Metatable;
 
-	if (!GLuaCxt->IsUObjectValid((UObjectBase*)Object))
+	if (!UnLua::IsUObjectValid((UObjectBase*)Object))
 	{
 		return "";
 	}
@@ -1037,7 +1037,7 @@ void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object)
  */
 void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object)
 {
-    if (GLuaCxt->IsUObjectValid(Object))
+    if (UnLua::IsUObjectValid(Object))
     {   
 #if UNLUA_ENABLE_DEBUG != 0
         UE_LOG(LogUnLua, Log, TEXT("UObject_Delete : %s,%p!"), *Object->GetName(), Object);

@@ -40,7 +40,7 @@ FPropertyDesc::~FPropertyDesc()
 bool FPropertyDesc::IsValid() const
 {
 #if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
-    return GLuaCxt->IsUObjectValid(Property);
+    return UnLua::IsUObjectValid(Property);
 #else
     bool bValid = false;
     if (Property)
@@ -51,23 +51,23 @@ bool FPropertyDesc::IsValid() const
         {
             case CPT_Interface:
             {
-                bValid = GLuaCxt->IsUObjectValid(((FInterfaceProperty*)Property)->InterfaceClass);
+                bValid = UnLua::IsUObjectValid(((FInterfaceProperty*)Property)->InterfaceClass);
                 break;
             }
             case CPT_Delegate:
             {
-                bValid = GLuaCxt->IsUObjectValid(((FDelegateProperty*)Property)->SignatureFunction);
+                bValid = UnLua::IsUObjectValid(((FDelegateProperty*)Property)->SignatureFunction);
                 break;
             }
             case CPT_MulticastDelegate:
             case CPT_MulticastSparseDelegate:
             {
-                bValid = GLuaCxt->IsUObjectValid(((FMulticastDelegateProperty*)Property)->SignatureFunction);
+                bValid = UnLua::IsUObjectValid(((FMulticastDelegateProperty*)Property)->SignatureFunction);
                 break;
             }
             case CPT_Struct:
             {
-                bValid = GLuaCxt->IsUObjectValid(((FStructProperty*)Property)->Struct);
+                bValid = UnLua::IsUObjectValid(((FStructProperty*)Property)->Struct);
                 break;
             }
             case CPT_ObjectReference:
@@ -75,7 +75,7 @@ bool FPropertyDesc::IsValid() const
             case CPT_LazyObjectReference:
             case CPT_SoftObjectReference:
             {
-                bValid = GLuaCxt->IsUObjectValid(((FObjectPropertyBase*)Property)->PropertyClass);
+                bValid = UnLua::IsUObjectValid(((FObjectPropertyBase*)Property)->PropertyClass);
                 break;
             }
         }

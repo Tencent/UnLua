@@ -270,7 +270,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         --NumParams;
     }
 
-    if (!GLuaCxt->IsUObjectValid(Object))
+    if (!UnLua::IsUObjectValid(Object))
     {
         UE_LOG(LogUnLua, Warning, TEXT("!!! NULL target object for UFunction '%s'! Check the usage of ':' and '.'!"), *FuncName);
         return 0;

@@ -332,7 +332,7 @@ namespace UnLua
      */
     int32 PushUObject(lua_State *L, UObjectBaseUtility *Object, bool bAddRef)
     {
-        if (!GLuaCxt->IsUObjectValid(Object))
+        if (!UnLua::IsUObjectValid(Object))
         {
             lua_pushnil(L);
             return 1;
@@ -379,7 +379,7 @@ namespace UnLua
         return ClassDesc && ClassDesc->IsClass() ? (UObject*)GetCppInstance(L, Index) : nullptr;
 #else*/
         UObject* Object = (UObject*)GetCppInstance(L, Index);
-        if (!GLuaCxt->IsUObjectValid(Object))
+        if (!UnLua::IsUObjectValid(Object))
         {
             return nullptr;
         }
