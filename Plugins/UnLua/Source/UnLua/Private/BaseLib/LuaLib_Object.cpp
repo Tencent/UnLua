@@ -244,7 +244,7 @@ static int32 UObject_Release(lua_State *L)
     {
         UObject* Object = UnLua::GetUObject(L, -1);
         if (Object)
-            GLuaCxt->GetUnLuaManager()->ReleaseAttachedObjectLuaRef(Object);
+            UnLua::FLuaEnv::FindEnvChecked(L).UnRef(Object);
     }
 
     return 0;

@@ -518,17 +518,6 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
  */
 void UUnLuaManager::OnMapLoaded(UWorld *World)
 {
-    /*for (AActor *Actor : AttachedActors)
-    {	
-		if (GLuaCxt->IsUObjectValid(Actor))
-		{
-			if (!Actor->OnDestroyed.IsAlreadyBound(this, &UUnLuaManager::OnActorDestroyed))
-			{
-				Actor->OnDestroyed.AddDynamic(this, &UUnLuaManager::OnActorDestroyed);      // bind a callback for destroying actor
-			}
-		}
-    }*/
-
     ENetMode NetMode = World->GetNetMode();
     if (NetMode == NM_DedicatedServer)
     {

@@ -27,7 +27,9 @@ namespace UnLua
     public:
         FLuaEnv();
 
-        virtual ~FLuaEnv();
+        virtual ~FLuaEnv() override;
+
+        static FLuaEnv& FindEnvChecked(const lua_State* L);
 
         // TODO: refactor: move this to constructor
         void Initialize();
@@ -43,6 +45,11 @@ namespace UnLua
         virtual bool DoString(const FString& Chunk, const FString& ChunkName = "chunk");
 
         virtual void GC();
+
+        /**
+         * 强制解除对象在Lua侧的引用
+         */
+        void UnRef(UObject* Object) const;
 
         lua_State* GetMainState() const { return L; }
 

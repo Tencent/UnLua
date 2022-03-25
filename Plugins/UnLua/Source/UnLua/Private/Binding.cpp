@@ -22,6 +22,7 @@ namespace UnLua
         TArray<IExportedFunction*> Functions;
         TMap<FString, IExportedClass*> ReflectedClasses;
         TMap<FString, IExportedClass*> NonReflectedClasses;
+        TMap<FString, TSharedPtr<ITypeInterface>> Types;
     };
 
     FExported* GetExported()
@@ -33,15 +34,9 @@ namespace UnLua
     void ExportClass(IExportedClass* Class)
     {
         if (Class->IsReflected())
-        {
             GetExported()->ReflectedClasses.Add(Class->GetName(), Class);
-            UE_LOG(LogTemp, Log, TEXT("!!!!!!!RRRR------------ %i"), GetExported()->ReflectedClasses.Num())
-        }
         else
-        {
             GetExported()->NonReflectedClasses.Add(Class->GetName(), Class);
-            UE_LOG(LogTemp, Log, TEXT("!!!!!!!NNNNN------------ %i"), GetExported()->NonReflectedClasses.Num())
-        }
     }
 
     void ExportEnum(IExportedEnum* Enum)
@@ -52,6 +47,13 @@ namespace UnLua
     void ExportFunction(IExportedFunction* Function)
     {
         GetExported()->Functions.Add(Function);
+    }
+
+    void AddType(FString Name, TSharedPtr<ITypeInterface> TypeInterface)
+    {
+        if (!ensure(!Name.IsEmpty() && TypeInterface))
+            return;
+        GetExported()->Types.Add(Name, TypeInterface);
     }
 
     TMap<FString, IExportedClass*> GetExportedReflectedClasses()
@@ -95,5 +97,10 @@ namespace UnLua
     {
         const auto Class = GetExported()->NonReflectedClasses.FindRef(Name);
         return Class;
+    }
+
+    TSharedPtr<ITypeInterface> FindTypeInterface(FString Name)
+    {
+        return GetExported()->Types.FindRef(Name);
     }
 }

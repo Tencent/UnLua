@@ -33,12 +33,6 @@ namespace UnLua
             return false;
         return (ObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0;
     }
-    
-    bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->AddTypeInterface(Name, TypeInterface);
-    }
 
     lua_State* CreateState()
     {

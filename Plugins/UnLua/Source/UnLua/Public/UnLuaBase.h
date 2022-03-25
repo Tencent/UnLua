@@ -143,16 +143,6 @@ namespace UnLua
 #endif
     };
 
-
-    /**
-     * Add type info
-     *
-     * @param Name - name of the type
-     * @param TypeInterface - instance of the type info
-     * @return - true if type interface is added successfully, false otherwise
-     */
-    UNLUA_API bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface);
-
     /**
      * Create Lua state
      *

@@ -133,33 +133,6 @@ bool FLuaContext::IsEnable() const
 }
 
 /**
- * Add a type interface
- */
-bool FLuaContext::AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface> TypeInterface)
-{
-    if (Name == NAME_None || !TypeInterface)
-    {
-        return false;
-    }
-
-    TSharedPtr<UnLua::ITypeInterface>* TypeInterfacePtr = TypeInterfaces.Find(Name);
-    if (!TypeInterfacePtr)
-    {
-        TypeInterfaces.Add(Name, TypeInterface);
-    }
-    return true;
-}
-
-/**
- * Find a type interface
- */
-TSharedPtr<UnLua::ITypeInterface> FLuaContext::FindTypeInterface(FName Name)
-{
-    TSharedPtr<UnLua::ITypeInterface>* TypeInterfacePtr = TypeInterfaces.Find(Name);
-    return TypeInterfacePtr ? *TypeInterfacePtr : TSharedPtr<UnLua::ITypeInterface>();
-}
-
-/**
  * Try to bind Lua module for a UObject
  */
 bool FLuaContext::TryToBindLua(UObject* Object)
@@ -521,11 +494,9 @@ FLuaContext::~FLuaContext()
     if (Env)
         Env = nullptr;
 
-#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 23
     // when exiting, remove listeners for creating/deleting UObject
     GUObjectArray.RemoveUObjectCreateListener(GLuaCxt);
     GUObjectArray.RemoveUObjectDeleteListener(GLuaCxt);
-#endif
 
     FScopeLock Lock(&Async2MainCS);
 

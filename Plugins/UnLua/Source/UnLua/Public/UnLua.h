@@ -157,14 +157,6 @@ namespace UnLua
     };
 
     /**
-     * Get instance of type interface
-     *
-     * @return - type interface
-     */
-    template <typename T> TSharedPtr<ITypeInterface> GetTypeInterface();
-
-
-    /**
      * Push values to the stack.
      */
     template <typename T> int32 Push(lua_State *L, T *V, bool bCopy = false);
@@ -757,7 +749,7 @@ namespace UnLua
     { \
         FTypeInterface##Name() \
         { \
-            UnLua::AddTypeInterface(#Name, UnLua::GetTypeInterface<Type>()); \
+            UnLua::AddType(#Name, UnLua::GetTypeInterface<Type>()); \
         } \
     } TypeInterface##Name;
 

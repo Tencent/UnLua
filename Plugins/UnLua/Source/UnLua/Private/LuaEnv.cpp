@@ -26,7 +26,7 @@ namespace UnLua
     constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags::AsyncLoading | EInternalObjectFlags::Async;
 
     TMap<lua_State*, FLuaEnv*> FLuaEnv::AllEnvs;
-    
+
     FLuaEnv::FLuaEnv()
     {
         RegisterDelegates();
@@ -111,6 +111,11 @@ namespace UnLua
         Manager = nullptr;
 
         UnRegisterDelegates();
+    }
+
+    FLuaEnv& FLuaEnv::FindEnvChecked(const lua_State* L)
+    {
+        return *AllEnvs.FindChecked(L);
     }
 
     void FLuaEnv::Initialize()
@@ -266,6 +271,11 @@ namespace UnLua
         lua_gc(L, LUA_GCCOLLECT, 0);
     }
 
+    void FLuaEnv::UnRef(UObject* Object) const
+    {
+        Manager->ReleaseAttachedObjectLuaRef(Object);
+    }
+    
     lua_Alloc FLuaEnv::GetLuaAllocator() const
     {
         return DefaultLuaAllocator;
@@ -275,7 +285,7 @@ namespace UnLua
     {
         BuiltinLoaders.Add(Name, Loader);
     }
-
+    
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)
     {
         const auto Env = AllEnvs.FindRef(L);

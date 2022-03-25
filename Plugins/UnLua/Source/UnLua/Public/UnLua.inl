@@ -243,14 +243,6 @@ namespace UnLua
         }
     };
 
-    template <typename T>
-    FORCEINLINE TSharedPtr<ITypeInterface> GetTypeInterface()
-    {
-        static TSharedPtr<ITypeInterface> TypeInterface(new TTypeInterface<T>);
-        return TypeInterface;
-    }
-
-
     /**
      * Helper for pointer operation
      */

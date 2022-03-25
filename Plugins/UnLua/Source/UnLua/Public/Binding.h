@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
-#include <array>
-#include <vector>
 
 #include "UnLuaBase.h"
 
@@ -25,6 +23,15 @@ namespace UnLua
     UNLUA_API void ExportEnum(IExportedEnum* Enum);
 
     UNLUA_API void ExportFunction(IExportedFunction* Function);
+
+    UNLUA_API void AddType(FString Name, TSharedPtr<ITypeInterface> TypeInterface);
+
+    template <typename T>
+    FORCEINLINE TSharedPtr<ITypeInterface> GetTypeInterface()
+    {
+        static TSharedPtr<ITypeInterface> TypeInterface(new TTypeInterface<T>);
+        return TypeInterface;
+    }
 
     UNLUA_API TMap<FString, IExportedClass*> GetExportedReflectedClasses();
 
@@ -39,4 +46,6 @@ namespace UnLua
     UNLUA_API IExportedClass* FindExportedReflectedClass(FString Name);
 
     UNLUA_API IExportedClass* FindExportedNonReflectedClass(FString Name);
+
+    UNLUA_API TSharedPtr<ITypeInterface> FindTypeInterface(FString Name);
 }

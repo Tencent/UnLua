@@ -2018,7 +2018,7 @@ int32 Global_GetUProperty(lua_State *L)
 
             UObject* Object = UnLua::GetUObject(L, 1);
             if ((bValid)
-                && (GLuaCxt->IsUObjectValid(Object)))
+                && (UnLua::IsUObjectValid(Object)))
             {
                 Property->Read(L, Object, false);           // get UProperty value
                 return 1;
@@ -2051,7 +2051,7 @@ int32 Global_SetUProperty(lua_State *L)
 
             UObject* Object = UnLua::GetUObject(L, 1);
             if ((bValid)
-                && (GLuaCxt->IsUObjectValid(Object)))
+                && (UnLua::IsUObjectValid(Object)))
             {
                 Property->Write(L, Object, 3);              // set UProperty value
             }
@@ -2779,7 +2779,7 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
                     }
                     else
                     {
-                        TypeInterface = GLuaCxt->FindTypeInterface(lua_tostring(L, -1));
+                        TypeInterface = UnLua::FindTypeInterface(lua_tostring(L, -1));
                     }
                 }
             }

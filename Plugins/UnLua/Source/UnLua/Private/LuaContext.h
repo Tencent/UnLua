@@ -34,7 +34,6 @@ public:
     void SetEnable(bool InEnable);
     bool IsEnable() const;
 
-    bool AddTypeInterface(FName Name, TSharedPtr<UnLua::ITypeInterface> TypeInterface);
     TSharedPtr<UnLua::ITypeInterface> FindTypeInterface(FName Name);
 
     bool TryToBindLua(UObject *Object);
@@ -96,8 +95,6 @@ private:
 
     TArray<FString> LibraryNames;       // metatables for classes/enums
     TArray<FString> ModuleNames;        // required Lua modules
-
-    TMap<FName, TSharedPtr<UnLua::ITypeInterface>> TypeInterfaces;      // registered type interfaces
 
     //!!!Fix!!!
     //thread need refine
