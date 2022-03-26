@@ -105,7 +105,7 @@ void FLuaContext::CreateState()
     if (Env)
         return;
 
-    Env = MakeUnique<UnLua::FLuaEnv>();
+    Env = MakeShared<UnLua::FLuaEnv>();
     Env->Initialize();
 }
 
@@ -246,27 +246,6 @@ void FLuaContext::PostLoadMapWithWorld(UWorld* World)
         return;
     }
 
-#if !WITH_EDITOR
-
-    // !!!Fix!!!
-    // gameinstance delay bind, muti lua state support
-    UGameInstance* GameInstance = World->GetGameInstance();
-    if (GameInstance
-        && (!GameInstances.Contains(GameInstance)))
-    {
-        TryToBindLua(GameInstance);                     // try to bind Lua module for GameInstance
-        GameInstances.Add(GameInstance);
-
-        // try to bind Lua module for UGameInstanceSubsystem
-        auto Subsystems= GameInstance->GetSubsystemArray<UGameInstanceSubsystem>();
-        for (auto Subsystem: Subsystems)
-        { 
-            TryToBindLua(Subsystem);
-        }
-    }
-
-#endif
-
     const auto Manager = Env->GetManager();
     Manager->OnMapLoaded(World);
 
@@ -315,58 +294,6 @@ void FLuaContext::PrePIEEnded(bool bIsSimulating)
 }
 
 #endif
-
-/**
- * Add a Lua coroutine and its reference in Lua registry
- */
-void FLuaContext::AddThread(lua_State* Thread, int32 ThreadRef)
-{
-    ThreadToRef.Add(Thread, ThreadRef);
-    RefToThread.Add(ThreadRef, Thread);
-}
-
-/**
- * Starts and resumes a Lua coroutine
- */
-void FLuaContext::ResumeThread(int32 ThreadRef)
-{
-    lua_State** ThreadPtr = RefToThread.Find(ThreadRef);
-    if (ThreadPtr)
-    {
-        lua_State* Thread = *ThreadPtr;
-        const auto L = Env->GetMainState();
-#if 504 == LUA_VERSION_NUM
-        int NResults = 0;
-        int32 State = lua_resume(Thread, L, 0, &NResults);
-#else
-        int32 State = lua_resume(Thread, L, 0);
-#endif
-        if (State == LUA_OK)
-        {
-            ThreadToRef.Remove(Thread);
-            RefToThread.Remove(ThreadRef);
-            luaL_unref(L, LUA_REGISTRYINDEX, ThreadRef);    // remove the reference if the coroutine finishes its execution
-        }
-    }
-}
-
-/**
- * Clean up all Lua coroutines
- */
-void FLuaContext::CleanupThreads()
-{
-    ThreadToRef.Empty();
-    RefToThread.Empty();
-}
-
-/**
- * Find a Lua coroutine
- */
-int32 FLuaContext::FindThread(lua_State* Thread)
-{
-    int32* ThreadRefPtr = ThreadToRef.Find(Thread);
-    return ThreadRefPtr ? *ThreadRefPtr : LUA_REFNIL;
-}
 
 /**
  * Callback when a UObjectBase (not full UObject) is created
@@ -541,21 +468,13 @@ void FLuaContext::Cleanup(bool bFullCleanup, UWorld* World)
 
             GObjectReferencer.Cleanup();                        // clean up object referencer
 
-            //!!!Fix!!!
-            //thread need refine
-            CleanupThreads();                                   // lua thread
-
-            LibraryNames.Empty();                               // metatables and lua module
-
             FDelegateHelper::Cleanup(bFullCleanup);                 // clean up delegates
 
             GPropertyCreator.Cleanup();                             // clean up dynamically created UProperties
 
             GReflectionRegistry.Cleanup();                      // clean up reflection registry
 
-            GameInstances.Empty();
             CandidateInputComponents.Empty();
-            FCoreUObjectDelegates::GetPostGarbageCollect().Remove(OnPostGarbageCollectHandle);
             FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
         }
 

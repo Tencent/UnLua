@@ -1720,8 +1720,6 @@ static bool RegisterEnumInternal(lua_State *L, FEnumDesc *EnumDesc)
             lua_setmetatable(L, -2);
 
             SetTableForClass(L, EnumName.Get());
-
-            GLuaCxt->AddLibraryName(*EnumDesc->GetName());
         }
         lua_pop(L, 1);
         return true;
@@ -1904,11 +1902,6 @@ static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDes
     }
 
     SetTableForClass(L, ClassName.Get());
-
-    if (!InClass->IsNative())
-    {
-        GLuaCxt->AddLibraryName(*StrClassName);
-    }
 
     return true;
 }
@@ -2492,19 +2485,12 @@ int32 Class_CallLatentFunction(lua_State *L)
         return 0;
     }
 
-    int32 ThreadRef = GLuaCxt->FindThread(L);
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto ThreadRef = Env.FindOrAddThread(L);
     if (ThreadRef == LUA_REFNIL)
     {
-        int32 Value = lua_pushthread(L);
-        if (Value == 1)
-        {
-            lua_pop(L, 1);
-            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Can't call latent action in main lua thread!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
-        }
-
-        ThreadRef = luaL_ref(L, LUA_REGISTRYINDEX);
-        GLuaCxt->AddThread(L, ThreadRef);
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Can't call latent action in main lua thread!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
     }
 
     int32 NumParams = lua_gettop(L);

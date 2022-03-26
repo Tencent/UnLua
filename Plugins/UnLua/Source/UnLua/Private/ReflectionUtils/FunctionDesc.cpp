@@ -21,6 +21,8 @@
 #include "DefaultParamCollection.h"
 #include "UnLua.h"
 #include "UnLuaLatentAction.h"
+#include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 /**
  * Function descriptor constructor
@@ -423,19 +425,19 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
         if (i == LatentPropertyIndex)
         {
             const int32 ThreadRef = *((int32*)Userdata);
+            void* ContainerPtr = (uint8*)Params;// + Property->GetOffset();
             if(lua_type(L, FirstParamIndex + ParamIndex) == LUA_TUSERDATA)
             {
                 // custom latent action info
                 FLatentActionInfo Info = UnLua::Get<FLatentActionInfo>(L, FirstParamIndex + ParamIndex, UnLua::TType<FLatentActionInfo>());
-                if(Info.Linkage == UUnLuaLatentAction::MAGIC_LEGACY_LINKAGE)
-                    Info.Linkage = ThreadRef;
-                Property->CopyValue(Params, &Info);
+                Property->CopyValue(ContainerPtr, &Info);
                 continue;
             }
 
             // bind a callback to the latent function
-            FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)GLuaCxt->GetUnLuaManager());
-            Property->CopyValue(Params, &LatentActionInfo);
+            const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+            FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)Env.GetManager());
+            Property->CopyValue(ContainerPtr, &LatentActionInfo);
             continue;
         }
         if (i == ReturnPropertyIndex)

@@ -15,6 +15,7 @@
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "CollisionHelper.h"
+#include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
 #include "lualib.h"
@@ -114,9 +115,18 @@ namespace UnLua
         UnRegisterDelegates();
     }
 
+    FLuaEnv* FLuaEnv::FindEnv(const lua_State* L)
+    {
+        if (!L)
+            return nullptr;
+
+        const auto MainThread = G(L)->mainthread;
+        return AllEnvs.FindRef(MainThread);
+    }
+
     FLuaEnv& FLuaEnv::FindEnvChecked(const lua_State* L)
     {
-        return *AllEnvs.FindChecked(L);
+        return *AllEnvs.FindChecked(G(L)->mainthread);
     }
 
     void FLuaEnv::Initialize()
@@ -276,7 +286,58 @@ namespace UnLua
     {
         Manager->ReleaseAttachedObjectLuaRef(Object);
     }
-    
+
+    int32 FLuaEnv::FindThread(const lua_State* Thread)
+    {
+        int32* ThreadRefPtr = ThreadToRef.Find(Thread);
+        return ThreadRefPtr ? *ThreadRefPtr : LUA_REFNIL;
+    }
+
+    void FLuaEnv::ResumeThread(int32 ThreadRef)
+    {
+        lua_State** ThreadPtr = RefToThread.Find(ThreadRef);
+        if (!ThreadPtr)
+            return;
+
+        lua_State* Thread = *ThreadPtr;
+#if 504 == LUA_VERSION_NUM
+        int NResults = 0;
+        int32 State = lua_resume(Thread, L, 0, &NResults);
+#else
+        int32 State = lua_resume(Thread, L, 0);
+#endif
+        if (State == LUA_OK)
+        {
+            ThreadToRef.Remove(Thread);
+            RefToThread.Remove(ThreadRef);
+            luaL_unref(L, LUA_REGISTRYINDEX, ThreadRef); // remove the reference if the coroutine finishes its execution
+        }
+    }
+
+    void FLuaEnv::AddThread(lua_State* Thread, int32 ThreadRef)
+    {
+        ThreadToRef.Add(Thread, ThreadRef);
+        RefToThread.Add(ThreadRef, Thread);
+    }
+
+    int32 FLuaEnv::FindOrAddThread(lua_State* Thread)
+    {
+        int32 ThreadRef = FindThread(Thread);
+        if (ThreadRef == LUA_REFNIL)
+        {
+            int32 Value = lua_pushthread(Thread);
+            if (Value == 1)
+            {
+                lua_pop(Thread, 1);
+                return LUA_REFNIL;
+            }
+
+            ThreadRef = luaL_ref(Thread, LUA_REGISTRYINDEX);
+            AddThread(Thread, ThreadRef);
+        }
+        return ThreadRef;
+    }
+
     lua_Alloc FLuaEnv::GetLuaAllocator() const
     {
         return DefaultLuaAllocator;
@@ -286,7 +347,7 @@ namespace UnLua
     {
         BuiltinLoaders.Add(Name, Loader);
     }
-    
+
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)
     {
         const auto Env = AllEnvs.FindRef(L);

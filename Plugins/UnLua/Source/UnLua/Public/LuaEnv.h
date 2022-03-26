@@ -29,6 +29,8 @@ namespace UnLua
 
         virtual ~FLuaEnv() override;
 
+        static FLuaEnv* FindEnv(const lua_State* L);
+
         static FLuaEnv& FindEnvChecked(const lua_State* L);
 
         // TODO: refactor: move this to constructor
@@ -53,6 +55,14 @@ namespace UnLua
 
         lua_State* GetMainState() const { return L; }
 
+        void AddThread(lua_State* Thread, int32 ThreadRef);
+
+        int32 FindOrAddThread(lua_State* Thread);
+
+        int32 FindThread(const lua_State* Thread);
+
+        void ResumeThread(int32 ThreadRef);
+
         UUnLuaManager* GetManager() const { return Manager; }
 
         void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
@@ -76,6 +86,8 @@ namespace UnLua
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
         FCriticalSection CandidatesLock;
         UUnLuaManager* Manager;
+        TMap<lua_State*, int32> ThreadToRef;
+        TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
 
         void AddSearcher(lua_CFunction Searcher, int Index) const;

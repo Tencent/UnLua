@@ -167,7 +167,7 @@ bool UUnLuaManager::OnModuleHotfixed(const TCHAR *InModuleName)
         UClass** ClassPtr = Classes.Find(_ModuleNames[i]);
         if (ClassPtr)
         {
-            lua_State* L = *GLuaCxt;
+            lua_State* L = Env->GetMainState();
             TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ModuleName(InModuleName);
 
             TSet<FName> LuaFunctions;
@@ -551,7 +551,7 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
  */
 void UUnLuaManager::OnLatentActionCompleted(int32 LinkID)
 {
-    GLuaCxt->ResumeThread(LinkID);              // resume a coroutine
+    Env->ResumeThread(LinkID); // resume a coroutine
 }
 
 /**
