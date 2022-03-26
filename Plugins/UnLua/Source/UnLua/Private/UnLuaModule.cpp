@@ -16,11 +16,19 @@
 #include "Modules/ModuleManager.h"
 #endif
 
+#include "UnLuaModule.h"
+
+#include "DefaultParamCollection.h"
 #include "LuaContext.h"
+#include "UnLuaDebugBase.h"
+#include "GameFramework/PlayerController.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaModule"
 
-class FUnLuaModule : public IModuleInterface
+
+class FUnLuaModule : public IUnLuaModule,
+                     public FUObjectArray::FUObjectCreateListener,
+                     public FUObjectArray::FUObjectDeleteListener
 {
 public:
     virtual void StartupModule() override
@@ -29,17 +37,143 @@ public:
         FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
 #endif
 
-        FLuaContext::Create();
-        GLuaCxt->RegisterDelegates();
+        FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FUnLuaModule::PostLoadMapWithWorld);
 
-#if AUTO_UNLUA_STARTUP && !WITH_EDITOR
-        GLuaCxt->SetEnable(true);
+        CreateDefaultParamCollection();
+        FLuaContext::Create();
+
+#if WITH_EDITOR
+        if (!IsRunningGame())
+        {
+            FEditorDelegates::PreBeginPIE.AddRaw(this, &FUnLuaModule::OnPreBeginPIE);
+            FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaModule::OnPostPIEStarted);
+            FEditorDelegates::EndPIE.AddRaw(this, &FUnLuaModule::OnEndPIE);
+        }
+#endif
+
+#if AUTO_UNLUA_STARTUP
+#if WITH_EDITOR
+        if (IsRunningGame())
+#endif
+            SetActive(true);
 #endif
     }
 
     virtual void ShutdownModule() override
     {
+        SetActive(false);
     }
+
+    virtual bool IsActive() override
+    {
+        return bIsActive;
+    }
+
+    virtual void SetActive(const bool bActive) override
+    {
+        if (bIsActive == bActive)
+            return;
+
+        if (bActive)
+        {
+            OnHandleSystemErrorHandle = FCoreDelegates::OnHandleSystemError.AddRaw(this, &FUnLuaModule::OnSystemError);
+            OnHandleSystemEnsureHandle = FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FUnLuaModule::OnSystemError);
+            GUObjectArray.AddUObjectCreateListener(this);
+            GUObjectArray.AddUObjectDeleteListener(this);
+            Env = MakeShared<UnLua::FLuaEnv>();
+            Env->Initialize();
+        }
+        else
+        {
+            FCoreDelegates::OnHandleSystemError.Remove(OnHandleSystemErrorHandle);
+            FCoreDelegates::OnHandleSystemEnsure.Remove(OnHandleSystemEnsureHandle);
+            GUObjectArray.RemoveUObjectCreateListener(this);
+            GUObjectArray.RemoveUObjectDeleteListener(this);
+            Env.Reset();
+        }
+
+        bIsActive = bActive;
+    }
+
+    virtual TSharedPtr<UnLua::FLuaEnv> GetEnv() override
+    {
+        return Env;
+    }
+
+private:
+    virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
+    {
+        if (!bIsActive)
+            return;
+
+        UObject* Object = (UObject*)ObjectBase;
+        Env->TryBind(Object);
+        Env->TryReplaceInputs(Object);
+    }
+
+    virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
+    {
+        if (!bIsActive)
+            return;
+    }
+
+    virtual void OnUObjectArrayShutdown() override
+    {
+        if (!bIsActive)
+            return;
+
+        GUObjectArray.RemoveUObjectCreateListener(this);
+        GUObjectArray.RemoveUObjectDeleteListener(this);
+
+        bIsActive = false;
+    }
+
+    void OnSystemError()
+    {
+        if (!IsInGameThread())
+            return;
+
+        if (!Env)
+            return;
+
+        const auto L = Env->GetMainState();
+        const FString Msg = UnLua::GetLuaCallStack(L);
+        UE_LOG(LogUnLua, Error, TEXT("%s"), *Msg);
+        GLog->Flush();
+    }
+
+    void OnPreBeginPIE(bool bIsSimulating)
+    {
+        SetActive(true);
+    }
+
+    void OnPostPIEStarted(bool bIsSimulating)
+    {
+        UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+        if (EditorEngine)
+            PostLoadMapWithWorld(EditorEngine->PlayWorld);
+    }
+
+    void OnEndPIE(bool bIsSimulating)
+    {
+    }
+
+    void PostLoadMapWithWorld(UWorld* World) const
+    {
+        if (!World || !bIsActive || !Env)
+            return;
+
+        const auto Manager = Env->GetManager();
+        if (!Manager)
+            return;
+
+        Manager->OnMapLoaded(World);
+    }
+
+    bool bIsActive;
+    TSharedPtr<UnLua::FLuaEnv> Env;
+    FDelegateHandle OnHandleSystemErrorHandle;
+    FDelegateHandle OnHandleSystemEnsureHandle;
 };
 
 #undef LOCTEXT_NAMESPACE

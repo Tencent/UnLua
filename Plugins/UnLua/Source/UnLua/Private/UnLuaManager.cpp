@@ -49,6 +49,7 @@ UUnLuaManager::UUnLuaManager()
     AnimNotifyFunc = Class->FindFunctionByName(FName("TriggerAnimNotify"));
 
     FCoreUObjectDelegates::GetPostGarbageCollect().AddUObject(this, &UUnLuaManager::PostGarbageCollect);
+    FWorldDelegates::OnWorldCleanup.AddUObject(this, &UUnLuaManager::OnWorldCleanup);
 }
 
 /**
@@ -149,6 +150,13 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
     return bSuccess;
 }
 
+void UUnLuaManager::OnWorldCleanup(UWorld* World, bool bArg, bool bCond)
+{
+    World->RemoveOnActorSpawnedHandler(OnActorSpawnedHandle);
+    if (Env)
+        Env->GC();
+}
+
 /**
  * Callback for 'Hotfix'
  */
@@ -231,6 +239,8 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
  */
 void UUnLuaManager::Cleanup()
 {
+    Env = nullptr;
+
     AttachedObjects.Empty();
     AttachedActors.Empty();
 
@@ -507,6 +517,8 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
  */
 void UUnLuaManager::OnMapLoaded(UWorld *World)
 {
+    OnActorSpawnedHandle = World->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &UUnLuaManager::OnActorSpawned));
+    
     ENetMode NetMode = World->GetNetMode();
     if (NetMode == NM_DedicatedServer)
     {

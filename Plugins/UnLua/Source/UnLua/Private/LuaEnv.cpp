@@ -15,12 +15,16 @@
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "CollisionHelper.h"
+#include "DelegateHelper.h"
 #include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
 #include "lualib.h"
+#include "UEObjectReferencer.h"
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
+#include "ReflectionUtils/PropertyCreator.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 
 namespace UnLua
 {
@@ -113,6 +117,16 @@ namespace UnLua
         Manager = nullptr;
 
         UnRegisterDelegates();
+
+        // TODO:legacy cleanup
+        // clean ue side modules,es static data structs
+        FCollisionHelper::Cleanup(); // clean up collision helper stuff
+        GObjectReferencer.Cleanup(); // clean up object referencer
+        FDelegateHelper::Cleanup(true); // clean up delegates
+        GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
+        GReflectionRegistry.Cleanup(); // clean up reflection registry
+        CandidateInputComponents.Empty();
+        FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }
 
     FLuaEnv* FLuaEnv::FindEnv(const lua_State* L)
@@ -165,14 +179,23 @@ namespace UnLua
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
 
-#pragma region ObjectListeners
-
     void FLuaEnv::NotifyUObjectCreated(const UObjectBase* Object, int32 Index)
     {
     }
 
-    void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
+    void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
+        UObject* Object = (UObject*)ObjectBase;
+        const bool bClass = GReflectionRegistry.NotifyUObjectDeleted(Object);
+        Manager->NotifyUObjectDeleted(Object, bClass);
+        FDelegateHelper::NotifyUObjectDeleted(Object);
+
+        if (CandidateInputComponents.Num() <= 0)
+            return;
+
+        const int32 NumRemoved = CandidateInputComponents.Remove((UInputComponent*)Object);
+        if (NumRemoved > 0 && CandidateInputComponents.Num() < 1)
+            FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }
 
     void FLuaEnv::OnUObjectArrayShutdown()
@@ -181,7 +204,43 @@ namespace UnLua
         GUObjectArray.RemoveUObjectDeleteListener(this);
     }
 
-#pragma endregion
+    bool FLuaEnv::TryReplaceInputs(UObject* Object)
+    {
+        if (Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject)
+            || !Object->IsA<UInputComponent>())
+            return false;
+
+        AActor* Actor = Cast<APlayerController>(Object->GetOuter());
+        if (!Actor)
+            Actor = Cast<APawn>(Object->GetOuter());
+
+        if (!Actor || Actor->GetLocalRole() < ROLE_AutonomousProxy)
+            return false;
+
+        CandidateInputComponents.AddUnique((UInputComponent*)Object);
+        if (OnWorldTickStartHandle.IsValid())
+            FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+        OnWorldTickStartHandle = FWorldDelegates::OnWorldTickStart.AddRaw(this, &FLuaEnv::OnWorldTickStart);
+        return true;
+    }
+
+    void FLuaEnv::OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime)
+    {
+        if (!Manager)
+            return;
+
+        for (UInputComponent* InputComponent : CandidateInputComponents)
+        {
+            if (!InputComponent->IsRegistered() || InputComponent->IsPendingKill())
+                continue;
+
+            AActor* Actor = Cast<AActor>(InputComponent->GetOuter());
+            Manager->ReplaceInputs(Actor, InputComponent); // try to replace/override input events
+        }
+
+        CandidateInputComponents.Empty();
+        FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+    }
 
     bool FLuaEnv::TryBind(UObject* Object)
     {
@@ -272,7 +331,12 @@ namespace UnLua
 
     bool FLuaEnv::DoString(const FString& Chunk, const FString& ChunkName)
     {
-        // TODO
+        // TODO: env support
+        // TODO: return value support 
+        bool bOk = !luaL_dostring(L, TCHAR_TO_UTF8(*Chunk));
+        if (bOk)
+            return bOk;
+        ReportLuaCallError(L);
         return false;
     }
 

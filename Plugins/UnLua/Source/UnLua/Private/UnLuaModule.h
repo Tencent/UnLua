@@ -13,21 +13,19 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
-
 #include "LuaEnv.h"
-#include "UnLuaBase.h"
-#include "UnLuaModule.h"
 
-class FLuaContext
+class UNLUA_API IUnLuaModule : public IModuleInterface
 {
 public:
-    UNLUA_API static FLuaContext* Create();
-
-    FORCEINLINE operator lua_State*() const
+    static FORCEINLINE IUnLuaModule& Get()
     {
-        const auto Env = IUnLuaModule::Get().GetEnv();
-        return Env ? Env->GetMainState() : nullptr;
+        return FModuleManager::LoadModuleChecked<IUnLuaModule>("UnLua");
     }
-};
 
-extern class FLuaContext *GLuaCxt;
+    virtual bool IsActive() = 0;
+
+    virtual void SetActive(bool bActive) = 0;
+
+    virtual TSharedPtr<UnLua::FLuaEnv> GetEnv() = 0;
+};

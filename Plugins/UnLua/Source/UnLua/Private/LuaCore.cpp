@@ -1046,7 +1046,7 @@ void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object)
         GObjectReferencer.RemoveObjectRef((UObject*)Object);
 
         // delegate ref, delegate must be clear before object is gced
-        if (GLuaCxt->IsEnable())
+        if (UnLua::IsEnabled())
         {
             FDelegateHelper::Remove((UObject*)Object);
         }

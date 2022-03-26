@@ -31,11 +31,13 @@ class UNLUA_API UUnLuaManager : public UObject
 public:
 
     UnLua::FLuaEnv* Env;
-    
+
     UUnLuaManager();
 
     bool Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = INDEX_NONE);
 
+    void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
+    
     bool OnModuleHotfixed(const TCHAR *InModuleName);
 
     void NotifyUObjectDeleted(const UObjectBase *Object, bool bClass = false);
@@ -145,5 +147,5 @@ private:
     UFunction *InputVectorAxisFunc;
     UFunction *InputGestureFunc;
     UFunction *AnimNotifyFunc;
-
+    FDelegateHandle OnActorSpawnedHandle;
 };

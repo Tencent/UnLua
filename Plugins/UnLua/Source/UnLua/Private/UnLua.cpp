@@ -144,7 +144,7 @@ namespace UnLua
     FLuaFunction::FLuaFunction(const char *GlobalFuncName)
         : FunctionRef(LUA_REFNIL)
     {
-        if (!GlobalFuncName || !GLuaCxt->IsEnable())
+        if (!GlobalFuncName || !UnLua::IsEnabled())
         {
             return;
         }
@@ -165,7 +165,7 @@ namespace UnLua
     FLuaFunction::FLuaFunction(const char *GlobalTableName, const char *FuncName)
         : FunctionRef(LUA_REFNIL)
     {
-        if (!GlobalTableName || !FuncName || !GLuaCxt->IsEnable())
+        if (!GlobalTableName || !FuncName || !UnLua::IsEnabled())
         {
             return;
         }
@@ -196,10 +196,8 @@ namespace UnLua
     FLuaFunction::FLuaFunction(FLuaTable Table, const char *FuncName)
         : FunctionRef(LUA_REFNIL)
     {
-        if (!GLuaCxt->IsEnable())
-        {
+        if (!UnLua::IsEnabled())
             return;
-        }
         
         // find a function in a table and create a reference for the function 
         lua_pushstring(*GLuaCxt, FuncName);
@@ -218,10 +216,8 @@ namespace UnLua
     FLuaFunction::FLuaFunction(FLuaValue Value)
         : FunctionRef(LUA_REFNIL)
     {
-        if (!GLuaCxt->IsEnable())
-        {
+        if (!UnLua::IsEnabled())
             return;
-        }
         
         // create a reference for the Generic Lua value if it's a function
         int32 Type = Value.GetType();

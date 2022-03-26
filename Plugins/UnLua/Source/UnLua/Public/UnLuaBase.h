@@ -167,6 +167,8 @@ namespace UnLua
      */
     UNLUA_API void Shutdown();
 
+    UNLUA_API bool IsEnabled();
+ 
     /**
      * Load a Lua file without running it
      *

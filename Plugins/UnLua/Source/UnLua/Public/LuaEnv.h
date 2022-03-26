@@ -38,11 +38,13 @@ namespace UnLua
 
         virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override;
 
-        virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override;
+        virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;
 
         virtual void OnUObjectArrayShutdown() override;
 
         virtual bool TryBind(UObject* Object);
+
+        virtual bool TryReplaceInputs(UObject* Object);
 
         virtual bool DoString(const FString& Chunk, const FString& ChunkName = "chunk");
 
@@ -81,6 +83,16 @@ namespace UnLua
         virtual lua_Alloc GetLuaAllocator() const;
 
     private:
+        void AddSearcher(lua_CFunction Searcher, int Index) const;
+
+        void OnAsyncLoadingFlushUpdate();
+
+        void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
+
+        void RegisterDelegates();
+
+        void UnRegisterDelegates();
+
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
@@ -89,13 +101,7 @@ namespace UnLua
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
-
-        void AddSearcher(lua_CFunction Searcher, int Index) const;
-
-        void OnAsyncLoadingFlushUpdate();
-
-        void RegisterDelegates();
-
-        void UnRegisterDelegates();
+        TArray<UInputComponent*> CandidateInputComponents;
+        FDelegateHandle OnWorldTickStartHandle;
     };
 }

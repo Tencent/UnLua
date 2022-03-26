@@ -23,6 +23,7 @@
 #include "UEObjectReferencer.h"
 #include "UnLuaManager.h"
 #include "UnLua.h"
+#include "UnLuaModule.h"
 
 /**
  * Class descriptor constructor
@@ -78,9 +79,10 @@ FClassDesc::~FClassDesc()
     // remove refs to class,etc ufunction/delegate
     if (Struct)
     {
-        UUnLuaManager* UnLuaManager = GLuaCxt->GetUnLuaManager();
-        if (UnLuaManager)
+        const auto& Env = IUnLuaModule::Get().GetEnv();
+        if (Env)
         {
+            UUnLuaManager* UnLuaManager = Env->GetManager();
             UnLuaManager->CleanUpByClass((UClass*)Struct);
         }
     }

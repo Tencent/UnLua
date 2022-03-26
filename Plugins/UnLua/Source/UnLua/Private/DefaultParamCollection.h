@@ -23,7 +23,7 @@ public:
     {
     }
 
-    virtual const void* GetValue() const = 0;
+    virtual const void* GetValue() = 0;
 };
 
 template <typename T>
@@ -35,7 +35,7 @@ public:
     {
     }
 
-    virtual const void* GetValue() const override { return &Value; }
+    virtual const void* GetValue() override { return &Value; }
 
 private:
     T Value;
@@ -45,17 +45,25 @@ class FRuntimeEnumParamValue : public IParamValue
 {
 public:
     explicit FRuntimeEnumParamValue(const FString& InCppType, int32 InIndex)
+        : bInitialized(false), TypeName(InCppType), Index(InIndex)
     {
-        UEnum* Enum = FindObjectChecked<UEnum>(ANY_PACKAGE, *InCppType);
-        Value = Enum->GetValueByIndex(InIndex);
     }
 
-    virtual const void* GetValue() const override 
+    virtual const void* GetValue() override
     {
+        if (!bInitialized)
+        {
+            UEnum* Enum = FindObjectChecked<UEnum>(ANY_PACKAGE, *TypeName);
+            Value = Enum->GetValueByIndex(Index);
+            bInitialized = true;
+        }
         return &Value;
     }
 
 private:
+    bool bInitialized;
+    FString TypeName;
+    int32 Index;
     int64 Value;
 };
 
@@ -66,7 +74,7 @@ public:
     {
     }
 
-    virtual const void* GetValue() const override { return &Value; }
+    virtual const void* GetValue() override { return &Value; }
 
 private:
     FScriptArray Value;

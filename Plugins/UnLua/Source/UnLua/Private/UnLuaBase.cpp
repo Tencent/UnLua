@@ -16,12 +16,14 @@
 #include "LuaContext.h"
 #include "UnLuaDelegates.h"
 #include "UEObjectReferencer.h"
+#include "UnLuaModule.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 
+class FUnLuaModule;
 DEFINE_LOG_CATEGORY(LogUnLua);
 DEFINE_LOG_CATEGORY(UnLuaDelegate);
 
@@ -36,35 +38,30 @@ namespace UnLua
 
     lua_State* CreateState()
     {
-        if (GLuaCxt)
-        {
-            GLuaCxt->CreateState();
-            return *GLuaCxt;
-        }
-        return nullptr;
+        IUnLuaModule::Get().SetActive(true);
+        return GetState();
     }
 
     lua_State* GetState()
     {
-        return GLuaCxt ? (lua_State*)(*GLuaCxt) : nullptr;
+        const auto Env = IUnLuaModule::Get().GetEnv();
+        return Env ? Env->GetMainState() : nullptr;
     }
 
     bool Startup()
     {
-        if (GLuaCxt)
-        {
-            GLuaCxt->SetEnable(true);
-            return true;
-        }
-        return false;
+        IUnLuaModule::Get().SetActive(true);
+        return true;
     }
 
     void Shutdown()
     {
-        if (GLuaCxt)
-        {
-            GLuaCxt->SetEnable(false);
-        }
+        IUnLuaModule::Get().SetActive(false);
+    }
+
+    bool IsEnabled()
+    {
+        return IUnLuaModule::Get().IsActive();
     }
 
     /**
