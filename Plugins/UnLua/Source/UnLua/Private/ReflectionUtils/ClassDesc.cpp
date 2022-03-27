@@ -18,11 +18,9 @@
 #include "FunctionDesc.h"
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
-#include "LuaContext.h"
 #include "DefaultParamCollection.h"
 #include "UEObjectReferencer.h"
 #include "UnLuaManager.h"
-#include "UnLua.h"
 #include "UnLuaModule.h"
 
 /**
@@ -30,7 +28,8 @@
  */
 FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
     : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
-{   
+{
+    const auto L = UnLua::GetState();
 	GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
 
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
@@ -47,7 +46,7 @@ FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
         for (FImplementedInterface &Interface : Class->Interfaces)
         {
             GReflectionRegistry.RegisterClass(Interface.Class);
-            RegisterClass(*GLuaCxt, Interface.Class);
+            RegisterClass(L, Interface.Class);
         }
 
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
@@ -259,7 +258,7 @@ void FClassDesc::Load()
     if (Struct)
         return;
 
-    lua_State *L = *GLuaCxt;
+    lua_State *L = UnLua::GetState();
     if (!L)
         return;
 
@@ -292,5 +291,7 @@ void FClassDesc::UnLoad()
 
     GObjectReferencer.RemoveObjectRef(Struct);
     Struct = nullptr;
-    ClearLibrary(*GLuaCxt, TCHAR_TO_UTF8(*ClassName));
+
+    const auto L = UnLua::GetState();
+    ClearLibrary(L, TCHAR_TO_UTF8(*ClassName));
 }

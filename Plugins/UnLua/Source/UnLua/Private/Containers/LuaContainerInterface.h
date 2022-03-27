@@ -36,9 +36,10 @@ public:
 
     void RemoveContainer(LuaContainerType *Container)
     {
+        const auto L = UnLua::GetState();
         if (Container && AllCachedContainer.Remove(Container) > 0)
         {
-            RemoveCachedScriptContainer(*GLuaCxt, Container->GetContainerPtr());
+            RemoveCachedScriptContainer(L, Container->GetContainerPtr());
         }
     }
 

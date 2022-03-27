@@ -23,6 +23,7 @@
 #include "UEObjectReferencer.h"
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
+#include "UnLuaLegacy.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
@@ -349,6 +350,11 @@ namespace UnLua
     void FLuaEnv::UnRef(UObject* Object) const
     {
         Manager->ReleaseAttachedObjectLuaRef(Object);
+    }
+
+    void FLuaEnv::HotReload()
+    {
+        Call(L, "UnLuaHotReload");
     }
 
     int32 FLuaEnv::FindThread(const lua_State* Thread)

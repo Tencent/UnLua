@@ -401,6 +401,21 @@ namespace UnLua
 } // namespace UnLua
 
 /**
+ * Macros to add type interfaces
+ */
+#define ADD_TYPE_INTERFACE(Type) \
+ADD_NAMED_TYPE_INTERFACE(Type, Type)
+
+#define ADD_NAMED_TYPE_INTERFACE(Name, Type) \
+static struct FTypeInterface##Name \
+{ \
+FTypeInterface##Name() \
+{ \
+UnLua::AddType(#Name, UnLua::GetTypeInterface<Type>()); \
+} \
+} TypeInterface##Name;
+
+/**
  * Export a class
  */
 #define EXPORT_UNTYPED_CLASS(Name, bIsReflected, Lib) \

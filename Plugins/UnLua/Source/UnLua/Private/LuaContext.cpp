@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaContext.h"
+#include "LuaEnv.h"
+#include "UnLuaModule.h"
 
 FLuaContext* GLuaCxt = nullptr;
 
@@ -27,4 +29,10 @@ FLuaContext* FLuaContext::Create()
         GLuaCxt = &Context;
     }
     return GLuaCxt;
+}
+
+FLuaContext::operator lua_State*() const
+{
+    const auto Env = IUnLuaModule::Get().GetEnv();
+    return Env ? Env->GetMainState() : nullptr;
 }

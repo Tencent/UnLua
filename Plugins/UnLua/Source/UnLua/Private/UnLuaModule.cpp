@@ -100,6 +100,12 @@ public:
         return Env;
     }
 
+    virtual void HotReload() override
+    {
+        if (Env)
+            Env->HotReload();
+    }
+
 private:
     virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
     {

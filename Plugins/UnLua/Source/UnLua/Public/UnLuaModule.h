@@ -28,4 +28,6 @@ public:
     virtual void SetActive(bool bActive) = 0;
 
     virtual TSharedPtr<UnLua::FLuaEnv> GetEnv() = 0;
+
+    virtual void HotReload() = 0;
 };

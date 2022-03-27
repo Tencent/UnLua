@@ -190,7 +190,8 @@ public:
     explicit FEnumPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty)
     {
-        RegisterEnum(*GLuaCxt, EnumProperty->GetEnum());
+        const auto L = UnLua::GetState();
+        RegisterEnum(L, EnumProperty->GetEnum());
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -282,11 +283,12 @@ public:
     explicit FObjectPropertyDesc(FProperty *InProperty, bool bSoftObject)
         : FPropertyDesc(InProperty), MetaClass(nullptr), IsSoftObject(bSoftObject)
     {
+        const auto L = UnLua::GetState();
         if (ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
         {
             MetaClass = bSoftObject ? (((FSoftClassProperty*)Property)->MetaClass) : ((FClassProperty*)Property)->MetaClass;
         }
-        RegisterClass(*GLuaCxt, MetaClass ? MetaClass : ObjectBaseProperty->PropertyClass);     // register meta/property class first
+        RegisterClass(L, MetaClass ? MetaClass : ObjectBaseProperty->PropertyClass);     // register meta/property class first
     }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
@@ -539,7 +541,8 @@ public:
     explicit FInterfacePropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty)
     {
-        RegisterClass(*GLuaCxt, InterfaceProperty->InterfaceClass);         // register interface class first
+        const auto L = UnLua::GetState();
+        RegisterClass(L, InterfaceProperty->InterfaceClass);         // register interface class first
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1188,7 +1191,8 @@ public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
-        FClassDesc *ClassDesc = RegisterClass(*GLuaCxt, StructProperty->Struct);    // register UScriptStruct first
+        const auto L = UnLua::GetState();
+        FClassDesc *ClassDesc = RegisterClass(L, StructProperty->Struct);    // register UScriptStruct first
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
 
@@ -1198,7 +1202,8 @@ public:
     FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
-        FClassDesc *ClassDesc = RegisterClass(*GLuaCxt, StructProperty->Struct);
+        const auto L = UnLua::GetState();
+        FClassDesc *ClassDesc = RegisterClass(L, StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();
         bFirstPropOfScriptStruct = false;

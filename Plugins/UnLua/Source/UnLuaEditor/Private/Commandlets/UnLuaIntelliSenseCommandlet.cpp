@@ -14,6 +14,7 @@
 
 #include "Commandlets/UnLuaIntelliSenseCommandlet.h"
 #include "LuaContext.h"
+#include "Misc/FileHelper.h"
 
 UUnLuaIntelliSenseCommandlet::UUnLuaIntelliSenseCommandlet(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)

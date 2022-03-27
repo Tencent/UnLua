@@ -13,7 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaManager.h"
-#include "UnLua.h"
+#include "LuaEnv.h"
+#include "UnLuaLegacy.h"
 #include "UnLuaInterface.h"
 #include "LuaCore.h"
 #include "LuaContext.h"

@@ -16,6 +16,8 @@
 
 #include "UnLuaManager.h"
 #include "lua.h"
+#include "LuaValue.h"
+#include "UnLuaLegacy.h"
 #include "HAL/Platform.h"
 
 namespace UnLua
@@ -48,6 +50,13 @@ namespace UnLua
 
         virtual bool DoString(const FString& Chunk, const FString& ChunkName = "chunk");
 
+        // TODO: refactor this
+        template <typename ... T>
+        FLuaRetValues CallTableFunc(const FString& TableName, const FString& FuncName, T&&... Args)
+        {
+            return UnLua::CallTableFunc(L, TCHAR_TO_UTF8(*TableName), TCHAR_TO_UTF8(*FuncName), Forward<T>(Args)...);
+        }
+
         virtual void GC();
 
         /**
@@ -55,6 +64,8 @@ namespace UnLua
          */
         void UnRef(UObject* Object) const;
 
+        virtual void HotReload();
+        
         lua_State* GetMainState() const { return L; }
 
         void AddThread(lua_State* Thread, int32 ThreadRef);
@@ -92,7 +103,7 @@ namespace UnLua
         void RegisterDelegates();
 
         void UnRegisterDelegates();
-
+        
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading

@@ -15,6 +15,7 @@
 #include "UnLua.h"
 #include "UnLuaFunctionLibrary.h"
 #include "UnLuaDelegates.h"
+#include "UnLuaModule.h"
 
 FString UUnLuaFunctionLibrary::GetScriptRootPath()
 {
@@ -29,16 +30,5 @@ int64 UUnLuaFunctionLibrary::GetFileLastModifiedTimestamp(FString Path)
 
 void UUnLuaFunctionLibrary::HotReload()
 {
-    lua_State* L = UnLua::GetState();
-    if (!L)
-        return;
-
-    if (FUnLuaDelegates::HotfixLua.IsBound())
-    {
-        FUnLuaDelegates::HotfixLua.Execute(L);
-        return;
-    }
-
-    // TODO:refactor with UnLua::GetEnvGroup FLuaEnv
-    UnLua::Call(L, "UnLuaHotReload");
+    IUnLuaModule::Get().HotReload();
 }

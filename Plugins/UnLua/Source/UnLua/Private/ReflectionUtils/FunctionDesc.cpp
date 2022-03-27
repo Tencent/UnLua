@@ -192,7 +192,7 @@ bool FFunctionDesc::CallLua(UObject *Context, FFrame &Stack, void *RetValueAddre
 {
     // push Lua function to the stack
     bool bSuccess = false;
-    lua_State *L = *GLuaCxt;
+    const auto L = UnLua::GetState();
     if (FunctionRef != INDEX_NONE)
     {
         bSuccess = PushFunction(L, Context, FunctionRef);

@@ -14,20 +14,14 @@
 
 #pragma once
 
-#include "LuaEnv.h"
-#include "UnLuaBase.h"
-#include "UnLuaModule.h"
+#include "lua.h"
 
 class FLuaContext
 {
 public:
     UNLUA_API static FLuaContext* Create();
 
-    FORCEINLINE operator lua_State*() const
-    {
-        const auto Env = IUnLuaModule::Get().GetEnv();
-        return Env ? Env->GetMainState() : nullptr;
-    }
+    FORCEINLINE operator lua_State*() const;
 };
 
-extern class FLuaContext *GLuaCxt;
+extern FLuaContext* GLuaCxt;

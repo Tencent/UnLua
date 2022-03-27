@@ -16,7 +16,6 @@
 
 #include "DelegateHelper.h"
 #include "LuaCore.h"
-#include "UnLuaManager.h"
 #include "PropertyDesc.h"
 #include "UEObjectReferencer.h"
 #include "UnLua.h"
