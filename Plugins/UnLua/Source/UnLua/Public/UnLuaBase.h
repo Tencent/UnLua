@@ -319,10 +319,11 @@ namespace UnLua
      */
     struct UNLUA_API FAutoStack
     {
-        FAutoStack();
+        FAutoStack(lua_State *L);
         ~FAutoStack();
 
     private:
+        lua_State* L;
         int32 OldTop;
     };
 } // namespace UnLua

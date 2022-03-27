@@ -622,7 +622,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
     FString RealModuleName = InModuleName;
     if (bMultipleLuaBind)
     {
-        lua_State* L = UnLua::GetState();
+        lua_State* L = Env->GetMainState();
         const int32 Type = GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
         if (Type != LUA_TTABLE) 
         {
@@ -665,7 +665,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
     Classes.Add(RealModuleName, Class);
 
     TSet<FName> &LuaFunctions = ModuleFunctions.Add(RealModuleName);
-    GetFunctionList(UnLua::GetState(), TCHAR_TO_UTF8(*RealModuleName), LuaFunctions);                         // get all functions defined in the Lua module
+    GetFunctionList(Env->GetMainState(), TCHAR_TO_UTF8(*RealModuleName), LuaFunctions);                         // get all functions defined in the Lua module
     TMap<FName, UFunction*> &UEFunctions = OverridableFunctions.Add(Class);
     GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
 
@@ -1074,7 +1074,7 @@ void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
 #if UNLUA_ENABLE_DEBUG != 0
         UE_LOG(LogUnLua, Log, TEXT("ReleaseAttachedObjectLuaRef : %s,%p,%d"), *Object->GetName(), Object, *ObjectLuaRef);
 #endif
-        luaL_unref(UnLua::GetState(), LUA_REGISTRYINDEX, *ObjectLuaRef);
+        luaL_unref(Env->GetMainState(), LUA_REGISTRYINDEX, *ObjectLuaRef);
         AttachedObjects.Remove(Object);
     }
 }

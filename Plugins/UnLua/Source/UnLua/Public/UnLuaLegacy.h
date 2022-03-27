@@ -654,13 +654,13 @@ namespace UnLua
     template <typename T>
     FORCEINLINE T FLuaValue::Value() const
     {
-        return UnLua::Get(UnLua::GetState(), Index, TType<T>());
+        return UnLua::Get(Env->GetMainState(), Index, TType<T>());
     }
 
     template <typename T>
     FORCEINLINE FLuaValue::operator T() const
     {
-        return UnLua::Get(UnLua::GetState(), Index, TType<T>());
+        return UnLua::Get(Env->GetMainState(), Index, TType<T>());
     }
 
     template <typename T, typename Allocator>

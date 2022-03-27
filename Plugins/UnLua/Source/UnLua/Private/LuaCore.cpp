@@ -254,7 +254,6 @@ static uint8 GetUdataHeaderSize()
     static uint8 HeaderSize = 0;
     if (0 == HeaderSize)
     {
-        
         lua_State* L = luaL_newstate();
 #if 504 == LUA_VERSION_NUM
         uint8* Userdata = (uint8*)lua_newuserdatauv(L, 0, 0);
@@ -471,7 +470,7 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
         FClassDesc* ClassDesc = GReflectionRegistry.FindClass(MetatableName);
         if (!ClassDesc)
         {
-            UnLua::FAutoStack AutoStack;
+            UnLua::FAutoStack AutoStack(L);
             ClassDesc = RegisterClass(L, MetatableName);
         }
         ClassDesc->Load();

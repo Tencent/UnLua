@@ -380,7 +380,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
         UObject* Object = UnLua::GetUObject(L, IndexInStack);
         if (Object)
         {
@@ -493,7 +493,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
 
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
@@ -569,7 +569,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
 
         UObject* Object = UnLua::GetUObject(L, IndexInStack);
         if (Object)
@@ -813,7 +813,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
 
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
@@ -959,7 +959,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
 
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
@@ -1107,7 +1107,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
 
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
@@ -1273,7 +1273,7 @@ public:
 #if ENABLE_TYPE_CHECK == 1
     virtual bool CheckPropertyType(lua_State* L, int32 IndexInStack, FString& ErrorMsg, void* UserData)
     {
-        UnLua::FAutoStack AutoStack;
+        UnLua::FAutoStack AutoStack(L);
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
         {

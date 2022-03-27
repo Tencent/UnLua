@@ -515,10 +515,9 @@ namespace UnLua
     /**
      * Helper to recover Lua stack automatically
      */
-    FAutoStack::FAutoStack()
+    FAutoStack::FAutoStack(lua_State* L): L(L)
     {
         OldTop = -1;
-        lua_State* L = UnLua::GetState();
         if (L)
         {
             OldTop = lua_gettop(L);
@@ -527,7 +526,6 @@ namespace UnLua
 
     FAutoStack::~FAutoStack()
     {
-        lua_State* L = UnLua::GetState();
         if ((L)
             && (-1 != OldTop))
         {

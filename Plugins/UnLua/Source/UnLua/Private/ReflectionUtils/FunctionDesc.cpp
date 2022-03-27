@@ -139,8 +139,6 @@ FFunctionDesc::~FFunctionDesc()
     UE_LOG(LogUnLua, Log, TEXT("~FFunctionDesc : %s,%p"), *FuncName, this);
 #endif
 
-    UnLua::FAutoStack AutoStack;
-
 	GReflectionRegistry.RemoveFromDescSet(this);
 
     // free persistent parameter buffer

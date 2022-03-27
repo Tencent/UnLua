@@ -116,9 +116,7 @@ namespace UnLua
         // register statically exported classes
         auto ExportedNonReflectedClasses = GetExportedNonReflectedClasses();
         for (const auto Pair : ExportedNonReflectedClasses)
-        {
             Pair.Value->Register(L);
-        }
 
         // register statically exported global functions
         auto ExportedFunctions = GetExportedFunctions();

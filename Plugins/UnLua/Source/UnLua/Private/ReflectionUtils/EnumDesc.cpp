@@ -29,9 +29,4 @@ FEnumDesc::FEnumDesc(UEnum *InEnum, EType EType)
 FEnumDesc::~FEnumDesc() 
 {
 	GReflectionRegistry.RemoveFromDescSet(this); 
-
-	UnLua::FAutoStack AutoStack;
-
-	// !!!Fix!!!
-	// clear enum lua table
 }
