@@ -29,7 +29,6 @@
 FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
     : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
 {
-    const auto L = UnLua::GetState();
 	GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
 
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
@@ -46,7 +45,7 @@ FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
         for (FImplementedInterface &Interface : Class->Interfaces)
         {
             GReflectionRegistry.RegisterClass(Interface.Class);
-            RegisterClass(L, Interface.Class);
+            // RegisterClass(L, Interface.Class);
         }
 
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);

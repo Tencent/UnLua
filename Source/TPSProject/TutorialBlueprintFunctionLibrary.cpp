@@ -13,7 +13,6 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByGlobalTable()
     PrintScreen(TEXT("[C++]CallLuaByGlobalTable 开始"));
 
     UnLua::FLuaEnv Env;
-    Env.Initialize();
     const auto bSuccess = Env.DoString("G_08_CppCallLua = require 'Tutorials.08_CppCallLua'");
     check(bSuccess);
 
@@ -32,7 +31,6 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByFLuaTable()
 {
     PrintScreen(TEXT("[C++]CallLuaByFLuaTable 开始"));
     UnLua::FLuaEnv Env;
-    Env.Initialize();
 
     const auto Require = UnLua::FLuaFunction(&Env, "_G", "require");
     const auto RetValues1 = Require.Call("Tutorials.08_CppCallLua");

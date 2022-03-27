@@ -107,6 +107,39 @@ namespace UnLua
         // add new package path
         const FString LuaSrcPath = GLuaSrcFullPath + TEXT("?.lua");
         AddPackagePath(L, TCHAR_TO_UTF8(*LuaSrcPath));
+
+        FUnLuaDelegates::OnPreStaticallyExport.Broadcast();
+
+        // register base class
+        RegisterClass(L, "UClass", "UObject");
+
+        // register statically exported classes
+        auto ExportedNonReflectedClasses = GetExportedNonReflectedClasses();
+        for (const auto Pair : ExportedNonReflectedClasses)
+        {
+            Pair.Value->Register(L);
+        }
+
+        // register statically exported global functions
+        auto ExportedFunctions = GetExportedFunctions();
+        for (const auto Function : ExportedFunctions)
+            Function->Register(L);
+
+        // register statically exported enums
+        auto ExportedEnums = GetExportedEnums();
+        for (const auto Enum : ExportedEnums)
+            Enum->Register(L);
+
+        DoString(R"(
+            local ok, m = pcall(require, "UnLuaHotReload")
+            if not ok then
+                return
+            end
+            require = m.require
+            UnLuaHotReload = m.reload
+        )");
+
+        FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
 
     FLuaEnv::~FLuaEnv()
@@ -142,42 +175,6 @@ namespace UnLua
     FLuaEnv& FLuaEnv::FindEnvChecked(const lua_State* L)
     {
         return *AllEnvs.FindChecked(G(L)->mainthread);
-    }
-
-    void FLuaEnv::Initialize()
-    {
-        FUnLuaDelegates::OnPreStaticallyExport.Broadcast();
-
-        // register base class
-        RegisterClass(L, "UClass", "UObject");
-
-        // register statically exported classes
-        auto ExportedNonReflectedClasses = GetExportedNonReflectedClasses();
-        for (const auto Pair : ExportedNonReflectedClasses)
-        {
-            Pair.Value->Register(L);
-        }
-
-        // register statically exported global functions
-        auto ExportedFunctions = GetExportedFunctions();
-        for (const auto Function : ExportedFunctions)
-            Function->Register(L);
-
-        // register statically exported enums
-        auto ExportedEnums = GetExportedEnums();
-        for (const auto Enum : ExportedEnums)
-            Enum->Register(L);
-
-        DoString(R"(
-            local ok, m = pcall(require, "UnLuaHotReload")
-            if not ok then
-                return
-            end
-            require = m.require
-            UnLuaHotReload = m.reload
-        )");
-
-        FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
 
     void FLuaEnv::NotifyUObjectCreated(const UObjectBase* Object, int32 Index)

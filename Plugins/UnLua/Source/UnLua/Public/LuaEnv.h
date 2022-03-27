@@ -35,9 +35,6 @@ namespace UnLua
 
         static FLuaEnv& FindEnvChecked(const lua_State* L);
 
-        // TODO: refactor: move this to constructor
-        void Initialize();
-
         virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override;
 
         virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;

@@ -254,7 +254,8 @@ static uint8 GetUdataHeaderSize()
     static uint8 HeaderSize = 0;
     if (0 == HeaderSize)
     {
-        lua_State* L = UnLua::GetState();
+        
+        lua_State* L = luaL_newstate();
 #if 504 == LUA_VERSION_NUM
         uint8* Userdata = (uint8*)lua_newuserdatauv(L, 0, 0);
 #else
@@ -263,9 +264,8 @@ static uint8 GetUdataHeaderSize()
         TValue* Value = GetTValue(L, -1);
         Udata* U = GetUdata(Value);
         HeaderSize = Userdata - (uint8*)U;
-
-        lua_pop(L, 1);
-}
+        lua_close(L);
+    }
 
     return HeaderSize;
 }

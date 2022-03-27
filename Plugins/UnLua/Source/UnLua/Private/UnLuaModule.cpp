@@ -79,7 +79,6 @@ public:
             GUObjectArray.AddUObjectCreateListener(this);
             GUObjectArray.AddUObjectDeleteListener(this);
             Env = MakeShared<UnLua::FLuaEnv>();
-            Env->Initialize();
         }
         else
         {
