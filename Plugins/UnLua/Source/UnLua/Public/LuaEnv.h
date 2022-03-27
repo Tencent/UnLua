@@ -27,6 +27,8 @@ namespace UnLua
           public FUObjectArray::FUObjectDeleteListener
     {
     public:
+        DECLARE_DELEGATE_RetVal_ThreeParams(bool, FLuaFileLoader, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
+
         FLuaEnv();
 
         virtual ~FLuaEnv() override;
@@ -45,7 +47,19 @@ namespace UnLua
 
         virtual bool TryReplaceInputs(UObject* Object);
 
-        virtual bool DoString(const FString& Chunk, const FString& ChunkName = "chunk");
+        bool DoString(const FString& Chunk, const FString& ChunkName = "chunk");
+
+        bool LoadString(const TArray<uint8>& Chunk, const FString& ChunkName = "chunk")
+        {
+            const char* Bytes = (char*)Chunk.GetData();
+            return LoadBuffer(Bytes, Chunk.Num(), TCHAR_TO_UTF8(*ChunkName));
+        }
+
+        bool LoadString(const FString& Chunk, const FString& ChunkName = "chunk")
+        {
+            const FTCHARToUTF8 Bytes(*Chunk);
+            return LoadBuffer(Bytes.Get(), Bytes.Length(), TCHAR_TO_UTF8(*ChunkName));
+        }
 
         // TODO: refactor this
         template <typename ... T>
@@ -62,7 +76,7 @@ namespace UnLua
         void UnRef(UObject* Object) const;
 
         virtual void HotReload();
-        
+
         lua_State* GetMainState() const { return L; }
 
         void AddThread(lua_State* Thread, int32 ThreadRef);
@@ -74,6 +88,8 @@ namespace UnLua
         void ResumeThread(int32 ThreadRef);
 
         UUnLuaManager* GetManager() const { return Manager; }
+
+        void AddLoader(const FLuaFileLoader Loader);
 
         void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
 
@@ -93,6 +109,8 @@ namespace UnLua
     private:
         void AddSearcher(lua_CFunction Searcher, int Index) const;
 
+        bool LoadBuffer(const char* Buffer, const size_t Size, const char* Name);
+
         void OnAsyncLoadingFlushUpdate();
 
         void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
@@ -100,9 +118,10 @@ namespace UnLua
         void RegisterDelegates();
 
         void UnRegisterDelegates();
-        
+
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
         TMap<FString, lua_CFunction> BuiltinLoaders;
+        TArray<FLuaFileLoader> CustomLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
         FCriticalSection CandidatesLock;
         UUnLuaManager* Manager;

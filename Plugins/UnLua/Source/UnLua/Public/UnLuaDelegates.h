@@ -30,7 +30,6 @@ public:
     DECLARE_MULTICAST_DELEGATE_OneParam(FOnObjectUnbinded, UObjectBaseUtility*);
 
     DECLARE_DELEGATE_RetVal_OneParam(int32, FGenericLuaDelegate, lua_State*);
-    DECLARE_DELEGATE_RetVal_TwoParams(bool, FLuaFileLoader, const FString&, TArray<uint8>&);
     DECLARE_DELEGATE_RetVal_ThreeParams(bool, FCustomLuaFileLoader, const FString&, TArray<uint8>&, FString&);
 
     static FOnLuaStateCreated OnLuaStateCreated;
@@ -46,6 +45,5 @@ public:
     static FGenericLuaDelegate ReportLuaCallError;
     static FGenericLuaDelegate ConfigureLuaGC;
     
-    static FLuaFileLoader LoadLuaFile;
     static FCustomLuaFileLoader CustomLoadLuaFile;
 };

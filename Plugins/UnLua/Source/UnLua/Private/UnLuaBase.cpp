@@ -62,58 +62,6 @@ namespace UnLua
     }
 
     /**
-     * Load a Lua file without running it
-     */
-    bool LoadFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
-    {
-        FString FullFilePath = GetFullPathFromRelativePath(RelativeFilePath);
-        if (FullFilePath.IsEmpty())
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("the lua file try to load does not exist! : %s"), *RelativeFilePath);
-            return false;
-        }
-
-        if (FullFilePath != GLuaSrcFullPath + RelativeFilePath)
-        {
-            UE_LOG(LogUnLua, Log, TEXT("Load lua file from DownloadDir : %s"), *FullFilePath);
-        }
-
-        TArray<uint8> Data;
-        // developers can provide a delegate to load the file
-        bool bSuccess = FUnLuaDelegates::LoadLuaFile.IsBound() ? FUnLuaDelegates::LoadLuaFile.Execute(FullFilePath, Data) : FFileHelper::LoadFileToArray(Data, *FullFilePath, 0);
-        if (!bSuccess)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        int32 SkipLen = (3 < Data.Num()) && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
-        return LoadChunk(L, (const char*)(Data.GetData() + SkipLen), Data.Num() - SkipLen, TCHAR_TO_UTF8(*RelativeFilePath), Mode, Env);    // loads the buffer as a Lua chunk
-    }
-
-    /**
-     * Run a Lua file
-     */
-    bool RunFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
-    {
-        bool bSuccess = LoadFile(L, RelativeFilePath, Mode, Env);       // load the file content as a Lua chunk
-        if (!bSuccess)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        int32 Code = lua_pcall(L, 0, LUA_MULTRET, 0);       // pcall
-        if (Code != LUA_OK)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("Failed to call lua_pcall, error code: %d"), Code);
-            ReportLuaCallError(L);                          // report pcall error
-        }
-
-        return Code == LUA_OK;
-    }
-
-    /**
      * Load a Lua chunk without running it
      */
     bool LoadChunk(lua_State *L, const char *Chunk, int32 ChunkSize, const char *ChunkName, const char *Mode, int32 Env)

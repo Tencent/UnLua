@@ -170,26 +170,6 @@ namespace UnLua
     UNLUA_API bool IsEnabled();
  
     /**
-     * Load a Lua file without running it
-     *
-     * @param RelativeFilePath - the relative (to project's content dir) Lua file path
-     * @param Mode - mode of the chunk, it may be the string "b" (only binary chunks), "t" (only text chunks), or "bt" (both binary and text)
-     * @param Env - Lua stack index of the 'Env'
-     * @return - true if Lua file is loaded successfully, false otherwise
-     */
-    UNLUA_API bool LoadFile(lua_State *L, const FString &RelativeFilePath, const char *Mode = "bt", int32 Env = 0);
-
-    /**
-     * Run a Lua file
-     *
-     * @param RelativeFilePath - the relative (to project's content dir) Lua file path
-     * @param Mode - mode of the chunk, it may be the string "b" (only binary chunks), "t" (only text chunks), or "bt" (both binary and text)
-     * @param Env - Lua stack index of the 'Env'
-     * @return - true if the Lua file runs successfully, false otherwise
-     */
-    UNLUA_API bool RunFile(lua_State *L, const FString &RelativeFilePath, const char *Mode = "bt", int32 Env = 0);
-
-    /**
      * Load a Lua chunk without running it
      *
      * @param Chunk - Lua chunk

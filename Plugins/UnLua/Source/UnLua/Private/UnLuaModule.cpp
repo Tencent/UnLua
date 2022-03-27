@@ -159,6 +159,7 @@ private:
 
     void OnEndPIE(bool bIsSimulating)
     {
+        SetActive(false);
     }
 
     void PostLoadMapWithWorld(UWorld* World) const

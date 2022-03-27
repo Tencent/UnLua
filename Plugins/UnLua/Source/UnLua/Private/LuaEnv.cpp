@@ -338,6 +338,25 @@ namespace UnLua
         return false;
     }
 
+    bool FLuaEnv::LoadBuffer(const char* Buffer, const size_t Size, const char* Name)
+    {
+        // TODO: env support
+        // TODO: return value support
+
+        // loads the buffer as a Lua chunk
+        const int32 Code = luaL_loadbufferx(L, Buffer, Size, Name, nullptr);
+        if (Code != LUA_OK)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("Failed to call luaL_loadbufferx, error code: %d"), Code);
+            ReportLuaCallError(L); // report pcall error
+            lua_pushnil(L); /* error (message is on top of the stack) */
+            lua_insert(L, -2); /* put before error message */
+            return false;
+        }
+
+        return true;
+    }
+
     void FLuaEnv::GC()
     {
         lua_gc(L, LUA_GCCOLLECT, 0);
@@ -410,6 +429,11 @@ namespace UnLua
         return DefaultLuaAllocator;
     }
 
+    void FLuaEnv::AddLoader(const FLuaFileLoader Loader)
+    {
+        CustomLoaders.Add(Loader);
+    }
+
     void FLuaEnv::AddBuiltInLoader(const FString Name, const lua_CFunction Loader)
     {
         BuiltinLoaders.Add(Name, Loader);
@@ -417,10 +441,7 @@ namespace UnLua
 
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)
     {
-        const auto Env = AllEnvs.FindRef(L);
-        if (!Env)
-            return 0;
-
+        const FLuaEnv* Env = (FLuaEnv*)lua_touserdata(L, lua_upvalueindex(1));
         const FString Name = UTF8_TO_TCHAR(lua_tostring(L, 1));
         const auto Loader = Env->BuiltinLoaders.Find(Name);
         if (!Loader)
@@ -431,20 +452,40 @@ namespace UnLua
 
     int FLuaEnv::LoadFromCustomLoader(lua_State* L)
     {
-        if (!FUnLuaDelegates::CustomLoadLuaFile.IsBound())
+        FLuaEnv* Env = (FLuaEnv*)lua_touserdata(L, lua_upvalueindex(1));
+        if (FUnLuaDelegates::CustomLoadLuaFile.IsBound())
+        {
+            // legacy support
+            const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
+            TArray<uint8> Data;
+            FString RealFilePath;
+            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, RealFilePath))
+            {
+                if (Env->LoadString(Data))
+                    return 1;
+
+                return luaL_error(L, "file loading from custom loader error");
+            }
+            return 0;
+        }
+
+        if (Env->CustomLoaders.Num() == 0)
             return 0;
 
         const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
 
         TArray<uint8> Data;
-        FString FullFilePath;
-        if (!FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, FullFilePath))
-            return 0;
+        FString RealFilePath;
+        for (auto Loader : Env->CustomLoaders)
+        {
+            if (!Loader.Execute(FileName, Data, RealFilePath))
+                continue;
 
-        const auto Chunk = (const char*)Data.GetData();
-        const auto ChunkName = TCHAR_TO_UTF8(*FileName);
-        if (!UnLua::LoadChunk(L, Chunk, Data.Num(), ChunkName))
+            if (Env->LoadString(Data))
+                break;
+
             return luaL_error(L, "file loading from custom loader error");
+        }
 
         return 1;
     }
@@ -469,7 +510,7 @@ namespace UnLua
         return 1;
     }
 
-    void FLuaEnv::AddSearcher(const lua_CFunction Searcher, int Index) const
+    void FLuaEnv::AddSearcher(lua_CFunction Searcher, int Index) const
     {
         lua_getglobal(L, "package");
         lua_getfield(L, -1, "searchers");
@@ -488,7 +529,8 @@ namespace UnLua
             lua_rawseti(L, -2, e);
         }
 
-        lua_pushcfunction(L, Searcher);
+        lua_pushlightuserdata(L, (void*)this);
+        lua_pushcclosure(L, Searcher, 1);
         lua_rawseti(L, -2, Index);
         lua_pop(L, 1);
     }
