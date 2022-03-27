@@ -16,7 +16,6 @@
 
 #include "Binding.h"
 #include "LuaDynamicBinding.h"
-#include "LuaContext.h"
 #include "UnLua.h"
 #include "UnLuaDelegates.h"
 #include "UEObjectReferencer.h"

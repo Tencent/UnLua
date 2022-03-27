@@ -19,7 +19,6 @@
 #include "UnLuaModule.h"
 
 #include "DefaultParamCollection.h"
-#include "LuaContext.h"
 #include "UnLuaDebugBase.h"
 #include "GameFramework/PlayerController.h"
 
@@ -40,7 +39,6 @@ public:
         FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FUnLuaModule::PostLoadMapWithWorld);
 
         CreateDefaultParamCollection();
-        FLuaContext::Create();
 
 #if WITH_EDITOR
         if (!IsRunningGame())

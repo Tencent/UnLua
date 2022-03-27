@@ -17,7 +17,6 @@
 #include "UnLuaLegacy.h"
 #include "UnLuaInterface.h"
 #include "LuaCore.h"
-#include "LuaContext.h"
 #include "LuaFunctionInjection.h"
 #include "UEObjectReferencer.h"
 #include "GameFramework/InputSettings.h"

@@ -16,7 +16,6 @@
 #include "ClassDesc.h"
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
-#include "LuaContext.h"
 #include "DelegateHelper.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"

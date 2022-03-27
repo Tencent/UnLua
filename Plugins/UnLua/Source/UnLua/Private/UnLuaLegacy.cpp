@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "UnLuaPrivate.h"
-#include "LuaContext.h"
 
 DEFINE_STAT(STAT_UnLua_Lua_Memory);
 DEFINE_STAT(STAT_UnLua_PersistentParamBuffer_Memory);

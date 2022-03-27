@@ -26,6 +26,5 @@ public:
 private:
     void SaveFile(const FString &ModuleName, const FString &FileName, const FString &GeneratedFileContent);
 
-    class FLuaContext *Context;
     FString IntermediateDir;
 };

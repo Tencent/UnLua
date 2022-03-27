@@ -13,14 +13,11 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaCore.h"
-#include "LuaContext.h"
 #include "UnLuaDelegates.h"
 #include "UEObjectReferencer.h"
 #include "UnLuaModule.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
-#include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
 
 class FUnLuaModule;

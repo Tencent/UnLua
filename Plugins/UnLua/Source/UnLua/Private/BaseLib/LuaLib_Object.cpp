@@ -13,11 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaEx.h"
-#include "UnLuaManager.h"
-#include "LuaContext.h"
 #include "LuaCore.h"
 #include "DelegateHelper.h"
-#include "UEObjectReferencer.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
 /**

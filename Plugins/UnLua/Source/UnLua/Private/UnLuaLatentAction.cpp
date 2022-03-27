@@ -14,7 +14,6 @@
 
 #include "UnLuaLatentAction.h"
 
-#include "LuaContext.h"
 #include "LuaCore.h"
 #include "UnLuaEx.h"
 

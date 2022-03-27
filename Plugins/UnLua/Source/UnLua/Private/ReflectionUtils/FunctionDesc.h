@@ -15,7 +15,6 @@
 #pragma once
 
 #include "UnLuaBase.h"
-#include "LuaContext.h"
 
 #define ENABLE_PERSISTENT_PARAM_BUFFER 1            // option to allocate persistent buffer for UFunction's parameters
 
