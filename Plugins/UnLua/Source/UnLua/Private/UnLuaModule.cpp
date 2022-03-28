@@ -32,7 +32,10 @@ public:
         FLuaContext::Create();
         GLuaCxt->RegisterDelegates();
 
-#if AUTO_UNLUA_STARTUP && !WITH_EDITOR
+#if AUTO_UNLUA_STARTUP
+#if WITH_EDITOR
+        if(IsRunningGame())
+#endif
         GLuaCxt->SetEnable(true);
 #endif
     }
