@@ -150,6 +150,15 @@ void FUnLuaBaseSpec::Define()
             UnLua::Push<FVector>(L, &VectorValue);
             TEST_EQUAL(UnLua::Get(L, -1, UnLua::TType<FVector>()), VectorValue);
         });
+
+        It(TEXT("正确传入UObject到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            auto Expected = NewObject<AActor>(GEngine);
+            UnLua::PushUObject(L, Expected);
+
+            auto Actual = (AActor*)UnLua::GetUObject(L, -1);
+            TEST_EQUAL(Expected, Actual);
+        });
     });
 
     Describe(TEXT("UnLua::RunChunk"), [this]
