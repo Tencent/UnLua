@@ -37,7 +37,6 @@ private:
 };
 
 FString GetFullPathFromRelativePath(const FString& RelativePath);
-void CreateNamespaceForUE(lua_State *L);
 void SetTableForClass(lua_State *L, const char *Name);
 
 /**

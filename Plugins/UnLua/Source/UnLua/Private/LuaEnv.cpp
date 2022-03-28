@@ -20,6 +20,7 @@
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
 #include "lualib.h"
+#include "UELib.h"
 #include "UEObjectReferencer.h"
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
@@ -50,6 +51,8 @@ namespace UnLua
         AddSearcher(LoadFromFileSystem, 3);
         AddSearcher(LoadFromBuiltinLibs, 4);
 
+        UELib::Open(L);
+
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
@@ -65,8 +68,6 @@ namespace UnLua
         lua_pushstring(L, "ArrayMap"); // create weak table 'ArrayMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
-
-        CreateNamespaceForUE(L); // create 'UE' namespace (table)
 
         // register global Lua functions
         lua_register(L, "RegisterEnum", Global_RegisterEnum);

@@ -41,31 +41,6 @@ const FScriptContainerDesc FScriptContainerDesc::Set(sizeof(FLuaSet), "TSet");
 const FScriptContainerDesc FScriptContainerDesc::Map(sizeof(FLuaMap), "TMap");
 
 /**
- * Global __index meta method
- */
-static int32 UE4_Index(lua_State *L)
-{
-    //!!!Fix!!!
-    // tvalue opt
-    int32 Type = lua_type(L, 2);
-    if (Type == LUA_TSTRING)
-    {
-        const char *Name = lua_tostring(L, 2);
-        const char Prefix = Name[0];
-        if (Prefix == 'U' || Prefix == 'A' || Prefix == 'F')
-        {
-            RegisterClass(L, Name);
-        }
-        else if (Prefix == 'E')
-        {
-            RegisterEnum(L, Name);
-        }
-    }
-    lua_rawget(L, 1);
-    return 1;
-}
-
-/**
  * Get lua file full path from relative path
  */
 FString GetFullPathFromRelativePath(const FString& RelativePath)
@@ -91,29 +66,6 @@ FString GetFullPathFromRelativePath(const FString& RelativePath)
         }
     }
     return FullFilePath;
-}
-
-/**
- * Create 'UE' namespace (a Lua table)
- */
-void CreateNamespaceForUE(lua_State *L)
-{
-#if WITH_UE4_NAMESPACE
-    lua_newtable(L);
-    lua_pushstring(L, "__index");
-    lua_pushcfunction(L, UE4_Index);
-    lua_rawset(L, -3);
-    lua_pushvalue(L, -1);
-    lua_setmetatable(L, -2);
-    lua_pushvalue(L, -1);
-    lua_setglobal(L, "UE4");    // for legacy support only, will be removed in future release
-    lua_setglobal(L, "UE");
-
-    lua_pushboolean(L, true);
-#else
-    lua_pushboolean(L, false);
-#endif
-    lua_setglobal(L, "WITH_UE4_NAMESPACE");
 }
 
 /**
@@ -554,7 +506,7 @@ void* NewUserdataWithPadding(lua_State *L, int32 Size, const char *MetatableName
         bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
         if (!bSuccess)
         {
-            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
             return nullptr;
         }
     }

@@ -206,7 +206,7 @@ namespace UnLua
                     bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
                     if (!bSuccess)
                     {
-                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"),  UTF8_TO_TCHAR(MetatableName));
+                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"),  UTF8_TO_TCHAR(MetatableName));
                         return 1;
                     }
                 }
@@ -227,7 +227,7 @@ namespace UnLua
                 bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
                 if (!bSuccess)
                 {
-                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
                     return 1;
                 }
             }
