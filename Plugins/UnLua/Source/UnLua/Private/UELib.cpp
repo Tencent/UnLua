@@ -18,8 +18,8 @@
 #include "ClassRegistry.h"
 #include "LuaCore.h"
 
-const char* REGISTRY_KEY = "UnLua_UELib";
-const char* NAMESPACE_NAME = "UE";
+static const char* REGISTRY_KEY = "UnLua_UELib";
+static const char* NAMESPACE_NAME = "UE";
 
 static void LoadUEType(const char* InName)
 {
