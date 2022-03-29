@@ -5,8 +5,7 @@ local BP_AICharacter_C= Class("BP_CharacterBase_C")
 function BP_AICharacter_C:Initialize(Initializer)
 	self.Super.Initialize(self)
 	self.Damage = 128.0
-	--self.DamageType = UE.UClass.Load("/Script/Engine.DamageType")
-	self.DamageType = UE.UClass.Load("UDamageType")
+	self.DamageType = UE.UDamageType
 end
 
 --function BP_AICharacter_C:UserConstructionScript()

@@ -78,10 +78,8 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
         bMultipleLuaBind = true;
     }
 
-    if (!RegisterClass(L, Class))              // register class first
-    {
+    if (!Env->GetClassRegistry()->Register(Class))
         return false;
-    }
 
     // try bind lua if not bind or use a copyed table
     UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_UTF8(InModuleName));    // require Lua module

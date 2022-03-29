@@ -399,45 +399,11 @@ void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr)
  */
 bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
 {
-    int32 Type = LUA_TNIL;
+    const auto Registry = UnLua::FClassRegistry::Find(L);
+    if (!Registry)
+        return false;
 
-    // exported non reflected class only need check metatable
-    const UnLua::IExportedClass* ExportedClass = UnLua::FindExportedNonReflectedClass(MetatableName);
-    if (ExportedClass)
-    {
-        Type = luaL_getmetatable(L, MetatableName);
-        if (LUA_TTABLE != Type)
-        {
-            lua_pop(L, 1);
-        }
-        else
-        {
-            lua_setmetatable(L, -2);                                    // set the metatable directly
-        }
-        return Type == LUA_TTABLE;
-    }
-    else
-    {   
-        // other class,check classdesc
-        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(MetatableName);
-        if (!ClassDesc)
-        {
-            UnLua::FAutoStack AutoStack(L);
-            ClassDesc = RegisterClass(L, MetatableName);
-        }
-        ClassDesc->Load();
-        Type = luaL_getmetatable(L, MetatableName);
-        if (Type != LUA_TTABLE)
-        {
-            lua_pop(L, 1);
-        }
-        else
-        {
-            lua_setmetatable(L, -2);                                    // set the metatable directly
-            ClassDesc->AddRef();
-        }
-        return Type == LUA_TTABLE;
-    }
+    return Registry->TrySetMetatable(L, MetatableName);
 }
 
 
@@ -650,7 +616,14 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), Object);  // create a userdata and store the UObject address
     bool bSuccess = TryToSetMetatable(L, TCHAR_TO_UTF8(*MetatableName), (UObject*)Object);
-	if (!bSuccess)
+	if (bSuccess)
+	{
+        if(!Object->IsNative() && Object->IsA(UStruct::StaticClass()))
+        {
+            GReflectionRegistry.RegisterClass((UStruct*)Object)->AddRef();
+        }	    
+	}
+    else
 	{
 		UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable,Name %s, Object %s,%p!"), ANSI_TO_TCHAR(__FUNCTION__), *MetatableName, *Object->GetName(), Object);
 	}
@@ -1255,8 +1228,8 @@ static int32 GetField(lua_State* L)
                 if (bInherited)
                 {
                     FString SuperStructName = Field->GetOuterName();
-                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperStructName));
-                    check(Type == LUA_TTABLE);
+                    const auto Registry = UnLua::FClassRegistry::Find(L);
+                    check(Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName)));
                     lua_pushvalue(L, 2);
                     Type = lua_rawget(L, -2);
                     bCached = Type != LUA_TNIL;
@@ -1866,29 +1839,11 @@ static void RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
     if (bSuccess)
         return;
 
-    TArray<FClassDesc*> ClassDescChain;
-    ClassDesc->GetInheritanceChain(ClassDescChain);
-
-    // add self
-    ClassDescChain.Insert((FClassDesc*)ClassDesc, 0);
-
     TArray<UnLua::IExportedClass*> ExportedClasses;
-    UnLua::IExportedClass *ExportedClass = UnLua::FindExportedReflectedClass(*ClassDescChain.Last()->GetName());   // find statically exported stuff...
+    UnLua::IExportedClass *ExportedClass = UnLua::FindExportedReflectedClass(*ClassDesc->GetName());   // find statically exported stuff...
     if (ExportedClass)
-    {
         ExportedClasses.Add(ExportedClass);
-    }
-    RegisterClassCore(L, ClassDescChain.Last(), nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
-
-    for (int32 i = ClassDescChain.Num() - 2; i > -1; --i)
-    {
-        ExportedClass = UnLua::FindExportedReflectedClass(*ClassDescChain[i]->GetName());                          // find statically exported stuff...
-        if (ExportedClass)
-        {
-            ExportedClasses.Add(ExportedClass);
-        }
-        RegisterClassCore(L, ClassDescChain[i], ClassDescChain[i + 1], ExportedClasses.GetData(), ExportedClasses.Num());
-    }
+    RegisterClassCore(L, ClassDesc, nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
 }
 
 FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName)

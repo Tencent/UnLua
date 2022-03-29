@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "ClassRegistry.h"
 #include "UnLuaManager.h"
 #include "lua.h"
 #include "LuaValue.h"
@@ -89,6 +90,8 @@ namespace UnLua
 
         UUnLuaManager* GetManager() const { return Manager; }
 
+        FClassRegistry* GetClassRegistry() const { return ClassRegistry; }
+
         void AddLoader(const FLuaFileLoader Loader);
 
         void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
@@ -125,6 +128,7 @@ namespace UnLua
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
         FCriticalSection CandidatesLock;
         UUnLuaManager* Manager;
+        FClassRegistry* ClassRegistry;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;

@@ -296,15 +296,18 @@ bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
 
     if (bNeedProcess)
     {
-        UClass* Class = Object->GetClass();
-        FString ClassName = FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
-        ClassDesc = FindClass(TCHAR_TO_UTF8(*ClassName));
-        if (ClassDesc)
+        if(!Object->IsNative() && Object->IsA(UStruct::StaticClass()))
         {
+            UClass* Class = Object->GetClass();
+            FString ClassName = FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
+            ClassDesc = FindClass(TCHAR_TO_UTF8(*ClassName));
+            if (ClassDesc)
+            {
 #if UNLUA_ENABLE_DEBUG != 0
-            UE_LOG(LogUnLua, Log, TEXT("FReflectionRegistry::NotifyUObjectDeleted:%p,%s"),Object, *ClassName);
+                UE_LOG(LogUnLua, Log, TEXT("FReflectionRegistry::NotifyUObjectDeleted:%p,%s"),Object, *ClassName);
 #endif
-            TryUnRegisterClass(ClassDesc);
+                TryUnRegisterClass(ClassDesc);
+            }    
         }
     }
         
@@ -419,20 +422,6 @@ FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName,
     FClassDesc *ClassDesc = new FClassDesc(Struct, ClassName);
     Classes.Add(Struct, ClassDesc);
     Name2Classes.Add(FName(*ClassName), ClassDesc);
-    
-    TArray<FString> NameChain;
-    TArray<UStruct*> StructChain;
-    ClassDesc->GetInheritanceChain(NameChain, StructChain);
-    for (int32 i = 0; i < NameChain.Num(); ++i)
-    {
-        FClassDesc* ClassDescParent = FindClass(TCHAR_TO_UTF8(*NameChain[i]));
-        if (!ClassDescParent)
-        {   
-            ClassDescParent = new FClassDesc(StructChain[i], NameChain[i]);
-            Classes.Add(StructChain[i], ClassDescParent);
-            Name2Classes.Add(*NameChain[i], ClassDescParent);
-        }
-    }
 
 #if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("RegisterClass : %s,%p"), *ClassName, ClassDesc);

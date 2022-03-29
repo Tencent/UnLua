@@ -22,9 +22,6 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByGlobalTable()
     const auto Msg = FString::Printf(TEXT("[C++]收到来自Lua的返回，结果=%f"), RetValues[0].Value<float>());
     PrintScreen(Msg);
     PrintScreen(TEXT("[C++]CallLuaByGlobalTable 结束"));
-
-    const auto Func = UnLua::FLuaFunction(nullptr, "");
-    Func.Call(1, 2);
 }
 
 void UTutorialBlueprintFunctionLibrary::CallLuaByFLuaTable()

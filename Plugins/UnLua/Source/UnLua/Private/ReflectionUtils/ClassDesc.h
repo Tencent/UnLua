@@ -81,8 +81,6 @@ public:
 
     FFieldDesc* RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
 
-    void GetInheritanceChain(TArray<FString> &InNameChain, TArray<UStruct*> &InStructChain);
-
     void GetInheritanceChain(TArray<FClassDesc*>& Chain);
 
     void Load();
@@ -107,9 +105,7 @@ private:
     TMap<FName, FFieldDesc*> Fields;
     TArray<FPropertyDesc*> Properties;
     TArray<FFunctionDesc*> Functions;
-
-    TArray<FString> NameChain;
-    TArray<UStruct*> StructChain;
+    TArray<FClassDesc*> SuperClasses;
 
     struct FFunctionCollection *FunctionCollection;
 };

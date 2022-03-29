@@ -13,14 +13,26 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
+
 #include "lua.h"
 
 namespace UnLua
 {
-    namespace UELib
+    class FClassRegistry
     {
-        int Open(lua_State* L);
+    public:
+        explicit FClassRegistry(lua_State* GL);
 
-        void SetTableForClass(lua_State* L, const char* Name);
-    }
+        static FClassRegistry* Find(const lua_State* L);
+
+        bool PushMetatable(lua_State* L, const char* MetatableName);
+        
+        bool TrySetMetatable(lua_State* L, const char* MetatableName);
+
+        bool Register(const char* MetatableName);
+
+        bool Register(const UStruct* Class);
+        
+        lua_State* GL;
+    };
 }

@@ -26,26 +26,25 @@
 /**
  * Class descriptor constructor
  */
-FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
+FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
 {
-	GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
+    GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
 
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
     bIsClass = InStruct->IsA(UClass::StaticClass());
     bIsInterface = bIsClass && static_cast<UClass*>(InStruct)->HasAnyClassFlags(CLASS_Interface) && InStruct != UInterface::StaticClass();
     bIsNative = InStruct->IsNative();
-    
+
     if (bIsClass)
     {
         UClass* Class = AsClass();
         Size = Struct->GetStructureSize();
 
         // register implemented interfaces
-        for (FImplementedInterface &Interface : Class->Interfaces)
+        for (FImplementedInterface& Interface : Class->Interfaces)
         {
             GReflectionRegistry.RegisterClass(Interface.Class);
-            // RegisterClass(L, Interface.Class);
         }
 
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
@@ -53,26 +52,32 @@ FClassDesc::FClassDesc(UStruct *InStruct, const FString &InName)
     else if (bIsScriptStruct)
     {
         UScriptStruct* ScriptStruct = AsScriptStruct();
-        UScriptStruct::ICppStructOps *CppStructOps = ScriptStruct->GetCppStructOps();
+        UScriptStruct::ICppStructOps* CppStructOps = ScriptStruct->GetCppStructOps();
         int32 Alignment = CppStructOps ? CppStructOps->GetAlignment() : ScriptStruct->GetMinAlignment();
         Size = CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
-        UserdataPadding = CalcUserdataPadding(Alignment);       // calculate padding size for userdata
+        UserdataPadding = CalcUserdataPadding(Alignment); // calculate padding size for userdata
     }
 
-    if (!bIsNative)
-        GObjectReferencer.AddObjectRef(Struct);
+    UStruct* SuperStruct = Struct->GetInheritanceSuper();
+    while (SuperStruct)
+    {
+        FString SuperName = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
+        FClassDesc* ClassDesc = GReflectionRegistry.RegisterClass(SuperStruct);
+        SuperClasses.Add(ClassDesc);
+        SuperStruct = SuperStruct->GetInheritanceSuper();
+    }
 }
 
 /**
  * Class descriptor destructor
  */
 FClassDesc::~FClassDesc()
-{   
+{
 #if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("~FClassDesc : %s,%p,%d"), *GetName(), this, RefCount);
 #endif
-    
-	GReflectionRegistry.RemoveFromDescSet(this);
+
+    GReflectionRegistry.RemoveFromDescSet(this);
 
     // remove refs to class,etc ufunction/delegate
     if (Struct)
@@ -89,27 +94,13 @@ FClassDesc::~FClassDesc()
 }
 
 void FClassDesc::AddRef()
-{   
-    TArray<FClassDesc*> DescChain;
-    GetInheritanceChain(DescChain);
-
-    DescChain.Insert(this, 0);   // add self
-    for (int i = 0; i < DescChain.Num(); ++i)
-    {
-        DescChain[i]->RefCount++;
-    }
+{
+    RefCount++;
 }
 
 void FClassDesc::SubRef()
-{ 
-    TArray<FClassDesc*> DescChain;
-    GetInheritanceChain(DescChain);
-
-    DescChain.Insert(this, 0);   // add self
-    for (int i = 0; i < DescChain.Num(); ++i)
-    {
-        DescChain[i]->RefCount--;
-    }
+{
+    RefCount--;
 }
 
 FFieldDesc* FClassDesc::FindField(const char* FieldName)
@@ -123,12 +114,12 @@ FFieldDesc* FClassDesc::FindField(const char* FieldName)
 /**
  * Register a field of this class
  */
-FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
+FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
 {
     Load();
 
-    FFieldDesc *FieldDesc = nullptr;
-    FFieldDesc **FieldDescPtr = Fields.Find(FieldName);
+    FFieldDesc* FieldDesc = nullptr;
+    FFieldDesc** FieldDescPtr = Fields.Find(FieldName);
     if (FieldDescPtr)
     {
         FieldDesc = *FieldDescPtr;
@@ -136,8 +127,8 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
     else
     {
         // a property or a function ?
-        FProperty *Property = Struct->FindPropertyByName(FieldName);
-        UFunction *Function = (!Property && bIsClass) ? AsClass()->FindFunctionByName(FieldName) : nullptr;
+        FProperty* Property = Struct->FindPropertyByName(FieldName);
+        UFunction* Function = (!Property && bIsClass) ? AsClass()->FindFunctionByName(FieldName) : nullptr;
         bool bValid = Property || Function;
         if (!bValid && bIsScriptStruct && !Struct->IsNative())
         {
@@ -171,12 +162,12 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
             return nullptr;
         }
 
-        UStruct *OuterStruct = Property ? Cast<UStruct>(GetPropertyOuter(Property)) : Cast<UStruct>(Function->GetOuter());
+        UStruct* OuterStruct = Property ? Cast<UStruct>(GetPropertyOuter(Property)) : Cast<UStruct>(Function->GetOuter());
         if (OuterStruct)
         {
             if (OuterStruct != Struct)
-            {   
-                FClassDesc *OuterClass = (FClassDesc*)GReflectionRegistry.RegisterClass(OuterStruct);
+            {
+                FClassDesc* OuterClass = (FClassDesc*)GReflectionRegistry.RegisterClass(OuterStruct);
                 check(OuterClass);
                 return OuterClass->RegisterField(FieldName, QueryClass);
             }
@@ -188,14 +179,14 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
             Fields.Add(FieldName, FieldDesc);
             if (Property)
             {
-                FieldDesc->FieldIndex = Properties.Add(FPropertyDesc::Create(Property));        // index of property descriptor
+                FieldDesc->FieldIndex = Properties.Add(FPropertyDesc::Create(Property)); // index of property descriptor
                 ++FieldDesc->FieldIndex;
             }
             else
             {
                 check(Function);
-                FParameterCollection *DefaultParams = FunctionCollection ? FunctionCollection->Functions.Find(FieldName) : nullptr;
-                FieldDesc->FieldIndex = Functions.Add(new FFunctionDesc(Function, DefaultParams, INDEX_NONE));  // index of function descriptor
+                FParameterCollection* DefaultParams = FunctionCollection ? FunctionCollection->Functions.Find(FieldName) : nullptr;
+                FieldDesc->FieldIndex = Functions.Add(new FFunctionDesc(Function, DefaultParams, INDEX_NONE)); // index of function descriptor
                 ++FieldDesc->FieldIndex;
                 FieldDesc->FieldIndex = -FieldDesc->FieldIndex;
             }
@@ -204,61 +195,15 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc *QueryClass)
     return FieldDesc;
 }
 
-/**
- * Get class inheritance chain
- */
-void FClassDesc::GetInheritanceChain(TArray<FString> &InNameChain, TArray<UStruct*> &InStructChain)
-{
-    Load();
-
-    InNameChain.Empty();
-    InStructChain.Empty();
-
-    if (NameChain.Num() <= 0)
-    {
-        UStruct* SuperStruct = Struct->GetInheritanceSuper();
-        while (SuperStruct)
-        {
-            FString Name = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
-            NameChain.Add(Name);
-            StructChain.Add(SuperStruct);
-            SuperStruct = SuperStruct->GetInheritanceSuper();
-        }
-    }
-
-    InNameChain = NameChain;
-    InStructChain = StructChain;
-}
-
 void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
 {
-    Load();
-    
-    TArray<FString> InNameChain;
-    TArray<UStruct*> InStructChain;
-    GetInheritanceChain(InNameChain, InStructChain);
-
-    for (int i = 0; i < NameChain.Num(); ++i)
-    {
-        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(TCHAR_TO_UTF8(*NameChain[i]));
-        if (ClassDesc)
-        {
-            DescChain.Add(ClassDesc);
-        }
-        else
-        {
-            UE_LOG(LogUnLua,Warning,TEXT("GetInheritanceChain : ClassDesc %s in inheritance chain %s not found"), *NameChain[i],*GetName());
-        }
-    }
+    DescChain.Add(this);
+    DescChain.Append(SuperClasses);
 }
 
 void FClassDesc::Load()
 {
     if (Struct)
-        return;
-
-    lua_State *L = UnLua::GetState();
-    if (!L)
         return;
 
     FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F' || ClassName[0] == 'E') ? ClassName.RightChop(1) : ClassName;
@@ -267,9 +212,6 @@ void FClassDesc::Load()
         Struct = LoadObject<UStruct>(nullptr, *Name);
 
     check(Struct);
-
-    GObjectReferencer.AddObjectRef(Struct);
-    RegisterClass(L, Struct);
 }
 
 void FClassDesc::UnLoad()

@@ -15,9 +15,11 @@
 #include "lauxlib.h"
 #include "UELib.h"
 
+#include "ClassRegistry.h"
 #include "LuaCore.h"
 
 const char* REGISTRY_KEY = "UnLua_UELib";
+const char* NAMESPACE_NAME = "UE";
 
 static void LoadUEType(const char* InName)
 {
@@ -37,6 +39,8 @@ static void LoadUEType(const char* InName)
         Ret = LoadObject<UScriptStruct>(nullptr, *Name);
     if (!Ret)
         Ret = LoadObject<UEnum>(nullptr, *Name);
+
+    // TODO: if (!Ret->IsNative())
 }
 
 static int Index(lua_State* L)
@@ -51,7 +55,7 @@ static int Index(lua_State* L)
 
     if (Prefix == 'U' || Prefix == 'A' || Prefix == 'F')
     {
-        RegisterClass(L, Name);
+        UnLua::FClassRegistry::Find(L)->Register(Name);
     }
     else if (Prefix == 'E')
     {
@@ -76,10 +80,19 @@ int UnLua::UELib::Open(lua_State* L)
     lua_rawset(L, LUA_REGISTRYINDEX);
 
     lua_pushvalue(L, -1);
-    lua_setglobal(L, "UE");
-    
+    lua_setglobal(L, NAMESPACE_NAME);
+
     lua_pushboolean(L, true);
     lua_setglobal(L, "WITH_UE4_NAMESPACE");
 
     return 1;
+}
+
+void UnLua::UELib::SetTableForClass(lua_State* L, const char* Name)
+{
+    lua_getglobal(L, NAMESPACE_NAME);
+    lua_pushstring(L, Name);
+    lua_pushvalue(L, -3);
+    lua_rawset(L, -3);
+    lua_pop(L, 1);
 }

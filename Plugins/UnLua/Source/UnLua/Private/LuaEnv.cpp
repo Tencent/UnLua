@@ -14,6 +14,7 @@
 
 #include "LuaEnv.h"
 #include "Binding.h"
+#include "ClassRegistry.h"
 #include "CollisionHelper.h"
 #include "DelegateHelper.h"
 #include "lstate.h"
@@ -52,6 +53,9 @@ namespace UnLua
         AddSearcher(LoadFromBuiltinLibs, 4);
 
         UELib::Open(L);
+        ClassRegistry = new FClassRegistry(L);
+        ClassRegistry->Register("UObject");
+        ClassRegistry->Register("UClass");
 
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
@@ -111,9 +115,6 @@ namespace UnLua
 
         FUnLuaDelegates::OnPreStaticallyExport.Broadcast();
 
-        // register base class
-        RegisterClass(L, "UClass", "UObject");
-
         // register statically exported classes
         auto ExportedNonReflectedClasses = GetExportedNonReflectedClasses();
         for (const auto Pair : ExportedNonReflectedClasses)
@@ -148,6 +149,7 @@ namespace UnLua
         Manager->Cleanup();
         Manager->RemoveFromRoot();
         Manager = nullptr;
+        ClassRegistry = nullptr;
 
         UnRegisterDelegates();
 

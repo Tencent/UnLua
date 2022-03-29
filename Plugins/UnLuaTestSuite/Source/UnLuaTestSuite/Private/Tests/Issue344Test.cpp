@@ -31,8 +31,8 @@ struct FUnLuaTest_Issue344 : FUnLuaTestBase
         GetTestRunner().AddExpectedError(TEXT("invalid owner"), EAutomationExpectedErrorFlags::Contains);
 
         const auto Chunk = "\
-        local obj = UE.UClass.Load('UUnLuaTestStub') \
-        obj.Counter = 1 \
+        local obj = UE.UClass.Load('/UnLuaTestSuite/Tests/Misc/BP_UnLuaTestStubActor.BP_UnLuaTestStubActor_C') \
+        obj.Int32Property = 1 \
         ";
         UnLua::RunChunk(L, Chunk);
 
