@@ -79,7 +79,6 @@ int UnLua::UELib::Open(lua_State* L)
     lua_pushstring(L, REGISTRY_KEY);
     lua_rawset(L, LUA_REGISTRYINDEX);
 
-    lua_pushvalue(L, -1);
     lua_setglobal(L, NAMESPACE_NAME);
 
     lua_pushboolean(L, true);
