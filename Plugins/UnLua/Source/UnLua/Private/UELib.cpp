@@ -19,7 +19,7 @@
 #include "LuaCore.h"
 
 static const char* REGISTRY_KEY = "UnLua_UELib";
-static const char* NAMESPACE_NAME = "UE";
+static const char* NAMESPACE_NAME = "UE"; 
 
 static void LoadUEType(const char* InName)
 {
@@ -43,7 +43,7 @@ static void LoadUEType(const char* InName)
     // TODO: if (!Ret->IsNative())
 }
 
-static int Index(lua_State* L)
+static int UE_Index(lua_State* L)
 {
     const int32 Type = lua_type(L, 2);
     if (Type != LUA_TSTRING)
@@ -69,7 +69,7 @@ int UnLua::UELib::Open(lua_State* L)
 {
     lua_newtable(L);
     lua_pushstring(L, "__index");
-    lua_pushcfunction(L, Index);
+    lua_pushcfunction(L, UE_Index);
     lua_rawset(L, -3);
 
     lua_pushvalue(L, -1);
