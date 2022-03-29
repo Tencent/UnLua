@@ -9,6 +9,7 @@ public class Lua : ModuleRules
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bEnforceIWYU = false;
+        bEnableExceptions = true;
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core" });
 
