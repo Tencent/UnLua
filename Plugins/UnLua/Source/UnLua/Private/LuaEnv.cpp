@@ -159,7 +159,8 @@ namespace UnLua
         GObjectReferencer.Cleanup(); // clean up object referencer
         FDelegateHelper::Cleanup(true); // clean up delegates
         GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
-        GReflectionRegistry.Cleanup(); // clean up reflection registry
+        if (AllEnvs.Num() == 0)
+            GReflectionRegistry.Cleanup(); // clean up reflection registry
         CandidateInputComponents.Empty();
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }

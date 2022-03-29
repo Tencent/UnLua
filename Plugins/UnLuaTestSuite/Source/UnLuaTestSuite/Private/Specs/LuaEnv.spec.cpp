@@ -31,7 +31,7 @@ void FLuaEnvSpec::Define()
         Env = MakeShared<UnLua::FLuaEnv>();
     });
 
-    xDescribe(TEXT("创建Lua环境"), [this]()
+    Describe(TEXT("创建Lua环境"), [this]()
     {
         It(TEXT("支持多个Lua环境"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
