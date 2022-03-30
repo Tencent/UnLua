@@ -1172,7 +1172,7 @@ static int32 GetField(lua_State* L)
         lua_pop(L, 1);
 
         // desc maybe released on c++ side,but lua side may still hold it
-        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(ClassName);
+        FClassDesc* ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
         if (!ClassDesc)
         {
             lua_pushnil(L);

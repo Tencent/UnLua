@@ -189,8 +189,6 @@ public:
     explicit FEnumPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty)
     {
-        const auto L = UnLua::GetState();
-        RegisterEnum(L, EnumProperty->GetEnum());
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -282,12 +280,10 @@ public:
     explicit FObjectPropertyDesc(FProperty *InProperty, bool bSoftObject)
         : FPropertyDesc(InProperty), MetaClass(nullptr), IsSoftObject(bSoftObject)
     {
-        const auto L = UnLua::GetState();
         if (ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
         {
             MetaClass = bSoftObject ? (((FSoftClassProperty*)Property)->MetaClass) : ((FClassProperty*)Property)->MetaClass;
         }
-        RegisterClass(L, MetaClass ? MetaClass : ObjectBaseProperty->PropertyClass);     // register meta/property class first
     }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
@@ -540,8 +536,6 @@ public:
     explicit FInterfacePropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty)
     {
-        const auto L = UnLua::GetState();
-        RegisterClass(L, InterfaceProperty->InterfaceClass);         // register interface class first
     }
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1190,8 +1184,7 @@ public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
-        const auto L = UnLua::GetState();
-        FClassDesc *ClassDesc = RegisterClass(L, StructProperty->Struct);    // register UScriptStruct first
+        FClassDesc *ClassDesc = GReflectionRegistry.RegisterClass(StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
 
@@ -1201,8 +1194,7 @@ public:
     FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
-        const auto L = UnLua::GetState();
-        FClassDesc *ClassDesc = RegisterClass(L, StructProperty->Struct);
+        FClassDesc *ClassDesc = GReflectionRegistry.RegisterClass(StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();
         bFirstPropOfScriptStruct = false;
@@ -1492,7 +1484,6 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
         const FByteProperty* TempByteProperty = CastField<FByteProperty>(InProperty);
         if (TempByteProperty->Enum)
         {
-            RegisterEnum(UnLua::GetState(), TempByteProperty->Enum);
         }
     }
     case CPT_Int8:

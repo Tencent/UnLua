@@ -6,8 +6,10 @@ local BP_PlayerController_C = Class()
 --end
 
 function BP_PlayerController_C:ReceiveBeginPlay()
-	local Widget = UE.UWidgetBlueprintLibrary.Create(self, UE.UClass.Load("/Game/Core/UI/UMG_Main.UMG_Main_C"))
-	Widget:AddToViewport()
+	if self:IsLocalPlayerController() then
+		local Widget = UE.UWidgetBlueprintLibrary.Create(self, UE.UClass.Load("/Game/Core/UI/UMG_Main.UMG_Main_C"))
+		Widget:AddToViewport()
+	end
 
 	self.ForwardVec = UE.FVector()
 	self.RightVec = UE.FVector()
