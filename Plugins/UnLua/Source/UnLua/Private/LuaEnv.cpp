@@ -75,7 +75,6 @@ namespace UnLua
 
         // register global Lua functions
         lua_register(L, "RegisterEnum", Global_RegisterEnum);
-        lua_register(L, "RegisterClass", Global_RegisterClass);
         lua_register(L, "GetUProperty", Global_GetUProperty);
         lua_register(L, "SetUProperty", Global_SetUProperty);
         lua_register(L, "LoadObject", Global_LoadObject);

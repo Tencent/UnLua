@@ -154,7 +154,6 @@ bool RegisterEnum(lua_State *L, UEnum *Enum);
  * Functions to register UClass
  */
 int32 Global_RegisterClass(lua_State *L);
-class FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName = nullptr);
 class FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct = nullptr);
 
 /**

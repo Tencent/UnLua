@@ -1649,19 +1649,6 @@ bool RegisterEnum(lua_State *L, UEnum *Enum)
     return bSuccess;
 }
 
-int32 Global_RegisterClass(lua_State *L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    RegisterClass(L, lua_tostring(L, 1));
-    return 0;
-}
-
 extern int32 UObject_Identical(lua_State *L);
 extern int32 UObject_Delete(lua_State *L);
 
@@ -1803,32 +1790,6 @@ static void RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
     if (ExportedClass)
         ExportedClasses.Add(ExportedClass);
     RegisterClassCore(L, ClassDesc, nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
-}
-
-FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName)
-{
-    if (!ClassName)
-    {
-        return nullptr;
-    }
-
-    FClassDesc *ClassDesc;
-    if (SuperClassName)
-    {
-        ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
-        GReflectionRegistry.RegisterClass(SuperClassName);
-    }
-    else
-    {
-        ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
-    }
-
-    if (!ClassDesc)
-        return nullptr;
-    
-    RegisterClassInternal(L, ClassDesc);
-
-    return ClassDesc;
 }
 
 FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct)
