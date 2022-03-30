@@ -15,6 +15,7 @@
 #include "ClassRegistry.h"
 #include "LuaEnv.h"
 #include "Binding.h"
+#include "LowLevel.h"
 #include "LuaCore.h"
 #include "UELib.h"
 #include "ReflectionUtils/ClassDesc.h"
@@ -22,22 +23,6 @@
 
 extern int32 UObject_Identical(lua_State* L);
 extern int32 UObject_Delete(lua_State* L);
-
-static FString GetMetatableName(const UObject* Object)
-{
-    if (Object->IsA<UEnum>())
-    {
-        return Object->IsNative() ? ((UEnum*)Object)->CppType : Object->GetPathName();
-    }
-
-    const UStruct* Type = Object->IsA<UStruct>() ? (UStruct*)Object : Object->GetClass();
-    if (Type->IsNative())
-    {
-        return FString::Printf(TEXT("%s%s"), Type->GetPrefixCPP(), *Type->GetName());
-    }
-
-    return Type->GetPathName();
-}
 
 UnLua::FClassRegistry::FClassRegistry(lua_State* GL)
     : GL(GL)
@@ -179,6 +164,6 @@ bool UnLua::FClassRegistry::Register(const char* MetatableName)
 
 bool UnLua::FClassRegistry::Register(const UStruct* Class)
 {
-    const auto MetatableName = GetMetatableName(Class);
+    const auto MetatableName = LowLevel::GetMetatableName(Class);
     return Register(TCHAR_TO_UTF8(*MetatableName));
 }

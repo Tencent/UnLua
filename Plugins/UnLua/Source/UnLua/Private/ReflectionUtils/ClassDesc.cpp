@@ -19,6 +19,7 @@
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
 #include "DefaultParamCollection.h"
+#include "LowLevel.h"
 #include "UEObjectReferencer.h"
 #include "UnLuaManager.h"
 #include "UnLuaModule.h"
@@ -61,7 +62,7 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     UStruct* SuperStruct = Struct->GetInheritanceSuper();
     while (SuperStruct)
     {
-        FString SuperName = FString::Printf(TEXT("%s%s"), SuperStruct->GetPrefixCPP(), *SuperStruct->GetName());
+        FString SuperName = UnLua::LowLevel::GetMetatableName(InStruct);
         FClassDesc* ClassDesc = GReflectionRegistry.RegisterClass(SuperStruct);
         SuperClasses.Add(ClassDesc);
         SuperStruct = SuperStruct->GetInheritanceSuper();

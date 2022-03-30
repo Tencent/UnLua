@@ -21,6 +21,7 @@
 #include "UEObjectReferencer.h"
 #include "CollisionHelper.h"
 #include "DelegateHelper.h"
+#include "LowLevel.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 #include "ReflectionUtils/FieldDesc.h"
@@ -406,48 +407,6 @@ bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
     return Registry->TrySetMetatable(L, MetatableName);
 }
 
-
-FString GetMetatableName(const UObjectBaseUtility* Object)
-{   
-    static TMap<FString, FString> Class2Metatable;
-
-	if (!UnLua::IsUObjectValid((UObjectBase*)Object))
-	{
-		return "";
-	}
-
-    const TCHAR* PrefixCPP;
-    FString ClassName;
-    if (Object->IsA<UEnum>()) 
-    {
-        PrefixCPP = TEXT("E");
-        ClassName = Object->GetName();
-    }
-    else if (Object->IsA<UStruct>())
-    {
-        PrefixCPP = ((UStruct*)Object)->GetPrefixCPP();
-        ClassName = Object->GetName();
-    }
-    else 
-    {
-        PrefixCPP = Object->GetClass()->GetPrefixCPP();
-        ClassName = Object->GetClass()->GetName();
-    }
-
-    FString MetatableName;
-    if (FString* MetatableNamePtr = Class2Metatable.Find(ClassName))
-    {
-        MetatableName = *MetatableNamePtr;
-    }
-    else
-    {
-        MetatableName = Class2Metatable.Add(ClassName, FString::Printf(TEXT("%s%s"), PrefixCPP, *ClassName));
-    }
-
-	return MetatableName;
-}
-
-
 /**
  * Create a new userdata with padding size
  */
@@ -603,7 +562,7 @@ void RemoveCachedScriptContainer(lua_State *L, void *Key)
  */
 void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 {
-    FString MetatableName = GetMetatableName(Object);
+    FString MetatableName = UnLua::LowLevel::GetMetatableName((UObject*)Object);
     if (MetatableName.IsEmpty())
     {
 		lua_pushnil(L);

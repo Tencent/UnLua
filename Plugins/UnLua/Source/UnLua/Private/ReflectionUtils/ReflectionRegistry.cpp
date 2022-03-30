@@ -15,6 +15,7 @@
 #include "ReflectionRegistry.h"
 
 #include "DelegateHelper.h"
+#include "LowLevel.h"
 #include "LuaCore.h"
 #include "PropertyDesc.h"
 #include "UEObjectReferencer.h"
@@ -114,7 +115,7 @@ FClassDesc* FReflectionRegistry::RegisterClass(const char* InName)
 FClassDesc* FReflectionRegistry::RegisterClass(UStruct *InStruct)
 {
 	// already registered ?
-	FString ClassName = FString::Printf(TEXT("%s%s"), InStruct->GetPrefixCPP(), *InStruct->GetName());
+	FString ClassName =  UnLua::LowLevel::GetMetatableName(InStruct);
 	FClassDesc *ClassDesc = GReflectionRegistry.FindClass(TCHAR_TO_UTF8(*ClassName));
     if (!ClassDesc)
     {
@@ -298,8 +299,7 @@ bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
     {
         if(!Object->IsNative() && Object->IsA(UStruct::StaticClass()))
         {
-            UClass* Class = Object->GetClass();
-            FString ClassName = FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
+            FString ClassName = UnLua::LowLevel::GetMetatableName(Object);
             ClassDesc = FindClass(TCHAR_TO_UTF8(*ClassName));
             if (ClassDesc)
             {
