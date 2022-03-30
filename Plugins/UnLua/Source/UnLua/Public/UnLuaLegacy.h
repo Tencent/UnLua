@@ -18,7 +18,6 @@
 #include "UnLuaBase.h"
 #include "UnLuaTemplate.h"
 #include "LuaValue.h"
-#include "LuaEnv.h"
 
 namespace UnLua
 {
@@ -666,19 +665,19 @@ namespace UnLua
     template <typename T, typename Allocator>
     FORCEINLINE FLuaValue::operator TArray<T, Allocator>&() const
     {
-        return UnLua::Get(UnLua::GetState(), Index, TType<TArray<T, Allocator>&>());
+        return UnLua::Get(Env->GetMainState(), Index, TType<TArray<T, Allocator>&>());
     }
 
     template <typename T, typename KeyFunc, typename Allocator>
     FORCEINLINE FLuaValue::operator TSet<T, KeyFunc, Allocator>&() const
     {
-        return UnLua::Get(UnLua::GetState(), Index, TType<TSet<T, KeyFunc, Allocator>&>());
+        return UnLua::Get(Env->GetMainState(), Index, TType<TSet<T, KeyFunc, Allocator>&>());
     }
 
     template <typename KeyType, typename ValueType, typename Allocator, typename KeyFunc>
     FORCEINLINE FLuaValue::operator TMap<KeyType, ValueType, Allocator, KeyFunc>&() const
     {
-        return UnLua::Get(UnLua::GetState(), Index, TType<TMap<KeyType, ValueType, Allocator, KeyFunc>&>());
+        return UnLua::Get(Env->GetMainState(), Index, TType<TMap<KeyType, ValueType, Allocator, KeyFunc>&>());
     }
 
     /**
