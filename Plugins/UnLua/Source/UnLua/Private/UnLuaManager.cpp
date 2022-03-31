@@ -197,7 +197,7 @@ bool UUnLuaManager::OnModuleHotfixed(const TCHAR *InModuleName)
                     UFunction** Func = UEFunctionsPtr->Find(LuaFuncName);
                     if (Func)
                     {
-                        OverrideFunction(*Func, Class, LuaFuncName);                            // override the UFunction
+                        ULuaFunction::Override(*Func, Class, Env, LuaFuncName); // override the UFunction
                     }
                 }
 
@@ -713,92 +713,6 @@ void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FNam
             UFunction *Function = *Func;
             ULuaFunction::Override(Function, OuterClass, Env, LuaFuncName);
         }
-    }
-}
-
-/**
- * Override a UFunction
- */
-void UUnLuaManager::OverrideFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
-{
-    if (TemplateFunction->GetOuter() != OuterClass)
-    {
-//#if UE_BUILD_SHIPPING || UE_BUILD_TEST
-        if (TemplateFunction->Script.Num() > 0 && TemplateFunction->Script[0] == EX_CallLua)
-        {
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-            TemplateFunction = GReflectionRegistry.FindOverriddenFunction(TemplateFunction);
-#else
-            TemplateFunction = New2TemplateFunctions.FindChecked(TemplateFunction);
-#endif
-        }
-//#endif
-        AddFunction(TemplateFunction, OuterClass, NewFuncName);     // add a duplicated UFunction to child UClass
-    }
-    else
-    {
-        ReplaceFunction(TemplateFunction, OuterClass);              // replace thunk function and insert opcodes
-    }
-}
-
-/**
- * Add a duplicated UFunction to UClass
- */
-void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
-{
-    UFunction *Func = OuterClass->FindFunctionByName(NewFuncName, EIncludeSuperFlag::ExcludeSuper);
-    if (!Func)
-    {
-        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
-        {
-            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
-            OuterClass->AddNativeFunction(*NewFuncName.ToString(), (FNativeFuncPtr)&FLuaInvoker::execCallLua);
-        }
-
-        UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName); // duplicate a UFunction
-        if (!NewFunc->HasAnyFunctionFlags(FUNC_Native) && NewFunc->Script.Num() > 0)
-        {
-            NewFunc->Script.Empty(3);                               // insert opcodes for non-native UFunction only
-        }
-        OverrideUFunction(NewFunc, (FNativeFuncPtr)&FLuaInvoker::execCallLua, GReflectionRegistry.RegisterFunction(NewFunc));   // replace thunk function and insert opcodes
-        TArray<TWeakObjectPtr<UFunction>> &DuplicatedFuncs = DuplicatedFunctions.FindOrAdd(OuterClass);
-        DuplicatedFuncs.AddUnique(NewFunc);
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        GReflectionRegistry.AddOverriddenFunction(NewFunc, TemplateFunction);
-#else
-        New2TemplateFunctions.Add(NewFunc, TemplateFunction);
-#endif
-    }
-}
-
-/**
- * Replace thunk function and insert opcodes
- */
-void UUnLuaManager::ReplaceFunction(UFunction *TemplateFunction, UClass *OuterClass)
-{
-    if (TemplateFunction->GetNativeFunc() == FLuaInvoker::execCallLua)
-        return;
-
-    FNativeFuncPtr *NativePtr = CachedNatives.Find(TemplateFunction);
-    if (!NativePtr)
-    {
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        FName NewFuncName(*FString::Printf(TEXT("%s%s"), *TemplateFunction->GetName(), TEXT("Copy")));
-        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
-        {
-            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
-            OuterClass->AddNativeFunction(*NewFuncName.ToString(), TemplateFunction->GetNativeFunc());
-        }
-        UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName);
-        GReflectionRegistry.AddOverriddenFunction(TemplateFunction, NewFunc);
-#endif
-        CachedNatives.Add(TemplateFunction, TemplateFunction->GetNativeFunc());
-        if (!TemplateFunction->HasAnyFunctionFlags(FUNC_Native) && TemplateFunction->Script.Num() > 0)
-        {
-            CachedScripts.Add(TemplateFunction, TemplateFunction->Script);
-            TemplateFunction->Script.Empty(3);
-        }
-        OverrideUFunction(TemplateFunction, (FNativeFuncPtr)&FLuaInvoker::execCallLua, GReflectionRegistry.RegisterFunction(TemplateFunction));
     }
 }
 

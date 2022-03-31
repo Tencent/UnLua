@@ -93,9 +93,6 @@ private:
     bool ConditionalUpdateClass(UClass *Class, const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions);
 
     void OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode = false);
-    void OverrideFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName);
-    void AddFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName);
-    void ReplaceFunction(UFunction *TemplateFunction, UClass *OuterClass);
 
     void ReplaceActionInputs(AActor *Actor, UInputComponent *InputComponent, TSet<FName> &LuaFunctions);
     void ReplaceKeyInputs(AActor *Actor, UInputComponent *InputComponent, TSet<FName> &LuaFunctions);
