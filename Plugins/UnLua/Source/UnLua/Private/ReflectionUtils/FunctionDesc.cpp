@@ -18,6 +18,7 @@
 #include "LuaCore.h"
 #include "LuaFunctionInjection.h"
 #include "DefaultParamCollection.h"
+#include "LuaFunction.h"
 #include "UnLua.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -316,16 +317,11 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #endif
     }
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    {   
-        if (IsOverridable(Function) 
-            && !Function->HasAnyFunctionFlags(FUNC_Net))
-        {
-            UFunction *OverriddenFunc = GReflectionRegistry.FindOverriddenFunction(Function);
-            if (OverriddenFunc)
-            {
-                FinalFunction = OverriddenFunc;
-            }
-        }
+    {
+        const auto LuaFunction = Cast<ULuaFunction>(Function);
+        const auto Overridden = LuaFunction == nullptr ? nullptr : LuaFunction->GetOverridden();
+        if (Overridden)
+            FinalFunction = Overridden;
     }
 #endif
 

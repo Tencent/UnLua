@@ -14,7 +14,6 @@
 
 
 #include "LuaFunction.h"
-
 #include "LuaCore.h"
 #include "LuaFunctionInjection.h"
 #include "ReflectionUtils/PropertyDesc.h"
@@ -22,7 +21,7 @@
 bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName)
 {
 	ULuaFunction* LuaFunction;
-	const auto bReplace = Function->GetOuter() == Outer;  
+	const auto bReplace = Function->GetOuter() == Outer;
 	if (bReplace)
 	{
 		// ReplaceFunction
@@ -31,7 +30,6 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* 
 		{
 			LuaFunction->Env = LuaEnv;
 			LuaFunction->LuaRef = 0;
-			LuaFunction->Overridden = Function;
 			LuaFunction->Initialize();
 			return true;
 		}
@@ -113,7 +111,7 @@ void ULuaFunction::Initialize()
     Buffer = nullptr;
     if (this->ParmsSize > 0)
     {
-        Buffer = FMemory::Malloc(InFunction->ParmsSize, 16);
+        Buffer = FMemory::Malloc(this->ParmsSize, 16);
 #if STATS
         const uint32 Size = FMemory::GetAllocSize(Buffer);
         INC_MEMORY_STAT_BY(STAT_UnLua_PersistentParamBuffer_Memory, Size);
@@ -189,6 +187,11 @@ void ULuaFunction::Initialize()
     if (CurrentOutParmRec)
     	CurrentOutParmRec->NextOutParm = nullptr;
 #endif
+}
+
+UFunction* ULuaFunction::GetOverridden() const
+{
+	return Overridden.Get();
 }
 
 void ULuaFunction::Call(UObject* Context, FFrame& Stack, void* const RetValueAddress)

@@ -33,6 +33,8 @@ public:
     
     void Call(UObject* Context, FFrame& Stack, RESULT_DECL);
 
+    UFunction* GetOverridden() const;
+
 private:
     static FOutParmRec* FindOutParamRec(FOutParmRec* OutParam, FProperty* OutProperty)
     {
