@@ -314,36 +314,6 @@ bool FReflectionRegistry::NotifyUObjectDeleted(const UObjectBase* InObject)
     return false;
 }
 
-
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-bool FReflectionRegistry::AddOverriddenFunction(UFunction *NewFunc, UFunction *OverriddenFunc)
-{
-    UFunction **OverriddenFuncPtr = OverriddenFunctions.Find(NewFunc);
-    if (!OverriddenFuncPtr)
-    {
-        OverriddenFunctions.Add(NewFunc, OverriddenFunc);
-        return true;
-    }
-    return false;
-}
-
-UFunction* FReflectionRegistry::RemoveOverriddenFunction(UFunction *NewFunc)
-{
-    if (NewFunc->HasAnyFlags(RF_BeginDestroyed))
-        return nullptr;
-    UFunction *OverriddenFunc = nullptr;
-    OverriddenFunctions.RemoveAndCopyValue(NewFunc, OverriddenFunc);
-    return OverriddenFunc;
-}
-
-UFunction* FReflectionRegistry::FindOverriddenFunction(UFunction *NewFunc)
-{
-    UFunction **OverriddenFuncPtr = OverriddenFunctions.Find(NewFunc);
-    return OverriddenFuncPtr ? *OverriddenFuncPtr : nullptr;
-}
-#endif
-
-
 void FReflectionRegistry::AddToDescSet(void* Desc, EDescType type)
 {
 	DescSet.Add(Desc, type);
@@ -433,14 +403,6 @@ FClassDesc* FReflectionRegistry::RegisterClassInternal(const FString &ClassName,
 void FReflectionRegistry::PostGarbageCollect()
 {
     for (auto It = Functions.CreateIterator(); It; ++It)
-    {
-        if (!It.Key().IsValid())
-        {
-            It.RemoveCurrent();
-        }
-    }
-
-    for (auto It = OverriddenFunctions.CreateIterator(); It; ++It)
     {
         if (!It.Key().IsValid())
         {

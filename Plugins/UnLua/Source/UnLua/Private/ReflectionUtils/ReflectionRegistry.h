@@ -88,9 +88,6 @@ private:
     TMap<FName, FClassDesc*> Name2Classes;
     TMap<FName, FEnumDesc*> Enums;
     TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    TMap<TWeakObjectPtr<UFunction>, UFunction*> OverriddenFunctions;
-#endif
 
 	TMap<void*, EDescType> DescSet;
     TMap<const UObject*, bool> GCSet;

@@ -392,16 +392,6 @@ void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFun
     }
 
     GReflectionRegistry.UnRegisterFunction(Function);
-
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    UFunction* OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
-    if (!OverriddenFunc)
-        return;
-    if (OverriddenFunc->IsValidLowLevel())
-        RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
-    else
-        GReflectionRegistry.UnRegisterFunction(OverriddenFunc);
-#endif
 }
 
 /**
@@ -414,9 +404,6 @@ void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<TWeakObjectP
         if (!Function.IsValid())
             continue;
         RemoveUFunction(Function.Get(), Class); // clean up duplicated UFunction
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        GReflectionRegistry.RemoveOverriddenFunction(Function.Get());
-#endif
     }
 }
 
