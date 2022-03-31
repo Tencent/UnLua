@@ -318,10 +318,13 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     }
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     {
-        const auto LuaFunction = Cast<ULuaFunction>(Function);
-        const auto Overridden = LuaFunction == nullptr ? nullptr : LuaFunction->GetOverridden();
-        if (Overridden)
-            FinalFunction = Overridden;
+        if (!Function->HasAnyFunctionFlags(FUNC_Net))
+        {
+            const auto LuaFunction = Cast<ULuaFunction>(Function);
+            const auto Overridden = LuaFunction == nullptr ? nullptr : LuaFunction->GetOverridden();
+            if (Overridden)
+                FinalFunction = Overridden;
+        }
     }
 #endif
 
