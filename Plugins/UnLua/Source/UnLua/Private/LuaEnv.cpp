@@ -20,6 +20,7 @@
 #include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
+#include "LuaFunction.h"
 #include "lualib.h"
 #include "UELib.h"
 #include "UEObjectReferencer.h"

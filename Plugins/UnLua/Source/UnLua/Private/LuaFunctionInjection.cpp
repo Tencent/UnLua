@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaFunctionInjection.h"
+
+#include "LuaFunction.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 #include "Misc/MemStack.h"
 #include "GameFramework/Actor.h"
@@ -22,76 +24,8 @@
  */
 DEFINE_FUNCTION(FLuaInvoker::execCallLua)
 {
-    bool bUnpackParams = false;
-    UFunction *Func = Stack.Node;
-    FFunctionDesc *FuncDesc = nullptr;
-    if (Stack.CurrentNativeFunction)
-    {
-        if (Func != Stack.CurrentNativeFunction)
-        {
-            Func = Stack.CurrentNativeFunction;
-#if UE_BUILD_SHIPPING || UE_BUILD_TEST
-            FMemory::Memcpy(&FuncDesc, &Stack.CurrentNativeFunction->Script[1], sizeof(FuncDesc));
-#endif
-            bUnpackParams = true;
-        }
-        else
-        {
-            if (Func->GetNativeFunc() == (FNativeFuncPtr)&FLuaInvoker::execCallLua)
-            {
-                check(*Stack.Code == EX_CallLua);
-                Stack.SkipCode(1);      // skip EX_CallLua only when called from native func
-            }
-        }
-    }
-
-    //!!!Fix!!!
-    //find desc from classdesc
-#if UE_BUILD_SHIPPING || UE_BUILD_TEST
-    if (!FuncDesc)
-    {
-        FMemory::Memcpy(&FuncDesc, Stack.Code, sizeof(FuncDesc));
-        Stack.SkipCode(sizeof(FuncDesc));       // skip 'FFunctionDesc' pointer
-    }
-#else
-    FuncDesc = GReflectionRegistry.RegisterFunction(Func);
-#endif
-
-    bool bRpcCall = false;
-#if SUPPORTS_RPC_CALL
-    AActor *Actor = Cast<AActor>(Stack.Object);
-    if (!Actor)
-    {
-        UActorComponent *ActorComponent = Cast<UActorComponent>(Stack.Object);
-        if (ActorComponent)
-        {
-            Actor = ActorComponent->GetOwner();
-        }
-    }
-    if (Actor)
-    {
-        /*ENetMode NetMode = Actor->GetNetMode();
-        if ((Func->HasAnyFunctionFlags(FUNC_NetClient | FUNC_NetMulticast) && NetMode == NM_Client) || (Func->HasAnyFunctionFlags(FUNC_NetServer | FUNC_NetMulticast) && (NetMode == NM_DedicatedServer || NetMode == NM_ListenServer)))
-        {
-            bRpcCall = true;
-        }*/
-
-        int32 Callspace = Actor->GetFunctionCallspace(Func, nullptr);
-        bRpcCall = Callspace & FunctionCallspace::Remote;
-    }
-#endif
-
-    bool bSuccess = FuncDesc->CallLua(Context, Stack, (void*)RESULT_PARAM, bRpcCall, bUnpackParams);
-    if (!bSuccess && bUnpackParams)
-    {
-        FMemMark Mark(FMemStack::Get());
-        void *Params = New<uint8>(FMemStack::Get(), Func->ParmsSize, 16);
-        for (TFieldIterator<FProperty> It(Func); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
-        {
-            Stack.Step(Stack.Object, It->ContainerPtrToValuePtr<uint8>(Params));
-        }
-        Stack.SkipCode(1);          // skip EX_EndFunctionParms
-    }
+    const auto LuaFunction = Cast<ULuaFunction>(Stack.CurrentNativeFunction);
+    LuaFunction->Call(Context, Stack, RESULT_PARAM);
 }
 
 /**
