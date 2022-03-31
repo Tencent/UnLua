@@ -33,7 +33,8 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByFLuaTable()
     const auto RetValues1 = Require.Call("Tutorials.08_CppCallLua");
     check(RetValues1.Num() == 1);
 
-    const auto LuaTable = UnLua::FLuaTable(RetValues1[0]);
+    const auto RetValue = RetValues1[0];
+    const auto LuaTable = UnLua::FLuaTable(&Env, RetValue);
     const auto RetValues2 = LuaTable.Call("CallMe", 3.3f, 4.4f);
     check(RetValues2.Num() == 1);
 

@@ -737,7 +737,7 @@ namespace UnLua
         lua_pushcfunction(L, ReportLuaCallError);
 
         lua_pushstring(L, FuncName);
-        int32 Type = lua_gettable(L, Index);
+        int32 Type = lua_gettable(L, Index - 2);
         if (Type != LUA_TFUNCTION)
         {
             UE_LOG(LogUnLua, Warning, TEXT("Function %s of table doesn't exist!"), UTF8_TO_TCHAR(FuncName));
