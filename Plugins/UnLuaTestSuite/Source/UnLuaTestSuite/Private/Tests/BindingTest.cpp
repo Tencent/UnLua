@@ -154,4 +154,26 @@ bool FUnLuaTest_MultipleBinding::RunTest(const FString& Parameters)
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FUnLuaTest_Overridden, TEXT("UnLua.API.Binding.Overridden 覆写：同一个Lua脚本绑定到不同类"), EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter);
+
+bool FUnLuaTest_Overridden::RunTest(const FString& Parameters)
+{
+    Run([this](lua_State* L, UWorld* World)
+    {
+        const char* Chunk = R"(
+                    local ActorClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Binding/BP_UnLuaTestActor_StaticBindingChild.BP_UnLuaTestActor_StaticBindingChild_C')
+                    G_Actor = World:SpawnActor(ActorClass)
+                    return G_Actor:Greeting('ABC')
+                )";
+        UnLua::RunChunk(L, Chunk);
+
+        World->Tick(LEVELTICK_All, SMALL_NUMBER);
+
+        const auto Actual = lua_tostring(L, -1);
+        TEST_EQUAL(Actual, "BP ABC Lua");
+    });
+
+    return true;
+}
+
 #endif //WITH_DEV_AUTOMATION_TESTS
