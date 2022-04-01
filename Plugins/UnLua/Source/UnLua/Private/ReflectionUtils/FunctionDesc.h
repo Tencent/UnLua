@@ -100,6 +100,8 @@ public:
      */
     bool CallLua(UObject *Context, FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams);
 
+    bool CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self);
+ 
     /**
      * Call this UFunction
      *

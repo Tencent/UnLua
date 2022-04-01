@@ -58,6 +58,8 @@ namespace UnLua
         ClassRegistry->Register("UObject");
         ClassRegistry->Register("UClass");
 
+        DelegateRegistry = new FDelegateRegistry(L);
+
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);

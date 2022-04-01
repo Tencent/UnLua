@@ -17,6 +17,7 @@
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
 #include "DelegateHelper.h"
+#include "LuaEnv.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 #include "UEObjectReferencer.h"
@@ -1340,6 +1341,7 @@ public:
         else
         {
             FScriptDelegate *ScriptDelegate = DelegateProperty->GetPropertyValuePtr((void*)ValuePtr);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty);
             FDelegateHelper::PreBind(ScriptDelegate, DelegateProperty);
             UnLua::PushPointer(L, ScriptDelegate, "FScriptDelegate", bFirstPropOfScriptStruct);
         }

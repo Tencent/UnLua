@@ -15,6 +15,7 @@
 #pragma once
 
 #include "ClassRegistry.h"
+#include "DelegateRegistry.h"
 #include "UnLuaManager.h"
 #include "lua.h"
 #include "LuaValue.h"
@@ -92,6 +93,8 @@ namespace UnLua
 
         FClassRegistry* GetClassRegistry() const { return ClassRegistry; }
 
+        FDelegateRegistry* GetDelegateRegistry() const { return DelegateRegistry; }
+
         void AddLoader(const FLuaFileLoader Loader);
 
         void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
@@ -129,6 +132,7 @@ namespace UnLua
         FCriticalSection CandidatesLock;
         UUnLuaManager* Manager;
         FClassRegistry* ClassRegistry;
+        FDelegateRegistry* DelegateRegistry;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;

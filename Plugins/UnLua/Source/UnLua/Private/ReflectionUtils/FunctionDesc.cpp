@@ -245,6 +245,15 @@ bool FFunctionDesc::CallLua(UObject *Context, FFrame &Stack, void *RetValueAddre
     return bSuccess;
 }
 
+bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self)
+{
+    bool bOk = PushFunction(L, Self, LuaRef);
+    if (!bOk)
+        return false;
+    bOk = CallLuaInternal(L, Params, nullptr, nullptr); // call Lua function...
+    return bOk;
+}
+
 /**
  * Call the UFunction
  */
