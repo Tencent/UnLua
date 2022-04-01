@@ -33,7 +33,7 @@ void UnLua::FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* 
     {
         auto& Env = FLuaEnv::FindEnvChecked(GL);
         lua_pushvalue(L, Index);
-        const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
+        const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
         const auto Handler = NewObject<ULuaDelegateHandler>();
         GObjectReferencer.AddObjectRef(Handler);
         Handler->BindTo(Delegate, &Env, Ref, Lifecycle);

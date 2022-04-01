@@ -87,10 +87,6 @@ public:
     static void PreBind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property);
     static bool Bind(FScriptDelegate *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static bool Bind(FScriptDelegate *ScriptDelegate, FDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
-    static void Unbind(const FCallbackDesc &Callback);
-    static void Unbind(FScriptDelegate *ScriptDelegate);
-    static int32 Execute(lua_State *L, FScriptDelegate *ScriptDelegate, int32 NumParams, int32 FirstParamIndex);
-
     static void PreAdd(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property);
     static bool Add(FMulticastDelegateType *ScriptDelegate, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
     static bool Add(FMulticastDelegateType *ScriptDelegate, FMulticastDelegateProperty *Property, UObject *Object, const FCallbackDesc &Callback, int32 CallbackRef);
