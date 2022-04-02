@@ -1417,6 +1417,7 @@ public:
         else
         {
             T *ScriptDelegate = (T*)ValuePtr;
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, MulticastDelegateProperty);
             FDelegateHelper::PreAdd(ScriptDelegate, MulticastDelegateProperty);
             UnLua::PushPointer(L, ScriptDelegate, TMulticastDelegateTraits<T>::GetName(), bFirstPropOfScriptStruct);
         }
@@ -1445,7 +1446,7 @@ public:
                 // a delegate function is created already
                 FScriptDelegate DynamicDelegate;
                 DynamicDelegate.BindUFunction(Object, FuncName);
-                TMulticastDelegateTraits<T>::AddDelegate(MulticastDelegateProperty, DynamicDelegate, ValuePtr);
+                TMulticastDelegateTraits<T>::AddDelegate(MulticastDelegateProperty, DynamicDelegate, nullptr, ValuePtr);
             }
         }
         return true;

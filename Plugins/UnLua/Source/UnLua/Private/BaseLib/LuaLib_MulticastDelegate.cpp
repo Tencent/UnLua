@@ -74,22 +74,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
-        FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
-        if (FuncName == NAME_None)
-        {
-            lua_pushvalue(L, 3);
-            int32 CallbackRef = luaL_ref(L, LUA_REGISTRYINDEX);
-            FDelegateHelper::Add(Delegate, Object, Callback, CallbackRef);
-        }
-        else
-        {
-			UE_LOG(UnLuaDelegate, Verbose, TEXT("++ %d %s %p %s"), FDelegateHelper::GetNumBindings(Callback), *Object->GetName(), Object, *FuncName.ToString());
-
-            FScriptDelegate DynamicDelegate;
-            DynamicDelegate.BindUFunction(Object, FuncName);
-            FDelegateHelper::AddDelegate(Delegate, Object, Callback, DynamicDelegate);
-        }
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Add(L, 3, Delegate, Object);
         return 0;
     }
 
@@ -107,7 +93,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Remove(Delegate, Object, FCallbackDesc(Object->GetClass(), CallbackFunction, Object));;
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Remove(L, (FMulticastScriptDelegate*)Delegate, 3);
         return 0;
     }
 
@@ -130,7 +117,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Clear(Delegate);
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Clear(L, (FMulticastScriptDelegate*)Delegate);
         return 0;
     }
 
@@ -153,7 +141,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Broadcast(L, Delegate, NumParams - 1, 2);
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Broadcast(L, Delegate, NumParams - 1, 2);
         return 0;
     }
 };

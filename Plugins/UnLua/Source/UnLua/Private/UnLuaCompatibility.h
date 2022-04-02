@@ -87,28 +87,28 @@ struct TMulticastDelegateTraits
 {
     static const char* GetName() { return "FMulticastSparseDelegate"; }
 
-    static void AddDelegate(FMulticastDelegateProperty *Property, FScriptDelegate Delegate, void *PropertyValue)
+    static void AddDelegate(FMulticastDelegateProperty* Property, FScriptDelegate Delegate, UObject* Parent, void* PropertyValue)
     {
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
-        Property->AddDelegate(Delegate, nullptr, PropertyValue);
+        Property->AddDelegate(Delegate, Parent, PropertyValue);
 #endif
     }
 
-    static void RemoveDelegate(FMulticastDelegateProperty *Property, FScriptDelegate Delegate, void *PropertyValue)
+    static void RemoveDelegate(FMulticastDelegateProperty* Property, FScriptDelegate Delegate, UObject* Parent, void* PropertyValue)
     {
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
-        Property->RemoveDelegate(Delegate, nullptr, PropertyValue);
+        Property->RemoveDelegate(Delegate, Parent, PropertyValue);
 #endif
     }
 
-    static void ClearDelegate(FMulticastDelegateProperty *Property, void *PropertyValue)
+    static void ClearDelegate(FMulticastDelegateProperty* Property, UObject* Parent, void* PropertyValue)
     {
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
-        Property->ClearDelegate(nullptr, PropertyValue);
+        Property->ClearDelegate(Parent, PropertyValue);
 #endif
     }
 
-    static FMulticastScriptDelegate* GetMulticastDelegate(FMulticastDelegateProperty *Property, void *PropertyValue)
+    static FMulticastScriptDelegate* GetMulticastDelegate(FMulticastDelegateProperty* Property, void* PropertyValue)
     {
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION > 22)
         return (FMulticastScriptDelegate*)Property->GetMulticastDelegate(PropertyValue);
@@ -118,11 +118,31 @@ struct TMulticastDelegateTraits
     }
 };
 
-template <> struct TMulticastDelegateTraits<FMulticastScriptDelegate>
+template <>
+struct TMulticastDelegateTraits<FMulticastScriptDelegate>
 {
-    static const char* GetName() { return "FMulticastScriptDelegate"; }
-    static void AddDelegate(FMulticastDelegateProperty *Property, FScriptDelegate Delegate, void *PropertyValue) { ((FMulticastScriptDelegate*)PropertyValue)->AddUnique(Delegate); }
-    static void RemoveDelegate(FMulticastDelegateProperty *Property, FScriptDelegate Delegate, void *PropertyValue) { ((FMulticastScriptDelegate*)PropertyValue)->Remove(Delegate); }
-    static void ClearDelegate(FMulticastDelegateProperty *Property, void *PropertyValue) { ((FMulticastScriptDelegate*)PropertyValue)->Clear(); }
-    static FMulticastScriptDelegate* GetMulticastDelegate(FMulticastDelegateProperty *Property, void *PropertyValue) { return (FMulticastScriptDelegate*)PropertyValue; }
+    static const char* GetName()
+    {
+        return "FMulticastScriptDelegate";
+    }
+
+    static void AddDelegate(FMulticastDelegateProperty* Property, FScriptDelegate Delegate, UObject* Parent, void* PropertyValue)
+    {
+        ((FMulticastScriptDelegate*)PropertyValue)->AddUnique(Delegate);
+    }
+    
+    static void RemoveDelegate(FMulticastDelegateProperty* Property, FScriptDelegate Delegate, UObject* Parent, void* PropertyValue)
+    {
+        ((FMulticastScriptDelegate*)PropertyValue)->Remove(Delegate);
+    }
+    
+    static void ClearDelegate(FMulticastDelegateProperty* Property, UObject* Parent, void* PropertyValue)
+    {
+        ((FMulticastScriptDelegate*)PropertyValue)->Clear();
+    }
+    
+    static FMulticastScriptDelegate* GetMulticastDelegate(FMulticastDelegateProperty* Property,  void* PropertyValue)
+    {
+        return (FMulticastScriptDelegate*)PropertyValue;
+    }
 };

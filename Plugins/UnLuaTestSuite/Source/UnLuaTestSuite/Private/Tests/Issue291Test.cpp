@@ -44,13 +44,14 @@ struct FUnLuaTest_Issue291 : FUnLuaTestBase
             collectgarbage('collect')\
             \
             Actor.Capsule.OnInputTouchBegin:Broadcast(0)\
+            Actor.Capsule.OnInputTouchBegin:Remove(Actor.Capsule, test)\
             return Flag\
         ";
 
         UnLua::RunChunk(L, Chunk);
 
         const auto Result = !!lua_toboolean(L, -1);
-        RUNNER_TEST_FALSE(Result); // 当前版本设计如此，详细讨论请参考 https://github.com/Tencent/UnLua/issues/291
+        RUNNER_TEST_TRUE(Result);
         
         return true;
     }

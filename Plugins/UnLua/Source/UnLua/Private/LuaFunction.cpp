@@ -20,93 +20,93 @@
 
 bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName)
 {
-	ULuaFunction* LuaFunction;
-	const auto bReplace = Function->GetOuter() == Outer;
-	if (bReplace)
-	{
-		// ReplaceFunction
-		LuaFunction = Cast<ULuaFunction>(Function);
-		if (LuaFunction)
-		{
-			LuaFunction->Env = LuaEnv;
-			LuaFunction->LuaRef = 0;
-			LuaFunction->Initialize();
-			return true;
-		}
+    ULuaFunction* LuaFunction;
+    const auto bReplace = Function->GetOuter() == Outer;
+    if (bReplace)
+    {
+        // ReplaceFunction
+        LuaFunction = Cast<ULuaFunction>(Function);
+        if (LuaFunction)
+        {
+            LuaFunction->Env = LuaEnv;
+            LuaFunction->LuaRef = LUA_NOREF;
+            LuaFunction->Initialize();
+            return true;
+        }
 
-		const auto OverriddenName = FString::Printf(TEXT("%s%s"), *Function->GetName(), TEXT("__Overridden"));
-		constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
-		Function->Rename(*OverriddenName, Function->GetOuter(), RenameFlags);
-	}
-	else
-	{
-		// AddFunction
-		if (Outer->FindFunctionByName(NewName, EIncludeSuperFlag::ExcludeSuper))
-			return false;
+        const auto OverriddenName = FString::Printf(TEXT("%s%s"), *Function->GetName(), TEXT("__Overridden"));
+        constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
+        Function->Rename(*OverriddenName, Function->GetOuter(), RenameFlags);
+    }
+    else
+    {
+        // AddFunction
+        if (Outer->FindFunctionByName(NewName, EIncludeSuperFlag::ExcludeSuper))
+            return false;
 
-		if (Function->HasAnyFunctionFlags(FUNC_Native))
-		{
-			// Need to do this before the call to DuplicateObject in the case that the super-function already has FUNC_Native
-			Outer->AddNativeFunction(*NewName.ToString(), &FLuaInvoker::execCallLua);
-		}
-	}
+        if (Function->HasAnyFunctionFlags(FUNC_Native))
+        {
+            // Need to do this before the call to DuplicateObject in the case that the super-function already has FUNC_Native
+            Outer->AddNativeFunction(*NewName.ToString(), &FLuaInvoker::execCallLua);
+        }
+    }
 
-	FObjectDuplicationParameters DuplicationParams(Function, Outer);
-	DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
-	DuplicationParams.DestName = NewName;
-	DuplicationParams.DestClass = StaticClass();
-	LuaFunction = Cast<ULuaFunction>(StaticDuplicateObjectEx(DuplicationParams));
-	LuaFunction->FunctionFlags |= FUNC_Native;
-	LuaFunction->Env = LuaEnv;
-	LuaFunction->LuaRef = 0;
-	LuaFunction->Overridden = Function;
-	LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
-	LuaFunction->SetNativeFunc(FLuaInvoker::execCallLua);
+    FObjectDuplicationParameters DuplicationParams(Function, Outer);
+    DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
+    DuplicationParams.DestName = NewName;
+    DuplicationParams.DestClass = StaticClass();
+    LuaFunction = Cast<ULuaFunction>(StaticDuplicateObjectEx(DuplicationParams));
+    LuaFunction->FunctionFlags |= FUNC_Native;
+    LuaFunction->Env = LuaEnv;
+    LuaFunction->LuaRef = LUA_NOREF;
+    LuaFunction->Overridden = Function;
+    LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
+    LuaFunction->SetNativeFunc(FLuaInvoker::execCallLua);
 
-	if (bReplace)
-		LuaFunction->SetSuperStruct(Function->GetSuperStruct());
-	else
-		LuaFunction->SetSuperStruct(Function);
+    if (bReplace)
+        LuaFunction->SetSuperStruct(Function->GetSuperStruct());
+    else
+        LuaFunction->SetSuperStruct(Function);
 
-	if (!FPlatformProperties::RequiresCookedData())
-		UMetaData::CopyMetadata(Function, LuaFunction);
+    if (!FPlatformProperties::RequiresCookedData())
+        UMetaData::CopyMetadata(Function, LuaFunction);
 
-	LuaFunction->StaticLink(true);
-	LuaFunction->Initialize();
+    LuaFunction->StaticLink(true);
+    LuaFunction->Initialize();
 
-	Outer->AddFunctionToFunctionMap(LuaFunction, NewName);
+    Outer->AddFunctionToFunctionMap(LuaFunction, NewName);
 
-	if (Outer->IsRooted() || GUObjectArray.IsDisregardForGC(Outer))
-	{
-		LuaFunction->AddToRoot();
-	}
-	else
-	{
-		LuaFunction->Next = Outer->Children;
-		Outer->Children = LuaFunction;
-		LuaFunction->AddToCluster(Outer);
-	}
+    if (Outer->IsRooted() || GUObjectArray.IsDisregardForGC(Outer))
+    {
+        LuaFunction->AddToRoot();
+    }
+    else
+    {
+        LuaFunction->Next = Outer->Children;
+        Outer->Children = LuaFunction;
+        LuaFunction->AddToCluster(Outer);
+    }
 
-	return true;
+    return true;
 }
 
 void ULuaFunction::Initialize()
 {
-	ReturnPropertyIndex = INDEX_NONE;
-	LatentPropertyIndex = INDEX_NONE;
-	NumRefProperties = 0;
-	NumCalls = 0;
-	bInterfaceFunc = false;
-	Properties.Reset();
-	OutPropertyIndices.Reset();
+    ReturnPropertyIndex = INDEX_NONE;
+    LatentPropertyIndex = INDEX_NONE;
+    NumRefProperties = 0;
+    NumCalls = 0;
+    bInterfaceFunc = false;
+    Properties.Reset();
+    OutPropertyIndices.Reset();
 
-	bStaticFunc = this->HasAnyFunctionFlags(FUNC_Static); // a static function?
-	UClass* OuterClass = this->GetOuterUClass();
-	if (OuterClass->HasAnyClassFlags(CLASS_Interface) && OuterClass != UInterface::StaticClass())
-		bInterfaceFunc = true; // a function in interface?
+    bStaticFunc = this->HasAnyFunctionFlags(FUNC_Static); // a static function?
+    UClass* OuterClass = this->GetOuterUClass();
+    if (OuterClass->HasAnyClassFlags(CLASS_Interface) && OuterClass != UInterface::StaticClass())
+        bInterfaceFunc = true; // a function in interface?
 
-	bHasDelegateParams = false;
-	// create persistent parameter buffer. memory for speed
+    bHasDelegateParams = false;
+    // create persistent parameter buffer. memory for speed
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     Buffer = nullptr;
     if (this->ParmsSize > 0)
@@ -119,32 +119,32 @@ void ULuaFunction::Initialize()
     }
 #endif
 
-	// pre-create OutParmRec. memory for speed
+    // pre-create OutParmRec. memory for speed
 #if !SUPPORTS_RPC_CALL
     OutParmRec = nullptr;
     FOutParmRec *CurrentOutParmRec = nullptr;
 #endif
 
-	static const FName NAME_LatentInfo = TEXT("LatentInfo");
-	Properties.Reserve(this->NumParms);
-	for (TFieldIterator<FProperty> It(this); It && (It->PropertyFlags & CPF_Parm); ++It)
-	{
-		FProperty* Property = *It;
-		FPropertyDesc* PropertyDesc = FPropertyDesc::Create(Property);
-		int32 Index = Properties.Add(PropertyDesc);
-		if (PropertyDesc->IsReturnParameter())
-		{
-			ReturnPropertyIndex = Index; // return property
-		}
-		else if (LatentPropertyIndex == INDEX_NONE && Property->GetFName() == NAME_LatentInfo)
-		{
-			LatentPropertyIndex = Index; // 'LatentInfo' property for latent function
-		}
-		else if (Property->HasAnyPropertyFlags(CPF_OutParm | CPF_ReferenceParm))
-		{
-			++NumRefProperties;
+    static const FName NAME_LatentInfo = TEXT("LatentInfo");
+    Properties.Reserve(this->NumParms);
+    for (TFieldIterator<FProperty> It(this); It && (It->PropertyFlags & CPF_Parm); ++It)
+    {
+        FProperty* Property = *It;
+        FPropertyDesc* PropertyDesc = FPropertyDesc::Create(Property);
+        int32 Index = Properties.Add(PropertyDesc);
+        if (PropertyDesc->IsReturnParameter())
+        {
+            ReturnPropertyIndex = Index; // return property
+        }
+        else if (LatentPropertyIndex == INDEX_NONE && Property->GetFName() == NAME_LatentInfo)
+        {
+            LatentPropertyIndex = Index; // 'LatentInfo' property for latent function
+        }
+        else if (Property->HasAnyPropertyFlags(CPF_OutParm | CPF_ReferenceParm))
+        {
+            ++NumRefProperties;
 
-			// pre-create OutParmRec for 'out' property
+            // pre-create OutParmRec for 'out' property
 #if !SUPPORTS_RPC_CALL
             FOutParmRec *Out = (FOutParmRec*)FMemory::Malloc(sizeof(FOutParmRec), alignof(FOutParmRec));
 #if STATS
@@ -165,23 +165,23 @@ void ULuaFunction::Initialize()
             }
 #endif
 
-			if (!Property->HasAnyPropertyFlags(CPF_ConstParm))
-			{
-				OutPropertyIndices.Add(Index); // non-const reference property
-			}
-		}
+            if (!Property->HasAnyPropertyFlags(CPF_ConstParm))
+            {
+                OutPropertyIndices.Add(Index); // non-const reference property
+            }
+        }
 
-		if (!bHasDelegateParams && !PropertyDesc->IsReturnParameter())
-		{
-			int8 PropertyType = PropertyDesc->GetPropertyType();
-			if (PropertyType == CPT_Delegate
-				|| PropertyType == CPT_MulticastDelegate
-				|| PropertyType == CPT_MulticastSparseDelegate)
-			{
-				bHasDelegateParams = true;
-			}
-		}
-	}
+        if (!bHasDelegateParams && !PropertyDesc->IsReturnParameter())
+        {
+            int8 PropertyType = PropertyDesc->GetPropertyType();
+            if (PropertyType == CPT_Delegate
+                || PropertyType == CPT_MulticastDelegate
+                || PropertyType == CPT_MulticastSparseDelegate)
+            {
+                bHasDelegateParams = true;
+            }
+        }
+    }
 
 #if !SUPPORTS_RPC_CALL
     if (CurrentOutParmRec)
@@ -191,183 +191,175 @@ void ULuaFunction::Initialize()
 
 UFunction* ULuaFunction::GetOverridden() const
 {
-	return Overridden.Get();
+    return Overridden.Get();
 }
 
 void ULuaFunction::Call(UObject* Context, FFrame& Stack, void* const RetValueAddress)
 {
-	// push Lua function to the stack
-	bool bSuccess;
-	const auto L = Env->GetMainState();
-	if (LuaRef)
-	{
-		bSuccess = PushFunction(L, Context, LuaRef);
-	}
-	else
-	{
-		// support rpc in standalone mode
-		bool bRpcCall = HasAnyFunctionFlags(FUNC_Net);
-		LuaRef = PushFunction(L, Context, bRpcCall ? TCHAR_TO_UTF8(*FString::Printf(TEXT("%s_RPC"), *GetName())) : TCHAR_TO_UTF8(*GetName()));
-		if (LuaRef == INDEX_NONE)
-		{
-			LuaRef = 0;
-			bSuccess = false;
-		}
-		else
-		{
-			bSuccess = true;
-		}
-	}
+    // push Lua function to the stack
+    bool bSuccess;
+    const auto L = Env->GetMainState();
+    if (LuaRef != LUA_NOREF)
+    {
+        bSuccess = PushFunction(L, Context, LuaRef);
+    }
+    else
+    {
+        // support rpc in standalone mode
+        bool bRpcCall = HasAnyFunctionFlags(FUNC_Net);
+        LuaRef = PushFunction(L, Context, bRpcCall ? TCHAR_TO_UTF8(*FString::Printf(TEXT("%s_RPC"), *GetName())) : TCHAR_TO_UTF8(*GetName()));
+        bSuccess = LuaRef != LUA_NOREF;
+    }
 
-	if (!bSuccess)
-		return;
+    if (!bSuccess)
+        return;
 
-	const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
+    const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
 
-	if (bUnpackParams)
-	{
-		void* Params = nullptr;
+    if (bUnpackParams)
+    {
+        void* Params = nullptr;
 #if ENABLE_PERSISTENT_PARAM_BUFFER
         if (!bHasDelegateParams)
         {
             Params = Buffer;
         }
 #endif
-		if (!Params)
-		{
-			Params = ParmsSize > 0 ? FMemory::Malloc(ParmsSize, 16) : nullptr;
-		}
+        if (!Params)
+        {
+            Params = ParmsSize > 0 ? FMemory::Malloc(ParmsSize, 16) : nullptr;
+        }
 
-		SkipCodes(Stack, Params);
+        SkipCodes(Stack, Params);
 
-		bSuccess = CallLuaInternal(L, Params, Stack.OutParms, RetValueAddress); // call Lua function...
+        bSuccess = CallLuaInternal(L, Params, Stack.OutParms, RetValueAddress); // call Lua function...
 
-		if (Params)
-		{
+        if (Params)
+        {
 #if ENABLE_PERSISTENT_PARAM_BUFFER
             if (bHasDelegateParams)
 #endif
-			FMemory::Free(Params);
-		}
-	}
-	else
-	{
-		bSuccess = CallLuaInternal(L, Stack.Locals, Stack.OutParms, RetValueAddress); // call Lua function...
-	}
+                FMemory::Free(Params);
+        }
+    }
+    else
+    {
+        bSuccess = CallLuaInternal(L, Stack.Locals, Stack.OutParms, RetValueAddress); // call Lua function...
+    }
 
-	if (!bSuccess && bUnpackParams)
-	{
-		FMemMark Mark(FMemStack::Get());
-		void* Params = New<uint8>(FMemStack::Get(), ParmsSize, 16);
-		SkipCodes(Stack, Params);
-	}
+    if (!bSuccess && bUnpackParams)
+    {
+        FMemMark Mark(FMemStack::Get());
+        void* Params = New<uint8>(FMemStack::Get(), ParmsSize, 16);
+        SkipCodes(Stack, Params);
+    }
 }
 
 bool ULuaFunction::CallLuaInternal(lua_State* L, void* InParams, FOutParmRec* OutParams, void* RetValueAddress) const
 {
-	// prepare parameters for Lua function
-	FOutParmRec* OutParam = OutParams;
-	for (const FPropertyDesc* Property : Properties)
-	{
-		if (Property->IsReturnParameter())
-			continue;
+    // prepare parameters for Lua function
+    FOutParmRec* OutParam = OutParams;
+    for (const FPropertyDesc* Property : Properties)
+    {
+        if (Property->IsReturnParameter())
+            continue;
 
-		if (Property->IsConstOutParameter())
-		{
-			OutParam = FindOutParamRec(OutParam, Property->GetProperty());
-			if (OutParam)
-			{
-				Property->GetValueInternal(L, OutParam->PropAddr, false);
-				OutParam = OutParam->NextOutParm;
-				continue;
-			}
-		}
+        if (Property->IsConstOutParameter())
+        {
+            OutParam = FindOutParamRec(OutParam, Property->GetProperty());
+            if (OutParam)
+            {
+                Property->GetValueInternal(L, OutParam->PropAddr, false);
+                OutParam = OutParam->NextOutParm;
+                continue;
+            }
+        }
 
-		Property->GetValue(L, InParams, !(Property->GetProperty()->PropertyFlags & CPF_OutParm));
-	}
+        Property->GetValue(L, InParams, !(Property->GetProperty()->PropertyFlags & CPF_OutParm));
+    }
 
-	// object is also pushed, return is push when return
-	int32 NumParams = Properties.Num();
-	int32 NumResult = OutPropertyIndices.Num();
-	if (ReturnPropertyIndex == INDEX_NONE)
-		NumParams++;
-	else
-		NumResult++;
+    // object is also pushed, return is push when return
+    int32 NumParams = Properties.Num();
+    int32 NumResult = OutPropertyIndices.Num();
+    if (ReturnPropertyIndex == INDEX_NONE)
+        NumParams++;
+    else
+        NumResult++;
 
-	const bool bSuccess = ::CallFunction(L, NumParams, NumResult); // pcall
-	if (!bSuccess)
-		return false;
+    const bool bSuccess = ::CallFunction(L, NumParams, NumResult); // pcall
+    if (!bSuccess)
+        return false;
 
-	// out value
-	// suppose out param is also pushed on stack? this is assumed done by user... so we can not trust it
-	int32 NumResultOnStack = lua_gettop(L);
-	if (NumResult <= NumResultOnStack)
-	{
-		int32 OutPropertyIndex = -NumResult;
-		OutParam = OutParams;
+    // out value
+    // suppose out param is also pushed on stack? this is assumed done by user... so we can not trust it
+    int32 NumResultOnStack = lua_gettop(L);
+    if (NumResult <= NumResultOnStack)
+    {
+        int32 OutPropertyIndex = -NumResult;
+        OutParam = OutParams;
 
-		for (int32 i = 0; i < OutPropertyIndices.Num(); ++i)
-		{
-			FPropertyDesc* OutProperty = Properties[OutPropertyIndices[i]];
-			if (OutProperty->IsReferenceParameter())
-			{
-				continue;
-			}
-			OutParam = FindOutParamRec(OutParam, OutProperty->GetProperty());
-			if (!OutParam)
-			{
-				OutProperty->SetValue(L, InParams, OutPropertyIndex, true);
-			}
-			else
-			{
-				// user do push it on stack?
-				int32 Type = lua_type(L, OutPropertyIndex);
-				if (Type == LUA_TNIL)
-				{
-					// so we need copy it back from input parameter
-					OutProperty->CopyBack(OutParam->PropAddr, OutProperty->GetProperty()->ContainerPtrToValuePtr<void>(InParams)); // copy back value to out property
-				}
-				else
-				{
-					// copy it from stack
-					OutProperty->SetValueInternal(L, OutParam->PropAddr, OutPropertyIndex, true); // set value for out property
-				}
-				OutParam = OutParam->NextOutParm;
-			}
-			++OutPropertyIndex;
-		}
-	}
+        for (int32 i = 0; i < OutPropertyIndices.Num(); ++i)
+        {
+            FPropertyDesc* OutProperty = Properties[OutPropertyIndices[i]];
+            if (OutProperty->IsReferenceParameter())
+            {
+                continue;
+            }
+            OutParam = FindOutParamRec(OutParam, OutProperty->GetProperty());
+            if (!OutParam)
+            {
+                OutProperty->SetValue(L, InParams, OutPropertyIndex, true);
+            }
+            else
+            {
+                // user do push it on stack?
+                int32 Type = lua_type(L, OutPropertyIndex);
+                if (Type == LUA_TNIL)
+                {
+                    // so we need copy it back from input parameter
+                    OutProperty->CopyBack(OutParam->PropAddr, OutProperty->GetProperty()->ContainerPtrToValuePtr<void>(InParams)); // copy back value to out property
+                }
+                else
+                {
+                    // copy it from stack
+                    OutProperty->SetValueInternal(L, OutParam->PropAddr, OutPropertyIndex, true); // set value for out property
+                }
+                OutParam = OutParam->NextOutParm;
+            }
+            ++OutPropertyIndex;
+        }
+    }
 
-	// return value
-	if (ReturnPropertyIndex > INDEX_NONE)
-	{
-		if (NumResultOnStack < 1)
-		{
-			UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("%s has return value, but no value found on stack!"), *GetName());
-		}
-		else
-		{
-			const FPropertyDesc* ReturnProperty = Properties[ReturnPropertyIndex];
+    // return value
+    if (ReturnPropertyIndex > INDEX_NONE)
+    {
+        if (NumResultOnStack < 1)
+        {
+            UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("%s has return value, but no value found on stack!"), *GetName());
+        }
+        else
+        {
+            const FPropertyDesc* ReturnProperty = Properties[ReturnPropertyIndex];
 
-			// set value for blueprint side return property
-			const FOutParmRec* RetParam = OutParam ? FindOutParamRec(OutParam, ReturnProperty->GetProperty()) : nullptr;
-			if (RetParam)
-				ReturnProperty->SetValueInternal(L, RetParam->PropAddr, -1, true);
+            // set value for blueprint side return property
+            const FOutParmRec* RetParam = OutParam ? FindOutParamRec(OutParam, ReturnProperty->GetProperty()) : nullptr;
+            if (RetParam)
+                ReturnProperty->SetValueInternal(L, RetParam->PropAddr, -1, true);
 
-			// set value for return property
-			check(RetValueAddress);
-			ReturnProperty->SetValueInternal(L, RetValueAddress, -1, true);
-		}
-	}
+            // set value for return property
+            check(RetValueAddress);
+            ReturnProperty->SetValueInternal(L, RetValueAddress, -1, true);
+        }
+    }
 
-	lua_pop(L, NumResult);
-	return true;
+    lua_pop(L, NumResult);
+    return true;
 }
 
 void ULuaFunction::SkipCodes(FFrame& Stack, void* Params) const
 {
-	for (TFieldIterator<FProperty> It(this); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
-		Stack.Step(Stack.Object, It->ContainerPtrToValuePtr<uint8>(Params));
-	check(Stack.PeekCode() == EX_EndFunctionParms);
-	Stack.SkipCode(1); // skip EX_EndFunctionParms
+    for (TFieldIterator<FProperty> It(this); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
+        Stack.Step(Stack.Object, It->ContainerPtrToValuePtr<uint8>(Params));
+    check(Stack.PeekCode() == EX_EndFunctionParms);
+    Stack.SkipCode(1); // skip EX_EndFunctionParms
 }

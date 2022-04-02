@@ -34,12 +34,19 @@ public:
 
     bool IsAlive() const;
 
-    void BindTo(FScriptDelegate* Delegate, UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifecycle);
+    void BindTo(FDelegateProperty* InProperty, FScriptDelegate* InDelegate);
+
+    void AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate);
 
     virtual void ProcessEvent(UFunction* Function, void* Parms) override;
 
+    void RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate);
+
+    static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifecycle);
+
     TWeakObjectPtr<UObject> Lifecycle;
-    FScriptDelegate* Delegate;
     UnLua::FLuaEnv* Env;
     int32 LuaRef;
+    FProperty* Property;
+    void* Delegate;
 };

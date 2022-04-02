@@ -14,7 +14,10 @@
 
 
 #include "LuaDelegateHandler.h"
+#include "DelegateHelper.h"
 #include "LuaEnv.h"
+
+static const FName NAME_Dummy = TEXT("Dummy");
 
 void ULuaDelegateHandler::Dummy()
 {
@@ -25,18 +28,41 @@ bool ULuaDelegateHandler::IsAlive() const
     return Lifecycle.IsValid();
 }
 
-void ULuaDelegateHandler::BindTo(FScriptDelegate* InDelegate, UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifeCycle)
+void ULuaDelegateHandler::BindTo(FDelegateProperty* InProperty, FScriptDelegate* InDelegate)
 {
-    static const FName NAME_Invoke = TEXT("Dummy");
-
-    Env = InEnv;
-    LuaRef = InLuaRef;
-    Lifecycle = InLifeCycle;
+    Property = InProperty;
     Delegate = InDelegate;
-    Delegate->BindUFunction(this, NAME_Invoke);
+
+    InDelegate->BindUFunction(this, NAME_Dummy);
+}
+
+void ULuaDelegateHandler::AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate)
+{
+    Property = InProperty;
+    Delegate = InDelegate;
+
+    FScriptDelegate DynamicDelegate;
+    DynamicDelegate.BindUFunction(this, NAME_Dummy);
+    TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(InProperty, MoveTemp(DynamicDelegate), Lifecycle.Get(), InDelegate);
+}
+
+void ULuaDelegateHandler::RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate)
+{
+    FScriptDelegate DynamicDelegate;
+    DynamicDelegate.BindUFunction(this, NAME_Dummy);
+    TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(InProperty, MoveTemp(DynamicDelegate), Lifecycle.Get(), InDelegate);
 }
 
 void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 {
-    Env->GetDelegateRegistry()->Execute(this, Parms, LuaRef);
+    Env->GetDelegateRegistry()->Execute(this, Parms);
+}
+
+ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifecycle)
+{
+    const auto Ret = NewObject<ULuaDelegateHandler>();
+    Ret->Env = InEnv;
+    Ret->LuaRef = InLuaRef;
+    Ret->Lifecycle = InLifecycle;
+    return Ret;
 }

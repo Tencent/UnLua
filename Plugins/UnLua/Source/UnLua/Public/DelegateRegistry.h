@@ -27,25 +27,42 @@ namespace UnLua
 
         lua_State* GL;
 
-        void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* Lifecycle);
+        void Register(void* Delegate, FProperty* Property);
 
-        void Register(FScriptDelegate* ScriptDelegate, FDelegateProperty* DelegateProperty);
-
-        void Execute(const ULuaDelegateHandler* Handler, void* Params, int32 LuaRef);
+        void Execute(const ULuaDelegateHandler* Handler, void* Params);
 
         int32 Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex);
 
+        void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* Lifecycle);
+
         void Unbind(FScriptDelegate* Delegate);
 
+        void Add(lua_State* L, int32 Index, void* Delegate, UObject* Lifecycle);
+
+        void Remove(lua_State* L, void* Delegate, int Index);
+
+        void Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex);
+
+        void Clear(lua_State* L, void* Delegate);
+
     private:
-        FFunctionDesc* GetSignatureDesc(const FScriptDelegate* Delegate);
+        FFunctionDesc* GetSignatureDesc(const void* Delegate);
 
         struct FDelegateInfo
         {
-            FDelegateProperty* Property;
+            union
+            {
+                FProperty* Property;
+                FDelegateProperty* DelegateProperty;
+                FMulticastDelegateProperty* MulticastProperty;
+            };
+
+            UFunction* SignatureFunction;
             FFunctionDesc* Desc;
+            TMap<int32, TWeakObjectPtr<ULuaDelegateHandler>> Handlers;
         };
 
-        TMap<FScriptDelegate*, FDelegateInfo> Delegates;
+        TMap<void*, FDelegateInfo> Delegates;
+        TMap<const void*, int32> LuaFunctions; // TODO: refactor this with object registry
     };
 }

@@ -207,7 +207,7 @@ bool FDelegateHelper::Add(FMulticastDelegateType *ScriptDelegate, FMulticastDele
 		UE_LOG(UnLuaDelegate, Verbose, TEXT("++ 1 %s %p %s"), *Object->GetName(), Object, *FuncName.ToString());
 
 		CreateSignature(Property->SignatureFunction, FuncName, Callback, CallbackRef);      // create the signature function for the callback
-		TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(Property, DynamicDelegate, ScriptDelegate);   // add a callback to the delegate
+		TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(Property, DynamicDelegate, nullptr, ScriptDelegate);   // add a callback to the delegate
 
 		TArray<FCallbackDesc>& DelegateCallbacks = MutiDelegates2Callback.FindOrAdd(ScriptDelegate);
 		DelegateCallbacks.AddUnique(Callback);
@@ -245,7 +245,7 @@ void FDelegateHelper::Remove(FMulticastDelegateType *ScriptDelegate, UObject *Ob
 
             FScriptDelegate DynamicDelegate;
             DynamicDelegate.BindUFunction(Object, (*CallbackFuncPtr)->GetFName());
-            TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(*Property, DynamicDelegate, ScriptDelegate);    // remove a callback from the delegate
+            TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(*Property, DynamicDelegate, nullptr, ScriptDelegate);    // remove a callback from the delegate
             
             // try to delete the signature
             FSignatureDesc** SignatureDesc = Function2Signature.Find(*CallbackFuncPtr);
@@ -291,7 +291,7 @@ void FDelegateHelper::Clear(FMulticastDelegateType *InScriptDelegate)
     Property = *PropertyPtr;
 #endif
 
-    TMulticastDelegateTraits<FMulticastDelegateType>::ClearDelegate(Property, InScriptDelegate);        // clear all callbacks
+    TMulticastDelegateTraits<FMulticastDelegateType>::ClearDelegate(Property, nullptr, InScriptDelegate);        // clear all callbacks
 
     TArray<FCallbackDesc> DelegateCallbacks;
     bool bSuccess = MutiDelegates2Callback.RemoveAndCopyValue(InScriptDelegate, DelegateCallbacks);
@@ -364,7 +364,7 @@ void FDelegateHelper::AddDelegate(FMulticastDelegateType *ScriptDelegate, UObjec
     }
     Property = *PropertyPtr;
 #endif
-    TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(Property, DynamicDelegate, ScriptDelegate);   // adds a callback to delegate's invocation list
+    TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(Property, DynamicDelegate, nullptr, ScriptDelegate);   // adds a callback to delegate's invocation list
 
     TArray<FCallbackDesc>& DelegateCallbacks = MutiDelegates2Callback.FindOrAdd(ScriptDelegate);
     DelegateCallbacks.AddUnique(Callback);
