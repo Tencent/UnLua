@@ -88,6 +88,19 @@ void FUnLuaLibDelegateSpec::Define()
             UnLua::RunChunk(L, Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 1LL);
         });
+
+        It(TEXT("执行委托：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Stub = NewObject(UE.UUnLuaTestStub)\
+            local Counter = 0\
+            Stub.SimpleHandler = { Stub, function() Counter = Counter + 1 end }\
+            Stub.SimpleHandler:Execute()\
+            return Counter\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            TEST_EQUAL(lua_tointeger(L, -1), 1LL);
+        });
     });
 
     AfterEach([this]

@@ -21,6 +21,7 @@
 
 BEGIN_DEFINE_SPEC(FUnLuaLibMulticastDelegateSpec, "UnLua.API.FMulticastScriptDelegate", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
     lua_State* L;
+    UUnLuaTestStub* Stub;
 END_DEFINE_SPEC(FUnLuaLibMulticastDelegateSpec)
 
 void FUnLuaLibMulticastDelegateSpec::Define()
@@ -29,32 +30,37 @@ void FUnLuaLibMulticastDelegateSpec::Define()
     {
         UnLua::Startup();
         L = UnLua::CreateState();
+        Stub = NewObject<UUnLuaTestStub>();
+        UnLua::PushUObject(L, Stub);
+        lua_setglobal(L, "Stub");
     });
 
     Describe(TEXT("Add"), [this]()
     {
         It(TEXT("添加绑定"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            Stub.SimpleEvent:Add(Stub, function() end)\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            Flag = false
+            Stub.SimpleEvent:Add(Stub, function() Flag = true end)
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_TRUE(Stub->SimpleEvent.IsBound());
+            Stub->SimpleEvent.Broadcast();
+            lua_getglobal(L, "Flag");
+            TEST_TRUE(lua_toboolean(L, -1));
         });
 
         It(TEXT("添加绑定：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            Stub.SimpleEvent = { Stub, function() end }\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            Flag = false
+            Stub.SimpleEvent = { Stub, function() Flag = true end }
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_TRUE(Stub->SimpleEvent.IsBound());
+            Stub->SimpleEvent.Broadcast();
+            lua_getglobal(L, "Flag");
+            TEST_TRUE(lua_toboolean(L, -1));
         });
     });
 
@@ -62,15 +68,12 @@ void FUnLuaLibMulticastDelegateSpec::Define()
     {
         It(TEXT("移除绑定"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            local Callback = function() end\
-            Stub.SimpleEvent:Add(Stub, Callback)\
-            Stub.SimpleEvent:Remove(Stub, Callback)\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            local Callback = function() end
+            Stub.SimpleEvent:Add(Stub, Callback)
+            Stub.SimpleEvent:Remove(Stub, Callback)
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_FALSE(Stub->SimpleEvent.IsBound());
         });
     });
@@ -79,14 +82,11 @@ void FUnLuaLibMulticastDelegateSpec::Define()
     {
         It(TEXT("清理所有的绑定"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            Stub.SimpleEvent:Add(Stub, function() end)\
-            Stub.SimpleEvent:Clear()\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            Stub.SimpleEvent:Add(Stub, function() end)
+            Stub.SimpleEvent:Clear()
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_FALSE(Stub->SimpleEvent.IsBound());
         });
     });
@@ -95,15 +95,14 @@ void FUnLuaLibMulticastDelegateSpec::Define()
     {
         It(TEXT("广播事件"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            local Counter1 = 0\
-            local Counter2 = 0\
-            Stub.SimpleEvent:Add(Stub, function() Counter1 = Counter1 + 1 end)\
-            Stub.SimpleEvent:Add(Stub, function() Counter2 = Counter2 + 1 end)\
-            Stub.SimpleEvent:Broadcast()\
-            return Counter1, Counter2\
-            ";
+            const char* Chunk = R"(
+            local Counter1 = 0
+            local Counter2 = 0
+            Stub.SimpleEvent:Add(Stub, function() Counter1 = Counter1 + 1 end)
+            Stub.SimpleEvent:Add(Stub, function() Counter2 = Counter2 + 1 end)
+            Stub.SimpleEvent:Broadcast()
+            return Counter1, Counter2
+            )";
             UnLua::RunChunk(L, Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 1LL);
             TEST_EQUAL(lua_tointeger(L, -2), 1LL);

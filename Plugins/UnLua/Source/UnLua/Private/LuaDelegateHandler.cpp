@@ -42,14 +42,14 @@ void ULuaDelegateHandler::AddTo(FMulticastDelegateProperty* InProperty, void* In
 
     FScriptDelegate DynamicDelegate;
     DynamicDelegate.BindUFunction(this, NAME_Dummy);
-    TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(InProperty, MoveTemp(DynamicDelegate), Lifecycle.Get(), InDelegate);
+    TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(InProperty, MoveTemp(DynamicDelegate), nullptr, InDelegate);
 }
 
 void ULuaDelegateHandler::RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate)
 {
     FScriptDelegate DynamicDelegate;
     DynamicDelegate.BindUFunction(this, NAME_Dummy);
-    TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(InProperty, MoveTemp(DynamicDelegate), Lifecycle.Get(), InDelegate);
+    TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(InProperty, MoveTemp(DynamicDelegate), nullptr, InDelegate);
 }
 
 void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
@@ -59,7 +59,7 @@ void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 
 ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifecycle)
 {
-    const auto Ret = NewObject<ULuaDelegateHandler>();
+    const auto Ret = NewObject<ULuaDelegateHandler>(InLifecycle);
     Ret->Env = InEnv;
     Ret->LuaRef = InLuaRef;
     Ret->Lifecycle = InLifecycle;
