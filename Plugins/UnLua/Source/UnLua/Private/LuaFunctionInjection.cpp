@@ -110,47 +110,6 @@ struct FFakeProperty : public FField
 };
 
 /**
- * 1. Duplicate template UFUNCTION
- * 2. Add duplicated UFUNCTION to class' function map
- * 3. Register 'FFunctionDesc'
- * 4. Add to root if necessary
- */
-UFunction* DuplicateUFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
-{
-    static int32 Offset = offsetof(FFakeProperty, Offset_Internal);
-    static FArchive Ar;         // dummy archive used for FProperty::Link()
-
-    FObjectDuplicationParameters DuplicationParams(TemplateFunction, OuterClass);
-    DuplicationParams.DestName = NewFuncName;
-    DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
-    UFunction *NewFunc = Cast<UFunction>(StaticDuplicateObjectEx(DuplicationParams));
-    
-    if (!FPlatformProperties::RequiresCookedData())
-    {
-        UMetaData::CopyMetadata(TemplateFunction, NewFunc);
-    }
-    NewFunc->Bind();
-    NewFunc->StaticLink(true);
-
-    OuterClass->AddFunctionToFunctionMap(NewFunc, NewFuncName);
-    GReflectionRegistry.RegisterFunction(NewFunc);
-    NewFunc->ClearInternalFlags(EInternalObjectFlags::Native);
-
-    if (OuterClass->IsRooted() || GUObjectArray.IsDisregardForGC(OuterClass))
-    {
-        NewFunc->AddToRoot();
-    }
-    else
-    {
-        NewFunc->Next = OuterClass->Children;
-        OuterClass->Children = NewFunc;
-        NewFunc->AddToCluster(OuterClass);
-    }
-
-    return NewFunc;
-}
-
-/**
  * 1. Remove duplicated UFUNCTION from class' function map
  * 2. Unregister 'FFunctionDesc'
  * 3. Remove from root if necessary

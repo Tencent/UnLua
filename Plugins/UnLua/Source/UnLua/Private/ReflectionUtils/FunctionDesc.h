@@ -30,7 +30,7 @@ class FFunctionDesc
     friend class FReflectionRegistry;
 
 public:
-    FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams, int32 InFunctionRef = INDEX_NONE);
+    FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams);
     ~FFunctionDesc();
 
     /**
@@ -88,17 +88,6 @@ public:
      * @return - the UFunction
      */
     FORCEINLINE UFunction* GetFunction() const { return Function; }
-
-    /**
-     * Call Lua function that overrides this UFunction
-     *
-     * @param Stack - script execution stack
-     * @param RetValueAddress - address of return value
-     * @param bRpcCall - whether this function is a RPC function
-     * @param bUnpackParams - whether to unpack parameters from the stack
-     * @return - true if the Lua function executes successfully, false otherwise
-     */
-    bool CallLua(UObject *Context, FFrame &Stack, void *RetValueAddress, bool bRpcCall, bool bUnpackParams);
 
     bool CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self);
  

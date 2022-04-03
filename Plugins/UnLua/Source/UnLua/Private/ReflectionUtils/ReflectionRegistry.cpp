@@ -231,28 +231,6 @@ bool FReflectionRegistry::UnRegisterEnum(const FEnumDesc* EnumDesc)
     return true;
 }
 
-/**
- * Register a UFunction
- */
-FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction* InFunction, int32 InFunctionRef)
-{
-    TSharedPtr<FFunctionDesc> Desc = Functions.FindRef(InFunction);
-    if (Desc)
-    {
-        if (InFunctionRef != INDEX_NONE)
-        {
-            checkf(Desc->FunctionRef == INDEX_NONE || Desc->FunctionRef == InFunctionRef, TEXT("Function(%p %s) Owner=%s Desc(%s))"), InFunction, *InFunction->GetName(),
-                   *InFunction->GetOwnerClass()->GetName(), *Desc->FuncName)
-            Desc->FunctionRef = InFunctionRef;
-        }
-        return Desc.Get();
-    }
-
-    Desc = MakeShareable(new FFunctionDesc(InFunction, nullptr, InFunctionRef));
-    Functions.Add(InFunction, Desc);
-    return Desc.Get();
-}
-
 bool FReflectionRegistry::UnRegisterFunction(UFunction* InFunction)
 {
     if (InFunction->HasAnyFlags(RF_BeginDestroyed))

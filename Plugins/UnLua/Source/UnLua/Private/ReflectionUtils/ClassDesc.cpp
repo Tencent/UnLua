@@ -187,7 +187,7 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
             {
                 check(Function);
                 FParameterCollection* DefaultParams = FunctionCollection ? FunctionCollection->Functions.Find(FieldName) : nullptr;
-                FieldDesc->FieldIndex = Functions.Add(new FFunctionDesc(Function, DefaultParams, INDEX_NONE)); // index of function descriptor
+                FieldDesc->FieldIndex = Functions.Add(new FFunctionDesc(Function, DefaultParams)); // index of function descriptor
                 ++FieldDesc->FieldIndex;
                 FieldDesc->FieldIndex = -FieldDesc->FieldIndex;
             }

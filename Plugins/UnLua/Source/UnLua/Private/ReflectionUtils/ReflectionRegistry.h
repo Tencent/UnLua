@@ -58,7 +58,6 @@ public:
     FEnumDesc* RegisterEnum(const char* InName);
     FEnumDesc* RegisterEnum(UEnum *InEnum);
 
-    FFunctionDesc* RegisterFunction(UFunction *InFunction, int32 InFunctionRef = INDEX_NONE);
     bool UnRegisterFunction(UFunction *InFunction);
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     bool AddOverriddenFunction(UFunction *NewFunc, UFunction *OverriddenFunc);
