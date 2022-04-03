@@ -47,6 +47,5 @@ public:
     TWeakObjectPtr<UObject> Lifecycle;
     UnLua::FLuaEnv* Env;
     int32 LuaRef;
-    FProperty* Property;
     void* Delegate;
 };

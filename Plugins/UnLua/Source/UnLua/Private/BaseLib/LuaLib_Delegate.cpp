@@ -41,8 +41,7 @@ static int32 FScriptDelegate_Bind(lua_State *L)
         return 0;
     }
 
-    const void *CallbackFunction = lua_topointer(L, 3);
-    if (!CallbackFunction)
+    if (lua_type(L, 3) != LUA_TFUNCTION)
     {
         UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("%s: Invalid function!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;

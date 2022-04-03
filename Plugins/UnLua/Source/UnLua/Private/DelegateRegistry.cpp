@@ -52,26 +52,16 @@ void UnLua::FDelegateRegistry::Register(void* Delegate, FProperty* Property)
 
 void UnLua::FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* Lifecycle)
 {
-    const auto Type = lua_type(L, Index);
-    if (Type == LUA_TFUNCTION)
-    {
-        auto& Env = FLuaEnv::FindEnvChecked(GL);
-        lua_pushvalue(L, Index);
-        const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
-        LuaFunctions.Add(lua_topointer(L, Index), Ref);
-        const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
-        GObjectReferencer.AddObjectRef(Handler);
-        auto Info = Delegates.FindChecked(Delegate);
-        Handler->BindTo(Info.DelegateProperty, Delegate);
-        Info.Handlers.Add(Ref, Handler);
-        return;
-    }
-
-    if (Type == LUA_TUSERDATA)
-    {
-        const auto Func = (UFunction*)GetUObject(L, -1);
-        Delegate->BindUFunction(Func->GetOuter(), Func->GetFName());
-    }
+    check(lua_type(L, Index) == LUA_TFUNCTION);
+    auto& Env = FLuaEnv::FindEnvChecked(GL);
+    lua_pushvalue(L, Index);
+    const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
+    LuaFunctions.Add(lua_topointer(L, Index), Ref);
+    const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
+    GObjectReferencer.AddObjectRef(Handler);
+    auto Info = Delegates.FindChecked(Delegate);
+    Handler->BindTo(Info.DelegateProperty, Delegate);
+    Info.Handlers.Add(Ref, Handler);
 }
 
 void UnLua::FDelegateRegistry::Unbind(FScriptDelegate* Delegate)

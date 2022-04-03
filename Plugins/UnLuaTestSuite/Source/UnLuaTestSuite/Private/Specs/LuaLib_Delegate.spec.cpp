@@ -21,6 +21,7 @@
 
 BEGIN_DEFINE_SPEC(FUnLuaLibDelegateSpec, "UnLua.API.FScriptDelegate", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
     lua_State* L;
+    UUnLuaTestStub* Stub;
 END_DEFINE_SPEC(FUnLuaLibDelegateSpec)
 
 void FUnLuaLibDelegateSpec::Define()
@@ -29,30 +30,37 @@ void FUnLuaLibDelegateSpec::Define()
     {
         UnLua::Startup();
         L = UnLua::CreateState();
+        Stub = NewObject<UUnLuaTestStub>();
+        UnLua::PushUObject(L, Stub);
+        lua_setglobal(L, "Stub");
     });
 
     Describe(TEXT("Bind"), [this]()
     {
         It(TEXT("绑定"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            Stub.SimpleHandler:Bind(Stub, function() end)\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            Stub.SimpleHandler:Bind(Stub, function() end)
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_TRUE(Stub->SimpleHandler.IsBound());
+        });
+        It(TEXT("绑定：UFunction"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            Stub.SimpleHandler:Bind(Stub, Stub.AddCount)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            TEST_TRUE(Stub->SimpleHandler.IsBound());
+            Stub->SimpleHandler.Execute();
+            TEST_EQUAL(Stub->Counter, 1);
         });
         It(TEXT("绑定：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            Stub.SimpleHandler = { Stub, function() end }\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            Stub.SimpleHandler = { Stub, function() end }
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_TRUE(Stub->SimpleHandler.IsBound());
         });
     });
@@ -61,15 +69,12 @@ void FUnLuaLibDelegateSpec::Define()
     {
         It(TEXT("解绑"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            local Callback = function() end\
-            Stub.SimpleHandler:Bind(Stub, Callback)\
-            Stub.SimpleHandler:Unbind()\
-            return Stub\
-            ";
+            const char* Chunk = R"(
+            local Callback = function() end
+            Stub.SimpleHandler:Bind(Stub, Callback)
+            Stub.SimpleHandler:Unbind()
+            )";
             UnLua::RunChunk(L, Chunk);
-            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_FALSE(Stub->SimpleHandler.IsBound());
         });
     });
@@ -78,26 +83,24 @@ void FUnLuaLibDelegateSpec::Define()
     {
         It(TEXT("执行委托"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            local Counter = 0\
-            Stub.SimpleHandler:Bind(Stub, function() Counter = Counter + 1 end)\
-            Stub.SimpleHandler:Execute()\
-            return Counter\
-            ";
+            const char* Chunk = R"(
+            local Counter = 0
+            Stub.SimpleHandler:Bind(Stub, function() Counter = Counter + 1 end)
+            Stub.SimpleHandler:Execute()
+            return Counter
+            )";
             UnLua::RunChunk(L, Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 1LL);
         });
 
         It(TEXT("执行委托：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = "\
-            local Stub = NewObject(UE.UUnLuaTestStub)\
-            local Counter = 0\
-            Stub.SimpleHandler = { Stub, function() Counter = Counter + 1 end }\
-            Stub.SimpleHandler:Execute()\
-            return Counter\
-            ";
+            const char* Chunk = R"(
+            local Counter = 0
+            Stub.SimpleHandler = {Stub, function() Counter = Counter + 1 end}
+            Stub.SimpleHandler:Execute()
+            return Counter
+            )";
             UnLua::RunChunk(L, Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 1LL);
         });

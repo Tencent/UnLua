@@ -29,15 +29,12 @@ bool ULuaDelegateHandler::IsAlive() const
 
 void ULuaDelegateHandler::BindTo(FDelegateProperty* InProperty, FScriptDelegate* InDelegate)
 {
-    Property = InProperty;
     Delegate = InDelegate;
-
     InDelegate->BindUFunction(this, NAME_Dummy);
 }
 
 void ULuaDelegateHandler::AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate)
 {
-    Property = InProperty;
     Delegate = InDelegate;
 
     FScriptDelegate DynamicDelegate;
