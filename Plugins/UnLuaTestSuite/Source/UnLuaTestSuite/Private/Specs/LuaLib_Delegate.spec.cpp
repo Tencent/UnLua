@@ -44,6 +44,17 @@ void FUnLuaLibDelegateSpec::Define()
             const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_TRUE(Stub->SimpleHandler.IsBound());
         });
+        It(TEXT("绑定：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Stub = NewObject(UE.UUnLuaTestStub)\
+            Stub.SimpleHandler = { Stub, function() end }\
+            return Stub\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
+            TEST_TRUE(Stub->SimpleHandler.IsBound());
+        });
     });
 
     Describe(TEXT("Unbind"), [this]()

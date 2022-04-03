@@ -44,6 +44,18 @@ void FUnLuaLibMulticastDelegateSpec::Define()
             const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
             TEST_TRUE(Stub->SimpleEvent.IsBound());
         });
+
+        It(TEXT("添加绑定：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = "\
+            local Stub = NewObject(UE.UUnLuaTestStub)\
+            Stub.SimpleEvent = { Stub, function() end }\
+            return Stub\
+            ";
+            UnLua::RunChunk(L, Chunk);
+            const auto Stub = (UUnLuaTestStub*)UnLua::GetUObject(L, -1);
+            TEST_TRUE(Stub->SimpleEvent.IsBound());
+        });
     });
 
     Describe(TEXT("Remove"), [this]()

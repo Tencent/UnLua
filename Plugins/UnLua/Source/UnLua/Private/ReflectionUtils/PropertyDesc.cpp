@@ -1354,21 +1354,12 @@ public:
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
         if (FuncIdxInTable != INDEX_NONE)
         {
-            FScriptDelegate *ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
-            FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
-            FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
-            if (FuncName == NAME_None)
-            {
-                // no delegate function is created yet
-                lua_rawgeti(L, IndexInStack, FuncIdxInTable);
-                int32 CallbackRef = luaL_ref(L, LUA_REGISTRYINDEX);
-                FDelegateHelper::Bind(ScriptDelegate, DelegateProperty, Object, Callback, CallbackRef);
-            }
-            else
-            {
-				UE_LOG(UnLuaDelegate, Verbose, TEXT("[BindUFunction FuncName:%s %p]"), *FuncName.ToString(), Callback.CallbackFunction);
-                ScriptDelegate->BindUFunction(Object, FuncName);        // a delegate function is created already
-            }
+            const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+            FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+            Registry->Register(Delegate, DelegateProperty);
+            lua_rawgeti(L, IndexInStack, FuncIdxInTable);
+            Registry->Bind(L, -1, Delegate, Object);
+            lua_pop(L, 1);
         }
         return true;
     }
@@ -1428,26 +1419,15 @@ public:
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
+
         if (FuncIdxInTable != INDEX_NONE)
         {
             T *ScriptDelegate = (T*)ValuePtr;
-            FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
-            FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
-            if (FuncName == NAME_None)
-            {
-                // no delegate function is created yet
-                lua_rawgeti(L, IndexInStack, FuncIdxInTable);
-                int32 CallbackRef = luaL_ref(L, LUA_REGISTRYINDEX);
-                FDelegateHelper::Add(ScriptDelegate, MulticastDelegateProperty, Object, Callback, CallbackRef);
-            }
-            else
-            {
-				UE_LOG(UnLuaDelegate, Verbose, TEXT("++ %d %s %p %s"), FDelegateHelper::GetNumBindings(Callback), *Object->GetName(), Object, *FuncName.ToString());
-                // a delegate function is created already
-                FScriptDelegate DynamicDelegate;
-                DynamicDelegate.BindUFunction(Object, FuncName);
-                TMulticastDelegateTraits<T>::AddDelegate(MulticastDelegateProperty, DynamicDelegate, nullptr, ValuePtr);
-            }
+            const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+            Registry->Register(ScriptDelegate, MulticastDelegateProperty);
+            lua_rawgeti(L, IndexInStack, FuncIdxInTable);
+            Registry->Add(L, -1, ScriptDelegate, Object);
+            lua_pop(L, 1);
         }
         return true;
     }
