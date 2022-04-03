@@ -672,8 +672,7 @@ static void PushStructElement(lua_State *L, FProperty *Property, void *Value)
 static void PushDelegateElement(lua_State *L, FDelegateProperty *Property, void *Value)
 {
     FScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
-    FDelegateHelper::PreBind(ScriptDelegate, Property);
-
+    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property);
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), ScriptDelegate);
 }
 
