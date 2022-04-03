@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
 
 /**
  * Bind a callback for the delegate. Parameters must be a UObject and a Lua function

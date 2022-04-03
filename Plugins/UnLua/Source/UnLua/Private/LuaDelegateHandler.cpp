@@ -14,7 +14,6 @@
 
 
 #include "LuaDelegateHandler.h"
-#include "DelegateHelper.h"
 #include "LuaEnv.h"
 
 static const FName NAME_Dummy = TEXT("Dummy");

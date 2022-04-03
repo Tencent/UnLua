@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
 
 /**
  * Helper function to get delegate, target UObject and Lua function

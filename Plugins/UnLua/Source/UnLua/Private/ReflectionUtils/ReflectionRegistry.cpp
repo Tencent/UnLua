@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "ReflectionRegistry.h"
-
-#include "DelegateHelper.h"
 #include "LowLevel.h"
 #include "LuaCore.h"
 #include "PropertyDesc.h"
@@ -365,7 +363,6 @@ void FReflectionRegistry::AddToGCSet(UObject* InObject)
     else
         GObjectReferencer.RemoveObjectRef(InObject);
 
-    FDelegateHelper::Remove(InObject);
     GCSet.Add(InObject, true);
 }
 

@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
 /**

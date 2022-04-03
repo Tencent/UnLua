@@ -20,7 +20,6 @@
 #include "UnLuaDelegates.h"
 #include "UEObjectReferencer.h"
 #include "CollisionHelper.h"
-#include "DelegateHelper.h"
 #include "LowLevel.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
@@ -686,8 +685,8 @@ static void PushMCDelegateElement(lua_State *L, FMulticastDelegateProperty *Prop
 #else
     void *ScriptDelegate = Value;
 #endif
-    FDelegateHelper::PreAdd(ScriptDelegate, Property);
 
+    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property);
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), ScriptDelegate);
 }
 
@@ -925,12 +924,6 @@ void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object)
 #endif
         // unlua ref
         GObjectReferencer.RemoveObjectRef((UObject*)Object);
-
-        // delegate ref, delegate must be clear before object is gced
-        if (UnLua::IsEnabled())
-        {
-            FDelegateHelper::Remove((UObject*)Object);
-        }
     }
 }
 

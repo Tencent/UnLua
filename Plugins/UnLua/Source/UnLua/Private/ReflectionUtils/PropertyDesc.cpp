@@ -16,7 +16,6 @@
 #include "ClassDesc.h"
 #include "ReflectionRegistry.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
 #include "LuaEnv.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
@@ -1342,7 +1341,6 @@ public:
         {
             FScriptDelegate *ScriptDelegate = DelegateProperty->GetPropertyValuePtr((void*)ValuePtr);
             UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty);
-            FDelegateHelper::PreBind(ScriptDelegate, DelegateProperty);
             UnLua::PushPointer(L, ScriptDelegate, "FScriptDelegate", bFirstPropOfScriptStruct);
         }
     }
@@ -1409,7 +1407,6 @@ public:
         {
             T *ScriptDelegate = (T*)ValuePtr;
             UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, MulticastDelegateProperty);
-            FDelegateHelper::PreAdd(ScriptDelegate, MulticastDelegateProperty);
             UnLua::PushPointer(L, ScriptDelegate, TMulticastDelegateTraits<T>::GetName(), bFirstPropOfScriptStruct);
         }
     }

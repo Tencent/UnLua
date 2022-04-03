@@ -82,6 +82,12 @@ typedef float unluaReal;
 typedef double unluaReal;
 #endif
 
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 23
+typedef FMulticastScriptDelegate FMulticastDelegateType;
+#else
+typedef void FMulticastDelegateType;
+#endif
+
 template <typename T>
 struct TMulticastDelegateTraits
 {

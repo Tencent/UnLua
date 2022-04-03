@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "DelegateRegistry.h"
-
-#include "DelegateHelper.h"
 #include "LuaDelegateHandler.h"
 #include "lauxlib.h"
 #include "UEObjectReferencer.h"

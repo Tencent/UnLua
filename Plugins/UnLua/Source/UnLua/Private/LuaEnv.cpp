@@ -16,7 +16,6 @@
 #include "Binding.h"
 #include "ClassRegistry.h"
 #include "CollisionHelper.h"
-#include "DelegateHelper.h"
 #include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
@@ -159,7 +158,6 @@ namespace UnLua
         // clean ue side modules,es static data structs
         FCollisionHelper::Cleanup(); // clean up collision helper stuff
         GObjectReferencer.Cleanup(); // clean up object referencer
-        FDelegateHelper::Cleanup(true); // clean up delegates
         GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
         if (AllEnvs.Num() == 0)
             GReflectionRegistry.Cleanup(); // clean up reflection registry
@@ -190,7 +188,6 @@ namespace UnLua
         UObject* Object = (UObject*)ObjectBase;
         const bool bClass = GReflectionRegistry.NotifyUObjectDeleted(Object);
         Manager->NotifyUObjectDeleted(Object, bClass);
-        FDelegateHelper::NotifyUObjectDeleted(Object);
 
         if (CandidateInputComponents.Num() <= 0)
             return;
