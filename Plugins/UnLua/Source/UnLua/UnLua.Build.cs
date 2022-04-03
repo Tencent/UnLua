@@ -81,6 +81,7 @@ public class UnLua : ModuleRules
 
         loadBoolConfig("bAutoStartup", "AUTO_UNLUA_STARTUP", true);
         loadBoolConfig("bEnableDebug", "UNLUA_ENABLE_DEBUG", false);
+        loadBoolConfig("bEnablePersistentParamBuffer", "ENABLE_PERSISTENT_PARAM_BUFFER", true);
         loadBoolConfig("bEnableTypeChecking", "ENABLE_TYPE_CHECK", true);
         loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
         loadBoolConfig("bWithUENamespace", "WITH_UE4_NAMESPACE", true);

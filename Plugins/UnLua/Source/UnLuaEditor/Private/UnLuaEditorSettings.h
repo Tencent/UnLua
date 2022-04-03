@@ -52,6 +52,9 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug", ToolTip = "Requires restart to take effect."))
     bool bEnableDebug = false;
 
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable persistent buffer for UFunction's parameters.", ToolTip = "Requires restart to take effect."))
+    bool bEnablePersistentParamBuffer = true;
+    
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking", ToolTip = "Requires restart to take effect."))
     bool bEnableTypeChecking = true;
 
