@@ -83,12 +83,7 @@ void UnLua::FDelegateRegistry::Execute(const ULuaDelegateHandler* Handler, void*
         return;
 
     const auto SignatureDesc = GetSignatureDesc(Handler->Delegate);
-    if (!SignatureDesc)
-    {
-        // TODO: should not be here
-        check(false);
-        return;
-    }
+    check(SignatureDesc);
 
     const auto L = Handler->Env->GetMainState();
     SignatureDesc->CallLua(L, Handler->LuaRef, Params, Handler->Lifecycle.Get());
@@ -97,12 +92,7 @@ void UnLua::FDelegateRegistry::Execute(const ULuaDelegateHandler* Handler, void*
 int32 UnLua::FDelegateRegistry::Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex)
 {
     const auto SignatureDesc = GetSignatureDesc(Delegate);
-    if (!SignatureDesc)
-    {
-        // TODO: should not be here
-        check(false);
-        return 0;
-    }
+    check(SignatureDesc);
 
     const auto Ret = SignatureDesc->ExecuteDelegate(L, NumParams, FirstParamIndex, Delegate);
     return Ret;
@@ -114,55 +104,32 @@ int32 UnLua::FDelegateRegistry::Execute(lua_State* L, FScriptDelegate* Delegate,
 
 void UnLua::FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate, UObject* Lifecycle)
 {
-    const auto Type = lua_type(L, Index);
-    if (Type == LUA_TFUNCTION)
-    {
-        auto& Env = FLuaEnv::FindEnvChecked(GL);
-        lua_pushvalue(L, Index);
-        const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
-        LuaFunctions.Add(lua_topointer(L, Index), Ref);
-        const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
-        Handler->AddTo(Delegates.FindChecked(Delegate).MulticastProperty, Delegate);
-        GObjectReferencer.AddObjectRef(Handler);
-        Delegates.FindChecked(Delegate).Handlers.Add(Ref, Handler);
-        return;
-    }
-
-    if (Type == LUA_TUSERDATA)
-    {
-        check(false); // TODO:
-    }
+    check(lua_type(L, Index) == LUA_TFUNCTION);
+    auto& Env = FLuaEnv::FindEnvChecked(GL);
+    lua_pushvalue(L, Index);
+    const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
+    LuaFunctions.Add(lua_topointer(L, Index), Ref);
+    const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
+    Handler->AddTo(Delegates.FindChecked(Delegate).MulticastProperty, Delegate);
+    GObjectReferencer.AddObjectRef(Handler);
+    Delegates.FindChecked(Delegate).Handlers.Add(Ref, Handler);
 }
 
 void UnLua::FDelegateRegistry::Remove(lua_State* L, void* Delegate, int Index)
 {
-    const auto Type = lua_type(L, Index);
-    if (Type == LUA_TFUNCTION)
-    {
-        const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(L, Index));
-        luaL_unref(L, LUA_REGISTRYINDEX, Ref);
-        auto Info = Delegates.FindChecked(Delegate);
-        const auto Handler = Info.Handlers.FindAndRemoveChecked(Ref);
-        GObjectReferencer.RemoveObjectRef(Handler.Get());
-        Handler->RemoveFrom(Info.MulticastProperty, Delegate);
-        return;
-    }
-
-    if (Type == LUA_TUSERDATA)
-    {
-        check(false); // TODO:
-    }
+    check(lua_type(L, Index) == LUA_TFUNCTION);
+    const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(L, Index));
+    luaL_unref(L, LUA_REGISTRYINDEX, Ref);
+    auto Info = Delegates.FindChecked(Delegate);
+    const auto Handler = Info.Handlers.FindAndRemoveChecked(Ref);
+    GObjectReferencer.RemoveObjectRef(Handler.Get());
+    Handler->RemoveFrom(Info.MulticastProperty, Delegate);
 }
 
 void UnLua::FDelegateRegistry::Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex)
 {
     const auto SignatureDesc = GetSignatureDesc(Delegate);
-    if (!SignatureDesc)
-    {
-        // TODO: should not be here
-        check(false);
-        return;
-    }
+    check(SignatureDesc);
 
     const auto Property = Delegates.Find(Delegate)->MulticastProperty;
     const auto ScriptDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, Delegate);
@@ -175,7 +142,7 @@ void UnLua::FDelegateRegistry::Clear(lua_State* L, void* Delegate)
     if (!Info)
         return;
 
-    for (auto Pair : Info->Handlers)
+    for (const auto Pair : Info->Handlers)
     {
         luaL_unref(L, LUA_REGISTRYINDEX, Pair.Key);
         Pair.Value->RemoveFrom(Info->MulticastProperty, Delegate);

@@ -62,6 +62,17 @@ void FUnLuaLibMulticastDelegateSpec::Define()
             lua_getglobal(L, "Flag");
             TEST_TRUE(lua_toboolean(L, -1));
         });
+
+        It(TEXT("添加绑定：UFunction"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            Stub.SimpleEvent:Add(Stub, Stub.AddCount)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            TEST_TRUE(Stub->SimpleEvent.IsBound());
+            Stub->SimpleEvent.Broadcast();
+            TEST_EQUAL(Stub->Counter, 1);
+        });
     });
 
     Describe(TEXT("Remove"), [this]()
@@ -72,6 +83,16 @@ void FUnLuaLibMulticastDelegateSpec::Define()
             local Callback = function() end
             Stub.SimpleEvent:Add(Stub, Callback)
             Stub.SimpleEvent:Remove(Stub, Callback)
+            )";
+            UnLua::RunChunk(L, Chunk);
+            TEST_FALSE(Stub->SimpleEvent.IsBound());
+        });
+
+        It(TEXT("移除绑定：UFunction"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            Stub.SimpleEvent:Add(Stub, Stub.AddCount)
+            Stub.SimpleEvent:Remove(Stub, Stub.AddCount)
             )";
             UnLua::RunChunk(L, Chunk);
             TEST_FALSE(Stub->SimpleEvent.IsBound());
