@@ -337,7 +337,7 @@ FFunctionDesc* FReflectionRegistry::RegisterFunction(UFunction* InFunction, int3
 
 bool FReflectionRegistry::UnRegisterFunction(UFunction* InFunction)
 {
-    if (InFunction->HasAnyFlags(RF_BeginDestroyed))
+    if (!InFunction || InFunction->HasAnyFlags(RF_BeginDestroyed) || !InFunction->IsValidLowLevel())
         return false;
     TSharedPtr<FFunctionDesc> FunctionDesc;
     return Functions.RemoveAndCopyValue(InFunction, FunctionDesc);
