@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.1.4] - 2021-4-8
+
+### Fixed
+
+- UMG中使用DynamicEntryBox，如果在生成的Entry中执行异步加载，会导致找不到绑定的Object [#379](https://github.com/Tencent/UnLua/issues/379)
+- Streaming Level 中的单位有时调用 Lua 实现时，self 是 userdata [#380](https://github.com/Tencent/UnLua/issues/380)
+- 开启多窗口，一个有UI展示，一个没有UI展示 [#387](https://github.com/Tencent/UnLua/issues/387)
+- 编辑器下PIE结束时可能Crash的问题 [#388](https://github.com/Tencent/UnLua/issues/388)
+- UE4.25之前的版本在cook时提示IntProperty initialized not properly
+
 ## [2.1.3] - 2021-3-9
 
 ### Added
