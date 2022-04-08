@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 编辑器下PIE结束时可能Crash的问题 [#388](https://github.com/Tencent/UnLua/issues/388)
 - UE4.25之前的版本在cook时提示IntProperty initialized not properly
 
+### PS
+
+我们把内部使用的工具提取成了独立的组件，欢迎点击[链接](https://marketplace.visualstudio.com/items?itemName=operali.lua-booster)体验，也可以通过VSCode应用商店中直接搜索`Lua Booster`安装。
+
 ## [2.1.3] - 2021-3-9
 
 ### Added
