@@ -16,6 +16,7 @@
 
 #include "ClassRegistry.h"
 #include "DelegateRegistry.h"
+#include "ContainerRegistry.h"
 #include "UnLuaManager.h"
 #include "lua.h"
 #include "LuaValue.h"
@@ -95,6 +96,8 @@ namespace UnLua
 
         FDelegateRegistry* GetDelegateRegistry() const { return DelegateRegistry; }
 
+        FContainerRegistry* GetContainerRegistry() const { return ContainerRegistry; }
+
         void AddLoader(const FLuaFileLoader Loader);
 
         void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
@@ -133,6 +136,7 @@ namespace UnLua
         UUnLuaManager* Manager;
         FClassRegistry* ClassRegistry;
         FDelegateRegistry* DelegateRegistry;
+        FContainerRegistry* ContainerRegistry;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;

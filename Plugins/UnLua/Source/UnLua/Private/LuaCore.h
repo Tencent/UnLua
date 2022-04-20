@@ -48,6 +48,7 @@ bool TryToSetMetatable(lua_State *L, const char *MetatableName, UObject* Object 
  * Functions to handle Lua userdata
  */
 void* NewUserdataWithTwoLvPtrTag(lua_State* L, int Size, void* Object);
+void* NewUserdataWithContainerTag(lua_State* L, int Size);
 void MarkUserdataTwoLvPtrTag(void* Userdata);
 UNLUA_API uint8 CalcUserdataPadding(int32 Alignment);
 template <typename T> uint8 CalcUserdataPadding() { return CalcUserdataPadding(alignof(T)); }

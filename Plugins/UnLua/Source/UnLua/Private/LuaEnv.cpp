@@ -58,16 +58,13 @@ namespace UnLua
         ClassRegistry->Register("UClass");
 
         DelegateRegistry = new FDelegateRegistry(L);
+        ContainerRegistry = new FContainerRegistry(L);
 
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
         lua_pushstring(L, "StructMap"); // create weak table 'StructMap'
-        CreateWeakValueTable(L);
-        lua_rawset(L, LUA_REGISTRYINDEX);
-
-        lua_pushstring(L, "ScriptContainerMap"); // create weak table 'ScriptContainerMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 

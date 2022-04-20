@@ -16,7 +16,6 @@
 #include "LuaDelegateHandler.h"
 #include "lauxlib.h"
 #include "UEObjectReferencer.h"
-#include "UnLuaBase.h"
 #include "LuaEnv.h"
 
 

@@ -38,9 +38,9 @@ static int32 TMap_New(lua_State *L)
         return 0;
     }
 
-    FScriptMap *ScriptMap = new FScriptMap;
-    void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-    new(Userdata) FLuaMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->NewMap(L, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+
     return 1;
 }
 
@@ -285,6 +285,9 @@ static int32 TMap_Delete(lua_State *L)
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TMap!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
+
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->Remove(Map);
 
     Map->~FLuaMap();
     return 0;

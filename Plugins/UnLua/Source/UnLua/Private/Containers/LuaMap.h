@@ -57,23 +57,12 @@ public:
 
     ~FLuaMap()
     {
-        DetachInterface();
-
         if (ScriptMapFlag == OwnedBySelf)
         {
             Clear();
             delete Map;
         }
         FMemory::Free(ElementCache);
-    }
-
-    void DetachInterface()
-    {
-        if (Interface)
-        {
-            Interface->RemoveContainer(this);
-            Interface = nullptr;
-        }
     }
 
     FORCEINLINE void* GetContainerPtr() const { return Map; }

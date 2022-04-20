@@ -754,24 +754,19 @@ public:
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
+        const auto& Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+        FScriptArray *ScriptArray;
         if (bCreateCopy)
         {
-            FScriptArray *ScriptArray = new FScriptArray;
-            //ArrayProperty->InitializeValue(ScriptArray);
+            ScriptArray = Registry->NewArray(L, InnerProperty, FLuaArray::OwnedBySelf);
             ArrayProperty->CopyCompleteValue(ScriptArray, ValuePtr);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);
-            new(Userdata) FLuaArray(ScriptArray, InnerProperty, FLuaArray::OwnedBySelf);
         }
         else
         {
-            FScriptArray *ScriptArray = (FScriptArray*)(&ArrayProperty->GetPropertyValue(ValuePtr));
-            void *Userdata = CacheScriptContainer(L, ScriptArray, FScriptContainerDesc::Array);
-            if (Userdata)
-            {
-                FLuaArray *LuaArray = new(Userdata) FLuaArray(ScriptArray, (TLuaContainerInterface<FLuaArray>*)this, FLuaArray::OwnedByOther);
-                ((TLuaContainerInterface<FLuaArray>*)this)->AddContainer(LuaArray);
-            }
+            ScriptArray = (FScriptArray*)(&ArrayProperty->GetPropertyValue(ValuePtr));
         }
+
+        Registry->FindOrAdd(L, InnerProperty, ScriptArray, bCreateCopy);
     }
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
@@ -916,7 +911,7 @@ public:
             if (Userdata)
             {
                 FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, (TLuaContainerInterface<FLuaMap>*)this, FLuaMap::OwnedByOther);
-                ((TLuaContainerInterface<FLuaMap>*)this)->AddContainer(LuaMap);
+                // ((TLuaContainerInterface<FLuaMap>*)this)->AddContainer(LuaMap);
             }
         }
     }
@@ -1064,7 +1059,7 @@ public:
             if (Userdata)
             {
                 FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, (TLuaContainerInterface<FLuaSet>*)this, FLuaSet::OwnedByOther);
-                ((TLuaContainerInterface<FLuaSet>*)this)->AddContainer(LuaSet);
+                // ((TLuaContainerInterface<FLuaSet>*)this)->AddContainer(LuaSet);
             }
         }
     }
