@@ -28,18 +28,18 @@ struct FUnLuaTest_Issue304 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto Chunk = "\
-        local Stub = NewObject(UE.UUnLuaTestStub)\
-        Stub.Issue304Event:Add(Stub, function(_, InArray)\
-            Result = InArray:Get(2)\
-        end)\
-        \
-        local Array = UE.TArray('')\
-        Array:Add('Hello')\
-        Array:Add('World')\
-        Stub.Issue304Event:Broadcast(Array)\
-        return Result\
-        ";
+        const auto Chunk = R"(
+        local Stub = NewObject(UE.UUnLuaTestStub)
+        Stub.Issue304Event:Add(Stub, function(_, InArray)
+            Result = InArray:Get(2)
+        end)
+        
+        local Array = UE.TArray('')
+        Array:Add('Hello')
+        Array:Add('World')
+        Stub.Issue304Event:Broadcast(Array)
+        return Result
+        )";
 
         UnLua::RunChunk(L, Chunk);
 

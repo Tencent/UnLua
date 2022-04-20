@@ -764,9 +764,8 @@ public:
         else
         {
             ScriptArray = (FScriptArray*)(&ArrayProperty->GetPropertyValue(ValuePtr));
+            Registry->FindOrAdd(L, InnerProperty, ScriptArray);
         }
-
-        Registry->FindOrAdd(L, InnerProperty, ScriptArray, bCreateCopy);
     }
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
@@ -896,23 +895,17 @@ public:
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
+        const auto& Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+        FScriptMap *ScriptMap;
         if (bCreateCopy)
         {
-            FScriptMap *ScriptMap = new FScriptMap;
-            //MapProperty->InitializeValue(ScriptMap);
+            ScriptMap = Registry->NewMap(L, KeyProperty, ValueProperty, FLuaMap::OwnedBySelf);
             MapProperty->CopyCompleteValue(ScriptMap, ValuePtr);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-            new(Userdata) FLuaMap(ScriptMap, KeyProperty, ValueProperty, FLuaMap::OwnedBySelf);
         }
         else
         {
-            FScriptMap *ScriptMap = (FScriptMap*)(&MapProperty->GetPropertyValue(ValuePtr));
-            void *Userdata = CacheScriptContainer(L, ScriptMap, FScriptContainerDesc::Map);
-            if (Userdata)
-            {
-                FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, (TLuaContainerInterface<FLuaMap>*)this, FLuaMap::OwnedByOther);
-                // ((TLuaContainerInterface<FLuaMap>*)this)->AddContainer(LuaMap);
-            }
+            ScriptMap = (FScriptMap*)(&MapProperty->GetPropertyValue(ValuePtr));
+            Registry->FindOrAdd(L, KeyProperty, ValueProperty, ScriptMap);
         }
     }
 
@@ -1044,23 +1037,17 @@ public:
 
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
+        const auto& Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+        FScriptSet *ScriptSet;
         if (bCreateCopy)
         {
-            FScriptSet *ScriptSet = new FScriptSet;
-            //SetProperty->InitializeValue(ScriptSet);
+            ScriptSet = Registry->NewSet(L, InnerProperty, FLuaSet::OwnedBySelf);
             SetProperty->CopyCompleteValue(ScriptSet, ValuePtr);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Set);
-            new(Userdata) FLuaSet(ScriptSet, InnerProperty, FLuaSet::OwnedBySelf);
         }
         else
         {
-            FScriptSet *ScriptSet = (FScriptSet*)(&SetProperty->GetPropertyValue(ValuePtr));
-            void *Userdata = CacheScriptContainer(L, ScriptSet, FScriptContainerDesc::Set);
-            if (Userdata)
-            {
-                FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, (TLuaContainerInterface<FLuaSet>*)this, FLuaSet::OwnedByOther);
-                // ((TLuaContainerInterface<FLuaSet>*)this)->AddContainer(LuaSet);
-            }
+            ScriptSet = (FScriptSet*)(&SetProperty->GetPropertyValue(ValuePtr));
+            Registry->FindOrAdd(L, InnerProperty, ScriptSet);
         }
     }
 
