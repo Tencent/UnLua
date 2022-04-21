@@ -1,5 +1,7 @@
 require "UnLua"
 
+local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
+
 local BP_PlayerController_C = Class()
 
 --function BP_PlayerController_C:UserConstructionScript()
@@ -61,22 +63,22 @@ end
 
 function BP_PlayerController_C:Fire_Pressed()
 	if self.Pawn then
-		UE.UBPI_Interfaces_C.StartFire(self.Pawn)
+		BPI_Interfaces.StartFire(self.Pawn)
 	else
 		UE.UKismetSystemLibrary.ExecuteConsoleCommand(self, "RestartLevel")
 	end
 end
 
 function BP_PlayerController_C:Fire_Released()
-	UE.UBPI_Interfaces_C.StopFire(self.Pawn)
+	BPI_Interfaces.StopFire(self.Pawn)
 end
 
 function BP_PlayerController_C:Aim_Pressed()
-	UE.UBPI_Interfaces_C.UpdateAiming(self.Pawn, true)
+	BPI_Interfaces.UpdateAiming(self.Pawn, true)
 end
 
 function BP_PlayerController_C:Aim_Released()
-	UE.UBPI_Interfaces_C.UpdateAiming(self.Pawn, false)
+	BPI_Interfaces.UpdateAiming(self.Pawn, false)
 end
 
 return BP_PlayerController_C

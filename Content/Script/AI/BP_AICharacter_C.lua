@@ -1,6 +1,9 @@
 require "UnLua"
 
-local BP_AICharacter_C= Class("BP_CharacterBase_C")
+local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
+local BP_PlayerCharacter = UE.UClass.Load("/Game/Core/Blueprints/Player/BP_PlayerCharacter.BP_PlayerCharacter_C")
+
+local BP_AICharacter_C = Class("BP_CharacterBase_C")
 
 function BP_AICharacter_C:Initialize(Initializer)
 	self.Super.Initialize(self)
@@ -24,12 +27,12 @@ function BP_AICharacter_C:Died(DamageType)
 	self.Mesh:K2_SetRelativeLocation(NewLocation, false, SweepHitResult, false)
 	self.Mesh:SetAllBodiesBelowSimulatePhysics(self.BoneName, true, true)
 	local GameMode = UE.UGameplayStatics.GetGameMode(self)
-	UE.UBPI_Interfaces_C.NotifyEnemyDied(GameMode)
+	BPI_Interfaces.NotifyEnemyDied(GameMode)
 	--self.Sphere.OnComponentBeginOverlap:Remove(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
 end
 
 function BP_AICharacter_C:OnComponentBeginOverlap_Sphere(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
-	local PlayerCharacter = OtherActor:Cast(UE.ABP_PlayerCharacter_C)
+	local PlayerCharacter = OtherActor:Cast(BP_PlayerCharacter)
 	if PlayerCharacter then
 		local Controller = self:GetController()
 		UE.UGameplayStatics.ApplyDamage(PlayerCharacter, self.Damage, Controller, self, self.DamageType)

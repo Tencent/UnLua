@@ -63,7 +63,7 @@ static int UE_Index(lua_State* L)
         }
         else
         {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to load a non-native type with UE namespace, use UE.UClass.Load or UE.UObject.Load instead."));
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to load a blueprint type %s with UE namespace, use UE.UClass.Load or UE.UObject.Load instead."), UTF8_TO_TCHAR(Name));
             return 0;
         }
     }
