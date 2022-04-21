@@ -228,6 +228,7 @@ namespace UnLua
                 if (!bSuccess)
                 {
                     UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+                    lua_pop(L, 1);
                     return 1;
                 }
             }

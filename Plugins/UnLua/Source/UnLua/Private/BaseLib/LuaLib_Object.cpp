@@ -14,6 +14,7 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
+#include "UEObjectReferencer.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
 /**
@@ -289,7 +290,7 @@ int32 UObject_Delete(lua_State *L)
     {
         UObject* Object = bTwoLvlPtr ? (UObject*)*(void**)Userdata : (UObject*)Userdata;
         if (Object)
-            GReflectionRegistry.AddToGCSet(Object);
+            GObjectReferencer.RemoveObjectRef(Object);
     }
 
     return 0;

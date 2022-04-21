@@ -15,6 +15,7 @@
 #pragma once
 
 #include "lua.h"
+#include "ReflectionUtils/ClassDesc.h"
 
 namespace UnLua
 {
@@ -25,14 +26,34 @@ namespace UnLua
 
         static FClassRegistry* Find(const lua_State* L);
 
-        bool PushMetatable(lua_State* L, const char* MetatableName);
+        static FClassDesc* Find(const char* TypeName);
+
+        static FClassDesc* Find(const UStruct* Type);
+
+        static FClassDesc* RegisterReflectedType(const char* MetatableName);
+
+        static FClassDesc* RegisterReflectedType(UStruct* Type);
+
+        static bool StaticUnregister(UStruct* Type);
+
+        static UField* LoadReflectedType(const char* InName);
+
+        static void Cleanup();
         
+        bool PushMetatable(lua_State* L, const char* MetatableName);
+
         bool TrySetMetatable(lua_State* L, const char* MetatableName);
 
         bool Register(const char* MetatableName);
 
         bool Register(const UStruct* Class);
-        
+
+    private:
+        static FClassDesc* RegisterInternal(UStruct* Type, const FString& Name);
+
+        static TMap<UStruct*, FClassDesc*> Classes;
+        static TMap<FName, FClassDesc*> Name2Classes;
+
         lua_State* GL;
     };
 }

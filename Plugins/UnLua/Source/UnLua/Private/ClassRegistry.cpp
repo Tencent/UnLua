@@ -24,6 +24,9 @@
 extern int32 UObject_Identical(lua_State* L);
 extern int32 UObject_Delete(lua_State* L);
 
+TMap<UStruct*, FClassDesc*> UnLua::FClassRegistry::Classes;
+TMap<FName, FClassDesc*> UnLua::FClassRegistry::Name2Classes;
+
 UnLua::FClassRegistry::FClassRegistry(lua_State* GL)
     : GL(GL)
 {
@@ -37,6 +40,68 @@ UnLua::FClassRegistry* UnLua::FClassRegistry::Find(const lua_State* L)
     return Env->GetClassRegistry();
 }
 
+FClassDesc* UnLua::FClassRegistry::Find(const char* TypeName)
+{
+    const FName Key = TypeName;
+    FClassDesc** Ret = Name2Classes.Find(Key);
+    return Ret ? *Ret : nullptr;
+}
+
+FClassDesc* UnLua::FClassRegistry::Find(const UStruct* Type)
+{
+    FClassDesc** Ret = Classes.Find(Type);
+    return Ret ? *Ret : nullptr;
+}
+
+FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(const char* MetatableName)
+{
+    FClassDesc* Ret = Find(MetatableName);
+    if (Ret)
+        return Ret;
+
+    const char* TypeName = MetatableName[0] == 'U' || MetatableName[0] == 'A' || MetatableName[0] == 'F' || MetatableName[0] == 'E' ? MetatableName + 1 : MetatableName;
+    const auto Type = LoadReflectedType(TypeName);
+    if (!Type)
+        return nullptr;
+
+    const auto StructType = Cast<UStruct>(Type);
+    if (StructType)
+    {
+        Ret = RegisterInternal(StructType, MetatableName);
+        return Ret;
+    }
+
+    const auto EnumType = Cast<UEnum>(Type);
+    if (EnumType)
+    {
+        // TODO:
+        check(false);
+    }
+
+    return nullptr;
+}
+
+FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(UStruct* Type)
+{
+    if (const auto Exists = Classes.Find(Type))
+        return *Exists;
+
+    const auto MetatableName = LowLevel::GetMetatableName(Type);
+    const auto Ret = RegisterInternal(Type, MetatableName);
+    return Ret;
+}
+
+bool UnLua::FClassRegistry::StaticUnregister(UStruct* Type)
+{
+    FClassDesc* ClassDesc;
+    if (!Classes.RemoveAndCopyValue(Type, ClassDesc))
+        return false;
+    const auto Name = FName(LowLevel::GetMetatableName(Type));
+    Name2Classes.Remove(Name);
+    ClassDesc->UnLoad();
+    return true;
+}
+
 bool UnLua::FClassRegistry::PushMetatable(lua_State* L, const char* MetatableName)
 {
     int Type = luaL_getmetatable(L, MetatableName);
@@ -47,7 +112,7 @@ bool UnLua::FClassRegistry::PushMetatable(lua_State* L, const char* MetatableNam
     if (FindExportedNonReflectedClass(MetatableName))
         return false;
 
-    FClassDesc* ClassDesc = GReflectionRegistry.RegisterClass(MetatableName);
+    FClassDesc* ClassDesc = RegisterReflectedType(MetatableName);
     if (!ClassDesc)
         return false;
 
@@ -166,4 +231,46 @@ bool UnLua::FClassRegistry::Register(const UStruct* Class)
 {
     const auto MetatableName = LowLevel::GetMetatableName(Class);
     return Register(TCHAR_TO_UTF8(*MetatableName));
+}
+
+void UnLua::FClassRegistry::Cleanup()
+{
+    for (const auto Pair : Name2Classes)
+        delete Pair.Value;
+    Name2Classes.Empty();
+    Classes.Empty();
+}
+
+UField* UnLua::FClassRegistry::LoadReflectedType(const char* InName)
+{
+    FString Name = UTF8_TO_TCHAR(InName);
+
+    // find candidates in memory
+    UField* Ret = FindObject<UClass>(ANY_PACKAGE, *Name);
+    if (!Ret)
+        Ret = FindObject<UScriptStruct>(ANY_PACKAGE, *Name);
+    if (!Ret)
+        Ret = FindObject<UEnum>(ANY_PACKAGE, *Name);
+
+    // load candidates if not found
+    if (!Ret)
+        Ret = LoadObject<UClass>(nullptr, *Name);
+    if (!Ret)
+        Ret = LoadObject<UScriptStruct>(nullptr, *Name);
+    if (!Ret)
+        Ret = LoadObject<UEnum>(nullptr, *Name);
+
+    return Ret;
+}
+
+FClassDesc* UnLua::FClassRegistry::RegisterInternal(UStruct* Type, const FString& Name)
+{
+    check(Type);
+    check(!Classes.Contains(Type));
+
+    FClassDesc* ClassDesc = new FClassDesc(Type, Name);
+    Classes.Add(Type, ClassDesc);
+    Name2Classes.Add(FName(*Name), ClassDesc);
+
+    return ClassDesc;
 }

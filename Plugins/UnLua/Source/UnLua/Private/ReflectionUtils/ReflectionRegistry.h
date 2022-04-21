@@ -45,13 +45,6 @@ public:
     void Cleanup();
 
     // all other place should use this to found desc!
-    FClassDesc* FindClass(const char* InName);
-
-    void TryUnRegisterClass(FClassDesc* ClassDesc, bool bForce = false);
-    FClassDesc* RegisterClass(const char* InName);
-    FClassDesc* RegisterClass(UStruct *InStruct);
-
-    // all other place should use this to found desc!
     FEnumDesc* FindEnum(const char* InName);
 
     bool UnRegisterEnum(const FEnumDesc* EnumDesc);
@@ -64,8 +57,6 @@ public:
     UFunction* RemoveOverriddenFunction(UFunction *NewFunc);
     UFunction* FindOverriddenFunction(UFunction *NewFunc);
 #endif
-
-    bool NotifyUObjectDeleted(const UObjectBase* InObject);
 
 	void AddToDescSet(void* Desc, EDescType type);
 	void RemoveFromDescSet(void* Desc);
@@ -81,15 +72,10 @@ private:
     FDelegateHandle PostGarbageCollectHandle;
     void PostGarbageCollect();
     
-    FClassDesc* RegisterClassInternal(const FString &ClassName, UStruct *Struct);
-
-    TMap<UStruct*, FClassDesc*> Classes;
-    TMap<FName, FClassDesc*> Name2Classes;
     TMap<FName, FEnumDesc*> Enums;
     TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
 
 	TMap<void*, EDescType> DescSet;
-    TMap<const UObject*, bool> GCSet;
     TMap<const FString, bool> ClassWhiteSet;
 };
 

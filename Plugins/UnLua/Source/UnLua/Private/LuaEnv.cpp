@@ -144,20 +144,26 @@ namespace UnLua
     {
         lua_close(L);
         AllEnvs.Remove(L);
+
         Manager->Cleanup();
         Manager->RemoveFromRoot();
         Manager = nullptr;
-        ClassRegistry = nullptr;
+
+        delete ClassRegistry;
+        delete DelegateRegistry;
+        delete ContainerRegistry;
 
         UnRegisterDelegates();
 
-        // TODO:legacy cleanup
-        // clean ue side modules,es static data structs
-        FCollisionHelper::Cleanup(); // clean up collision helper stuff
-        GObjectReferencer.Cleanup(); // clean up object referencer
-        GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
         if (AllEnvs.Num() == 0)
+        {
+            // TODO:legacy cleanup
+            // clean ue side modules,es static data structs
+            FCollisionHelper::Cleanup(); // clean up collision helper stuff
+            GObjectReferencer.Cleanup(); // clean up object referencer
+            GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
             GReflectionRegistry.Cleanup(); // clean up reflection registry
+        }
         CandidateInputComponents.Empty();
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }
@@ -183,8 +189,7 @@ namespace UnLua
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
-        const bool bClass = GReflectionRegistry.NotifyUObjectDeleted(Object);
-        Manager->NotifyUObjectDeleted(Object, bClass);
+        Manager->NotifyUObjectDeleted(Object, Object->IsA<UClass>());
 
         if (CandidateInputComponents.Num() <= 0)
             return;
@@ -435,6 +440,11 @@ namespace UnLua
     void FLuaEnv::AddBuiltInLoader(const FString Name, const lua_CFunction Loader)
     {
         BuiltinLoaders.Add(Name, Loader);
+    }
+
+    void FLuaEnv::UnLoadClass(const FClassDesc* Class)
+    {
+        ClearLibrary(L, TCHAR_TO_UTF8(*Class->GetName()));
     }
 
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)

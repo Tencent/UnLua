@@ -55,7 +55,17 @@ static int UE_Index(lua_State* L)
 
     if (Prefix == 'U' || Prefix == 'A' || Prefix == 'F')
     {
-        UnLua::FClassRegistry::Find(L)->Register(Name);
+        const auto ReflectedType = UnLua::FClassRegistry::LoadReflectedType(Name + 1);
+        if (ReflectedType->IsNative())
+        {
+            if (auto Struct = Cast<UStruct>(ReflectedType))
+                UnLua::FClassRegistry::Find(L)->Register(Struct);
+        }
+        else
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to load a non-native type with UE namespace, use UE.UClass.Load or UE.UObject.Load instead."));
+            return 0;
+        }
     }
     else if (Prefix == 'E')
     {

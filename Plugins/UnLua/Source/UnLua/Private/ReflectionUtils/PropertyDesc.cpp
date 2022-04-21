@@ -1166,7 +1166,7 @@ public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
-        FClassDesc *ClassDesc = GReflectionRegistry.RegisterClass(StructProperty->Struct);
+        FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
 
@@ -1176,7 +1176,7 @@ public:
     FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
         : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
     {
-        FClassDesc *ClassDesc = GReflectionRegistry.RegisterClass(StructProperty->Struct);
+        FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
         UserdataPadding = ClassDesc->GetUserdataPadding();
         bFirstPropOfScriptStruct = false;
@@ -1272,7 +1272,7 @@ public:
                 return false;
             }
 
-            FClassDesc* CurrentClassDesc = GReflectionRegistry.FindClass(MetatableName);
+            FClassDesc* CurrentClassDesc = UnLua::FClassRegistry::Find(MetatableName);
             if (!CurrentClassDesc)
             {
                 ErrorMsg = FString::Printf(TEXT("metatable of userdata needed in registry but got no found"));

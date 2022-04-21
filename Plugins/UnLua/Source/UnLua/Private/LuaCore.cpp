@@ -578,7 +578,7 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 	{
         if(!Object->IsNative() && Object->IsA(UStruct::StaticClass()))
         {
-            GReflectionRegistry.RegisterClass((UStruct*)Object)->AddRef();
+            UnLua::FClassRegistry::RegisterReflectedType((UStruct*)Object)->AddRef();
         }	    
 	}
     else
@@ -1163,61 +1163,54 @@ static int32 GetField(lua_State* L)
         const char* FieldName = lua_tostring(L, 2);
         lua_pop(L, 1);
 
-        // desc maybe released on c++ side,but lua side may still hold it
-        FClassDesc* ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
-        if (!ClassDesc)
+        // TODO: refactor
+        const auto Registry = UnLua::FClassRegistry::Find(L);
+        FClassDesc* ClassDesc = Registry->Find(ClassName);
+        FFieldDesc* Field = ClassDesc->RegisterField(FieldName, ClassDesc);
+        if (Field && Field->IsValid())
         {
-            lua_pushnil(L);
+            bool bCached = false;
+            bool bInherited = Field->IsInherited();
+            if (bInherited)
+            {
+                FString SuperStructName = Field->GetOuterName();
+                check(Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName)));
+                lua_pushvalue(L, 2);
+                Type = lua_rawget(L, -2);
+                bCached = Type != LUA_TNIL;
+                if (!bCached)
+                {
+                    lua_pop(L, 1);
+                }
+            }
+
+            if (!bCached)
+            {
+                PushField(L, Field);                // Property / closure
+                lua_pushvalue(L, 2);                // key
+                lua_pushvalue(L, -2);               // Property / closure
+                lua_rawset(L, -4);
+            }
+            if (bInherited)
+            {
+                lua_remove(L, -2);
+                lua_pushvalue(L, 2);                // key
+                lua_pushvalue(L, -2);               // Property / closure
+                lua_rawset(L, -4);
+            }
         }
         else
         {
-            FFieldDesc* Field = ClassDesc->RegisterField(FieldName, ClassDesc);
-            if (Field && Field->IsValid())
+            if (ClassDesc->IsClass())
             {
-                bool bCached = false;
-                bool bInherited = Field->IsInherited();
-                if (bInherited)
-                {
-                    FString SuperStructName = Field->GetOuterName();
-                    const auto Registry = UnLua::FClassRegistry::Find(L);
-                    check(Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName)));
-                    lua_pushvalue(L, 2);
-                    Type = lua_rawget(L, -2);
-                    bCached = Type != LUA_TNIL;
-                    if (!bCached)
-                    {
-                        lua_pop(L, 1);
-                    }
-                }
-
-                if (!bCached)
-                {
-                    PushField(L, Field);                // Property / closure
-                    lua_pushvalue(L, 2);                // key
-                    lua_pushvalue(L, -2);               // Property / closure
-                    lua_rawset(L, -4);
-                }
-                if (bInherited)
-                {
-                    lua_remove(L, -2);
-                    lua_pushvalue(L, 2);                // key
-                    lua_pushvalue(L, -2);               // Property / closure
-                    lua_rawset(L, -4);
-                }
+                luaL_getmetatable(L, "UClass");
+                lua_pushvalue(L, 2);                // push key
+                lua_rawget(L, -2);
+                lua_remove(L, -2);
             }
             else
             {
-                if (ClassDesc->IsClass())
-                {
-                    luaL_getmetatable(L, "UClass");
-                    lua_pushvalue(L, 2);                // push key
-                    lua_rawget(L, -2);
-                    lua_remove(L, -2);
-                }
-                else
-                {
-                    lua_pushnil(L);
-                }
+                lua_pushnil(L);
             }
         }
     }
@@ -1794,12 +1787,12 @@ FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct)
     FClassDesc *ClassDesc;
     if (SuperStruct)
     {
-        ClassDesc = GReflectionRegistry.RegisterClass(Struct);
-        GReflectionRegistry.RegisterClass(SuperStruct);
+        ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(Struct);
+        UnLua::FClassRegistry::RegisterReflectedType(SuperStruct);
     }
     else
     {
-        ClassDesc = GReflectionRegistry.RegisterClass(Struct);
+        ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(Struct);
     }
 
     RegisterClassInternal(L, ClassDesc);
@@ -2443,8 +2436,6 @@ int32 ScriptStruct_Delete(lua_State *L)
                 ScriptStruct->DestroyStruct(Userdata);
             }
         }
-
-        GReflectionRegistry.TryUnRegisterClass(ClassDesc);
     }
     return 0;
 }
@@ -2559,7 +2550,7 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
             if (Type == LUA_TSTRING)
             {   
                 const char* Name = lua_tostring(L, -1);
-                FClassDesc *ClassDesc = GReflectionRegistry.FindClass(Name);
+                FClassDesc *ClassDesc = UnLua::FClassRegistry::Find(Name);
                 if (ClassDesc)
                 {
                     if (ClassDesc->IsClass())

@@ -45,7 +45,7 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
         // register implemented interfaces
         for (FImplementedInterface& Interface : Class->Interfaces)
         {
-            GReflectionRegistry.RegisterClass(Interface.Class);
+            UnLua::FClassRegistry::RegisterReflectedType(Interface.Class);
         }
 
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
@@ -63,7 +63,7 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     while (SuperStruct)
     {
         FString SuperName = UnLua::LowLevel::GetMetatableName(InStruct);
-        FClassDesc* ClassDesc = GReflectionRegistry.RegisterClass(SuperStruct);
+        FClassDesc* ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(SuperStruct);
         SuperClasses.Add(ClassDesc);
         SuperStruct = SuperStruct->GetInheritanceSuper();
     }
@@ -168,7 +168,7 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
         {
             if (OuterStruct != Struct)
             {
-                FClassDesc* OuterClass = (FClassDesc*)GReflectionRegistry.RegisterClass(OuterStruct);
+                FClassDesc* OuterClass = UnLua::FClassRegistry::RegisterReflectedType(OuterStruct);
                 check(OuterClass);
                 return OuterClass->RegisterField(FieldName, QueryClass);
             }
@@ -233,7 +233,4 @@ void FClassDesc::UnLoad()
 
     GObjectReferencer.RemoveObjectRef(Struct);
     Struct = nullptr;
-
-    const auto L = UnLua::GetState();
-    ClearLibrary(L, TCHAR_TO_UTF8(*ClassName));
 }

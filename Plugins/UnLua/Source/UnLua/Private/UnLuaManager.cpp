@@ -540,7 +540,7 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
     if (Num > 0)
     {
         ReleaseAttachedObjectLuaRef(Actor);
-        GReflectionRegistry.AddToGCSet(Actor);
+        GObjectReferencer.RemoveObjectRef(Actor);
     }
 }
 

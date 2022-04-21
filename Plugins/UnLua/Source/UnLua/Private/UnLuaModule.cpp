@@ -118,6 +118,10 @@ private:
     {
         if (!bIsActive)
             return;
+
+        UStruct* Struct = Cast<UStruct>((UObject*)Object);
+        if (Struct)
+            UnLua::FClassRegistry::StaticUnregister(Struct);
     }
 
     virtual void OnUObjectArrayShutdown() override

@@ -102,6 +102,8 @@ namespace UnLua
 
         void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
 
+        void UnLoadClass(const FClassDesc* Class);
+
     protected:
         lua_State* L;
 
