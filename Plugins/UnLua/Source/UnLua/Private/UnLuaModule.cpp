@@ -21,6 +21,8 @@
 #include "DefaultParamCollection.h"
 #include "UnLuaDebugBase.h"
 #include "GameFramework/PlayerController.h"
+#include "Registries/ClassRegistry.h"
+#include "Registries/EnumRegistry.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaModule"
 
@@ -87,6 +89,9 @@ public:
             GUObjectArray.RemoveUObjectCreateListener(this);
             GUObjectArray.RemoveUObjectDeleteListener(this);
             Env.Reset();
+            UnLua::FClassRegistry::Cleanup();
+            UnLua::FEnumRegistry::Cleanup();
+            // TODO: Teardown all static stuffs
         }
 
         bIsActive = bActive;
@@ -119,9 +124,14 @@ private:
         if (!bIsActive)
             return;
 
+        // TODO: refactor these to void ptr for performance
         UStruct* Struct = Cast<UStruct>((UObject*)Object);
         if (Struct)
             UnLua::FClassRegistry::StaticUnregister(Struct);
+
+        UEnum* Enum = Cast<UEnum>((UEnum*)Object);
+        if (Enum)
+            UnLua::FEnumRegistry::StaticUnregister(Enum);
     }
 
     virtual void OnUObjectArrayShutdown() override

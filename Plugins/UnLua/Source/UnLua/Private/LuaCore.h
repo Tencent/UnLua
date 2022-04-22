@@ -145,13 +145,6 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool (*TraverseWo
 bool PeekTableElement(lua_State *L, void *Userdata);
 
 /**
- * Functions to register UEnum
- */
-int32 Global_RegisterEnum(lua_State *L);
-bool RegisterEnum(lua_State *L, const char *EnumName);
-bool RegisterEnum(lua_State *L, UEnum *Enum);
-
-/**
  * Functions to register UClass
  */
 int32 Global_RegisterClass(lua_State *L);

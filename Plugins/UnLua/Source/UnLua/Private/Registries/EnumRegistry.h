@@ -12,32 +12,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "LowLevel.h"
+#pragma once
 
-FString UnLua::LowLevel::GetMetatableName(const UObject* Object)
+#include "lua.h"
+#include "ReflectionUtils/EnumDesc.h"
+
+namespace UnLua
 {
-    if (!Object)
-        return "";
-
-    if (UNLIKELY(Object->IsA<UEnum>()))
+    class FEnumRegistry
     {
-        return Object->IsNative() ? Object->GetName() : Object->GetPathName();
-    }
+    public:
+        explicit FEnumRegistry(lua_State* GL);
 
-    const UStruct* Struct = Cast<UStruct>(Object);
-    if (Struct)
-        return GetMetatableName(Struct);
+        static FEnumDesc* Find(const char* InName);
 
-    Struct = Object->GetClass();
-    return GetMetatableName(Struct);
-}
+        static FEnumDesc* StaticRegister(const char* MetatableName);
+        
+        static bool StaticUnregister(UEnum* Enum);
 
-FString UnLua::LowLevel::GetMetatableName(const UStruct* Struct)
-{
-    if (!Struct)
-        return "";
+        static void Cleanup();
+        
+        FEnumDesc* Register(const char* MetatableName);
 
-    if (Struct->IsNative())
-        return FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
-    return Struct->GetPathName();
+        FEnumDesc* Register(const UEnum* Enum);
+
+    private:
+        static TMap<UEnum*, FEnumDesc*> Enums;
+        static TMap<FName, FEnumDesc*> Name2Enums;
+        lua_State* GL;
+    };
 }

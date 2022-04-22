@@ -57,7 +57,7 @@ int32 UObject_Load(lua_State *L)
         UEnum *Enum = Cast<UEnum>(Object);
         if (Enum)
         {
-            RegisterEnum(L, Enum);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetEnumRegistry()->Register(Enum);
             int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*Enum->GetName()));
             check(Type == LUA_TTABLE);
         }

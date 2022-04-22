@@ -15,17 +15,17 @@
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "Registries/ClassRegistry.h"
-#include "CollisionHelper.h"
 #include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
-#include "LuaFunction.h"
 #include "lualib.h"
 #include "UELib.h"
 #include "UEObjectReferencer.h"
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
 #include "UnLuaLegacy.h"
+#include "Components/InputComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "ReflectionUtils/ReflectionRegistry.h"
 
@@ -59,6 +59,7 @@ namespace UnLua
 
         DelegateRegistry = new FDelegateRegistry(L);
         ContainerRegistry = new FContainerRegistry(L);
+        EnumRegistry = new FEnumRegistry(L);
 
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
@@ -73,21 +74,13 @@ namespace UnLua
         lua_rawset(L, LUA_REGISTRYINDEX);
 
         // register global Lua functions
-        lua_register(L, "RegisterEnum", Global_RegisterEnum);
         lua_register(L, "GetUProperty", Global_GetUProperty);
         lua_register(L, "SetUProperty", Global_SetUProperty);
         lua_register(L, "LoadObject", Global_LoadObject);
         lua_register(L, "LoadClass", Global_LoadClass);
         lua_register(L, "NewObject", Global_NewObject);
-
         lua_register(L, "UEPrint", Global_Print);
-
-        // register collision related enums
-        FCollisionHelper::Initialize(); // initialize collision helper stuff
-        RegisterECollisionChannel(L);
-        RegisterEObjectTypeQuery(L);
-        RegisterETraceTypeQuery(L);
-
+        
         if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
         {
             FUnLuaDelegates::ConfigureLuaGC.Execute(L);
@@ -150,6 +143,7 @@ namespace UnLua
         delete ClassRegistry;
         delete DelegateRegistry;
         delete ContainerRegistry;
+        delete EnumRegistry;
 
         UnRegisterDelegates();
 
@@ -157,7 +151,6 @@ namespace UnLua
         {
             // TODO:legacy cleanup
             // clean ue side modules,es static data structs
-            FCollisionHelper::Cleanup(); // clean up collision helper stuff
             GObjectReferencer.Cleanup(); // clean up object referencer
             GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
             GReflectionRegistry.Cleanup(); // clean up reflection registry
@@ -187,7 +180,7 @@ namespace UnLua
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
-        Manager->NotifyUObjectDeleted(Object, Object->IsA<UClass>());
+        Manager->NotifyUObjectDeleted(Object, Object->IsA<UStruct>());
 
         if (CandidateInputComponents.Num() <= 0)
             return;
@@ -438,11 +431,6 @@ namespace UnLua
     void FLuaEnv::AddBuiltInLoader(const FString Name, const lua_CFunction Loader)
     {
         BuiltinLoaders.Add(Name, Loader);
-    }
-
-    void FLuaEnv::UnLoadClass(const FClassDesc* Class)
-    {
-        ClearLibrary(L, TCHAR_TO_UTF8(*Class->GetName()));
     }
 
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)

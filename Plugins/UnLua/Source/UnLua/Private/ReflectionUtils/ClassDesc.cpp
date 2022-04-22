@@ -67,27 +67,14 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     }
 }
 
-/**
- * Class descriptor destructor
- */
 FClassDesc::~FClassDesc()
 {
-#if UNLUA_ENABLE_DEBUG != 0
-    UE_LOG(LogUnLua, Log, TEXT("~FClassDesc : %s,%p,%d"), *GetName(), this, RefCount);
-#endif
-
-    // remove refs to class,etc ufunction/delegate
-    if (Struct)
-    {
-        const auto& Env = IUnLuaModule::Get().GetEnv();
-        if (Env)
-        {
-            UUnLuaManager* UnLuaManager = Env->GetManager();
-            UnLuaManager->CleanUpByClass((UClass*)Struct);
-        }
-    }
-
-    UnLoad();
+    for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
+        delete It.Value();
+    for (FPropertyDesc* Property : Properties)
+        delete Property;
+    for (FFunctionDesc* Function : Functions)
+        delete Function;
 }
 
 void FClassDesc::AddRef()
@@ -203,7 +190,7 @@ void FClassDesc::Load()
     if (Struct)
         return;
 
-    FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F' || ClassName[0] == 'E') ? ClassName.RightChop(1) : ClassName;
+    FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F') ? ClassName.RightChop(1) : ClassName;
     Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);
     if (!Struct)
         Struct = LoadObject<UStruct>(nullptr, *Name);
@@ -213,7 +200,7 @@ void FClassDesc::Load()
 
 void FClassDesc::UnLoad()
 {
-    if (bIsNative || !Struct)
+    if (!Struct)
         return;
 
     for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)

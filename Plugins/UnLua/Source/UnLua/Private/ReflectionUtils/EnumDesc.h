@@ -17,7 +17,6 @@
 #include "CoreUObject.h"
 #include "Engine/UserDefinedEnum.h"
 #include "HAL/Platform.h"
-#include "UnLuaBase.h"
 
 /**
  * Enum descriptor
@@ -25,36 +24,33 @@
 class FEnumDesc
 {
 public:
-    enum class EType
-    {
-        Enum,
-        UserDefinedEnum,
-    };
+    explicit FEnumDesc(UEnum* InEnum);
 
-    explicit FEnumDesc(UEnum *InEnum, EType EType = EType::Enum);
-
-    ~FEnumDesc();
-
-    FORCEINLINE bool IsValid() const { return Enum && UnLua::IsUObjectValid(Enum); }
+    FORCEINLINE bool IsValid() const { return true; }
 
     FORCEINLINE const FString& GetName() const { return EnumName; }
 
     template <typename CharType>
-    FORCEINLINE int64 GetValue(const CharType *EntryName) const
+    FORCEINLINE int64 GetValue(const CharType* EntryName) const
     {
-        static int64 (*Func[2])(UEnum*, FName) = { FEnumDesc::GetEnumValue, FEnumDesc::GetUserDefinedEnumValue };
-        return (Func[(int32)Type])(Enum, FName(EntryName));
+        if (bUserDefined)
+            return GetUserDefinedEnumValue(Enum, FName(EntryName));
+        return GetEnumValue(Enum, FName(EntryName));
     }
 
     FORCEINLINE UEnum* GetEnum() const { return Enum; }
 
-    static int64 GetEnumValue(UEnum *Enum, FName EntryName)
+    void Load();
+
+    void UnLoad();
+
+    static int64 GetEnumValue(const UEnum* Enum, FName EntryName)
     {
         check(Enum);
         return Enum->GetValueByName(EntryName);
     }
 
-    static int64 GetUserDefinedEnumValue(UEnum *Enum, FName EntryName)
+    static int64 GetUserDefinedEnumValue(const UEnum* Enum, FName EntryName)
     {
         check(Enum);
         int32 NumEntries = Enum->NumEnums();
@@ -72,10 +68,10 @@ public:
 private:
     union
     {
-        UEnum *Enum;
-        UUserDefinedEnum *UserDefinedEnum;
+        UEnum* Enum;
+        UUserDefinedEnum* UserDefinedEnum;
     };
 
     FString EnumName;
-    EType Type;
+    bool bUserDefined;
 };

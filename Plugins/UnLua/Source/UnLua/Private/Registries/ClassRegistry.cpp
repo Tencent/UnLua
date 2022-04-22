@@ -59,7 +59,7 @@ FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(const char* MetatableNa
     if (Ret)
         return Ret;
 
-    const char* TypeName = MetatableName[0] == 'U' || MetatableName[0] == 'A' || MetatableName[0] == 'F' || MetatableName[0] == 'E' ? MetatableName + 1 : MetatableName;
+    const char* TypeName = MetatableName[0] == 'U' || MetatableName[0] == 'A' || MetatableName[0] == 'F' ? MetatableName + 1 : MetatableName;
     const auto Type = LoadReflectedType(TypeName);
     if (!Type)
         return nullptr;
@@ -83,10 +83,18 @@ FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(const char* MetatableNa
 
 FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(UStruct* Type)
 {
-    if (const auto Exists = Classes.Find(Type))
+    FClassDesc** Exists = Classes.Find(Type);
+    if (Exists)
         return *Exists;
 
     const auto MetatableName = LowLevel::GetMetatableName(Type);
+    Exists = Name2Classes.Find(FName(MetatableName));
+    if (Exists)
+    {
+        Classes.Add(Type, *Exists);
+        return *Exists;
+    }
+
     const auto Ret = RegisterInternal(Type, MetatableName);
     return Ret;
 }
@@ -96,8 +104,6 @@ bool UnLua::FClassRegistry::StaticUnregister(UStruct* Type)
     FClassDesc* ClassDesc;
     if (!Classes.RemoveAndCopyValue(Type, ClassDesc))
         return false;
-    const auto Name = FName(LowLevel::GetMetatableName(Type));
-    Name2Classes.Remove(Name);
     ClassDesc->UnLoad();
     return true;
 }

@@ -15,15 +15,30 @@
 #include "EnumDesc.h"
 #include "ReflectionRegistry.h"
 
-FEnumDesc::FEnumDesc(UEnum *InEnum, EType EType)
-	: Enum(InEnum), Type(EType)
+FEnumDesc::FEnumDesc(UEnum* InEnum)
+    : Enum(InEnum)
 {
-	if (Enum)
-	{
-		EnumName = Enum->GetName();
-	}
+    check(Enum);
+    EnumName = Enum->GetName();
+    bUserDefined = InEnum->IsA<UUserDefinedEnum>();
 }
 
-FEnumDesc::~FEnumDesc() 
+void FEnumDesc::Load()
 {
+    if (Enum)
+        return;
+
+    Enum = FindObject<UEnum>(ANY_PACKAGE, *EnumName);
+    if (!Enum)
+        Enum = LoadObject<UEnum>(nullptr, *EnumName);
+
+    check(Enum);
+}
+
+void FEnumDesc::UnLoad()
+{
+    if (!Enum)
+        return;
+
+    Enum = nullptr;
 }

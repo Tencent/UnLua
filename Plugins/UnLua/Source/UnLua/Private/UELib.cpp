@@ -17,9 +17,11 @@
 
 #include "Registries/ClassRegistry.h"
 #include "LuaCore.h"
+#include "LuaEnv.h"
+#include "Registries/EnumRegistry.h"
 
 static const char* REGISTRY_KEY = "UnLua_UELib";
-static const char* NAMESPACE_NAME = "UE"; 
+static const char* NAMESPACE_NAME = "UE";
 
 static void LoadUEType(const char* InName)
 {
@@ -53,13 +55,17 @@ static int UE_Index(lua_State* L)
     const char Prefix = Name[0];
     // LoadUEType(Name + 1);
 
+    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     if (Prefix == 'U' || Prefix == 'A' || Prefix == 'F')
     {
         const auto ReflectedType = UnLua::FClassRegistry::LoadReflectedType(Name + 1);
+        if (!ReflectedType)
+            return 0;
+
         if (ReflectedType->IsNative())
         {
             if (auto Struct = Cast<UStruct>(ReflectedType))
-                UnLua::FClassRegistry::Find(L)->Register(Struct);
+                Env.GetClassRegistry()->Register(Struct);
         }
         else
         {
@@ -69,7 +75,20 @@ static int UE_Index(lua_State* L)
     }
     else if (Prefix == 'E')
     {
-        RegisterEnum(L, Name);
+        const auto ReflectedType = UnLua::FClassRegistry::LoadReflectedType(Name);
+        if (!ReflectedType)
+            return 0;
+
+        if (ReflectedType->IsNative())
+        {
+            if (auto Enum = Cast<UEnum>(ReflectedType))
+                Env.GetEnumRegistry()->Register(Enum);
+        }
+        else
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to load a blueprint enum %s with UE namespace, use UE.UObject.Load instead."), UTF8_TO_TCHAR(Name));
+            return 0;
+        }
     }
     lua_rawget(L, 1);
     return 1;

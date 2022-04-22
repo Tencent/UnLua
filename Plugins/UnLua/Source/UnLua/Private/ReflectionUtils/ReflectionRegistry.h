@@ -44,13 +44,6 @@ public:
 
     void Cleanup();
 
-    // all other place should use this to found desc!
-    FEnumDesc* FindEnum(const char* InName);
-
-    bool UnRegisterEnum(const FEnumDesc* EnumDesc);
-    FEnumDesc* RegisterEnum(const char* InName);
-    FEnumDesc* RegisterEnum(UEnum *InEnum);
-
     bool UnRegisterFunction(UFunction *InFunction);
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
     bool AddOverriddenFunction(UFunction *NewFunc, UFunction *OverriddenFunc);
@@ -58,7 +51,6 @@ public:
     UFunction* FindOverriddenFunction(UFunction *NewFunc);
 #endif
 
-	void RemoveFromDescSet(void* Desc);
 	bool IsDescValid(void* Desc, EDescType type);
     bool IsDescValidWithObjectCheck(void* Desc, EDescType type);
 
@@ -66,7 +58,6 @@ private:
     FDelegateHandle PostGarbageCollectHandle;
     void PostGarbageCollect();
     
-    TMap<FName, FEnumDesc*> Enums;
     TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
 };
 

@@ -1290,7 +1290,7 @@ static bool RegisterCollisionEnum(lua_State *L, const char *Name, lua_CFunction 
         return true;
     }
 
-    GReflectionRegistry.RegisterEnum(Name);
+    UnLua::FEnumRegistry::StaticRegister(Name);
 
     lua_pop(L, 1);
     luaL_newmetatable(L, Name);
@@ -1528,19 +1528,6 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool(*TraverseWor
     return INDEX_NONE;
 }
 
-int32 Global_RegisterEnum(lua_State *L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    RegisterEnum(L, lua_tostring(L, 1));
-    return 0;
-}
-
 /**
  * Register an enum (by FEnumDesc)
  */
@@ -1592,46 +1579,6 @@ static bool RegisterEnumInternal(lua_State *L, FEnumDesc *EnumDesc)
         return true;
     }
     return false;
-}
-
-/**
- * Register an enum (by name)
- */
-bool RegisterEnum(lua_State *L, const char *EnumName)
-{
-    if (!EnumName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid enum name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return false;
-    }
-
-    FEnumDesc *EnumDesc = GReflectionRegistry.RegisterEnum(EnumName);
-    bool bSuccess = RegisterEnumInternal(L, EnumDesc);
-    if (!bSuccess)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to register enum %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(EnumName));
-    }
-    return bSuccess;
-}
-
-/**
- * Register an enum (by UEnum)
- */
-bool RegisterEnum(lua_State *L, UEnum *Enum)
-{
-    if (!Enum)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid UEnum!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return false;
-    }
-
-    FEnumDesc *EnumDesc = GReflectionRegistry.RegisterEnum(Enum);
-    bool bSuccess = RegisterEnumInternal(L, EnumDesc);
-    if (!bSuccess)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Failed to register UEnum!"), ANSI_TO_TCHAR(__FUNCTION__));
-    }
-    return bSuccess;
 }
 
 extern int32 UObject_Identical(lua_State *L);
@@ -1977,7 +1924,7 @@ int32 Enum_Index(lua_State *L)
     lua_rawget(L, 1);                   // 3
     check(lua_isstring(L, -1));
     
-    const FEnumDesc *Enum = GReflectionRegistry.FindEnum(lua_tostring(L, -1));
+    const FEnumDesc *Enum = UnLua::FEnumRegistry::Find(lua_tostring(L, -1));
 	if ((!Enum) 
         || (!Enum->IsValid()))
 	{
@@ -1997,18 +1944,6 @@ int32 Enum_Index(lua_State *L)
 
 int32 Enum_Delete(lua_State *L)
 {
-    lua_pushstring(L, "__name");
-    int32 Type = lua_rawget(L, 1);
-    if (Type == LUA_TSTRING)
-    {   
-        const char* EnumName = lua_tostring(L, -1);
-        const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
-        if (EnumDesc)
-        {
-            GReflectionRegistry.UnRegisterEnum(EnumDesc);
-        }
-    }
-    lua_pop(L, 1);
     return 0;
 }
 
@@ -2024,7 +1959,7 @@ int32 Enum_GetMaxValue(lua_State* L)
 		if (Type == LUA_TSTRING)
 		{
 			const char* EnumName = lua_tostring(L, -1);
-			const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+			const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
 			if (EnumDesc)
 			{
 				UEnum* Enum = EnumDesc->GetEnum();
@@ -2062,7 +1997,7 @@ int32 Enum_GetNameStringByValue(lua_State* L)
         if (Type == LUA_TSTRING)
         {
             const char* EnumName = lua_tostring(L, -1);
-            const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+            const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
             if (EnumDesc)
             {
                 UEnum* Enum = EnumDesc->GetEnum();
@@ -2101,7 +2036,7 @@ int32 Enum_GetDisplayNameTextByValue(lua_State* L)
         if (Type == LUA_TSTRING)
         {
             const char* EnumName = lua_tostring(L, -1);
-            const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+            const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
             if (EnumDesc)
             {
                 UEnum* Enum = EnumDesc->GetEnum();
@@ -2524,7 +2459,7 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
                 }
                 else
                 {
-                    FEnumDesc *EnumDesc = GReflectionRegistry.FindEnum(Name);
+                    FEnumDesc *EnumDesc = UnLua::FEnumRegistry::Find(Name);
                     if (EnumDesc)
                     {
                         TypeInterface = GPropertyCreator.CreateEnumProperty(EnumDesc->GetEnum());
