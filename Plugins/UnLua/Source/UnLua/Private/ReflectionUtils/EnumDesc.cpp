@@ -18,8 +18,6 @@
 FEnumDesc::FEnumDesc(UEnum *InEnum, EType EType)
 	: Enum(InEnum), Type(EType)
 {
-	GReflectionRegistry.AddToDescSet(this, DESC_ENUM);
-
 	if (Enum)
 	{
 		EnumName = Enum->GetName();
@@ -28,5 +26,4 @@ FEnumDesc::FEnumDesc(UEnum *InEnum, EType EType)
 
 FEnumDesc::~FEnumDesc() 
 {
-	GReflectionRegistry.RemoveFromDescSet(this); 
 }

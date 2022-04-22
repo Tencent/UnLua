@@ -58,15 +58,9 @@ public:
     UFunction* FindOverriddenFunction(UFunction *NewFunc);
 #endif
 
-	void AddToDescSet(void* Desc, EDescType type);
 	void RemoveFromDescSet(void* Desc);
 	bool IsDescValid(void* Desc, EDescType type);
     bool IsDescValidWithObjectCheck(void* Desc, EDescType type);
-
-    void AddToGCSet(UObject* InObject);
-    void AddToClassWhiteSet(const FString& ClassName);
-    void RemoveFromClassWhiteSet(const FString& ClassName);
-    bool IsInClassWhiteSet(const FString& ClassName);
 
 private:
     FDelegateHandle PostGarbageCollectHandle;
@@ -74,9 +68,6 @@ private:
     
     TMap<FName, FEnumDesc*> Enums;
     TMap<TWeakObjectPtr<UFunction>, TSharedPtr<FFunctionDesc>> Functions;
-
-	TMap<void*, EDescType> DescSet;
-    TMap<const FString, bool> ClassWhiteSet;
 };
 
 extern UNLUA_API FReflectionRegistry GReflectionRegistry;

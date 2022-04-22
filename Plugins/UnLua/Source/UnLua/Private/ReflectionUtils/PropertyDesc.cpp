@@ -25,14 +25,12 @@ TMap<FProperty*,FPropertyDesc*> FPropertyDesc::Property2Desc;
 
 FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty) 
 { 
-	GReflectionRegistry.AddToDescSet(this, DESC_PROPERTY); 
     Property2Desc.Add(Property,this);
     PropertyType = CPT_None;
 }
 
 FPropertyDesc::~FPropertyDesc()
 {
-	GReflectionRegistry.RemoveFromDescSet(this);
     Property2Desc.Remove(Property);
 }
 

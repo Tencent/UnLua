@@ -1965,48 +1965,6 @@ int32 Global_Print(lua_State *L)
     return 0;
 }
 
-int32 Global_AddToClassWhiteSet(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, 1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    GReflectionRegistry.AddToClassWhiteSet(UTF8_TO_TCHAR(ClassName));
-
-    return 0;
-}
-
-int32 Global_RemoveFromClassWhiteSet(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, 1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    GReflectionRegistry.RemoveFromClassWhiteSet(UTF8_TO_TCHAR(ClassName));
-
-    return 0;
-}
-
 /**
  * __index meta methods for enum
  */

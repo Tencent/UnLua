@@ -30,8 +30,6 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     : Function(InFunction), DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
     , NumRefProperties(0), NumCalls(0), bStaticFunc(false), bInterfaceFunc(false)
 {
-	GReflectionRegistry.AddToDescSet(this, DESC_FUNCTION);
-
     check(InFunction);
 
     FuncName = InFunction->GetName();
@@ -139,8 +137,6 @@ FFunctionDesc::~FFunctionDesc()
 #if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("~FFunctionDesc : %s,%p"), *FuncName, this);
 #endif
-
-	GReflectionRegistry.RemoveFromDescSet(this);
 
     // free persistent parameter buffer
 #if ENABLE_PERSISTENT_PARAM_BUFFER

@@ -30,8 +30,6 @@
 FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
 {
-    GReflectionRegistry.AddToDescSet(this, DESC_CLASS);
-
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
     bIsClass = InStruct->IsA(UClass::StaticClass());
     bIsInterface = bIsClass && static_cast<UClass*>(InStruct)->HasAnyClassFlags(CLASS_Interface) && InStruct != UInterface::StaticClass();
@@ -77,8 +75,6 @@ FClassDesc::~FClassDesc()
 #if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("~FClassDesc : %s,%p,%d"), *GetName(), this, RefCount);
 #endif
-
-    GReflectionRegistry.RemoveFromDescSet(this);
 
     // remove refs to class,etc ufunction/delegate
     if (Struct)

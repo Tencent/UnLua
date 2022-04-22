@@ -41,8 +41,6 @@ void FReflectionRegistry::Cleanup()
     }
     Enums.Empty();
     Functions.Empty();
-	DescSet.Empty();
-    ClassWhiteSet.Empty();
 }
 
 FEnumDesc* FReflectionRegistry::FindEnum(const char* InName)
@@ -160,16 +158,6 @@ bool FReflectionRegistry::UnRegisterFunction(UFunction* InFunction)
     return Functions.RemoveAndCopyValue(InFunction, FunctionDesc);
 }
 
-void FReflectionRegistry::AddToDescSet(void* Desc, EDescType type)
-{
-	DescSet.Add(Desc, type);
-}
-
-void FReflectionRegistry::RemoveFromDescSet(void* Desc)
-{
-	DescSet.Remove(Desc);
-}
-
 bool FReflectionRegistry::IsDescValid(void* Desc, EDescType type)
 {   
     return true;
@@ -200,21 +188,6 @@ bool FReflectionRegistry::IsDescValidWithObjectCheck(void* Desc, EDescType type)
     }
 
     return bValid;
-}
-
-void FReflectionRegistry::AddToClassWhiteSet(const FString& ClassName)
-{
-    ClassWhiteSet.Add(ClassName, true);
-}
-
-void FReflectionRegistry::RemoveFromClassWhiteSet(const FString& ClassName)
-{
-    ClassWhiteSet.Remove(ClassName);
-}
-
-bool FReflectionRegistry::IsInClassWhiteSet(const FString& ClassName)
-{
-    return ClassWhiteSet.Contains(ClassName);
 }
 
 void FReflectionRegistry::PostGarbageCollect()

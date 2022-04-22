@@ -79,8 +79,6 @@ namespace UnLua
         lua_register(L, "LoadObject", Global_LoadObject);
         lua_register(L, "LoadClass", Global_LoadClass);
         lua_register(L, "NewObject", Global_NewObject);
-        lua_register(L, "UnLua_AddToClassWhiteSet", Global_AddToClassWhiteSet);
-        lua_register(L, "UnLua_RemoveFromClassWhiteSet", Global_RemoveFromClassWhiteSet);
 
         lua_register(L, "UEPrint", Global_Print);
 
