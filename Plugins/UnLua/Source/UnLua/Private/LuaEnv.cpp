@@ -62,7 +62,7 @@ namespace UnLua
         EnumRegistry = new FEnumRegistry(L);
 
         AutoObjectReference.SetName("UnLua_AutoReference");
-        AutoObjectReference.SetName("UnLua_ManualReference");
+        ManualObjectReference.SetName("UnLua_ManualReference");
 
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
@@ -147,6 +147,9 @@ namespace UnLua
         delete DelegateRegistry;
         delete ContainerRegistry;
         delete EnumRegistry;
+
+        AutoObjectReference.Clear();
+        ManualObjectReference.Clear();
 
         UnRegisterDelegates();
 
