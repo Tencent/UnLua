@@ -14,12 +14,11 @@
 
 #include "PropertyDesc.h"
 #include "ClassDesc.h"
-#include "ReflectionRegistry.h"
 #include "LuaCore.h"
 #include "LuaEnv.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
 
 TMap<FProperty*,FPropertyDesc*> FPropertyDesc::Property2Desc;
 

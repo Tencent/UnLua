@@ -20,7 +20,7 @@
 #include "LuaDynamicBinding.h"
 #include "lualib.h"
 #include "UELib.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
 #include "UnLuaLegacy.h"
@@ -60,6 +60,9 @@ namespace UnLua
         DelegateRegistry = new FDelegateRegistry(L);
         ContainerRegistry = new FContainerRegistry(L);
         EnumRegistry = new FEnumRegistry(L);
+
+        AutoObjectReference.SetName("UnLua_AutoReference");
+        AutoObjectReference.SetName("UnLua_ManualReference");
 
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
         CreateWeakValueTable(L);
@@ -151,7 +154,6 @@ namespace UnLua
         {
             // TODO:legacy cleanup
             // clean ue side modules,es static data structs
-            GObjectReferencer.Cleanup(); // clean up object referencer
             GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
             GReflectionRegistry.Cleanup(); // clean up reflection registry
         }

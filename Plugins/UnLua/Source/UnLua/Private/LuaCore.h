@@ -92,7 +92,6 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
  */
 int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
 void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object);
-void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object);
 
 /**
  * Get UObject and Lua function address for delegate

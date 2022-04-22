@@ -15,7 +15,7 @@
 #include "Registries/DelegateRegistry.h"
 #include "LuaDelegateHandler.h"
 #include "lauxlib.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
 #include "LuaEnv.h"
 
 
@@ -57,7 +57,7 @@ void UnLua::FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* 
     const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
     LuaFunctions.Add(lua_topointer(L, Index), Ref);
     const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
-    GObjectReferencer.AddObjectRef(Handler);
+    Env.AutoObjectReference.Add(Handler);
     auto Info = Delegates.FindChecked(Delegate);
     Handler->BindTo(Info.DelegateProperty, Delegate);
     Info.Handlers.Add(Ref, Handler);
@@ -110,18 +110,19 @@ void UnLua::FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate, UO
     LuaFunctions.Add(lua_topointer(L, Index), Ref);
     const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
     Handler->AddTo(Delegates.FindChecked(Delegate).MulticastProperty, Delegate);
-    GObjectReferencer.AddObjectRef(Handler);
+    Env.AutoObjectReference.Add(Handler);
     Delegates.FindChecked(Delegate).Handlers.Add(Ref, Handler);
 }
 
 void UnLua::FDelegateRegistry::Remove(lua_State* L, void* Delegate, int Index)
 {
     check(lua_type(L, Index) == LUA_TFUNCTION);
+    auto& Env = FLuaEnv::FindEnvChecked(GL);
     const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(L, Index));
     luaL_unref(L, LUA_REGISTRYINDEX, Ref);
     auto Info = Delegates.FindChecked(Delegate);
     const auto Handler = Info.Handlers.FindAndRemoveChecked(Ref);
-    GObjectReferencer.RemoveObjectRef(Handler.Get());
+    Env.AutoObjectReference.Remove(Handler.Get());
     Handler->RemoveFrom(Info.MulticastProperty, Delegate);
 }
 

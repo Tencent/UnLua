@@ -16,12 +16,9 @@
 #include "FieldDesc.h"
 #include "PropertyDesc.h"
 #include "FunctionDesc.h"
-#include "ReflectionRegistry.h"
 #include "LuaCore.h"
 #include "DefaultParamCollection.h"
 #include "LowLevel.h"
-#include "UEObjectReferencer.h"
-#include "UnLuaManager.h"
 #include "UnLuaModule.h"
 
 /**
@@ -214,6 +211,5 @@ void FClassDesc::UnLoad()
     Properties.Empty();
     Functions.Empty();
 
-    GObjectReferencer.RemoveObjectRef(Struct);
     Struct = nullptr;
 }

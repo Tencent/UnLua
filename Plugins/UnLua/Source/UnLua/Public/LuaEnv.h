@@ -22,6 +22,7 @@
 #include "lua.h"
 #include "LuaValue.h"
 #include "UnLuaLegacy.h"
+#include "ObjectReferencer.h"
 #include "HAL/Platform.h"
 
 namespace UnLua
@@ -30,6 +31,8 @@ namespace UnLua
         : public FUObjectArray::FUObjectCreateListener,
           public FUObjectArray::FUObjectDeleteListener
     {
+        friend FDelegateRegistry;
+
     public:
         DECLARE_DELEGATE_RetVal_ThreeParams(bool, FLuaFileLoader, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
 
@@ -136,6 +139,8 @@ namespace UnLua
         TArray<FLuaFileLoader> CustomLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
         FCriticalSection CandidatesLock;
+        FObjectReferencer AutoObjectReference;
+        FObjectReferencer ManualObjectReference;
         UUnLuaManager* Manager;
         FClassRegistry* ClassRegistry;
         FDelegateRegistry* DelegateRegistry;

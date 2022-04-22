@@ -14,11 +14,10 @@
 
 #include "LuaCore.h"
 #include "UnLuaDelegates.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
 #include "UnLuaModule.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
-#include "Misc/FileHelper.h"
 
 class FUnLuaModule;
 DEFINE_LOG_CATEGORY(LogUnLua);
@@ -269,7 +268,7 @@ namespace UnLua
      */
     int32 PushUObject(lua_State *L, UObjectBaseUtility *Object, bool bAddRef)
     {
-        if (!UnLua::IsUObjectValid(Object))
+        if (!IsUObjectValid(Object))
         {
             lua_pushnil(L);
             return 1;
@@ -286,11 +285,6 @@ namespace UnLua
             lua_pushlightuserdata(L, Object);
             lua_pushvalue(L, -2);
             lua_rawset(L, -4);
-
-            if (bAddRef && !Object->IsNative())
-            {
-                GObjectReferencer.AddObjectRef((UObject*)Object);       // add a reference for the object if it's a non-native object
-            }
         }
         lua_remove(L, -2);
 

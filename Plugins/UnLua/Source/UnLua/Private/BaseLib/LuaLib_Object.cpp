@@ -14,8 +14,7 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "UEObjectReferencer.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
+#include "ObjectReferencer.h"
 
 /**
  * Load an object. for example: UObject.Load("/Game/Core/Blueprints/AI/BehaviorTree_Enemy.BehaviorTree_Enemy")
@@ -289,8 +288,9 @@ int32 UObject_Delete(lua_State *L)
     if (!bClassMetatable)
     {
         UObject* Object = bTwoLvlPtr ? (UObject*)*(void**)Userdata : (UObject*)Userdata;
-        if (Object)
-            GObjectReferencer.RemoveObjectRef(Object);
+        // if (Object)
+        //     GObjectReferencer.RemoveObjectRef(Object);
+        // TODO: refactor
     }
 
     return 0;

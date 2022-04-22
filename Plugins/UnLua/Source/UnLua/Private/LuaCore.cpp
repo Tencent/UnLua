@@ -18,7 +18,7 @@
 #include "LuaDynamicBinding.h"
 #include "UnLua.h"
 #include "UnLuaDelegates.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
 #include "CollisionHelper.h"
 #include "LowLevel.h"
 #include "Containers/LuaSet.h"
@@ -642,7 +642,6 @@ static void PushFTextElement(lua_State *L, FTextProperty *Property, void *Value)
 static void PushObjectElement(lua_State *L, FObjectPropertyBase *Property, void *Value)
 {
     UObject *Object = Property->GetObjectPropertyValue(Value);
-    GObjectReferencer.AddObjectRef(Object);
     PushObjectCore(L, Object);
 }
 
@@ -653,7 +652,6 @@ static void PushInterfaceElement(lua_State *L, FInterfaceProperty *Property, voi
 {
     const FScriptInterface &Interface = Property->GetPropertyValue(Value);
     UObject *Object = Interface.GetObject();
-    GObjectReferencer.AddObjectRef(Object);
     PushObjectCore(L, Object);
 }
 
@@ -909,21 +907,6 @@ void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object)
     {
         check(Type == LUA_TNIL);
         lua_pop(L, 2);
-    }
-}
-
-/**
- * Delete the ref of uobject instance
- */
-void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object)
-{
-    if (UnLua::IsUObjectValid(Object))
-    {   
-#if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogUnLua, Log, TEXT("UObject_Delete : %s,%p!"), *Object->GetName(), Object);
-#endif
-        // unlua ref
-        GObjectReferencer.RemoveObjectRef((UObject*)Object);
     }
 }
 

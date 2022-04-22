@@ -19,7 +19,7 @@
 #include "LuaCore.h"
 #include "LuaFunction.h"
 #include "LuaFunctionInjection.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
 #include "Animation/AnimInstance.h"
@@ -540,7 +540,6 @@ void UUnLuaManager::OnActorDestroyed(AActor *Actor)
     if (Num > 0)
     {
         ReleaseAttachedObjectLuaRef(Actor);
-        GObjectReferencer.RemoveObjectRef(Actor);
     }
 }
 
@@ -948,8 +947,6 @@ void UUnLuaManager::AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRe
 {
     check(Object);
 
-    GObjectReferencer.AddObjectRef((UObject*)Object);
-
     AttachedObjects.Add(Object, ObjectRef);
 
     if (Object->IsA<AActor>())
@@ -964,9 +961,7 @@ void UUnLuaManager::AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRe
 void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
 {
     check(Object);
-    
-    GObjectReferencer.RemoveObjectRef((UObject*)Object);
-    
+
     int32* ObjectLuaRef = AttachedObjects.Find(Object);
     if ((ObjectLuaRef)
         &&(*ObjectLuaRef != LUA_REFNIL))
