@@ -148,6 +148,7 @@ namespace UnLua
      *
      * @return - created Lua state
      */
+    UE_DEPRECATED(4.20, "Use FLuaEnv to create lua vm instead.")
     UNLUA_API lua_State* CreateState();
 
     /**

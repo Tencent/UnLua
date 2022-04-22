@@ -31,7 +31,7 @@ void FUnLuaLibWorldSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
 
         World = UWorld::CreateWorld(EWorldType::Game, false, "UnLuaTest");
         FWorldContext& WorldContext = GEngine->CreateNewWorldContext(EWorldType::Game);

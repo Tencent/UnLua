@@ -28,7 +28,7 @@ void FUnLuaLibFColorSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
     });
 
     Describe(TEXT("构造FColor"), [this]()

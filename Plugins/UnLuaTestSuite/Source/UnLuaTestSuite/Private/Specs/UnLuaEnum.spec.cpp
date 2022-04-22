@@ -28,7 +28,7 @@ void FUnLuaEnumSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
     });
 
     Describe(TEXT("GetNameStringByValue"), [this]()

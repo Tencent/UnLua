@@ -28,7 +28,7 @@ void FUnLuaLibDataTableSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
     });
 
     Describe(TEXT("GetTableDataRowFromName"), [this]()

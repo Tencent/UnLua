@@ -29,7 +29,7 @@ void FUnLuaLibDelegateSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
         Stub = NewObject<UUnLuaTestStub>();
         UnLua::PushUObject(L, Stub);
         lua_setglobal(L, "Stub");
