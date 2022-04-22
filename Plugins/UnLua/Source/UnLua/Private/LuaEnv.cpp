@@ -14,7 +14,7 @@
 
 #include "LuaEnv.h"
 #include "Binding.h"
-#include "ClassRegistry.h"
+#include "Registries/ClassRegistry.h"
 #include "CollisionHelper.h"
 #include "lstate.h"
 #include "LuaCore.h"

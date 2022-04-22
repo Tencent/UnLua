@@ -14,9 +14,9 @@
 
 #pragma once
 
-#include "ClassRegistry.h"
-#include "DelegateRegistry.h"
-#include "ContainerRegistry.h"
+#include "Registries/ClassRegistry.h"
+#include "Registries/DelegateRegistry.h"
+#include "Registries/ContainerRegistry.h"
 #include "UnLuaManager.h"
 #include "lua.h"
 #include "LuaValue.h"

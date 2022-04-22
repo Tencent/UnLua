@@ -15,7 +15,7 @@
 #include "lauxlib.h"
 #include "UELib.h"
 
-#include "ClassRegistry.h"
+#include "Registries/ClassRegistry.h"
 #include "LuaCore.h"
 
 static const char* REGISTRY_KEY = "UnLua_UELib";
