@@ -144,6 +144,27 @@ struct TMulticastDelegateLib
         Registry->Broadcast(L, Delegate, NumParams - 1, 2);
         return 0;
     }
+
+    static int32 IsBound(lua_State *L)
+    {
+        int32 NumParams = lua_gettop(L);
+        if (NumParams < 1)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+
+        T *Delegate = (T*)GetCppInstanceFast(L, 1);
+        if (!Delegate)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("%s: Invalid multicast delegate!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+
+        auto Bound = Delegate->IsBound();
+        lua_pushboolean(L, Bound);
+        return 1;
+    }
 };
 
 static const luaL_Reg FMulticastScriptDelegateLib[] =
@@ -152,6 +173,7 @@ static const luaL_Reg FMulticastScriptDelegateLib[] =
     { "Remove", TMulticastDelegateLib<FMulticastScriptDelegate>::Remove },
     { "Clear", TMulticastDelegateLib<FMulticastScriptDelegate>::Clear },
     { "Broadcast", TMulticastDelegateLib<FMulticastScriptDelegate>::Broadcast },
+    { "IsBound", TMulticastDelegateLib<FMulticastScriptDelegate>::IsBound },
     { nullptr, nullptr }
 };
 
@@ -165,6 +187,7 @@ static const luaL_Reg FMulticastSparseDelegateLib[] =
     { "Remove", TMulticastDelegateLib<FSparseDelegate>::Remove },
     { "Clear", TMulticastDelegateLib<FSparseDelegate>::Clear },
     { "Broadcast", TMulticastDelegateLib<FSparseDelegate>::Broadcast },
+    { "IsBound", TMulticastDelegateLib<FSparseDelegate>::IsBound },
     { nullptr, nullptr }
 };
 
