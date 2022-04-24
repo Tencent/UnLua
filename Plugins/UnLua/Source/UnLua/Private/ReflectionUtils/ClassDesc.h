@@ -42,7 +42,7 @@ public:
     FORCEINLINE UStruct* AsStruct()
     {
         Load();
-        return Struct;
+        return Struct.Get();
     }
 
     FORCEINLINE UScriptStruct* AsScriptStruct()
@@ -50,7 +50,7 @@ public:
         if (!bIsScriptStruct)
             return nullptr;
         Load();
-        return static_cast<UScriptStruct*>(Struct);
+        return static_cast<UScriptStruct*>(Struct.Get());
     }
 
     FORCEINLINE UClass* AsClass()
@@ -58,7 +58,7 @@ public:
         if (!bIsClass)
             return nullptr;
         Load();
-        return static_cast<UClass*>(Struct);
+        return static_cast<UClass*>(Struct.Get());
     }
 
     FORCEINLINE FString GetName() const { return ClassName; }
@@ -88,7 +88,7 @@ public:
     void UnLoad();
 
 private:
-    UStruct* Struct;
+    TWeakObjectPtr<UStruct> Struct;
 
     FString ClassName;
 

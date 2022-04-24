@@ -16,6 +16,7 @@
 
 #include "UnLuaBase.h"
 #include "UnLuaCompatibility.h"
+#include "UObject/WeakFieldPtr.h"
 
 /**
  * new FProperty types
@@ -204,7 +205,7 @@ protected:
         FDelegateProperty *DelegateProperty;
         FMulticastDelegateProperty *MulticastDelegateProperty;
     };
-
+    TWeakFieldPtr<FProperty> PropertyPtr;
     int8 PropertyType;
 public:
     static TMap<FProperty*,FPropertyDesc*> Property2Desc;

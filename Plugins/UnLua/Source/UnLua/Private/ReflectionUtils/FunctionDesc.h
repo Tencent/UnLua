@@ -36,7 +36,7 @@ public:
      *
      * @return - true if the function is valid, false otherwise
      */
-    FORCEINLINE bool IsValid() const { return Function && UnLua::IsUObjectValid(Function); }
+    FORCEINLINE bool IsValid() const { return Function.IsValid(); }
 
     /**
      * Test if this function has return property
@@ -51,13 +51,6 @@ public:
      * @return - true if the function is a latent function, false otherwise
      */
     FORCEINLINE bool IsLatentFunction() const { return LatentPropertyIndex > INDEX_NONE; }
-
-    /**
-     * Get the number of properties (includes both in and out properties)
-     *
-     * @return - the number of properties
-     */
-    FORCEINLINE uint8 GetNumProperties() const { return Function->NumParms; }
 
     /**
      * Get the number of out properties
@@ -85,7 +78,7 @@ public:
      *
      * @return - the UFunction
      */
-    FORCEINLINE UFunction* GetFunction() const { return Function; }
+    FORCEINLINE UFunction* GetFunction() const { return Function.Get(); }
 
     bool CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self);
  
@@ -122,8 +115,8 @@ private:
     int32 PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params, const TArray<bool> &CleanupFlags);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
-
-    UFunction *Function;
+ 
+    TWeakObjectPtr<UFunction> Function;
     FString FuncName;
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     void *Buffer;

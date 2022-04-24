@@ -23,9 +23,11 @@
 TMap<FProperty*,FPropertyDesc*> FPropertyDesc::Property2Desc;
 
 FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty) 
-{ 
+{
     Property2Desc.Add(Property,this);
     PropertyType = CPT_None;
+    PropertyPtr = InProperty;
+    check(PropertyPtr.IsValid());
 }
 
 FPropertyDesc::~FPropertyDesc()
@@ -35,45 +37,44 @@ FPropertyDesc::~FPropertyDesc()
 
 bool FPropertyDesc::IsValid() const
 {
+    if (!PropertyPtr.IsValid())
+        return false;
+    
 #if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
     return UnLua::IsUObjectValid(Property);
 #else
-    bool bValid = false;
-    if (Property)
-    {
-        bValid = true;
+    bool bValid = true;
 
-        switch (PropertyType)
+    switch (PropertyType)
+    {
+    case CPT_Interface:
         {
-            case CPT_Interface:
-            {
-                bValid = UnLua::IsUObjectValid(((FInterfaceProperty*)Property)->InterfaceClass);
-                break;
-            }
-            case CPT_Delegate:
-            {
-                bValid = UnLua::IsUObjectValid(((FDelegateProperty*)Property)->SignatureFunction);
-                break;
-            }
-            case CPT_MulticastDelegate:
-            case CPT_MulticastSparseDelegate:
-            {
-                bValid = UnLua::IsUObjectValid(((FMulticastDelegateProperty*)Property)->SignatureFunction);
-                break;
-            }
-            case CPT_Struct:
-            {
-                bValid = UnLua::IsUObjectValid(((FStructProperty*)Property)->Struct);
-                break;
-            }
-            case CPT_ObjectReference:
-            case CPT_WeakObjectReference:
-            case CPT_LazyObjectReference:
-            case CPT_SoftObjectReference:
-            {
-                bValid = UnLua::IsUObjectValid(((FObjectPropertyBase*)Property)->PropertyClass);
-                break;
-            }
+            bValid = UnLua::IsUObjectValid(((FInterfaceProperty*)Property)->InterfaceClass);
+            break;
+        }
+    case CPT_Delegate:
+        {
+            bValid = UnLua::IsUObjectValid(((FDelegateProperty*)Property)->SignatureFunction);
+            break;
+        }
+    case CPT_MulticastDelegate:
+    case CPT_MulticastSparseDelegate:
+        {
+            bValid = UnLua::IsUObjectValid(((FMulticastDelegateProperty*)Property)->SignatureFunction);
+            break;
+        }
+    case CPT_Struct:
+        {
+            bValid = UnLua::IsUObjectValid(((FStructProperty*)Property)->Struct);
+            break;
+        }
+    case CPT_ObjectReference:
+    case CPT_WeakObjectReference:
+    case CPT_LazyObjectReference:
+    case CPT_SoftObjectReference:
+        {
+            bValid = UnLua::IsUObjectValid(((FObjectPropertyBase*)Property)->PropertyClass);
+            break;
         }
     }
 

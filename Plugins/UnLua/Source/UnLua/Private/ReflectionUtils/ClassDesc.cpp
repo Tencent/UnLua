@@ -116,7 +116,7 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
             FString FieldNameStr = FieldName.ToString();
             const int32 GuidStrLen = 32;
             const int32 MinimalPostfixlen = GuidStrLen + 3;
-            for (TFieldIterator<FProperty> PropertyIt(Struct, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); PropertyIt; ++PropertyIt)
+            for (TFieldIterator<FProperty> PropertyIt(Struct.Get(), EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); PropertyIt; ++PropertyIt)
             {
                 FString DisplayName = (*PropertyIt)->GetName();
                 if (DisplayName.Len() > MinimalPostfixlen)
@@ -160,7 +160,9 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
             Fields.Add(FieldName, FieldDesc);
             if (Property)
             {
-                FieldDesc->FieldIndex = Properties.Add(FPropertyDesc::Create(Property)); // index of property descriptor
+                auto X = FPropertyDesc::Create(Property);
+                check(X->IsValid());
+                FieldDesc->FieldIndex = Properties.Add(X); // index of property descriptor
                 ++FieldDesc->FieldIndex;
             }
             else
@@ -184,22 +186,21 @@ void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
 
 void FClassDesc::Load()
 {
-    if (Struct)
+    if (Struct.IsValid())
         return;
 
-    FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F') ? ClassName.RightChop(1) : ClassName;
-    Struct = FindObject<UStruct>(ANY_PACKAGE, *Name);
-    if (!Struct)
-        Struct = LoadObject<UStruct>(nullptr, *Name);
+    UnLoad();
 
-    check(Struct);
+    FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F') ? ClassName.RightChop(1) : ClassName;
+    UStruct* Found = FindObject<UStruct>(ANY_PACKAGE, *Name);
+    if (!Found)
+        Found = LoadObject<UStruct>(nullptr, *Name);
+
+    Struct = Found;
 }
 
 void FClassDesc::UnLoad()
 {
-    if (!Struct)
-        return;
-
     for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
         delete It.Value();
     for (FPropertyDesc* Property : Properties)
@@ -211,5 +212,5 @@ void FClassDesc::UnLoad()
     Properties.Empty();
     Functions.Empty();
 
-    Struct = nullptr;
+    Struct.Reset();
 }

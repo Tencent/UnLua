@@ -27,11 +27,12 @@
  * Function descriptor constructor
  */
 FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams)
-    : Function(InFunction), DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
+    : DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
     , NumRefProperties(0), NumCalls(0), bStaticFunc(false), bInterfaceFunc(false)
 {
     check(InFunction);
 
+    Function = InFunction;
     FuncName = InFunction->GetName();
 
     bStaticFunc = InFunction->HasAnyFunctionFlags(FUNC_Static);         // a static function?
@@ -185,7 +186,7 @@ bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* S
  */
 int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 {
-    check(Function);
+    check(Function.IsValid());
 
     // !!!Fix!!!
     // when static function passed an object, it should be ignored auto
@@ -211,7 +212,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     }
 
 #if SUPPORTS_RPC_CALL
-    int32 Callspace = Object->GetFunctionCallspace(Function, nullptr);
+    int32 Callspace = Object->GetFunctionCallspace(Function.Get(), nullptr);
     bool bRemote = Callspace & FunctionCallspace::Remote;
     bool bLocal = Callspace & FunctionCallspace::Local;
 #else
@@ -223,7 +224,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     CleanupFlags.AddZeroed(Properties.Num());
     void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
 
-    UFunction *FinalFunction = Function;
+    UFunction *FinalFunction = Function.Get();
     if (bInterfaceFunc)
     {
         // get target UFunction if it's a function in Interface
