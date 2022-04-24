@@ -132,8 +132,6 @@ bool RegisterECollisionChannel(lua_State *L);
 bool RegisterEObjectTypeQuery(lua_State *L);
 bool RegisterETraceTypeQuery(lua_State *L);
 
-void ClearLibrary(lua_State *L, const char *LibrayName);
-
 /**
  * Functions to create weak table
  */
@@ -144,12 +142,6 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool (*TraverseWo
 bool PeekTableElement(lua_State *L, void *Userdata);
 
 /**
- * Functions to register UClass
- */
-int32 Global_RegisterClass(lua_State *L);
-class FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct = nullptr);
-
-/**
  * Lua global functions
  */
 int32 Global_GetUProperty(lua_State *L);
@@ -158,7 +150,6 @@ int32 Global_LoadObject(lua_State *L);
 int32 Global_LoadClass(lua_State *L);
 int32 Global_NewObject(lua_State *L);
 UNLUA_API int32 Global_Print(lua_State *L);
-UNLUA_API int32 Global_Require(lua_State *L);
 int32 Global_AddToClassWhiteSet(lua_State* L);
 int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 
