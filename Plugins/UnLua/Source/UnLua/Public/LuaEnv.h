@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "Registries/DelegateRegistry.h"
 #include "Registries/ContainerRegistry.h"
@@ -99,6 +100,8 @@ namespace UnLua
 
         FClassRegistry* GetClassRegistry() const { return ClassRegistry; }
 
+        TSharedPtr<FObjectRegistry> GetObjectRegistry() const { return ObjectRegistry; }
+
         FDelegateRegistry* GetDelegateRegistry() const { return DelegateRegistry; }
 
         FContainerRegistry* GetContainerRegistry() const { return ContainerRegistry; }
@@ -144,6 +147,7 @@ namespace UnLua
         FObjectReferencer ManualObjectReference;
         UUnLuaManager* Manager;
         FClassRegistry* ClassRegistry;
+        TSharedPtr<FObjectRegistry> ObjectRegistry;
         FDelegateRegistry* DelegateRegistry;
         FContainerRegistry* ContainerRegistry;
         FEnumRegistry* EnumRegistry;

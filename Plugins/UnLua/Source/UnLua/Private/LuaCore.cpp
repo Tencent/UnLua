@@ -1100,18 +1100,19 @@ bool CallFunction(lua_State *L, int32 NumArgs, int32 NumResults)
 /**
  * Push a field (property or function)
  */
-static void PushField(lua_State *L, FFieldDesc *Field)
+static void PushField(lua_State *L, TSharedPtr<FFieldDesc> Field)
 {
+    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     check(Field && Field->IsValid());
     if (Field->IsProperty())
     {
-        FPropertyDesc *Property = Field->AsProperty();
-        lua_pushlightuserdata(L, Property);                     // Property
+        TSharedPtr<FPropertyDesc> Property = Field->AsProperty();
+        Env.GetObjectRegistry()->Push(L, Property);
     }
     else
     {
-        FFunctionDesc *Function = Field->AsFunction();
-        lua_pushlightuserdata(L, Function);                     // Function
+        TSharedPtr<FFunctionDesc> Function = Field->AsFunction();
+        Env.GetObjectRegistry()->Push(L, Function);
         if (Function->IsLatentFunction())
         {
             lua_pushcclosure(L, Class_CallLatentFunction, 1);   // closure
@@ -1144,12 +1145,13 @@ static int32 GetField(lua_State* L)
 
         const char* ClassName = lua_tostring(L, -1);
         const char* FieldName = lua_tostring(L, 2);
+
         lua_pop(L, 1);
 
         // TODO: refactor
         const auto Registry = UnLua::FClassRegistry::Find(L);
         FClassDesc* ClassDesc = Registry->Find(ClassName);
-        FFieldDesc* Field = ClassDesc->RegisterField(FieldName, ClassDesc);
+        TSharedPtr<FFieldDesc> Field = ClassDesc->RegisterField(FieldName, ClassDesc);
         if (Field && Field->IsValid())
         {
             bool bCached = false;
@@ -1502,63 +1504,42 @@ extern int32 UObject_Delete(lua_State *L);
 
 int32 Global_GetUProperty(lua_State *L)
 {
-    if (lua_islightuserdata(L, 2))
-    {   
-        bool bValid = false;
-        UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
-        if (Property)
-        {
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
-
-			if ((!bValid)
-				&& (Property->StaticExported))
-			{
-				bValid = true;
-			}
-
-            UObject* Object = UnLua::GetUObject(L, 1);
-            if ((bValid)
-                && (UnLua::IsUObjectValid(Object)))
-            {
-                Property->Read(L, Object, false);           // get UProperty value
-                return 1;
-            }
-        }
+    if (lua_type(L, 2) != LUA_TUSERDATA)
+    {
+        lua_pushnil(L);
+        return 1;
     }
 
-    lua_pushnil(L);
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+    if (!Property.IsValid())
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    void* Self = GetCppInstance(L, 1);
+    if (!Self)
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    Property->Read(L, Self, false);
     return 1;
 }
 
 int32 Global_SetUProperty(lua_State *L)
 {
-    if (lua_islightuserdata(L, 2))
+    if (lua_type(L, 2) == LUA_TUSERDATA)
     {
-        bool bValid = false;
-        UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
-        if (Property)
-        {   
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+        const auto Property = Registry->Get<UnLua::ITypeOps>(L, 2);
+        if (!Property.IsValid())
+            return 0;
 
-            if ((!bValid)
-                && (Property->StaticExported))
-            {
-                bValid = true;
-            }
-
-            UObject* Object = UnLua::GetUObject(L, 1);
-            if ((bValid)
-                && (UnLua::IsUObjectValid(Object)))
-            {
-                Property->Write(L, Object, 3);              // set UProperty value
-            }
-        }
+        UObject* Object = UnLua::GetUObject(L, 1);
+        Property->Write(L, Object, 3);              // set UProperty value
     }
     return 0;
 }
@@ -1814,38 +1795,20 @@ int32 Enum_GetDisplayNameTextByValue(lua_State* L)
 int32 Class_Index(lua_State *L)
 {
     GetField(L);
-    if (lua_islightuserdata(L, -1))
-    {   
-        bool bValid = false;
-		UnLua::ITypeOps *Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
-        if (Property)
-        {
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
+    if (lua_type(L, -1) != LUA_TUSERDATA)
+        return 1;
 
-			if ((!bValid)
-				&& (Property->StaticExported))
-			{
-				bValid = true;
-			}
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+    if (!Property.IsValid())
+        return 0;
 
-			void* ContainerPtr = GetCppInstance(L, 1);
+    void* Self = GetCppInstance(L, 1);
+    if (!Self)
+        return 1;
 
-			if ((bValid)
-				&& (ContainerPtr))
-			{
-				Property->Read(L, ContainerPtr, false);
-				lua_remove(L, -2);
-			}
-        }
-        else
-        {
-            lua_pushnil(L);
-            lua_remove(L, -2);
-        }
-    }
+    Property->Read(L, Self, false);
+    lua_remove(L, -2);
     return 1;
 }
 
@@ -1877,18 +1840,19 @@ bool IsPropertyOwnerTypeValid(UnLua::ITypeOps* InProperty, void* InContainerPtr)
 int32 Class_NewIndex(lua_State *L)
 {
     GetField(L);
-    if (lua_islightuserdata(L, -1))
+
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    if (lua_type(L, -1) == LUA_TUSERDATA)
     {
-        UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
-        if (Property)
+        const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+        if (Property.IsValid())
         {
-            const bool bValid = GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY) || Property->StaticExported;
-            void* ContainerPtr = GetCppInstance(L, 1);
-            if (bValid && ContainerPtr)
+            void* Self = GetCppInstance(L, 1);
+            if (Self)
             {
 #if ENABLE_TYPE_CHECK
-                if (IsPropertyOwnerTypeValid(Property, ContainerPtr))
-                    Property->Write(L, ContainerPtr, 3);
+                if (IsPropertyOwnerTypeValid(Property.Get(), Self))
+                    Property->Write(L, Self, 3);
 #else
                 Property->Write(L, ContainerPtr, 3);
 #endif
@@ -1918,10 +1882,11 @@ int32 Class_CallUFunction(lua_State *L)
 {
     //!!!Fix!!!
     //delete desc when is not valid
-    FFunctionDesc *Function = (FFunctionDesc*)lua_touserdata(L, lua_upvalueindex(1));
-    if (!GReflectionRegistry.IsDescValidWithObjectCheck(Function,DESC_FUNCTION))
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto Function = Env.GetObjectRegistry()->Get<FFunctionDesc>(L, lua_upvalueindex(1));
+    if (!Function->IsValid())
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid function descriptor! %p"), ANSI_TO_TCHAR(__FUNCTION__), Function);
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid function descriptor!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
     int32 NumParams = lua_gettop(L);
@@ -1934,14 +1899,14 @@ int32 Class_CallUFunction(lua_State *L)
  */
 int32 Class_CallLatentFunction(lua_State *L)
 {
-    FFunctionDesc *Function = (FFunctionDesc*)lua_touserdata(L, lua_upvalueindex(1));
-	if (!GReflectionRegistry.IsDescValidWithObjectCheck(Function, DESC_FUNCTION))
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto Function = Env.GetObjectRegistry()->Get<FFunctionDesc>(L, lua_upvalueindex(1));
+	if (!Function->IsValid())
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid function descriptor!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     auto ThreadRef = Env.FindOrAddThread(L);
     if (ThreadRef == LUA_REFNIL)
     {

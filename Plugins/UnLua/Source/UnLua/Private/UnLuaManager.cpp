@@ -227,10 +227,8 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
         OverridableFunctions.Remove(Class);
         DuplicatedFunctions.Remove(Class);
     }
-    else
-    {
-        DeleteLuaObject(Env->GetMainState(), (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
-    }
+
+    DeleteLuaObject(Env->GetMainState(), (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
 }
 
 /**

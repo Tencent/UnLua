@@ -65,16 +65,6 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     }
 }
 
-FClassDesc::~FClassDesc()
-{
-    for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
-        delete It.Value();
-    for (FPropertyDesc* Property : Properties)
-        delete Property;
-    for (FFunctionDesc* Function : Functions)
-        delete Function;
-}
-
 void FClassDesc::AddRef()
 {
     RefCount++;
@@ -85,23 +75,23 @@ void FClassDesc::SubRef()
     RefCount--;
 }
 
-FFieldDesc* FClassDesc::FindField(const char* FieldName)
+TSharedPtr<FFieldDesc> FClassDesc::FindField(const char* FieldName)
 {
     Load();
 
-    FFieldDesc** FieldDescPtr = Fields.Find(FieldName);
+    TSharedPtr<FFieldDesc>* FieldDescPtr = Fields.Find(FieldName);
     return FieldDescPtr ? *FieldDescPtr : nullptr;
 }
 
 /**
  * Register a field of this class
  */
-FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
+TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
 {
     Load();
 
-    FFieldDesc* FieldDesc = nullptr;
-    FFieldDesc** FieldDescPtr = Fields.Find(FieldName);
+    TSharedPtr<FFieldDesc> FieldDesc = nullptr;
+    TSharedPtr<FFieldDesc>* FieldDescPtr = Fields.Find(FieldName);
     if (FieldDescPtr)
     {
         FieldDesc = *FieldDescPtr;
@@ -155,22 +145,21 @@ FFieldDesc* FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
             }
 
             // create new Field descriptor
-            FieldDesc = new FFieldDesc;
+            FieldDesc = MakeShared<FFieldDesc>();
             FieldDesc->QueryClass = QueryClass;
             FieldDesc->OuterClass = this;
             Fields.Add(FieldName, FieldDesc);
             if (Property)
             {
-                auto X = FPropertyDesc::Create(Property);
-                check(X->IsValid());
-                FieldDesc->FieldIndex = Properties.Add(X); // index of property descriptor
+                TSharedPtr<FPropertyDesc> Ptr(FPropertyDesc::Create(Property));
+                FieldDesc->FieldIndex = Properties.Add(Ptr); // index of property descriptor
                 ++FieldDesc->FieldIndex;
             }
             else
             {
                 check(Function);
                 FParameterCollection* DefaultParams = FunctionCollection ? FunctionCollection->Functions.Find(FieldName) : nullptr;
-                FieldDesc->FieldIndex = Functions.Add(new FFunctionDesc(Function, DefaultParams)); // index of function descriptor
+                FieldDesc->FieldIndex = Functions.Add(MakeShared<FFunctionDesc>(Function, DefaultParams)); // index of function descriptor
                 ++FieldDesc->FieldIndex;
                 FieldDesc->FieldIndex = -FieldDesc->FieldIndex;
             }
@@ -203,13 +192,6 @@ void FClassDesc::Load()
 
 void FClassDesc::UnLoad()
 {
-    for (TMap<FName, FFieldDesc*>::TIterator It(Fields); It; ++It)
-        delete It.Value();
-    for (FPropertyDesc* Property : Properties)
-        delete Property;
-    for (FFunctionDesc* Function : Functions)
-        delete Function;
-
     Fields.Empty();
     Properties.Empty();
     Functions.Empty();

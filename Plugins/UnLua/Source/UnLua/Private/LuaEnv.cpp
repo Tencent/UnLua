@@ -53,6 +53,7 @@ namespace UnLua
         AddSearcher(LoadFromBuiltinLibs, 4);
 
         UELib::Open(L);
+        ObjectRegistry = MakeShared<FObjectRegistry>(L);
         ClassRegistry = new FClassRegistry(L);
         ClassRegistry->Register("UObject");
         ClassRegistry->Register("UClass");

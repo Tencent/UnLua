@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "lauxlib.h"
 #include "UnLuaBase.h"
 #include "UnLuaCompatibility.h"
 #include "UObject/WeakFieldPtr.h"
@@ -168,11 +169,21 @@ public:
     virtual FProperty* GetUProperty() const override { return Property; }
 
     virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override 
-    { 
+    {
+        if (!IsValid())
+        {
+            luaL_error(L, "attempt to read invalid property");
+            return;
+        }
         GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy);
     }
     virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override 
-    { 
+    {
+        if (!IsValid())
+        {
+            luaL_error(L, "attempt to write invalid property");
+            return;
+        }
         SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, true); 
     }
 

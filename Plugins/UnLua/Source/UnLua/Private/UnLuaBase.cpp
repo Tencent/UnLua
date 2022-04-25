@@ -29,7 +29,7 @@ namespace UnLua
     {
         if (!ObjPtr)
             return false;
-        return (ObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0;
+        return (ObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0 && ObjPtr->IsValidLowLevelFast();
     }
 
     lua_State* CreateState()

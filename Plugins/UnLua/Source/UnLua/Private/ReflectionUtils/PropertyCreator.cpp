@@ -22,6 +22,8 @@ public:
         : ScriptStruct(nullptr)
     {
         ScriptStruct = FindObject<UScriptStruct>(ANY_PACKAGE, TEXT("PropertyCollector"));
+        if (!ScriptStruct)
+            return;
 
         // ScriptStruct->CreateCluster() fail to create a cluster...
         int32 RootInternalIndex = GUObjectArray.ObjectToIndex(ScriptStruct);

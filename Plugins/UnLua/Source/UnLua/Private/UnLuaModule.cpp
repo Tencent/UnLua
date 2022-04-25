@@ -111,6 +111,7 @@ public:
 private:
     virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
     {
+        // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectCreated : %p"), ObjectBase);
         if (!bIsActive)
             return;
 
@@ -121,6 +122,7 @@ private:
 
     virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
     {
+        // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectDeleted : %p"), Object);
         if (!bIsActive)
             return;
 

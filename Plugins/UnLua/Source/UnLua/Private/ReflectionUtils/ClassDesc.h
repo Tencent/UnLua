@@ -27,7 +27,6 @@ class FClassDesc
 {
 public:
     FClassDesc(UStruct *InStruct, const FString &InName);
-    ~FClassDesc();
 
     FORCEINLINE bool IsValid() const { return true; }
 
@@ -69,17 +68,17 @@ public:
 
     FORCEINLINE int32 GetRefCount() const { return RefCount; }
 
-    FORCEINLINE FPropertyDesc* GetProperty(int32 Index) { return Index > INDEX_NONE && Index < Properties.Num() ? Properties[Index] : nullptr; }
+    FORCEINLINE TSharedPtr<FPropertyDesc> GetProperty(int32 Index) { return Index > INDEX_NONE && Index < Properties.Num() ? Properties[Index] : nullptr; }
 
-    FORCEINLINE FFunctionDesc* GetFunction(int32 Index) { return Index > INDEX_NONE && Index < Functions.Num() ? Functions[Index] : nullptr; }
+    FORCEINLINE TSharedPtr<FFunctionDesc> GetFunction(int32 Index) { return Index > INDEX_NONE && Index < Functions.Num() ? Functions[Index] : nullptr; }
 
     void AddRef();
 
     void SubRef();
 
-    FFieldDesc* FindField(const char* FieldName);
+    TSharedPtr<FFieldDesc> FindField(const char* FieldName);
 
-    FFieldDesc* RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
+    TSharedPtr<FFieldDesc> RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
 
     void GetInheritanceChain(TArray<FClassDesc*>& Chain);
 
@@ -103,9 +102,9 @@ private:
     int32 RefCount;
 
     TArray<FClassDesc*> Interfaces;
-    TMap<FName, FFieldDesc*> Fields;
-    TArray<FPropertyDesc*> Properties;
-    TArray<FFunctionDesc*> Functions;
+    TMap<FName, TSharedPtr<FFieldDesc>> Fields;
+    TArray<TSharedPtr<FPropertyDesc>> Properties;
+    TArray<TSharedPtr<FFunctionDesc>> Functions;
     TArray<FClassDesc*> SuperClasses;
 
     struct FFunctionCollection *FunctionCollection;

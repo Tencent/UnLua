@@ -27,7 +27,6 @@ FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty)
     Property2Desc.Add(Property,this);
     PropertyType = CPT_None;
     PropertyPtr = InProperty;
-    check(PropertyPtr.IsValid());
 }
 
 FPropertyDesc::~FPropertyDesc()

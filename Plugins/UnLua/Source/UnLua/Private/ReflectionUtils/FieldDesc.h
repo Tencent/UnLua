@@ -24,6 +24,10 @@ class FFieldDesc
     friend class FClassDesc;
 
 public:
+    FFieldDesc()
+        : QueryClass(nullptr), OuterClass(nullptr), FieldIndex(0)
+    {}
+    
     FORCEINLINE bool IsValid() const { return FieldIndex != 0; }
 
     FORCEINLINE bool IsProperty() const { return FieldIndex > 0; }
@@ -32,18 +36,11 @@ public:
 
     FORCEINLINE bool IsInherited() const { return OuterClass != QueryClass; }
 
-    FORCEINLINE FPropertyDesc* AsProperty() const { return FieldIndex > 0 ? OuterClass->GetProperty(FieldIndex - 1) : nullptr; }
+    FORCEINLINE TSharedPtr<FPropertyDesc> AsProperty() const { return FieldIndex > 0 ? OuterClass->GetProperty(FieldIndex - 1) : nullptr; }
 
-    FORCEINLINE FFunctionDesc* AsFunction() const { return FieldIndex < 0 ? OuterClass->GetFunction(-FieldIndex - 1) : nullptr; }
+    FORCEINLINE TSharedPtr<FFunctionDesc> AsFunction() const { return FieldIndex < 0 ? OuterClass->GetFunction(-FieldIndex - 1) : nullptr; }
 
     FORCEINLINE FString GetOuterName() const { return OuterClass ? OuterClass->GetName() : TEXT(""); }
-
-private:
-    FFieldDesc()
-        : QueryClass(nullptr), OuterClass(nullptr), FieldIndex(0)
-    {}
-
-    ~FFieldDesc() {}
 
     FClassDesc *QueryClass;
     FClassDesc *OuterClass;
