@@ -27,6 +27,7 @@
 FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
 {
+    RawStructPtr = InStruct;
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
     bIsClass = InStruct->IsA(UClass::StaticClass());
     bIsInterface = bIsClass && static_cast<UClass*>(InStruct)->HasAnyClassFlags(CLASS_Interface) && InStruct != UInterface::StaticClass();
@@ -197,6 +198,7 @@ void FClassDesc::Load()
         Found = LoadObject<UStruct>(nullptr, *Name);
 
     Struct = Found;
+    RawStructPtr = Found;
 }
 
 void FClassDesc::UnLoad()
@@ -213,4 +215,5 @@ void FClassDesc::UnLoad()
     Functions.Empty();
 
     Struct.Reset();
+    RawStructPtr = nullptr;
 }
