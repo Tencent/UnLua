@@ -83,7 +83,7 @@ namespace UnLua
         lua_register(L, "LoadClass", Global_LoadClass);
         lua_register(L, "NewObject", Global_NewObject);
         lua_register(L, "UEPrint", Global_Print);
-        
+
         if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
         {
             FUnLuaDelegates::ConfigureLuaGC.Execute(L);
@@ -197,8 +197,9 @@ namespace UnLua
 
     void FLuaEnv::OnUObjectArrayShutdown()
     {
-        GUObjectArray.RemoveUObjectCreateListener(this);
         GUObjectArray.RemoveUObjectDeleteListener(this);
+        GUObjectArray.RemoveUObjectCreateListener(this);
+        ObjectArrayListenerRegistered = false;
     }
 
     bool FLuaEnv::TryReplaceInputs(UObject* Object)
@@ -574,15 +575,19 @@ namespace UnLua
     FORCEINLINE void FLuaEnv::RegisterDelegates()
     {
         OnAsyncLoadingFlushUpdateHandle = FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaEnv::OnAsyncLoadingFlushUpdate);
-        GUObjectArray.AddUObjectCreateListener(this);
         GUObjectArray.AddUObjectDeleteListener(this);
+        GUObjectArray.AddUObjectCreateListener(this);
+        ObjectArrayListenerRegistered = true;
     }
 
     FORCEINLINE void FLuaEnv::UnRegisterDelegates()
     {
         FCoreDelegates::OnAsyncLoadingFlushUpdate.Remove(OnAsyncLoadingFlushUpdateHandle);
-        GUObjectArray.RemoveUObjectCreateListener(this);
+        if (!ObjectArrayListenerRegistered)
+            return;
         GUObjectArray.RemoveUObjectDeleteListener(this);
+        GUObjectArray.RemoveUObjectCreateListener(this);
+        ObjectArrayListenerRegistered = false;
     }
 
     void* FLuaEnv::DefaultLuaAllocator(void* ud, void* ptr, size_t osize, size_t nsize)

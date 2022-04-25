@@ -31,6 +31,7 @@ namespace UnLua
         : public FUObjectArray::FUObjectCreateListener,
           public FUObjectArray::FUObjectDeleteListener
     {
+        friend FClassRegistry;
         friend FDelegateRegistry;
 
     public:
@@ -151,5 +152,6 @@ namespace UnLua
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
         TArray<UInputComponent*> CandidateInputComponents;
         FDelegateHandle OnWorldTickStartHandle;
+        bool ObjectArrayListenerRegistered;
     };
 }
