@@ -15,6 +15,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LuaEnvLocator.h"
 #include "UnLuaSettings.generated.h"
 
 
@@ -22,4 +23,10 @@ UCLASS(config=UnLua, defaultconfig, meta=(DisplayName="UnLua"))
 class UNLUA_API UUnLuaSettings : public UObject
 {
     GENERATED_BODY()
+
+public:
+    UUnLuaSettings(const FObjectInitializer& ObjectInitializer);
+
+    UPROPERTY(EditAnywhere, Category = "Runtime", meta = (DisplayName = "Lua Env Locator"))
+    ULuaEnvLocator* EnvLocator;
 };

@@ -16,6 +16,7 @@
 
 #include "CoreMinimal.h"
 #include "LuaEnv.h"
+#include "LuaEnvLocator.h"
 #include "ReflectionUtils/PropertyDesc.h"
 #include "LuaFunction.generated.h"
 
@@ -25,8 +26,6 @@ class UNLUA_API ULuaFunction : public UFunction
     GENERATED_BODY()
 
 public:
-    UnLua::FLuaEnv* Env;
-
     static bool Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName);
 
     void Initialize();
@@ -54,7 +53,6 @@ private:
     FORCEINLINE void SkipCodes(FFrame& Stack, void* Params) const;
     
     TWeakObjectPtr<UFunction> Overridden;
-    int32 LuaRef;
 
     // TODO: refactor below
 #if ENABLE_PERSISTENT_PARAM_BUFFER

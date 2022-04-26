@@ -179,6 +179,16 @@ namespace UnLua
         return *AllEnvs.FindChecked(G(L)->mainthread);
     }
 
+    const FString& FLuaEnv::GetName()
+    {
+        return Name;
+    }
+
+    void FLuaEnv::SetName(FString InName)
+    {
+        Name = InName;
+    }
+
     void FLuaEnv::NotifyUObjectCreated(const UObjectBase* Object, int32 Index)
     {
     }
@@ -339,13 +349,13 @@ namespace UnLua
         return false;
     }
 
-    bool FLuaEnv::LoadBuffer(const char* Buffer, const size_t Size, const char* Name)
+    bool FLuaEnv::LoadBuffer(const char* Buffer, const size_t Size, const char* InName)
     {
         // TODO: env support
         // TODO: return value support
 
         // loads the buffer as a Lua chunk
-        const int32 Code = luaL_loadbufferx(L, Buffer, Size, Name, nullptr);
+        const int32 Code = luaL_loadbufferx(L, Buffer, Size, InName, nullptr);
         if (Code != LUA_OK)
         {
             UE_LOG(LogUnLua, Warning, TEXT("Failed to call luaL_loadbufferx, error code: %d"), Code);
@@ -435,9 +445,9 @@ namespace UnLua
         CustomLoaders.Add(Loader);
     }
 
-    void FLuaEnv::AddBuiltInLoader(const FString Name, const lua_CFunction Loader)
+    void FLuaEnv::AddBuiltInLoader(const FString InName, const lua_CFunction Loader)
     {
-        BuiltinLoaders.Add(Name, Loader);
+        BuiltinLoaders.Add(InName, Loader);
     }
 
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)

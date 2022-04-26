@@ -13,3 +13,8 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaSettings.h"
+
+UUnLuaSettings::UUnLuaSettings(const FObjectInitializer& ObjectInitializer)
+    : EnvLocator(ObjectInitializer.CreateDefaultSubobject<ULuaEnvLocator_ByGameInstance>(this, TEXT("LuaEnvLocator_ByGameInstance")))
+{
+}

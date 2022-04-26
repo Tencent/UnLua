@@ -1997,7 +1997,7 @@ FClassDesc* ScriptStruct_CheckParam(lua_State *L)
     UScriptStruct *ScriptStruct = ClassDesc->AsScriptStruct();
     if (!ScriptStruct)
     {
-        UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : ClassDesc type is not script struct(Name : %s, Address : %p)"), *ClassDesc->GetName(),ClassDesc);
+        // UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : ClassDesc type is not script struct(Name : %s, Address : %p)"), *ClassDesc->GetName(),ClassDesc);
         return NULL;
     }
 
@@ -2026,7 +2026,7 @@ int32 ScriptStruct_New(lua_State *L)
  * Generic GC function for UScriptStruct
  */
 int32 ScriptStruct_Delete(lua_State *L)
-{   
+{
     FClassDesc *ClassDesc = ScriptStruct_CheckParam(L);
     if (!ClassDesc)
     {

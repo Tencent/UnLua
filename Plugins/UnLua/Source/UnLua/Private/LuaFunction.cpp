@@ -16,6 +16,7 @@
 #include "LuaFunction.h"
 #include "LuaCore.h"
 #include "LuaFunctionInjection.h"
+#include "UnLuaModule.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
 bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName)
@@ -28,8 +29,6 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* 
         LuaFunction = Cast<ULuaFunction>(Function);
         if (LuaFunction)
         {
-            LuaFunction->Env = LuaEnv;
-            LuaFunction->LuaRef = LUA_NOREF;
             LuaFunction->Initialize();
             return true;
         }
@@ -57,8 +56,6 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* 
     DuplicationParams.DestClass = StaticClass();
     LuaFunction = Cast<ULuaFunction>(StaticDuplicateObjectEx(DuplicationParams));
     LuaFunction->FunctionFlags |= FUNC_Native;
-    LuaFunction->Env = LuaEnv;
-    LuaFunction->LuaRef = LUA_NOREF;
     LuaFunction->Overridden = Function;
     LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
     LuaFunction->SetNativeFunc(FLuaInvoker::execCallLua);
@@ -196,21 +193,11 @@ UFunction* ULuaFunction::GetOverridden() const
 
 void ULuaFunction::Call(UObject* Context, FFrame& Stack, void* const RetValueAddress)
 {
-    // push Lua function to the stack
-    bool bSuccess;
+    const auto Env = IUnLuaModule::Get().GetEnv(Context);
     const auto L = Env->GetMainState();
-    if (LuaRef != LUA_NOREF)
-    {
-        bSuccess = PushFunction(L, Context, LuaRef);
-    }
-    else
-    {
-        // support rpc in standalone mode
-        bool bRpcCall = HasAnyFunctionFlags(FUNC_Net);
-        LuaRef = PushFunction(L, Context, bRpcCall ? TCHAR_TO_UTF8(*FString::Printf(TEXT("%s_RPC"), *GetName())) : TCHAR_TO_UTF8(*GetName()));
-        bSuccess = LuaRef != LUA_NOREF;
-    }
-
+    bool bRpcCall = HasAnyFunctionFlags(FUNC_Net);
+    // TODO: Refactor for performance
+    bool bSuccess = PushFunction(L, Context, bRpcCall ? TCHAR_TO_UTF8(*FString::Printf(TEXT("%s_RPC"), *GetName())) : TCHAR_TO_UTF8(*GetName())) != LUA_NOREF;
     if (!bSuccess)
         return;
 

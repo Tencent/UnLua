@@ -46,6 +46,10 @@ namespace UnLua
 
         static FLuaEnv& FindEnvChecked(const lua_State* L);
 
+        const FString& GetName();
+
+        void SetName(FString InName);
+
         virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override;
 
         virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;
@@ -110,7 +114,7 @@ namespace UnLua
 
         void AddLoader(const FLuaFileLoader Loader);
 
-        void AddBuiltInLoader(const FString Name, lua_CFunction Loader);
+        void AddBuiltInLoader(const FString InName, lua_CFunction Loader);
 
     protected:
         lua_State* L;
@@ -128,7 +132,7 @@ namespace UnLua
     private:
         void AddSearcher(lua_CFunction Searcher, int Index) const;
 
-        bool LoadBuffer(const char* Buffer, const size_t Size, const char* Name);
+        bool LoadBuffer(const char* Buffer, const size_t Size, const char* InName);
 
         void OnAsyncLoadingFlushUpdate();
 
@@ -156,6 +160,7 @@ namespace UnLua
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
         TArray<UInputComponent*> CandidateInputComponents;
         FDelegateHandle OnWorldTickStartHandle;
+        FString Name = TEXT("Env_0");
         bool ObjectArrayListenerRegistered;
     };
 }

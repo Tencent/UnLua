@@ -137,7 +137,7 @@ private:
     {
         ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
         if (SettingsModule)
-            SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua");
+            SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua Editor");
     }
 
     bool OnSettingsModified() const
