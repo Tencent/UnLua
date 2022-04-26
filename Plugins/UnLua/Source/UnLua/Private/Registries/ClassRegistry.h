@@ -44,12 +44,14 @@ namespace UnLua
 
         bool TrySetMetatable(lua_State* L, const char* MetatableName);
 
-        bool Register(const char* MetatableName);
+        FClassDesc* Register(const char* MetatableName);
 
-        bool Register(const UStruct* Class);
+        FClassDesc* Register(const UStruct* Class);
 
     private:
         static FClassDesc* RegisterInternal(UStruct* Type, const FString& Name);
+
+        void Unregister(const FClassDesc* ClassDesc);
 
         static TMap<UStruct*, FClassDesc*> Classes;
         static TMap<FName, FClassDesc*> Name2Classes;

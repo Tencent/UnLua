@@ -57,7 +57,10 @@ FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(const char* MetatableNa
 {
     FClassDesc* Ret = Find(MetatableName);
     if (Ret)
+    {
+        Classes.FindOrAdd(Ret->AsStruct(), Ret);
         return Ret;
+    }
 
     const char* TypeName = MetatableName[0] == 'U' || MetatableName[0] == 'A' || MetatableName[0] == 'F' ? MetatableName + 1 : MetatableName;
     const auto Type = LoadReflectedType(TypeName);
@@ -67,7 +70,7 @@ FClassDesc* UnLua::FClassRegistry::RegisterReflectedType(const char* MetatableNa
     const auto StructType = Cast<UStruct>(Type);
     if (StructType)
     {
-        Ret = RegisterInternal(StructType, MetatableName);
+        Ret = RegisterInternal(StructType, UTF8_TO_TCHAR(MetatableName));
         return Ret;
     }
 
@@ -105,6 +108,11 @@ bool UnLua::FClassRegistry::StaticUnregister(UStruct* Type)
     if (!Classes.RemoveAndCopyValue(Type, ClassDesc))
         return false;
     ClassDesc->UnLoad();
+    for (auto Pair : FLuaEnv::AllEnvs)
+    {
+        auto Registry = Pair.Value->GetClassRegistry();
+        Registry->Unregister(ClassDesc);
+    }
     return true;
 }
 
@@ -224,16 +232,18 @@ bool UnLua::FClassRegistry::TrySetMetatable(lua_State* L, const char* MetatableN
     return true;
 }
 
-bool UnLua::FClassRegistry::Register(const char* MetatableName)
+FClassDesc* UnLua::FClassRegistry::Register(const char* MetatableName)
 {
     if (!PushMetatable(GL, MetatableName))
-        return false;
+        return nullptr;
 
+    // TODO: refactor
     lua_pop(GL, 1);
-    return true;
+    FName Key = FName(UTF8_TO_TCHAR(MetatableName));
+    return Name2Classes.FindChecked(Key);
 }
 
-bool UnLua::FClassRegistry::Register(const UStruct* Class)
+FClassDesc* UnLua::FClassRegistry::Register(const UStruct* Class)
 {
     const auto MetatableName = LowLevel::GetMetatableName(Class);
     return Register(TCHAR_TO_UTF8(*MetatableName));
@@ -279,4 +289,12 @@ FClassDesc* UnLua::FClassRegistry::RegisterInternal(UStruct* Type, const FString
     Name2Classes.Add(FName(*Name), ClassDesc);
 
     return ClassDesc;
+}
+
+void UnLua::FClassRegistry::Unregister(const FClassDesc* ClassDesc)
+{
+    const auto L = GL;
+    const auto MetatableName = ClassDesc->GetName();
+    lua_pushnil(L);
+    lua_setfield(L, LUA_REGISTRYINDEX, TCHAR_TO_UTF8(*MetatableName));
 }

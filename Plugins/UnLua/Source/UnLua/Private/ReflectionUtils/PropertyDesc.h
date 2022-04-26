@@ -165,14 +165,17 @@ public:
     virtual void Destruct(void *Dest) const override { Property->DestroyValue(Dest); }
     virtual void Copy(void *Dest, const void *Src) const override { Property->CopySingleValue(Dest, Src); }
     virtual bool Identical(const void *A, const void *B) const override { return Property->Identical(A, B); }
-    virtual FString GetName() const override { return TEXT(""); }
+    virtual FString GetName() const override { return Name; }
     virtual FProperty* GetUProperty() const override { return Property; }
 
     virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override 
     {
         if (!IsValid())
         {
-            luaL_error(L, "attempt to read invalid property");
+            // const auto Msg = TCHAR_TO_UTF8(*Name);
+            // luaL_error(L, "attempt to read invalid property %s", Msg);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            lua_pushnil(L);
             return;
         }
         GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy);
@@ -181,7 +184,9 @@ public:
     {
         if (!IsValid())
         {
-            luaL_error(L, "attempt to write invalid property");
+            // const auto Msg = TCHAR_TO_UTF8(*Name);
+            // luaL_error(L, "attempt to write invalid property %s", Msg);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
             return;
         }
         SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, true); 
@@ -218,6 +223,7 @@ protected:
     };
     TWeakFieldPtr<FProperty> PropertyPtr;
     int8 PropertyType;
+    FString Name = TEXT("");
 public:
     static TMap<FProperty*,FPropertyDesc*> Property2Desc;
 };

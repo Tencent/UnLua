@@ -1150,7 +1150,7 @@ static int32 GetField(lua_State* L)
 
         // TODO: refactor
         const auto Registry = UnLua::FClassRegistry::Find(L);
-        FClassDesc* ClassDesc = Registry->Find(ClassName);
+        FClassDesc* ClassDesc = Registry->Register(ClassName);
         TSharedPtr<FFieldDesc> Field = ClassDesc->RegisterField(FieldName, ClassDesc);
         if (Field && Field->IsValid())
         {
