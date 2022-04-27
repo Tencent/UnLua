@@ -61,6 +61,9 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated).", ToolTip = "Requires restart to take effect."))
     bool bEnableRPCCall = true;
 
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Call Overridden Function (Deprecated).", ToolTip = "Requires restart to take effect."))
+    bool bEnableCallOverriddenFunction = true;
+    
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated)", ToolTip = "Requires restart to take effect."))
     bool bWithUENamespace = true;
 

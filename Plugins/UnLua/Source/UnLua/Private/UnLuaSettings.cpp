@@ -15,6 +15,5 @@
 #include "UnLuaSettings.h"
 
 UUnLuaSettings::UUnLuaSettings(const FObjectInitializer& ObjectInitializer)
-    : EnvLocator(ObjectInitializer.CreateDefaultSubobject<ULuaEnvLocator_ByGameInstance>(this, TEXT("LuaEnvLocator_ByGameInstance")))
 {
 }

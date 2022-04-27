@@ -15,7 +15,6 @@
 #include "LuaFunctionInjection.h"
 
 #include "LuaFunction.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Misc/MemStack.h"
 #include "GameFramework/Actor.h"
 
@@ -140,8 +139,6 @@ void RemoveUFunction(UFunction* Function, UClass* OuterClass)
                 Previous->Next = Function->Next;
         }
     }
-
-    GReflectionRegistry.UnRegisterFunction(Function);
 }
 
 /**

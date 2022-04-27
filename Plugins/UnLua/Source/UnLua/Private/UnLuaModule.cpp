@@ -24,7 +24,6 @@
 #include "UnLuaDebugBase.h"
 #include "UnLuaSettings.h"
 #include "GameFramework/PlayerController.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "Registries/EnumRegistry.h"
 
@@ -82,11 +81,14 @@ public:
 
         if (bActive)
         {
+            OnHandleSystemErrorHandle = FCoreDelegates::OnHandleSystemError.AddRaw(this, &FUnLuaModule::OnSystemError);
+            OnHandleSystemEnsureHandle = FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FUnLuaModule::OnSystemError);
             GUObjectArray.AddUObjectCreateListener(this);
             GUObjectArray.AddUObjectDeleteListener(this);
 
             const auto& Settings = *GetMutableDefault<UUnLuaSettings>();
-            EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), Settings.EnvLocator->GetClass());
+            const auto EnvLocatorClass = Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : Settings.EnvLocatorClass;
+            EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
             EnvLocator->AddToRoot();
         }
         else
@@ -95,12 +97,12 @@ public:
             FCoreDelegates::OnHandleSystemEnsure.Remove(OnHandleSystemEnsureHandle);
             GUObjectArray.RemoveUObjectCreateListener(this);
             GUObjectArray.RemoveUObjectDeleteListener(this);
+            EnvLocator->Reset();
             EnvLocator->RemoveFromRoot();
             EnvLocator = nullptr;
             UnLua::FClassRegistry::Cleanup();
             UnLua::FEnumRegistry::Cleanup();
             GPropertyCreator.Cleanup();
-            GReflectionRegistry.Cleanup();
         }
 
         bIsActive = bActive;
@@ -156,6 +158,10 @@ private:
         GUObjectArray.RemoveUObjectDeleteListener(this);
 
         bIsActive = false;
+    }
+
+    void OnSystemError() const
+    {
     }
 
     void OnPreBeginPIE(bool bIsSimulating)

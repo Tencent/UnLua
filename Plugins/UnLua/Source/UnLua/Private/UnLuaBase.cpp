@@ -296,19 +296,6 @@ namespace UnLua
      */
     UObject* GetUObject(lua_State *L, int32 Index)
     {
-/*#if UE_BUILD_DEBUG
-        if (lua_getmetatable(L, Index) == 0)
-        {
-            return nullptr;
-        }
-        // todo: stricter check?
-        lua_pushstring(L, "__name");
-        lua_gettable(L, -2);
-        const char *ClassName = lua_tostring(L, -1);
-        FClassDesc *ClassDesc = GReflectionRegistry.FindClass(ClassName);
-        lua_pop(L, 2);
-        return ClassDesc && ClassDesc->IsClass() ? (UObject*)GetCppInstance(L, Index) : nullptr;
-#else*/
         UObject* Object = (UObject*)GetCppInstance(L, Index);
         if (!UnLua::IsUObjectValid(Object))
         {
@@ -318,7 +305,6 @@ namespace UnLua
         {
             return Object;
         }
-//#endif
     }
 
     /**

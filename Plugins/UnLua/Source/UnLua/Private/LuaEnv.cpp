@@ -26,8 +26,6 @@
 #include "UnLuaLegacy.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/PlayerController.h"
-#include "ReflectionUtils/PropertyCreator.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 
 namespace UnLua
 {

@@ -84,6 +84,7 @@ public class UnLua : ModuleRules
         loadBoolConfig("bEnablePersistentParamBuffer", "ENABLE_PERSISTENT_PARAM_BUFFER", true);
         loadBoolConfig("bEnableTypeChecking", "ENABLE_TYPE_CHECK", true);
         loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
+        loadBoolConfig("bEnableCallOverriddenFunction", "ENABLE_CALL_OVERRIDDEN_FUNCTION", true);
         loadBoolConfig("bWithUENamespace", "WITH_UE4_NAMESPACE", true);
     }
 

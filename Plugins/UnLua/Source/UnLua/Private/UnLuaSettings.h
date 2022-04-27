@@ -19,7 +19,7 @@
 #include "UnLuaSettings.generated.h"
 
 
-UCLASS(config=UnLua, defaultconfig, meta=(DisplayName="UnLua"))
+UCLASS(Config=UnLua, DefaultConfig, Meta=(DisplayName="UnLua"))
 class UNLUA_API UUnLuaSettings : public UObject
 {
     GENERATED_BODY()
@@ -27,6 +27,6 @@ class UNLUA_API UUnLuaSettings : public UObject
 public:
     UUnLuaSettings(const FObjectInitializer& ObjectInitializer);
 
-    UPROPERTY(EditAnywhere, Category = "Runtime", meta = (DisplayName = "Lua Env Locator"))
-    ULuaEnvLocator* EnvLocator;
+    UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(AllowAbstract="false", DisplayName="LuaEnvLocator"))
+    TSubclassOf<ULuaEnvLocator> EnvLocatorClass = ULuaEnvLocator::StaticClass();
 };

@@ -19,7 +19,6 @@
 #include "LuaCore.h"
 #include "UELib.h"
 #include "ReflectionUtils/ClassDesc.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 
 extern int32 UObject_Identical(lua_State* L);
 extern int32 UObject_Delete(lua_State* L);

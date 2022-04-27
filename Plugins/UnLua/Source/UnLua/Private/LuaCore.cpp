@@ -26,7 +26,6 @@
 #include "ReflectionUtils/FieldDesc.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "ReflectionUtils/PropertyDesc.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 extern "C"

@@ -14,7 +14,6 @@
 
 #include "FunctionDesc.h"
 #include "PropertyDesc.h"
-#include "ReflectionRegistry.h"
 #include "LuaCore.h"
 #include "LuaFunctionInjection.h"
 #include "DefaultParamCollection.h"

@@ -24,7 +24,6 @@
 #include "Components/InputComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Engine/LevelScriptActor.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 
 
 static const TCHAR* SReadableInputEvent[] = { TEXT("Pressed"), TEXT("Released"), TEXT("Repeat"), TEXT("DoubleClick"), TEXT("Axis"), TEXT("Max") };
@@ -388,8 +387,6 @@ void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFun
             Function->Script = Script;
         }
     }
-
-    GReflectionRegistry.UnRegisterFunction(Function);
 }
 
 /**
