@@ -154,13 +154,6 @@ namespace UnLua
 
         UnRegisterDelegates();
 
-        if (AllEnvs.Num() == 0)
-        {
-            // TODO:legacy cleanup
-            // clean ue side modules,es static data structs
-            GPropertyCreator.Cleanup(); // clean up dynamically created UProperties
-            GReflectionRegistry.Cleanup(); // clean up reflection registry
-        }
         CandidateInputComponents.Empty();
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }

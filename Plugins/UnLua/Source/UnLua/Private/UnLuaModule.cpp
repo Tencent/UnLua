@@ -24,6 +24,7 @@
 #include "UnLuaDebugBase.h"
 #include "UnLuaSettings.h"
 #include "GameFramework/PlayerController.h"
+#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "Registries/EnumRegistry.h"
 
@@ -98,7 +99,8 @@ public:
             EnvLocator = nullptr;
             UnLua::FClassRegistry::Cleanup();
             UnLua::FEnumRegistry::Cleanup();
-            // TODO: Teardown all static stuffs
+            GPropertyCreator.Cleanup();
+            GReflectionRegistry.Cleanup();
         }
 
         bIsActive = bActive;
