@@ -4,21 +4,20 @@ local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_
 
 local BP_PlayerController_C = Class()
 
---function BP_PlayerController_C:UserConstructionScript()
---end
+function BP_PlayerController_C:UserConstructionScript()
+	self.ForwardVec = UE.FVector()
+	self.RightVec = UE.FVector()
+	self.ControlRot = UE.FRotator()
+
+	self.BaseTurnRate = 45.0
+	self.BaseLookUpRate = 45.0	
+end
 
 function BP_PlayerController_C:ReceiveBeginPlay()
 	if self:IsLocalPlayerController() then
 		local Widget = UE.UWidgetBlueprintLibrary.Create(self, UE.UClass.Load("/Game/Core/UI/UMG_Main.UMG_Main_C"))
 		Widget:AddToViewport()
 	end
-
-	self.ForwardVec = UE.FVector()
-	self.RightVec = UE.FVector()
-	self.ControlRot = UE.FRotator()
-
-	self.BaseTurnRate = 45.0
-	self.BaseLookUpRate = 45.0
 
 	self.Overridden.ReceiveBeginPlay(self)
 end
@@ -63,14 +62,16 @@ end
 
 function BP_PlayerController_C:Fire_Pressed()
 	if self.Pawn then
-		BPI_Interfaces.StartFire(self.Pawn)
+		self.Pawn:StartFire_Server()
 	else
 		UE.UKismetSystemLibrary.ExecuteConsoleCommand(self, "RestartLevel")
 	end
 end
 
 function BP_PlayerController_C:Fire_Released()
-	BPI_Interfaces.StopFire(self.Pawn)
+	if self.Pawn then
+		self.Pawn:StopFire_Server()
+	end
 end
 
 function BP_PlayerController_C:Aim_Pressed()
