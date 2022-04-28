@@ -39,8 +39,6 @@ public:
 
     void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
     
-    bool OnModuleHotfixed(const TCHAR *InModuleName);
-
     void NotifyUObjectDeleted(const UObjectBase *Object, bool bClass = false);
 
     void Cleanup();
@@ -94,18 +92,10 @@ private:
     void ReplaceVectorAxisInputs(AActor *Actor, UInputComponent *InputComponent, TSet<FName> &LuaFunctions);
     void ReplaceGestureInputs(AActor *Actor, UInputComponent *InputComponent, TSet<FName> &LuaFunctions);
 
-    void AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRef);
-
     TMap<UClass*, FString> ModuleNames;
     TMap<FString, int16> RealModuleNames;
     TMap<FString, UClass*> Classes;
-    TMap<UClass*, TMap<FName, UFunction*>> OverridableFunctions;
-    TMap<UClass*, TArray<TWeakObjectPtr<UFunction>>> DuplicatedFunctions;
     TMap<FString, TSet<FName>> ModuleFunctions;
-
-#if !ENABLE_CALL_OVERRIDDEN_FUNCTION
-    TMap<UFunction*, UFunction*> New2TemplateFunctions;
-#endif
 
     TMap<UClass*, TArray<UClass*>> Base2DerivedClasses;
     TMap<UClass*, UClass*> Derived2BaseClasses;
@@ -114,14 +104,10 @@ private:
     TSet<FName> DefaultActionNames;
     TArray<FKey> AllKeys;
 
-    TMap<UObjectBaseUtility*, int32> AttachedObjects;
-    TSet<AActor*> AttachedActors;
-
     UFunction *InputActionFunc;
     UFunction *InputAxisFunc;
     UFunction *InputTouchFunc;
     UFunction *InputVectorAxisFunc;
     UFunction *InputGestureFunc;
     UFunction *AnimNotifyFunc;
-    FDelegateHandle OnActorSpawnedHandle;
 };
