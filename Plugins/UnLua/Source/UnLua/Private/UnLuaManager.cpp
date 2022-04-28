@@ -18,7 +18,6 @@
 #include "UnLuaInterface.h"
 #include "LuaCore.h"
 #include "LuaFunction.h"
-#include "LuaFunctionInjection.h"
 #include "ObjectReferencer.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
@@ -481,7 +480,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
     TSet<FName> &LuaFunctions = ModuleFunctions.Add(RealModuleName);
     GetFunctionList(Env->GetMainState(), TCHAR_TO_UTF8(*RealModuleName), LuaFunctions);                         // get all functions defined in the Lua module
     TMap<FName, UFunction*> &UEFunctions = OverridableFunctions.Add(Class);
-    GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
+    ULuaFunction::GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
 
     OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated);           // try to override UFunctions
 

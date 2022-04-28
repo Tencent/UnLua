@@ -15,9 +15,21 @@
 
 #include "LuaFunction.h"
 #include "LuaCore.h"
-#include "LuaFunctionInjection.h"
 #include "UnLuaModule.h"
 #include "ReflectionUtils/PropertyDesc.h"
+
+DEFINE_FUNCTION(ULuaFunction::execCallLua)
+{
+    const auto LuaFunction = Cast<ULuaFunction>(Stack.CurrentNativeFunction);
+    LuaFunction->Call(Context, Stack, RESULT_PARAM);
+}
+
+bool ULuaFunction::IsOverridable(const UFunction* Function)
+{
+    static constexpr uint32 FlagMask = FUNC_Native | FUNC_Event | FUNC_Net;
+    static constexpr uint32 FlagResult = FUNC_Native | FUNC_Event;
+    return Function->HasAnyFunctionFlags(FUNC_BlueprintEvent) || (Function->FunctionFlags & FlagMask) == FlagResult;
+}
 
 bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName)
 {
@@ -46,7 +58,7 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* 
         if (Function->HasAnyFunctionFlags(FUNC_Native))
         {
             // Need to do this before the call to DuplicateObject in the case that the super-function already has FUNC_Native
-            Outer->AddNativeFunction(*NewName.ToString(), &FLuaInvoker::execCallLua);
+            Outer->AddNativeFunction(*NewName.ToString(), &execCallLua);
         }
     }
 
@@ -58,7 +70,7 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* 
     LuaFunction->FunctionFlags |= FUNC_Native;
     LuaFunction->Overridden = Function;
     LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
-    LuaFunction->SetNativeFunc(FLuaInvoker::execCallLua);
+    LuaFunction->SetNativeFunc(execCallLua);
 
     if (bReplace)
         LuaFunction->SetSuperStruct(Function->GetSuperStruct());
@@ -85,6 +97,38 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* 
     }
 
     return true;
+}
+
+void ULuaFunction::GetOverridableFunctions(UClass* Class, TMap<FName, UFunction*>& Functions)
+{
+    if (!Class)
+        return;
+
+    // all 'BlueprintEvent'
+    for (TFieldIterator<UFunction> It(Class, EFieldIteratorFlags::IncludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::IncludeInterfaces); It; ++It)
+    {
+        UFunction* Function = *It;
+        if (!IsOverridable(Function))
+            continue;
+        FName FuncName = Function->GetFName();
+        UFunction** FuncPtr = Functions.Find(FuncName);
+        if (!FuncPtr)
+            Functions.Add(FuncName, Function);
+    }
+
+    // all 'RepNotifyFunc'
+    for (int32 i = 0; i < Class->ClassReps.Num(); ++i)
+    {
+        FProperty* Property = Class->ClassReps[i].Property;
+        if (!Property->HasAnyPropertyFlags(CPF_RepNotify))
+            continue;
+        UFunction* Function = Class->FindFunctionByName(Property->RepNotifyFunc);
+        if (!Function)
+            continue;
+        UFunction** FuncPtr = Functions.Find(Property->RepNotifyFunc);
+        if (!FuncPtr)
+            Functions.Add(Property->RepNotifyFunc, Function);
+    }
 }
 
 void ULuaFunction::Initialize()

@@ -47,6 +47,6 @@ public:
     virtual void HotReload() override;
 
     virtual void Reset() override;
-    
+
     TMap<UGameInstance*, TSharedPtr<UnLua::FLuaEnv>> Envs;
 };
