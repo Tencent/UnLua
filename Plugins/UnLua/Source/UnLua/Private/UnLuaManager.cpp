@@ -53,7 +53,7 @@ UUnLuaManager::UUnLuaManager()
 /**
  * Bind a Lua module for a UObject
  */
-bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef)
+bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef)
 {   
     if (!Object || !Class)
     {
@@ -113,7 +113,7 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
         FString RealModuleName = *ModuleNames.Find(Class);
 
         // create a Lua instance for this UObject
-        int32 ObjectRef = NewLuaObject(L, Object, bDerivedClassBinded ? Class : nullptr, TCHAR_TO_UTF8(*RealModuleName));
+        int32 ObjectRef = NewLuaObject(L, Object, TCHAR_TO_UTF8(*RealModuleName));
 
         AddAttachedObject(Object, ObjectRef);                                       // record this binded UObject
 
@@ -148,7 +148,6 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
 
 void UUnLuaManager::OnWorldCleanup(UWorld* World, bool bArg, bool bCond)
 {
-    World->RemoveOnActorSpawnedHandler(OnActorSpawnedHandle);
     if (Env)
         Env->GC();
 }
@@ -331,8 +330,6 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
  */
 void UUnLuaManager::OnMapLoaded(UWorld *World)
 {
-    OnActorSpawnedHandle = World->AddOnActorSpawnedHandler(FOnActorSpawned::FDelegate::CreateUObject(this, &UUnLuaManager::OnActorSpawned));
-    
     ENetMode NetMode = World->GetNetMode();
     if (NetMode == NM_DedicatedServer)
     {
@@ -348,26 +345,6 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
         {
             ReplaceInputs(LSA, LSA->InputComponent);
         }
-    }
-}
-
-/**
- * Callback for spawning an actor
- */
-void UUnLuaManager::OnActorSpawned(AActor *Actor)
-{
-    Actor->OnDestroyed.AddDynamic(this, &UUnLuaManager::OnActorDestroyed);      // bind a callback for destroying actor
-}
-
-/**
- * Callback for destroying an actor
- */
-void UUnLuaManager::OnActorDestroyed(AActor *Actor)
-{
-    int32 Num = AttachedActors.Remove(Actor);
-    if (Num > 0)
-    {
-        ReleaseAttachedObjectLuaRef(Actor);
     }
 }
 
@@ -780,24 +757,5 @@ void UUnLuaManager::AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRe
     if (Object->IsA<AActor>())
     {
         AttachedActors.Add((AActor*)Object);
-    }
-}
-
-/**
- * Get lua ref of a recorded binded UObject
- */
-void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
-{
-    check(Object);
-
-    int32* ObjectLuaRef = AttachedObjects.Find(Object);
-    if ((ObjectLuaRef)
-        &&(*ObjectLuaRef != LUA_REFNIL))
-    {   
-#if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogUnLua, Log, TEXT("ReleaseAttachedObjectLuaRef : %s,%p,%d"), *Object->GetName(), Object, *ObjectLuaRef);
-#endif
-        luaL_unref(Env->GetMainState(), LUA_REGISTRYINDEX, *ObjectLuaRef);
-        AttachedObjects.Remove(Object);
     }
 }

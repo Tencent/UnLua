@@ -35,7 +35,7 @@ public:
 
     UUnLuaManager();
 
-    bool Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
+    bool Bind(UObject *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
 
     void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
     
@@ -53,14 +53,7 @@ public:
 
     bool ReplaceInputs(AActor *Actor, class UInputComponent *InputComponent);
 
-    void ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object);
-
     void OnMapLoaded(UWorld *World);
-
-    void OnActorSpawned(class AActor *Actor);
-
-    UFUNCTION()
-    void OnActorDestroyed(class AActor *Actor);
 
     UFUNCTION()
     void OnLatentActionCompleted(int32 LinkID);

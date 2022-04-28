@@ -83,11 +83,6 @@ namespace UnLua
 
         virtual void GC();
 
-        /**
-         * 强制解除对象在Lua侧的引用
-         */
-        void UnRef(UObject* Object) const;
-
         virtual void HotReload();
 
         lua_State* GetMainState() const { return L; }

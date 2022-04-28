@@ -34,3 +34,20 @@ FObjectRegistry::FObjectRegistry(lua_State* GL)
     lua_rawset(L, -3);
     lua_pop(L, 1);
 }
+
+int FObjectRegistry::Ref(lua_State* L, UObject* Object, const int Index)
+{
+    check(!ObjectRefs.Contains(Object));
+    lua_pushvalue(L, Index);
+    const int Ret = luaL_ref(L, LUA_REGISTRYINDEX);
+    ObjectRefs.Add(Object, Ret);
+    return Ret;
+}
+
+void FObjectRegistry::NotifyUObjectDeleted(UObject* Object)
+{
+    int32 LuaRef;
+    if (!ObjectRefs.RemoveAndCopyValue(Object, LuaRef))
+        return;
+    luaL_unref(GL, LUA_REGISTRYINDEX, LuaRef);
+}

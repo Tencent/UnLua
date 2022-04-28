@@ -49,6 +49,8 @@ struct FUnLuaTest_Issue372 : FUnLuaTestBase
         RUNNER_TEST_EQUAL(Actual, LUA_TTABLE);
 
         UnLua::RunChunk(L, "Actor:K2_DestroyActor()");
+        CollectGarbage(RF_NoFlags, true);
+        
         lua_rawgeti(L, LUA_REGISTRYINDEX, NextRef);
         Actual = lua_type(L, -1);
         RUNNER_TEST_EQUAL(Actual, LUA_TNIL);

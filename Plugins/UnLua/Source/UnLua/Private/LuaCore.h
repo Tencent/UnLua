@@ -90,7 +90,7 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
 /**
  * Functions to New/Delete Lua instance for UObjectBaseUtility
  */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
+int32 NewLuaObject(lua_State *L, UObject *Object, const char *ModuleName);
 void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object);
 
 /**

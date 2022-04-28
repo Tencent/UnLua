@@ -819,7 +819,7 @@ void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char 
 /**
  * Create a Lua instance (table) for a UObject
  */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName)
+int32 NewLuaObject(lua_State *L, UObject *Object, const char *ModuleName)
 {
     check(Object);
 
@@ -852,14 +852,15 @@ int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, cons
     lua_setmetatable(L, -2);                                    // REQUIRED_MODULE.metatable = METATABLE_UOBJECT
     lua_setmetatable(L, -3);                                    // INSTANCE.metatable = REQUIRED_MODULE
     lua_pop(L, 1);
-    lua_pushvalue(L, -1);
-    int32 ObjectRef = luaL_ref(L, LUA_REGISTRYINDEX);           // keep a reference for 'INSTANCE'
+
+    // TODO: refactor
+    const auto Ret = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->Ref(L, Object, -1); // keep a reference for 'INSTANCE'
 
     FUnLuaDelegates::OnObjectBinded.Broadcast(Object);          // 'INSTANCE' is on the top of stack now
 
     lua_rawset(L, -3);
     lua_pop(L, 1);
-    return ObjectRef;
+    return Ret;
 }
 
 /**

@@ -229,20 +229,6 @@ static int32 UObject_IsA(lua_State *L)
 
 static int32 UObject_Release(lua_State *L)
 {
-    int32 NumParams = lua_gettop(L);
-    if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    if (LUA_TTABLE == lua_type(L, -1))
-    {
-        UObject* Object = UnLua::GetUObject(L, -1);
-        if (Object)
-            UnLua::FLuaEnv::FindEnvChecked(L).UnRef(Object);
-    }
-
     return 0;
 }
 

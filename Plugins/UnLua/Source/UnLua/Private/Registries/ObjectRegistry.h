@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
+#include "lauxlib.h"
 #include "lstate.h"
 #include "UnLuaBase.h"
 
@@ -27,6 +28,12 @@ public:
     template <typename T>
     TSharedPtr<T> Get(lua_State* L, int Index);
 
+    int Ref(lua_State* L, UObject* Object, const int Index);
+
+    void NotifyUObjectDeleted(UObject* Object);
+
+private:
+    TMap<UObject*, int32> ObjectRefs;
     lua_State* GL;
 };
 

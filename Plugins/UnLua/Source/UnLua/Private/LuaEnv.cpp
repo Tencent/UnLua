@@ -188,6 +188,7 @@ namespace UnLua
     {
         UObject* Object = (UObject*)ObjectBase;
         Manager->NotifyUObjectDeleted(Object, Object->IsA<UStruct>());
+        ObjectRegistry->NotifyUObjectDeleted(Object);
 
         if (CandidateInputComponents.Num() <= 0)
             return;
@@ -363,11 +364,6 @@ namespace UnLua
     {
         lua_gc(L, LUA_GCCOLLECT, 0);
         lua_gc(L, LUA_GCCOLLECT, 0);
-    }
-
-    void FLuaEnv::UnRef(UObject* Object) const
-    {
-        Manager->ReleaseAttachedObjectLuaRef(Object);
     }
 
     void FLuaEnv::HotReload()
