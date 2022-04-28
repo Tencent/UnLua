@@ -238,6 +238,12 @@ UFunction* ULuaFunction::GetOverridden() const
 void ULuaFunction::Call(UObject* Context, FFrame& Stack, void* const RetValueAddress)
 {
     const auto Env = IUnLuaModule::Get().GetEnv(Context);
+    if (!Env)
+    {
+        // PIE 结束时可能已经没有Lua环境了
+        return;
+    }
+
     const auto L = Env->GetMainState();
     bool bRpcCall = HasAnyFunctionFlags(FUNC_Net);
     // TODO: Refactor for performance

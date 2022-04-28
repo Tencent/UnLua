@@ -11,6 +11,7 @@ end
 
 function M:ReceivePossessed()
     self.Name = string.format("PLAYER_%d", self:GetController().PlayerState.PlayerId)
+    self.NameTextRender:SetText(self.Name)
     self:Say("我来了")
 end
 
