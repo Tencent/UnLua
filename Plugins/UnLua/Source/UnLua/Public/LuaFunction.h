@@ -49,6 +49,8 @@ public:
 
     UFunction* GetOverridden() const;
 
+    virtual void Bind() override;
+
 private:
     static FOutParmRec* FindOutParamRec(FOutParmRec* OutParam, FProperty* OutProperty)
     {

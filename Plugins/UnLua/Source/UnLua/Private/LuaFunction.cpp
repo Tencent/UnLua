@@ -241,6 +241,19 @@ UFunction* ULuaFunction::GetOverridden() const
     return Overridden.Get();
 }
 
+void ULuaFunction::Bind()
+{
+#if WITH_EDITOR
+    const auto Outer = GetOuter();
+    if (Outer && Outer->GetName().StartsWith("REINST_"))
+    {
+        FunctionFlags &= ~FUNC_Native;
+        return;
+    }
+#endif
+    Super::Bind();
+}
+
 void ULuaFunction::Call(UObject* Context, FFrame& Stack, void* const RetValueAddress)
 {
     const auto Env = IUnLuaModule::Get().GetEnv(Context);
