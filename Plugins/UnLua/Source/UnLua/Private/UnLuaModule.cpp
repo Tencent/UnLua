@@ -168,6 +168,8 @@ private:
     {
     }
 
+#if WITH_EDITOR
+
     void OnPreBeginPIE(bool bIsSimulating)
     {
         SetActive(true);
@@ -184,6 +186,8 @@ private:
     {
         SetActive(false);
     }
+
+#endif
 
     void RegisterSettings()
     {
