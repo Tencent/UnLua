@@ -25,6 +25,8 @@ class UNLUA_API ULuaEnvLocator : public UObject
 public:
     ULuaEnvLocator()
     {
+        if (HasAnyFlags(RF_ClassDefaultObject))
+            return;
         Env = MakeShared<UnLua::FLuaEnv>();
     }
 

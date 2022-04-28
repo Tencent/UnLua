@@ -76,6 +76,7 @@ private:
 #if !SUPPORTS_RPC_CALL
     FOutParmRec *OutParmRec;
 #endif
+    TUniquePtr<FTCHARToUTF8> LuaFunctionName;
     TArray<FPropertyDesc*> Properties;
     TArray<int32> OutPropertyIndices;
     // FParameterCollection *DefaultParams;

@@ -35,6 +35,14 @@ FObjectRegistry::FObjectRegistry(lua_State* GL)
     lua_pop(L, 1);
 }
 
+void FObjectRegistry::NotifyUObjectDeleted(UObject* Object)
+{
+    int32 LuaRef;
+    if (!ObjectRefs.RemoveAndCopyValue(Object, LuaRef))
+        return;
+    luaL_unref(GL, LUA_REGISTRYINDEX, LuaRef);
+}
+
 int FObjectRegistry::Ref(lua_State* L, UObject* Object, const int Index)
 {
     check(!ObjectRefs.Contains(Object));
@@ -44,10 +52,7 @@ int FObjectRegistry::Ref(lua_State* L, UObject* Object, const int Index)
     return Ret;
 }
 
-void FObjectRegistry::NotifyUObjectDeleted(UObject* Object)
+bool FObjectRegistry::IsBound(UObject* Object)
 {
-    int32 LuaRef;
-    if (!ObjectRefs.RemoveAndCopyValue(Object, LuaRef))
-        return;
-    luaL_unref(GL, LUA_REGISTRYINDEX, LuaRef);
+    return ObjectRefs.Contains(Object);
 }

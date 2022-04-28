@@ -224,9 +224,15 @@ void ULuaFunction::Initialize()
         }
     }
 
-#if !SUPPORTS_RPC_CALL
+#if SUPPORTS_RPC_CALL
+    if (HasAnyFunctionFlags(FUNC_Net))
+        LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FString::Printf(TEXT("%s_RPC"), *GetName()));
+    else
+        LuaFunctionName = MakeUnique<FTCHARToUTF8>(*GetName());
+#else
+    LuaFunctionName = MakeUnique<FTCHARToUTF8>(*GetName());
     if (CurrentOutParmRec)
-    	CurrentOutParmRec->NextOutParm = nullptr;
+        CurrentOutParmRec->NextOutParm = nullptr;
 #endif
 }
 
@@ -244,10 +250,14 @@ void ULuaFunction::Call(UObject* Context, FFrame& Stack, void* const RetValueAdd
         return;
     }
 
+    // UE_LOG(LogTemp, Log, TEXT("Calling %s.%s from %s"), *Context->GetName(), *GetName(), *Env->GetName());
+
     const auto L = Env->GetMainState();
-    bool bRpcCall = HasAnyFunctionFlags(FUNC_Net);
+    if (!Env->GetObjectRegistry()->IsBound(Context))
+        Env->TryBind(Context);
+
     // TODO: Refactor for performance
-    bool bSuccess = PushFunction(L, Context, bRpcCall ? TCHAR_TO_UTF8(*FString::Printf(TEXT("%s_RPC"), *GetName())) : TCHAR_TO_UTF8(*GetName())) != LUA_NOREF;
+    bool bSuccess = PushFunction(L, Context, LuaFunctionName->Get()) != LUA_NOREF;
     if (!bSuccess)
         return;
 

@@ -69,7 +69,7 @@ void ULuaEnvLocator_ByGameInstance::HotReload()
 
 void ULuaEnvLocator_ByGameInstance::Reset()
 {
-    Envs.Reset();
+    Env.Reset();
     for (auto Pair : Envs)
         Pair.Value.Reset();
     Envs.Empty();

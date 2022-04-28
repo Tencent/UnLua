@@ -22,6 +22,8 @@ class FObjectRegistry
 public:
     FObjectRegistry(lua_State* GL);
 
+    void NotifyUObjectDeleted(UObject* Object);
+    
     template <typename T>
     void Push(lua_State* L, TSharedPtr<T> Ptr);
 
@@ -30,7 +32,7 @@ public:
 
     int Ref(lua_State* L, UObject* Object, const int Index);
 
-    void NotifyUObjectDeleted(UObject* Object);
+    bool IsBound(UObject* Object);
 
 private:
     TMap<UObject*, int32> ObjectRefs;
