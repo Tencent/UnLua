@@ -122,9 +122,9 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
         // try call user first user function handler
         bool bResult = false;
         int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
-        if (FunctionRef != INDEX_NONE)
+        if (FunctionRef != LUA_NOREF)
         {
-            if (InitializerTableRef != INDEX_NONE)
+            if (InitializerTableRef != LUA_NOREF)
             {
                 lua_rawgeti(L, LUA_REGISTRYINDEX, InitializerTableRef);             // push a initializer table if necessary
             }

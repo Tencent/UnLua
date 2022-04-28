@@ -53,7 +53,7 @@ void UUnLuaEditorFunctionLibrary::FetchNewVersion()
         }
 
         PRAGMA_DISABLE_DEPRECATION_WARNINGS
-        const FString Msg = FString::Printf(TEXT("cmd=3&tag=glcoud.unlua.update&version=%s&engine=%s&machine_name=%s"),
+        const FString Msg = FString::Printf(TEXT("cmd=3&tag=glcoud.unlua.update&version=%s&engine=%s&user_name=%s"),
                                             *GetCurrentVersion(),
                                             *FEngineVersion::Current().ToString(),
                                             *FPlatformMisc::GetHashedMacAddressString()

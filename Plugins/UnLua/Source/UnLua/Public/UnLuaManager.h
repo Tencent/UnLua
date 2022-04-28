@@ -15,6 +15,7 @@
 #pragma once
 
 #include "InputCoreTypes.h"
+#include "lauxlib.h"
 #include "UnLuaCompatibility.h"
 #include "UnLuaManager.generated.h"
 
@@ -34,7 +35,7 @@ public:
 
     UUnLuaManager();
 
-    bool Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = INDEX_NONE);
+    bool Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
 
     void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
     

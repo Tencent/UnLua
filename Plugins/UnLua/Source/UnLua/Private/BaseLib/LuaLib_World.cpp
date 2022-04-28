@@ -102,7 +102,7 @@ static int32 UWorld_SpawnActor(lua_State *L)
 
     {
         const char *ModuleName = NumParams > 6 ? lua_tostring(L, 7) : nullptr;
-        int32 TableRef = INDEX_NONE;
+        int32 TableRef = LUA_NOREF;
         if (NumParams > 7 && lua_type(L, 8) == LUA_TTABLE)
         {
             lua_pushvalue(L, 8);
@@ -158,7 +158,7 @@ static int32 UWorld_SpawnActorEx(lua_State *L)
     }
 
     {
-        int32 TableRef = INDEX_NONE;
+        int32 TableRef = LUA_NOREF;
         if (NumParams > 3 && lua_type(L, 4) == LUA_TTABLE)
         {
             lua_pushvalue(L, 4);

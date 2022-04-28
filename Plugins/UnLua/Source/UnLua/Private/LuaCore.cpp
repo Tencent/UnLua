@@ -1056,7 +1056,7 @@ int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *Functio
     {
         lua_pop(L, NumToPop);
     }
-    return INDEX_NONE;
+    return LUA_NOREF;
 }
 
 /**
@@ -1593,7 +1593,7 @@ int32 Global_NewObject(lua_State *L)
 
     {
         const char *ModuleName = NumParams > 3 ? lua_tostring(L, 4) : nullptr;
-        int32 TableRef = INDEX_NONE;
+        int32 TableRef = LUA_NOREF;
         if (NumParams > 4 && lua_type(L, 5) == LUA_TTABLE)
         {
             lua_pushvalue(L, 5);

@@ -110,11 +110,15 @@ public:
 
     virtual TSharedPtr<UnLua::FLuaEnv> GetEnv(UObject* Object) override
     {
+        if (!bIsActive)
+            return nullptr;
         return EnvLocator->Locate(Object);
     }
 
     virtual void HotReload() override
     {
+        if (!bIsActive)
+            return;
         EnvLocator->HotReload();
     }
 

@@ -37,7 +37,7 @@ TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::Locate(const UObject* 
     const auto Outer = Object->GetOuter();
     if (!Outer)
         return Env;
-    
+
     const auto World = Outer->GetWorld();
     if (!World)
         return Env;
@@ -69,7 +69,7 @@ void ULuaEnvLocator_ByGameInstance::HotReload()
 
 void ULuaEnvLocator_ByGameInstance::Reset()
 {
-    Super::Reset();
+    Envs.Reset();
     for (auto Pair : Envs)
         Pair.Value.Reset();
     Envs.Empty();
