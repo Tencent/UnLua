@@ -19,8 +19,8 @@ function BP_AICharacter_C:ReceiveBeginPlay()
 	self.Sphere.OnComponentBeginOverlap:Add(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
 end
 
-function BP_AICharacter_C:Died(DamageType)
-	self.Super.Died(self, DamageType)
+function BP_AICharacter_C:Died_Multicast_RPC(DamageType)
+	self.Super.Died_Multicast_RPC(self, DamageType)
 	self.Sphere:SetCollisionEnabled(UE.ECollisionEnabled.NoCollision)
 	local NewLocation = UE.FVector(0.0, 0.0, self.CapsuleComponent.CapsuleHalfHeight)
 	local SweepHitResult = UE.FHitResult()
