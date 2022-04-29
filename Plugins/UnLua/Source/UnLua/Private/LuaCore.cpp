@@ -899,38 +899,17 @@ bool GetFunctionList(lua_State *L, const char *InModuleName, TSet<FName> &Functi
 }
 
 /**
- * Get Lua instance for a UObject
- */
-bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object)
-{
-    if (!Object)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return false;
-    }
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-    lua_pushlightuserdata(L, Object);
-    int32 Type = lua_rawget(L, -2);
-    if (Type != LUA_TNIL)
-    {
-        lua_remove(L, -2);
-        return true;
-    }
-    lua_pop(L, 2);
-    return false;
-}
-
-/**
  * Push a Lua function (by a function name) and push a UObject instance as its first parameter
  */
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName)
 {
     int32 N = lua_gettop(L);
     lua_pushcfunction(L, UnLua::ReportLuaCallError);
-    bool bSuccess = GetObjectMapping(L, Object);
-    if (bSuccess)
+    const auto& Env = UnLua::FLuaEnv::FindEnv(L);
+    const auto Ref = Env->GetObjectRegistry()->GetBoundRef((UObject*)Object);
+    if (Ref != LUA_NOREF)
     {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, Ref);
         int32 Type = lua_type(L, -1);
         if (Type == LUA_TTABLE /*|| Type == LUA_TUSERDATA*/)
         {

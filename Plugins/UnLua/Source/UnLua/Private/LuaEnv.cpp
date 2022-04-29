@@ -64,10 +64,6 @@ namespace UnLua
         AutoObjectReference.SetName("UnLua_AutoReference");
         ManualObjectReference.SetName("UnLua_ManualReference");
 
-        lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
-        CreateWeakValueTable(L);
-        lua_rawset(L, LUA_REGISTRYINDEX);
-
         lua_pushstring(L, "StructMap"); // create weak table 'StructMap'
         CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);

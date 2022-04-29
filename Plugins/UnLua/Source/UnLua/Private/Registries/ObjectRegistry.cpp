@@ -30,6 +30,11 @@ namespace UnLua
         : Env(Env)
     {
         const auto L = Env->GetMainState();
+
+        lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
+        CreateWeakValueTable(L);
+        lua_rawset(L, LUA_REGISTRYINDEX);
+
         luaL_newmetatable(L, "TSharedPtr");
         lua_pushstring(L, "__gc");
         lua_pushcfunction(L, ReleaseSharedPtr);
@@ -94,6 +99,14 @@ namespace UnLua
     bool FObjectRegistry::IsBound(const UObject* Object) const
     {
         return ObjectRefs.Contains(Object);
+    }
+
+    int FObjectRegistry::GetBoundRef(const UObject* Object) const
+    {
+        const auto Ref = ObjectRefs.Find(Object);
+        if (Ref)
+            return *Ref;
+        return LUA_NOREF;
     }
 
     void FObjectRegistry::Unbind(UObject* Object)

@@ -46,6 +46,12 @@ namespace UnLua
         bool IsBound(const UObject* Object) const;
 
         /**
+         * 获取指定UObject在Lua里绑定的table的引用ID。
+         * @return 若没有绑定过则返回LUA_NOREF。
+         */
+        int GetBoundRef(const UObject* Object) const;
+
+        /**
          * 将指定的UObject从Lua环境解绑。
          */
         void Unbind(UObject* Object);
