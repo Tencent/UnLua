@@ -111,7 +111,7 @@ bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleNa
         FString RealModuleName = *ModuleNames.Find(Class);
 
         // create a Lua instance for this UObject
-        NewLuaObject(L, Object, TCHAR_TO_UTF8(*RealModuleName));
+        Env->GetObjectRegistry()->Bind(Object, TCHAR_TO_UTF8(*RealModuleName));
 
         // try call user first user function handler
         bool bResult = false;
@@ -164,8 +164,6 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
             ClearLoadedModule(Env->GetMainState(), TCHAR_TO_UTF8(*ModuleName));
         }
     }
-
-    DeleteLuaObject(Env->GetMainState(), (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
 }
 
 /**

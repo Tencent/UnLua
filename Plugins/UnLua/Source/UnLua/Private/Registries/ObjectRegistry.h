@@ -23,17 +23,29 @@ public:
     FObjectRegistry(lua_State* GL);
 
     void NotifyUObjectDeleted(UObject* Object);
-    
+
     template <typename T>
     void Push(lua_State* L, TSharedPtr<T> Ptr);
 
     template <typename T>
     TSharedPtr<T> Get(lua_State* L, int Index);
 
-    int Ref(lua_State* L, UObject* Object, const int Index);
+    /**
+     * 将一个UObject绑定到Lua环境，作为lua table访问。
+     * @return lua引用ID
+     */
+    int Bind(UObject* Object, const char* ModuleName);
 
-    bool IsBound(UObject* Object);
+    /**
+     * 获取一个值，表示UObject是否绑定到了Lua环境。
+     */
+    bool IsBound(const UObject* Object) const;
 
+    /**
+     * 将指定的UObject从Lua环境解绑。
+     */
+    void Unbind(UObject* Object);
+    
 private:
     TMap<UObject*, int32> ObjectRefs;
     lua_State* GL;
