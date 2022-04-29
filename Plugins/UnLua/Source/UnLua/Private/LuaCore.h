@@ -101,11 +101,6 @@ bool PushFunction(lua_State *L, UObjectBaseUtility *Object, int32 FunctionRef);
 bool CallFunction(lua_State *L, int32 NumArgs, int32 NumResults);
 
 /**
- * Get corresponding Lua instance for a UObjectBaseUtility
- */
-UNLUA_API bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object);
-
-/**
  * Add Lua package path
  */
 UNLUA_API void AddPackagePath(lua_State *L, const char *Path);
