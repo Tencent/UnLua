@@ -14,6 +14,7 @@
 
 #include "LuaEnv.h"
 #include "Binding.h"
+#include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "lstate.h"
 #include "LuaCore.h"
@@ -51,7 +52,7 @@ namespace UnLua
         AddSearcher(LoadFromBuiltinLibs, 4);
 
         UELib::Open(L);
-        ObjectRegistry = MakeShared<FObjectRegistry>(L);
+        ObjectRegistry = MakeShared<FObjectRegistry>(this);
         ClassRegistry = new FClassRegistry(L);
         ClassRegistry->Register("UObject");
         ClassRegistry->Register("UClass");
