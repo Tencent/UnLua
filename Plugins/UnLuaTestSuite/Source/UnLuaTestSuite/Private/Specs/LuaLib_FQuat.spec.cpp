@@ -28,7 +28,7 @@ void FUnLuaLibFQuatSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
     });
 
     Describe(TEXT("构造FQuat"), [this]()

@@ -28,7 +28,7 @@ void FUnLuaLibFVector2DSpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
     });
 
     Describe(TEXT("构造FVector2D"), [this]()

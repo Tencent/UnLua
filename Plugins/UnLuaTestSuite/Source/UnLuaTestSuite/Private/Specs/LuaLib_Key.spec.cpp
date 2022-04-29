@@ -28,7 +28,7 @@ void FUnLuaLibEKeySpec::Define()
     BeforeEach([this]
     {
         UnLua::Startup();
-        L = UnLua::CreateState();
+        L = UnLua::GetState();
     });
 
     Describe(TEXT("访问EKeys"), [this]()
