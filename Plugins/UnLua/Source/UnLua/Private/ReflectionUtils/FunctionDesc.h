@@ -14,7 +14,8 @@
 
 #pragma once
 
-#include "UnLuaBase.h"
+#include "lua.h"
+#include "Registries/FunctionRegistry.h"
 
 struct lua_State;
 struct FParameterCollection;
@@ -25,8 +26,6 @@ class FPropertyDesc;
  */
 class FFunctionDesc
 {
-    friend class FReflectionRegistry;
-
 public:
     FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams);
     ~FFunctionDesc();
@@ -80,6 +79,10 @@ public:
      */
     FORCEINLINE UFunction* GetFunction() const { return Function.Get(); }
 
+    FORCEINLINE const char* GetLuaFunctionName() const { return LuaFunctionName->Get(); }
+ 
+    void CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer SelfRef, FFrame& Stack, RESULT_DECL);
+ 
     bool CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self);
  
     /**
@@ -110,11 +113,13 @@ public:
      */
     void BroadcastMulticastDelegate(lua_State *L, int32 NumParams, int32 FirstParamIndex, FMulticastScriptDelegate *ScriptDelegate);
 
-private:
+   private:
     void* PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, TArray<bool> &CleanupFlags, void *Userdata = nullptr);
     int32 PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params, const TArray<bool> &CleanupFlags);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
+
+    void SkipCodes(FFrame& Stack, void* Params) const;
  
     TWeakObjectPtr<UFunction> Function;
     FString FuncName;
@@ -129,10 +134,11 @@ private:
     FParameterCollection *DefaultParams;
     int32 ReturnPropertyIndex;
     int32 LatentPropertyIndex;
-    int32 FunctionRef;
     uint8 NumRefProperties;
     uint8 NumCalls;                 // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
     uint8 bStaticFunc : 1;
     uint8 bInterfaceFunc : 1;
     uint8 bHasDelegateParams : 1;
+    int32 ParmsSize;
+    TUniquePtr<FTCHARToUTF8> LuaFunctionName;
 };

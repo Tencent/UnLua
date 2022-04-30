@@ -15,10 +15,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "LuaEnv.h"
-#include "LuaEnvLocator.h"
-#include "ReflectionUtils/PropertyDesc.h"
 #include "LuaFunction.generated.h"
+
+namespace UnLua
+{
+    class FLuaEnv;
+}
+class FFunctionDesc;
 
 UCLASS()
 class UNLUA_API ULuaFunction : public UFunction
@@ -45,48 +48,13 @@ public:
 
     void Initialize();
 
-    void Call(UObject* Context, FFrame& Stack, RESULT_DECL);
-
     UFunction* GetOverridden() const;
 
+#if WITH_EDITOR
     virtual void Bind() override;
+#endif
 
 private:
-    static FOutParmRec* FindOutParamRec(FOutParmRec* OutParam, FProperty* OutProperty)
-    {
-        while (OutParam)
-        {
-            if (OutParam->Property == OutProperty)
-            {
-                return OutParam;
-            }
-            OutParam = OutParam->NextOutParm;
-        }
-        return nullptr;
-    }
-
-    bool CallLuaInternal(lua_State* L, void* InParams, FOutParmRec* OutParams, RESULT_DECL) const;
-
-    FORCEINLINE void SkipCodes(FFrame& Stack, void* Params) const;
-
     TWeakObjectPtr<UFunction> Overridden;
-
-    // TODO: refactor below
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    void* Buffer;
-#endif
-#if !SUPPORTS_RPC_CALL
-    FOutParmRec *OutParmRec;
-#endif
-    TUniquePtr<FTCHARToUTF8> LuaFunctionName;
-    TArray<FPropertyDesc*> Properties;
-    TArray<int32> OutPropertyIndices;
-    // FParameterCollection *DefaultParams;
-    int32 ReturnPropertyIndex;
-    int32 LatentPropertyIndex;
-    uint8 NumRefProperties;
-    uint8 NumCalls; // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
-    uint8 bStaticFunc : 1;
-    uint8 bInterfaceFunc : 1;
-    uint8 bHasDelegateParams : 1;
+    TSharedPtr<FFunctionDesc> Desc;
 };

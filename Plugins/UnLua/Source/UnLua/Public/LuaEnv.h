@@ -17,6 +17,7 @@
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "Registries/DelegateRegistry.h"
+#include "Registries/FunctionRegistry.h"
 #include "Registries/ContainerRegistry.h"
 #include "Registries/EnumRegistry.h"
 #include "UnLuaManager.h"
@@ -103,6 +104,8 @@ namespace UnLua
 
         FDelegateRegistry* GetDelegateRegistry() const { return DelegateRegistry; }
 
+        TSharedPtr<FFunctionRegistry> GetFunctionRegistry() const { return FunctionRegistry; }
+
         FContainerRegistry* GetContainerRegistry() const { return ContainerRegistry; }
 
         FEnumRegistry* GetEnumRegistry() const { return EnumRegistry; }
@@ -148,6 +151,7 @@ namespace UnLua
         FClassRegistry* ClassRegistry;
         TSharedPtr<FObjectRegistry> ObjectRegistry;
         FDelegateRegistry* DelegateRegistry;
+        TSharedPtr<FFunctionRegistry> FunctionRegistry;
         FContainerRegistry* ContainerRegistry;
         FEnumRegistry* EnumRegistry;
         TMap<lua_State*, int32> ThreadToRef;

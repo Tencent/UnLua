@@ -16,6 +16,7 @@
 
 #include "lstate.h"
 #include "UnLuaBase.h"
+#include "ReflectionUtils/FunctionDesc.h"
 
 namespace UnLua
 {

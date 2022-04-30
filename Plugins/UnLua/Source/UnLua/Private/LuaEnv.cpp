@@ -57,6 +57,7 @@ namespace UnLua
         ClassRegistry->Register("UObject");
         ClassRegistry->Register("UClass");
 
+        FunctionRegistry = MakeShared<FFunctionRegistry>(this);
         DelegateRegistry = new FDelegateRegistry(L);
         ContainerRegistry = new FContainerRegistry(L);
         EnumRegistry = new FEnumRegistry(L);

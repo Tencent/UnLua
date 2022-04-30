@@ -32,7 +32,17 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
 
     Function = InFunction;
     FuncName = InFunction->GetName();
+    ParmsSize = InFunction->ParmsSize;
 
+#if SUPPORTS_RPC_CALL
+    if (InFunction->HasAnyFunctionFlags(FUNC_Net))
+        LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FString::Printf(TEXT("%s_RPC"), *FuncName));
+    else
+        LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
+#else
+    LuaFunctionName = MakeUnique<FTCHARToUTF8>(*GetName());
+#endif
+    
     bStaticFunc = InFunction->HasAnyFunctionFlags(FUNC_Static);         // a static function?
 
     UClass *OuterClass = InFunction->GetOuterUClass();
@@ -167,6 +177,56 @@ FFunctionDesc::~FFunctionDesc()
     for (FPropertyDesc *Property : Properties)
     {  
         delete Property;
+    }
+}
+
+
+void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer SelfRef, FFrame& Stack, RESULT_DECL)
+{
+    lua_pushcfunction(L, UnLua::ReportLuaCallError);
+    check(Function.IsValid());
+    check(lua_rawgeti(L, LUA_REGISTRYINDEX, FunctionRef) == LUA_TFUNCTION);
+    check(lua_rawgeti(L, LUA_REGISTRYINDEX, SelfRef) == LUA_TTABLE);
+    
+    const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
+    bool bSuccess;
+
+    if (bUnpackParams)
+    {
+        void* Params = nullptr;
+#if ENABLE_PERSISTENT_PARAM_BUFFER
+        if (!bHasDelegateParams)
+        {
+            Params = Buffer;
+        }
+#endif
+        if (!Params)
+        {
+            Params = ParmsSize > 0 ? FMemory::Malloc(ParmsSize, 16) : nullptr;
+        }
+
+        SkipCodes(Stack, Params);
+
+        bSuccess = CallLuaInternal(L, Params, Stack.OutParms, RESULT_PARAM); // call Lua function...
+
+        if (Params)
+        {
+#if ENABLE_PERSISTENT_PARAM_BUFFER
+            if (bHasDelegateParams)
+#endif
+            FMemory::Free(Params);
+        }
+    }
+    else
+    {
+        bSuccess = CallLuaInternal(L, Stack.Locals, Stack.OutParms, RESULT_PARAM); // call Lua function...
+    }
+
+    if (!bSuccess && bUnpackParams)
+    {
+        FMemMark Mark(FMemStack::Get());
+        void* Params = New<uint8>(FMemStack::Get(), ParmsSize, 16);
+        SkipCodes(Stack, Params);
     }
 }
 
@@ -599,4 +659,12 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 
     lua_pop(L, NumResult);
     return true;
+}
+
+void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params) const
+{
+    for (TFieldIterator<FProperty> It(Function.Get()); It && (It->PropertyFlags & CPF_Parm) == CPF_Parm; ++It)
+        Stack.Step(Stack.Object, It->ContainerPtrToValuePtr<uint8>(Params));
+    check(Stack.PeekCode() == EX_EndFunctionParms);
+    Stack.SkipCode(1); // skip EX_EndFunctionParms
 }
