@@ -20,12 +20,12 @@
 
 namespace UnLua
 {
+    class FLuaEnv;
+
     class FDelegateRegistry
     {
     public:
-        explicit FDelegateRegistry(lua_State* GL);
-
-        lua_State* GL;
+        explicit FDelegateRegistry(FLuaEnv* Env);
 
         void Register(void* Delegate, FProperty* Property);
 
@@ -46,7 +46,7 @@ namespace UnLua
         void Clear(lua_State* L, void* Delegate);
 
     private:
-        FFunctionDesc* GetSignatureDesc(const void* Delegate);
+        TSharedPtr<FFunctionDesc> GetSignatureDesc(const void* Delegate);
 
         struct FDelegateInfo
         {
@@ -58,11 +58,12 @@ namespace UnLua
             };
 
             UFunction* SignatureFunction;
-            FFunctionDesc* Desc;
+            TSharedPtr<FFunctionDesc> Desc;
             TMap<int32, TWeakObjectPtr<ULuaDelegateHandler>> Handlers;
         };
 
         TMap<void*, FDelegateInfo> Delegates;
         TMap<const void*, int32> LuaFunctions; // TODO: refactor this with object registry
+        FLuaEnv* Env;
     };
 }

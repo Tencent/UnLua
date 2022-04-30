@@ -58,7 +58,7 @@ namespace UnLua
         ClassRegistry->Register("UClass");
 
         FunctionRegistry = MakeShared<FFunctionRegistry>(this);
-        DelegateRegistry = new FDelegateRegistry(L);
+        DelegateRegistry = MakeShared<FDelegateRegistry>(this);
         ContainerRegistry = new FContainerRegistry(L);
         EnumRegistry = new FEnumRegistry(L);
 
@@ -141,7 +141,6 @@ namespace UnLua
         Manager = nullptr;
 
         delete ClassRegistry;
-        delete DelegateRegistry;
         delete ContainerRegistry;
         delete EnumRegistry;
 

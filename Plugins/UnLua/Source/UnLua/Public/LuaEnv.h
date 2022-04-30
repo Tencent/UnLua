@@ -102,7 +102,7 @@ namespace UnLua
 
         TSharedPtr<FObjectRegistry> GetObjectRegistry() const { return ObjectRegistry; }
 
-        FDelegateRegistry* GetDelegateRegistry() const { return DelegateRegistry; }
+        TSharedPtr<FDelegateRegistry> GetDelegateRegistry() const { return DelegateRegistry; }
 
         TSharedPtr<FFunctionRegistry> GetFunctionRegistry() const { return FunctionRegistry; }
 
@@ -150,7 +150,7 @@ namespace UnLua
         UUnLuaManager* Manager;
         FClassRegistry* ClassRegistry;
         TSharedPtr<FObjectRegistry> ObjectRegistry;
-        FDelegateRegistry* DelegateRegistry;
+        TSharedPtr<FDelegateRegistry> DelegateRegistry;
         TSharedPtr<FFunctionRegistry> FunctionRegistry;
         FContainerRegistry* ContainerRegistry;
         FEnumRegistry* EnumRegistry;

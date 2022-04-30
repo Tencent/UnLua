@@ -18,147 +18,146 @@
 #include "ObjectReferencer.h"
 #include "LuaEnv.h"
 
-
-UnLua::FDelegateRegistry::FDelegateRegistry(lua_State* GL)
-    : GL(GL)
+namespace UnLua
 {
-}
+    FDelegateRegistry::FDelegateRegistry(FLuaEnv* Env)
+        : Env(Env)
+    {
+    }
 
 #pragma region FScriptDelgate
 
-void UnLua::FDelegateRegistry::Register(void* Delegate, FProperty* Property)
-{
-    const auto Info = Delegates.Find(Delegate);
-    if (Info)
+    void FDelegateRegistry::Register(void* Delegate, FProperty* Property)
     {
-        check(Info->Property == Property);
-        Info->Property = Property;
-    }
-    else
-    {
-        FDelegateInfo NewInfo;
-        NewInfo.Property = Property;
-        NewInfo.Desc = nullptr;
-        if (const auto MulticastProperty = CastField<FMulticastDelegateProperty>(Property))
-            NewInfo.SignatureFunction = MulticastProperty->SignatureFunction;
-        else if (const auto DelegateProperty = CastField<FDelegateProperty>(Property))
-            NewInfo.SignatureFunction = DelegateProperty->SignatureFunction;
+        const auto Info = Delegates.Find(Delegate);
+        if (Info)
+        {
+            check(Info->Property == Property);
+            Info->Property = Property;
+        }
         else
-            NewInfo.SignatureFunction = nullptr;
-        Delegates.Add(Delegate, NewInfo);
+        {
+            FDelegateInfo NewInfo;
+            NewInfo.Property = Property;
+            NewInfo.Desc = nullptr;
+            if (const auto MulticastProperty = CastField<FMulticastDelegateProperty>(Property))
+                NewInfo.SignatureFunction = MulticastProperty->SignatureFunction;
+            else if (const auto DelegateProperty = CastField<FDelegateProperty>(Property))
+                NewInfo.SignatureFunction = DelegateProperty->SignatureFunction;
+            else
+                NewInfo.SignatureFunction = nullptr;
+            Delegates.Add(Delegate, NewInfo);
+        }
     }
-}
 
-void UnLua::FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* Lifecycle)
-{
-    check(lua_type(L, Index) == LUA_TFUNCTION);
-    auto& Env = FLuaEnv::FindEnvChecked(GL);
-    lua_pushvalue(L, Index);
-    const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
-    LuaFunctions.Add(lua_topointer(L, Index), Ref);
-    const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
-    Env.AutoObjectReference.Add(Handler);
-    auto Info = Delegates.FindChecked(Delegate);
-    Handler->BindTo(Info.DelegateProperty, Delegate);
-    Info.Handlers.Add(Ref, Handler);
-}
-
-void UnLua::FDelegateRegistry::Unbind(FScriptDelegate* Delegate)
-{
-    FDelegateInfo Info = Delegates.FindAndRemoveChecked(Delegate);
-    for (auto Pair : Info.Handlers)
+    void FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* Lifecycle)
     {
-        lua_rawgeti(GL, LUA_REGISTRYINDEX, Pair.Key);
-        const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(GL, -1));
-        luaL_unref(GL, LUA_REGISTRYINDEX, Ref);
+        check(lua_type(L, Index) == LUA_TFUNCTION);
+        lua_pushvalue(L, Index);
+        const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
+        LuaFunctions.Add(lua_topointer(L, Index), Ref);
+        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Lifecycle);
+        Env->AutoObjectReference.Add(Handler);
+        auto Info = Delegates.FindChecked(Delegate);
+        Handler->BindTo(Info.DelegateProperty, Delegate);
+        Info.Handlers.Add(Ref, Handler);
     }
-    Delegate->Unbind();
-    delete Info.Desc; // TODO: optimize this and release handler
-}
 
-void UnLua::FDelegateRegistry::Execute(const ULuaDelegateHandler* Handler, void* Params)
-{
-    if (!Handler->IsAlive())
-        return;
+    void FDelegateRegistry::Unbind(FScriptDelegate* Delegate)
+    {
+        const auto L = Env->GetMainState();
+        FDelegateInfo Info = Delegates.FindAndRemoveChecked(Delegate);
+        for (const auto Pair : Info.Handlers)
+        {
+            lua_rawgeti(L, LUA_REGISTRYINDEX, Pair.Key);
+            const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(L, -1));
+            luaL_unref(L, LUA_REGISTRYINDEX, Ref);
+        }
+        Delegate->Unbind();
+    }
 
-    const auto SignatureDesc = GetSignatureDesc(Handler->Delegate);
-    check(SignatureDesc);
+    void FDelegateRegistry::Execute(const ULuaDelegateHandler* Handler, void* Params)
+    {
+        if (!Handler->IsAlive())
+            return;
 
-    const auto L = Handler->Env->GetMainState();
-    SignatureDesc->CallLua(L, Handler->LuaRef, Params, Handler->Lifecycle.Get());
-}
+        const auto SignatureDesc = GetSignatureDesc(Handler->Delegate);
+        check(SignatureDesc);
 
-int32 UnLua::FDelegateRegistry::Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex)
-{
-    const auto SignatureDesc = GetSignatureDesc(Delegate);
-    check(SignatureDesc);
+        const auto L = Handler->Env->GetMainState();
+        SignatureDesc->CallLua(L, Handler->LuaRef, Params, Handler->Lifecycle.Get());
+    }
 
-    const auto Ret = SignatureDesc->ExecuteDelegate(L, NumParams, FirstParamIndex, Delegate);
-    return Ret;
-}
+    int32 FDelegateRegistry::Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex)
+    {
+        const auto SignatureDesc = GetSignatureDesc(Delegate);
+        check(SignatureDesc);
+
+        const auto Ret = SignatureDesc->ExecuteDelegate(L, NumParams, FirstParamIndex, Delegate);
+        return Ret;
+    }
 
 #pragma endregion
 
 #pragma region FMulticastScriptDelegate
 
-void UnLua::FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate, UObject* Lifecycle)
-{
-    check(lua_type(L, Index) == LUA_TFUNCTION);
-    auto& Env = FLuaEnv::FindEnvChecked(GL);
-    lua_pushvalue(L, Index);
-    const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
-    LuaFunctions.Add(lua_topointer(L, Index), Ref);
-    const auto Handler = ULuaDelegateHandler::CreateFrom(&Env, Ref, Lifecycle);
-    Handler->AddTo(Delegates.FindChecked(Delegate).MulticastProperty, Delegate);
-    Env.AutoObjectReference.Add(Handler);
-    Delegates.FindChecked(Delegate).Handlers.Add(Ref, Handler);
-}
-
-void UnLua::FDelegateRegistry::Remove(lua_State* L, void* Delegate, int Index)
-{
-    check(lua_type(L, Index) == LUA_TFUNCTION);
-    auto& Env = FLuaEnv::FindEnvChecked(GL);
-    const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(L, Index));
-    luaL_unref(L, LUA_REGISTRYINDEX, Ref);
-    auto Info = Delegates.FindChecked(Delegate);
-    const auto Handler = Info.Handlers.FindAndRemoveChecked(Ref);
-    Env.AutoObjectReference.Remove(Handler.Get());
-    Handler->RemoveFrom(Info.MulticastProperty, Delegate);
-}
-
-void UnLua::FDelegateRegistry::Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex)
-{
-    const auto SignatureDesc = GetSignatureDesc(Delegate);
-    check(SignatureDesc);
-
-    const auto Property = Delegates.Find(Delegate)->MulticastProperty;
-    const auto ScriptDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, Delegate);
-    SignatureDesc->BroadcastMulticastDelegate(L, NumParams, FirstParamIndex, ScriptDelegate);
-}
-
-void UnLua::FDelegateRegistry::Clear(lua_State* L, void* Delegate)
-{
-    const auto Info = Delegates.Find(Delegate);
-    if (!Info)
-        return;
-
-    for (const auto Pair : Info->Handlers)
+    void FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate, UObject* Lifecycle)
     {
-        luaL_unref(L, LUA_REGISTRYINDEX, Pair.Key);
-        Pair.Value->RemoveFrom(Info->MulticastProperty, Delegate);
+        check(lua_type(L, Index) == LUA_TFUNCTION);
+        lua_pushvalue(L, Index);
+        const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX); // TODO: release
+        LuaFunctions.Add(lua_topointer(L, Index), Ref);
+        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Lifecycle);
+        Handler->AddTo(Delegates.FindChecked(Delegate).MulticastProperty, Delegate);
+        Env->AutoObjectReference.Add(Handler);
+        Delegates.FindChecked(Delegate).Handlers.Add(Ref, Handler);
     }
 
-    delete Info->Desc; // TODO: optimize this and release handler
-}
+    void FDelegateRegistry::Remove(lua_State* L, void* Delegate, int Index)
+    {
+        check(lua_type(L, Index) == LUA_TFUNCTION);
+        const auto Ref = LuaFunctions.FindAndRemoveChecked(lua_topointer(L, Index));
+        luaL_unref(L, LUA_REGISTRYINDEX, Ref);
+        auto Info = Delegates.FindChecked(Delegate);
+        const auto Handler = Info.Handlers.FindAndRemoveChecked(Ref);
+        Env->AutoObjectReference.Remove(Handler.Get());
+        Handler->RemoveFrom(Info.MulticastProperty, Delegate);
+    }
+
+    void FDelegateRegistry::Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex)
+    {
+        const auto SignatureDesc = GetSignatureDesc(Delegate);
+        check(SignatureDesc);
+
+        const auto Property = Delegates.Find(Delegate)->MulticastProperty;
+        const auto ScriptDelegate = TMulticastDelegateTraits<FMulticastDelegateType>::GetMulticastDelegate(Property, Delegate);
+        SignatureDesc->BroadcastMulticastDelegate(L, NumParams, FirstParamIndex, ScriptDelegate);
+    }
+
+    void FDelegateRegistry::Clear(lua_State* L, void* Delegate)
+    {
+        const auto Info = Delegates.Find(Delegate);
+        if (!Info)
+            return;
+
+        for (const auto Pair : Info->Handlers)
+        {
+            luaL_unref(L, LUA_REGISTRYINDEX, Pair.Key);
+            Pair.Value->RemoveFrom(Info->MulticastProperty, Delegate);
+        }
+
+        Delegates.Remove(Delegate);
+    }
 
 #pragma endregion
 
-FFunctionDesc* UnLua::FDelegateRegistry::GetSignatureDesc(const void* Delegate)
-{
-    const auto Info = Delegates.Find(Delegate);
-    if (!Info)
-        return nullptr;
-    if (!Info->Desc)
-        Info->Desc = new FFunctionDesc(Info->SignatureFunction, nullptr);
-    return Info->Desc;
+    TSharedPtr<FFunctionDesc> FDelegateRegistry::GetSignatureDesc(const void* Delegate)
+    {
+        const auto Info = Delegates.Find(Delegate);
+        if (!Info)
+            return nullptr;
+        if (!Info->Desc)
+            Info->Desc = MakeShared<FFunctionDesc>(Info->SignatureFunction, nullptr);
+        return Info->Desc;
+    }
 }
