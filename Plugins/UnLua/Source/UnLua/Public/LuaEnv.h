@@ -30,8 +30,7 @@
 namespace UnLua
 {
     class UNLUA_API FLuaEnv
-        : public FUObjectArray::FUObjectCreateListener,
-          public FUObjectArray::FUObjectDeleteListener
+        : public FUObjectArray::FUObjectDeleteListener
     {
         friend FClassRegistry;
         friend FDelegateRegistry;
@@ -50,8 +49,6 @@ namespace UnLua
         const FString& GetName();
 
         void SetName(FString InName);
-
-        virtual void NotifyUObjectCreated(const UObjectBase* Object, int32 Index) override;
 
         virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;
 

@@ -173,10 +173,6 @@ namespace UnLua
         Name = InName;
     }
 
-    void FLuaEnv::NotifyUObjectCreated(const UObjectBase* Object, int32 Index)
-    {
-    }
-
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
@@ -194,7 +190,6 @@ namespace UnLua
     void FLuaEnv::OnUObjectArrayShutdown()
     {
         GUObjectArray.RemoveUObjectDeleteListener(this);
-        GUObjectArray.RemoveUObjectCreateListener(this);
         ObjectArrayListenerRegistered = false;
     }
 
@@ -567,7 +562,6 @@ namespace UnLua
     {
         OnAsyncLoadingFlushUpdateHandle = FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaEnv::OnAsyncLoadingFlushUpdate);
         GUObjectArray.AddUObjectDeleteListener(this);
-        GUObjectArray.AddUObjectCreateListener(this);
         ObjectArrayListenerRegistered = true;
     }
 
@@ -577,7 +571,6 @@ namespace UnLua
         if (!ObjectArrayListenerRegistered)
             return;
         GUObjectArray.RemoveUObjectDeleteListener(this);
-        GUObjectArray.RemoveUObjectCreateListener(this);
         ObjectArrayListenerRegistered = false;
     }
 
