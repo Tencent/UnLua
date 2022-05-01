@@ -98,7 +98,7 @@ namespace UnLua
 
         UUnLuaManager* GetManager() const { return Manager; }
 
-        FClassRegistry* GetClassRegistry() const { return ClassRegistry; }
+        TSharedPtr<FClassRegistry> GetClassRegistry() const { return ClassRegistry; }
 
         TSharedPtr<FObjectRegistry> GetObjectRegistry() const { return ObjectRegistry; }
 
@@ -148,7 +148,7 @@ namespace UnLua
         FObjectReferencer AutoObjectReference;
         FObjectReferencer ManualObjectReference;
         UUnLuaManager* Manager;
-        FClassRegistry* ClassRegistry;
+        TSharedPtr<FClassRegistry> ClassRegistry;
         TSharedPtr<FObjectRegistry> ObjectRegistry;
         TSharedPtr<FDelegateRegistry> DelegateRegistry;
         TSharedPtr<FFunctionRegistry> FunctionRegistry;

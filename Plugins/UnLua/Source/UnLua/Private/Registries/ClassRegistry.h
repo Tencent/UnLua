@@ -19,12 +19,14 @@
 
 namespace UnLua
 {
+    class FLuaEnv;
+
     class FClassRegistry
     {
     public:
-        explicit FClassRegistry(lua_State* GL);
+        explicit FClassRegistry(FLuaEnv* Env);
 
-        static FClassRegistry* Find(const lua_State* L);
+        static TSharedPtr<FClassRegistry> Find(const lua_State* L);
 
         static FClassDesc* Find(const char* TypeName);
 
@@ -39,7 +41,7 @@ namespace UnLua
         static UField* LoadReflectedType(const char* InName);
 
         static void Cleanup();
-        
+
         bool PushMetatable(lua_State* L, const char* MetatableName);
 
         bool TrySetMetatable(lua_State* L, const char* MetatableName);
@@ -56,6 +58,6 @@ namespace UnLua
         static TMap<UStruct*, FClassDesc*> Classes;
         static TMap<FName, FClassDesc*> Name2Classes;
 
-        lua_State* GL;
+        FLuaEnv* Env;
     };
 }

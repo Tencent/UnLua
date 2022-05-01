@@ -53,7 +53,7 @@ namespace UnLua
 
         UELib::Open(L);
         ObjectRegistry = MakeShared<FObjectRegistry>(this);
-        ClassRegistry = new FClassRegistry(L);
+        ClassRegistry = MakeShared<FClassRegistry>(this);
         ClassRegistry->Register("UObject");
         ClassRegistry->Register("UClass");
 
@@ -140,7 +140,6 @@ namespace UnLua
         Manager->RemoveFromRoot();
         Manager = nullptr;
 
-        delete ClassRegistry;
         delete ContainerRegistry;
         delete EnumRegistry;
 
