@@ -106,7 +106,7 @@ namespace UnLua
 
         TSharedPtr<FFunctionRegistry> GetFunctionRegistry() const { return FunctionRegistry; }
 
-        FContainerRegistry* GetContainerRegistry() const { return ContainerRegistry; }
+        TSharedPtr<FContainerRegistry> GetContainerRegistry() const { return ContainerRegistry; }
 
         FEnumRegistry* GetEnumRegistry() const { return EnumRegistry; }
 
@@ -152,7 +152,7 @@ namespace UnLua
         TSharedPtr<FObjectRegistry> ObjectRegistry;
         TSharedPtr<FDelegateRegistry> DelegateRegistry;
         TSharedPtr<FFunctionRegistry> FunctionRegistry;
-        FContainerRegistry* ContainerRegistry;
+        TSharedPtr<FContainerRegistry> ContainerRegistry;
         FEnumRegistry* EnumRegistry;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;

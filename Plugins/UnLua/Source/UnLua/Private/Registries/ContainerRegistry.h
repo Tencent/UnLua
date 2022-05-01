@@ -22,10 +22,12 @@
 
 namespace UnLua
 {
+    class FLuaEnv;
+
     class FContainerRegistry
     {
     public:
-        explicit FContainerRegistry(lua_State* GL);
+        explicit FContainerRegistry(FLuaEnv* Env);
 
         /**
          * Create a new userdata for a script container
@@ -59,6 +61,6 @@ namespace UnLua
         // TODO: refactor
         void FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FScriptMap* ContainerPtr);
 
-        lua_State* GL;
+        FLuaEnv* Env;
     };
 }

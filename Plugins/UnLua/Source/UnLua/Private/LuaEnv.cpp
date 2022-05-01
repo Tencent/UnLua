@@ -59,7 +59,7 @@ namespace UnLua
 
         FunctionRegistry = MakeShared<FFunctionRegistry>(this);
         DelegateRegistry = MakeShared<FDelegateRegistry>(this);
-        ContainerRegistry = new FContainerRegistry(L);
+        ContainerRegistry = MakeShared<FContainerRegistry>(this);
         EnumRegistry = new FEnumRegistry(L);
 
         AutoObjectReference.SetName("UnLua_AutoReference");
@@ -140,7 +140,6 @@ namespace UnLua
         Manager->RemoveFromRoot();
         Manager = nullptr;
 
-        delete ContainerRegistry;
         delete EnumRegistry;
 
         AutoObjectReference.Clear();

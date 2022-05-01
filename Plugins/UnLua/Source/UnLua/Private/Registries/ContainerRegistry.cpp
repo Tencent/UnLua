@@ -14,14 +14,16 @@
 
 #include "ContainerRegistry.h"
 #include "LuaCore.h"
+#include "LuaEnv.h"
 
-UnLua::FContainerRegistry::FContainerRegistry(lua_State* GL)
-    : GL(GL)
+UnLua::FContainerRegistry::FContainerRegistry(FLuaEnv* Env)
+    : Env(Env)
 {
     // <FScriptArray, FLuaArray>
-    lua_pushstring(GL, "ScriptContainerMap");
-    CreateWeakValueTable(GL);
-    lua_rawset(GL, LUA_REGISTRYINDEX);
+    const auto L = Env->GetMainState();
+    lua_pushstring(L, "ScriptContainerMap");
+    CreateWeakValueTable(L);
+    lua_rawset(L, LUA_REGISTRYINDEX);
 }
 
 void* UnLua::FContainerRegistry::New(lua_State* L, const FScriptContainerDesc& Desc)
@@ -33,17 +35,20 @@ void* UnLua::FContainerRegistry::New(lua_State* L, const FScriptContainerDesc& D
 
 void UnLua::FContainerRegistry::Remove(const FLuaArray* Container)
 {
-    RemoveCachedScriptContainer(GL, Container->GetContainerPtr());
+    const auto L = Env->GetMainState();
+    RemoveCachedScriptContainer(L, Container->GetContainerPtr());
 }
 
 void UnLua::FContainerRegistry::Remove(const FLuaSet* Container)
 {
-    RemoveCachedScriptContainer(GL, Container->GetContainerPtr());
+    const auto L = Env->GetMainState();
+    RemoveCachedScriptContainer(L, Container->GetContainerPtr());
 }
 
 void UnLua::FContainerRegistry::Remove(const FLuaMap* Container)
 {
-    RemoveCachedScriptContainer(GL, Container->GetContainerPtr());
+    const auto L = Env->GetMainState();
+    RemoveCachedScriptContainer(L, Container->GetContainerPtr());
 }
 
 FScriptArray* UnLua::FContainerRegistry::NewArray(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaArray::EScriptArrayFlag Flag)
