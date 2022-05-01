@@ -19,19 +19,21 @@
 
 namespace UnLua
 {
+    class FLuaEnv;
+
     class FEnumRegistry
     {
     public:
-        explicit FEnumRegistry(lua_State* GL);
+        explicit FEnumRegistry(FLuaEnv* Env);
 
         static FEnumDesc* Find(const char* InName);
 
         static FEnumDesc* StaticRegister(const char* MetatableName);
-        
+
         static bool StaticUnregister(UEnum* Enum);
 
         static void Cleanup();
-        
+
         FEnumDesc* Register(const char* MetatableName);
 
         FEnumDesc* Register(const UEnum* Enum);
@@ -39,6 +41,6 @@ namespace UnLua
     private:
         static TMap<UEnum*, FEnumDesc*> Enums;
         static TMap<FName, FEnumDesc*> Name2Enums;
-        lua_State* GL;
+        FLuaEnv* Env;
     };
 }

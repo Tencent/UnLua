@@ -108,7 +108,7 @@ namespace UnLua
 
         TSharedPtr<FContainerRegistry> GetContainerRegistry() const { return ContainerRegistry; }
 
-        FEnumRegistry* GetEnumRegistry() const { return EnumRegistry; }
+        TSharedPtr<FEnumRegistry> GetEnumRegistry() const { return EnumRegistry; }
 
         void AddLoader(const FLuaFileLoader Loader);
 
@@ -153,7 +153,7 @@ namespace UnLua
         TSharedPtr<FDelegateRegistry> DelegateRegistry;
         TSharedPtr<FFunctionRegistry> FunctionRegistry;
         TSharedPtr<FContainerRegistry> ContainerRegistry;
-        FEnumRegistry* EnumRegistry;
+        TSharedPtr<FEnumRegistry> EnumRegistry;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
