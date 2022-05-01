@@ -30,7 +30,7 @@ namespace UnLua
 
         static FEnumDesc* StaticRegister(const char* MetatableName);
 
-        static bool StaticUnregister(UEnum* Enum);
+        static bool StaticUnregister(const UObjectBase* Enum);
 
         static void Cleanup();
 

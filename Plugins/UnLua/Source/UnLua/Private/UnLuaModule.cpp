@@ -143,14 +143,10 @@ private:
         if (!bIsActive)
             return;
 
-        // TODO: refactor these to void ptr for performance
-        UStruct* Struct = Cast<UStruct>((UObject*)Object);
-        if (Struct)
-            UnLua::FClassRegistry::StaticUnregister(Struct);
+        if (UnLua::FClassRegistry::StaticUnregister(Object))
+            return;
 
-        UEnum* Enum = Cast<UEnum>((UEnum*)Object);
-        if (Enum)
-            UnLua::FEnumRegistry::StaticUnregister(Enum);
+        UnLua::FEnumRegistry::StaticUnregister(Object);
     }
 
     virtual void OnUObjectArrayShutdown() override

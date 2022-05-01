@@ -61,10 +61,10 @@ namespace UnLua
         return Ret;
     }
 
-    bool FEnumRegistry::StaticUnregister(UEnum* Enum)
+    bool FEnumRegistry::StaticUnregister(const UObjectBase* Enum)
     {
         FEnumDesc* EnumDesc;
-        if (!Enums.RemoveAndCopyValue(Enum, EnumDesc))
+        if (!Enums.RemoveAndCopyValue((UEnum*)Enum, EnumDesc))
             return false;
         EnumDesc->UnLoad();
         return true;

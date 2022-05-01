@@ -36,7 +36,7 @@ namespace UnLua
 
         static FClassDesc* RegisterReflectedType(UStruct* Type);
 
-        static bool StaticUnregister(UStruct* Type);
+        static bool StaticUnregister(const UObjectBase* Type);
 
         static UField* LoadReflectedType(const char* InName);
 

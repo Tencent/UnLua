@@ -103,10 +103,10 @@ namespace UnLua
         return Ret;
     }
 
-    bool FClassRegistry::StaticUnregister(UStruct* Type)
+    bool FClassRegistry::StaticUnregister(const UObjectBase* Type)
     {
         FClassDesc* ClassDesc;
-        if (!Classes.RemoveAndCopyValue(Type, ClassDesc))
+        if (!Classes.RemoveAndCopyValue((UStruct*)Type, ClassDesc))
             return false;
         ClassDesc->UnLoad();
         for (auto Pair : FLuaEnv::AllEnvs)
