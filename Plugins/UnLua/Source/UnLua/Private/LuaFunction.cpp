@@ -36,7 +36,7 @@ bool ULuaFunction::IsOverridable(const UFunction* Function)
     return Function->HasAnyFunctionFlags(FUNC_BlueprintEvent) || (Function->FunctionFlags & FlagMask) == FlagResult;
 }
 
-bool ULuaFunction::Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName)
+bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
 {
     ULuaFunction* LuaFunction;
     const auto bReplace = Function->GetOuter() == Outer;

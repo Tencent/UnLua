@@ -31,6 +31,15 @@ namespace UnLua
 
     FDelegateRegistry::~FDelegateRegistry()
     {
+        for (auto& Pair : Delegates)
+        {
+            for (auto& HandlerPair : Pair.Value.Handlers)
+            {
+                if (HandlerPair.Value.IsValid())
+                    Env->AutoObjectReference.Remove(HandlerPair.Value.Get());
+            }
+        }
+        Delegates.Empty();
         FCoreUObjectDelegates::GetPostGarbageCollect().Remove(PostGarbageCollectHandle);
     }
 
@@ -78,7 +87,7 @@ namespace UnLua
         }
     }
 
-    void FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate)
+    void FDelegateRegistry::Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* SelfObject)
     {
         check(lua_type(L, Index) == LUA_TFUNCTION);
         lua_pushvalue(L, Index);
@@ -86,7 +95,7 @@ namespace UnLua
         LuaFunctions.Add(lua_topointer(L, Index), Ref);
 
         auto Info = Delegates.FindChecked(Delegate);
-        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get());
+        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->BindTo(Delegate);
         Info.Handlers.Add(Ref, Handler);
@@ -111,7 +120,7 @@ namespace UnLua
         check(SignatureDesc);
 
         const auto L = Handler->Env->GetMainState();
-        SignatureDesc->CallLua(L, Handler->LuaRef, Params, Handler->Owner.Get());
+        SignatureDesc->CallLua(L, Handler->LuaRef, Params, Handler->SelfObject.Get());
     }
 
     int32 FDelegateRegistry::Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex)
@@ -127,7 +136,7 @@ namespace UnLua
 
 #pragma region FMulticastScriptDelegate
 
-    void FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate)
+    void FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate, UObject* SelfObject)
     {
         check(lua_type(L, Index) == LUA_TFUNCTION);
         lua_pushvalue(L, Index);
@@ -135,7 +144,7 @@ namespace UnLua
         LuaFunctions.Add(lua_topointer(L, Index), Ref);
 
         auto& Info = Delegates.FindChecked(Delegate);
-        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get());
+        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->AddTo(Info.MulticastProperty, Delegate);
         Info.Handlers.Add(Ref, Handler);

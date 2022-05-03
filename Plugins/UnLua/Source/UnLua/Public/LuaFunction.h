@@ -34,7 +34,7 @@ public:
     */
     static bool IsOverridable(const UFunction* Function);
 
-    static bool Override(UFunction* Function, UClass* Outer, UnLua::FLuaEnv* LuaEnv, FName NewName);
+    static bool Override(UFunction* Function, UClass* Outer, FName NewName);
 
     /*
      * Get all UFUNCTION that can be overrode

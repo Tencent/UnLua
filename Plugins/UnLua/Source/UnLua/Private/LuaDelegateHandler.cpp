@@ -30,7 +30,6 @@ void ULuaDelegateHandler::BindTo(FScriptDelegate* InDelegate)
 void ULuaDelegateHandler::AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate)
 {
     Delegate = InDelegate;
-
     FScriptDelegate DynamicDelegate;
     DynamicDelegate.BindUFunction(this, NAME_Dummy);
     TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(InProperty, MoveTemp(DynamicDelegate), nullptr, InDelegate);
@@ -48,11 +47,12 @@ void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
     Env->GetDelegateRegistry()->Execute(this, Parms);
 }
 
-ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner)
+ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject)
 {
-    const auto Ret = NewObject<ULuaDelegateHandler>();
+    const auto Ret = NewObject<ULuaDelegateHandler>(InSelfObject);
     Ret->Env = InEnv;
     Ret->LuaRef = InLuaRef;
     Ret->Owner = InOwner;
+    Ret->SelfObject = InSelfObject;
     return Ret;
 }

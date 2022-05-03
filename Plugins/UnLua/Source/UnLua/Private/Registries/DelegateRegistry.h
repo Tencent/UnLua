@@ -37,11 +37,11 @@ namespace UnLua
 
         int32 Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex);
 
-        void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate);
+        void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* SelfObject);
 
         void Unbind(FScriptDelegate* Delegate);
 
-        void Add(lua_State* L, int32 Index, void* Delegate);
+        void Add(lua_State* L, int32 Index, void* Delegate, UObject* SelfObject);
 
         void Remove(lua_State* L, void* Delegate, int Index);
 

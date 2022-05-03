@@ -40,9 +40,10 @@ public:
 
     void RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate);
 
-    static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner);
+    static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject);
 
     TWeakObjectPtr<UObject> Owner;
+    TWeakObjectPtr<UObject> SelfObject;
     UnLua::FLuaEnv* Env;
     int32 LuaRef;
     void* Delegate;

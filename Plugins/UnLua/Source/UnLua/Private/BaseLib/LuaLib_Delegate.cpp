@@ -48,7 +48,7 @@ static int32 FScriptDelegate_Bind(lua_State *L)
     }
 
     const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
-    Registry->Bind(L, 3, Delegate);
+    Registry->Bind(L, 3, Delegate, Object);
 
     return 0;
 }

@@ -74,7 +74,7 @@ struct TMulticastDelegateLib
         }
 
         const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
-        Registry->Add(L, 3, Delegate);
+        Registry->Add(L, 3, Delegate, Object);
         return 0;
     }
 

@@ -1357,7 +1357,7 @@ public:
         {
             FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
             lua_rawgeti(L, IndexInStack, FuncIdxInTable);
-            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
             lua_pop(L, 1);
         }
         return true;
@@ -1444,7 +1444,7 @@ public:
             const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
             Registry->Register(ScriptDelegate, MulticastDelegateProperty, Object);
             lua_rawgeti(L, IndexInStack, FuncIdxInTable);
-            Registry->Add(L, -1, ScriptDelegate);
+            Registry->Add(L, -1, ScriptDelegate, Object);
             lua_pop(L, 1);
         }
         return true;
