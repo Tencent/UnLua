@@ -42,7 +42,7 @@ public:
         FMemory::Free(ElementCache);
     }
 
-    FORCEINLINE void* GetContainerPtr() const { return ScriptArray; }
+    FORCEINLINE FScriptArray* GetContainerPtr() const { return ScriptArray; }
 
     /**
      * Check the validity of an index

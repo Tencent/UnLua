@@ -53,7 +53,7 @@ public:
         FMemory::Free(ElementCache);
     }
 
-    FORCEINLINE void* GetContainerPtr() const { return Set; }
+    FORCEINLINE FScriptSet* GetContainerPtr() const { return Set; }
 
     /**
      * Get the length of the set

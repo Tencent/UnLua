@@ -29,28 +29,26 @@ namespace UnLua
     public:
         explicit FContainerRegistry(FLuaEnv* Env);
 
-        /**
-         * Create a new userdata for a script container
-         */
-        static void* New(lua_State* L, const FScriptContainerDesc& Desc);
+        FLuaArray* NewArray(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaArray::EScriptArrayFlag Flag);
+
+        FLuaSet* NewSet(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaSet::FScriptSetFlag Flag);
+
+        FLuaMap* NewMap(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FLuaMap::FScriptMapFlag Flag);
+        
+        void FindOrAdd(lua_State* L, FScriptArray* ContainerPtr, TSharedPtr<ITypeInterface> ElementType);
+
+        void FindOrAdd(lua_State* L, FScriptSet* ContainerPtr, TSharedPtr<ITypeInterface> ElementType);
+
+        void FindOrAdd(lua_State* L, FScriptMap* ContainerPtr, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType);
 
         void Remove(const FLuaArray* Container);
 
         void Remove(const FLuaSet* Container);
 
         void Remove(const FLuaMap* Container);
-
-        FScriptArray* NewArray(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaArray::EScriptArrayFlag Flag);
-
-        FScriptSet* NewSet(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaSet::FScriptSetFlag Flag);
-
-        FScriptMap* NewMap(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FLuaMap::FScriptMapFlag Flag);
-
-        void FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FScriptArray* ContainerPtr);
-
-        void FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FScriptSet* ContainerPtr);
-
-        void FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FScriptMap* ContainerPtr);
+        
+    private:
+        static void* NewUserdata(lua_State* L, const FScriptContainerDesc& Desc);
 
         FLuaEnv* Env;
     };

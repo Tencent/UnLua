@@ -756,13 +756,14 @@ public:
         FScriptArray *ScriptArray;
         if (bCreateCopy)
         {
-            ScriptArray = Registry->NewArray(L, InnerProperty, FLuaArray::OwnedBySelf);
+            const auto LuaArray = Registry->NewArray(L, InnerProperty, FLuaArray::OwnedBySelf); 
+            ScriptArray = LuaArray->GetContainerPtr();
             ArrayProperty->CopyCompleteValue(ScriptArray, ValuePtr);
         }
         else
         {
             ScriptArray = (FScriptArray*)(&ArrayProperty->GetPropertyValue(ValuePtr));
-            Registry->FindOrAdd(L, InnerProperty, ScriptArray);
+            Registry->FindOrAdd(L, ScriptArray, InnerProperty);
         }
     }
 
@@ -897,13 +898,14 @@ public:
         FScriptMap *ScriptMap;
         if (bCreateCopy)
         {
-            ScriptMap = Registry->NewMap(L, KeyProperty, ValueProperty, FLuaMap::OwnedBySelf);
+            const auto LuaMap = Registry->NewMap(L, KeyProperty, ValueProperty, FLuaMap::OwnedBySelf);
+            ScriptMap = LuaMap->GetContainerPtr();
             MapProperty->CopyCompleteValue(ScriptMap, ValuePtr);
         }
         else
         {
-            ScriptMap = (FScriptMap*)(&MapProperty->GetPropertyValue(ValuePtr));
-            Registry->FindOrAdd(L, KeyProperty, ValueProperty, ScriptMap);
+            ScriptMap = (FScriptMap*)&MapProperty->GetPropertyValue(ValuePtr);
+            Registry->FindOrAdd(L, ScriptMap, KeyProperty, ValueProperty);
         }
     }
 
@@ -1039,13 +1041,14 @@ public:
         FScriptSet *ScriptSet;
         if (bCreateCopy)
         {
-            ScriptSet = Registry->NewSet(L, InnerProperty, FLuaSet::OwnedBySelf);
+            const auto LuaSet = Registry->NewSet(L, InnerProperty, FLuaSet::OwnedBySelf); 
+            ScriptSet = LuaSet->GetContainerPtr();
             SetProperty->CopyCompleteValue(ScriptSet, ValuePtr);
         }
         else
         {
             ScriptSet = (FScriptSet*)(&SetProperty->GetPropertyValue(ValuePtr));
-            Registry->FindOrAdd(L, InnerProperty, ScriptSet);
+            Registry->FindOrAdd(L, ScriptSet, InnerProperty);
         }
     }
 

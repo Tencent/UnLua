@@ -65,7 +65,7 @@ public:
         FMemory::Free(ElementCache);
     }
 
-    FORCEINLINE void* GetContainerPtr() const { return Map; }
+    FORCEINLINE FScriptMap* GetContainerPtr() const { return Map; }
 
     /**
      * Get the length of the map
