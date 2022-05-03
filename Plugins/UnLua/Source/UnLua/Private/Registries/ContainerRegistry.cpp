@@ -16,82 +16,85 @@
 #include "LuaCore.h"
 #include "LuaEnv.h"
 
-UnLua::FContainerRegistry::FContainerRegistry(FLuaEnv* Env)
-    : Env(Env)
+namespace UnLua
 {
-    // <FScriptArray, FLuaArray>
-    const auto L = Env->GetMainState();
-    lua_pushstring(L, "ScriptContainerMap");
-    CreateWeakValueTable(L);
-    lua_rawset(L, LUA_REGISTRYINDEX);
-}
+    FContainerRegistry::FContainerRegistry(FLuaEnv* Env)
+        : Env(Env)
+    {
+        // <FScriptArray, FLuaArray>
+        const auto L = Env->GetMainState();
+        lua_pushstring(L, "ScriptContainerMap");
+        CreateWeakValueTable(L);
+        lua_rawset(L, LUA_REGISTRYINDEX);
+    }
 
-void* UnLua::FContainerRegistry::New(lua_State* L, const FScriptContainerDesc& Desc)
-{
-    void* Userdata = NewUserdataWithContainerTag(L, Desc.GetSize());
-    luaL_setmetatable(L, Desc.GetName());
-    return Userdata;
-}
+    void* FContainerRegistry::New(lua_State* L, const FScriptContainerDesc& Desc)
+    {
+        void* Userdata = NewUserdataWithContainerTag(L, Desc.GetSize());
+        luaL_setmetatable(L, Desc.GetName());
+        return Userdata;
+    }
 
-void UnLua::FContainerRegistry::Remove(const FLuaArray* Container)
-{
-    const auto L = Env->GetMainState();
-    RemoveCachedScriptContainer(L, Container->GetContainerPtr());
-}
+    void FContainerRegistry::Remove(const FLuaArray* Container)
+    {
+        const auto L = Env->GetMainState();
+        RemoveCachedScriptContainer(L, Container->GetContainerPtr());
+    }
 
-void UnLua::FContainerRegistry::Remove(const FLuaSet* Container)
-{
-    const auto L = Env->GetMainState();
-    RemoveCachedScriptContainer(L, Container->GetContainerPtr());
-}
+    void FContainerRegistry::Remove(const FLuaSet* Container)
+    {
+        const auto L = Env->GetMainState();
+        RemoveCachedScriptContainer(L, Container->GetContainerPtr());
+    }
 
-void UnLua::FContainerRegistry::Remove(const FLuaMap* Container)
-{
-    const auto L = Env->GetMainState();
-    RemoveCachedScriptContainer(L, Container->GetContainerPtr());
-}
+    void FContainerRegistry::Remove(const FLuaMap* Container)
+    {
+        const auto L = Env->GetMainState();
+        RemoveCachedScriptContainer(L, Container->GetContainerPtr());
+    }
 
-FScriptArray* UnLua::FContainerRegistry::NewArray(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaArray::EScriptArrayFlag Flag)
-{
-    FScriptArray* ScriptArray = new FScriptArray;
-    void* Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);
-    new(Userdata) FLuaArray(ScriptArray, ElementType, Flag);
-    return ScriptArray;
-}
+    FScriptArray* FContainerRegistry::NewArray(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaArray::EScriptArrayFlag Flag)
+    {
+        FScriptArray* ScriptArray = new FScriptArray;
+        void* Userdata = New(L, FScriptContainerDesc::Array);
+        new(Userdata) FLuaArray(ScriptArray, ElementType, Flag);
+        return ScriptArray;
+    }
 
-FScriptSet* UnLua::FContainerRegistry::NewSet(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaSet::FScriptSetFlag Flag)
-{
-    FScriptSet* ScriptSet = new FScriptSet;
-    void* Userdata = NewScriptContainer(L, FScriptContainerDesc::Set);
-    new(Userdata) FLuaSet(ScriptSet, ElementType, Flag);
-    return ScriptSet;
-}
+    FScriptSet* FContainerRegistry::NewSet(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FLuaSet::FScriptSetFlag Flag)
+    {
+        FScriptSet* ScriptSet = new FScriptSet;
+        void* Userdata = New(L, FScriptContainerDesc::Set);
+        new(Userdata) FLuaSet(ScriptSet, ElementType, Flag);
+        return ScriptSet;
+    }
 
-FScriptMap* UnLua::FContainerRegistry::NewMap(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FLuaMap::FScriptMapFlag Flag)
-{
-    FScriptMap* ScriptMap = new FScriptMap;
-    void* Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-    new(Userdata) FLuaMap(ScriptMap, KeyType, ValueType, Flag);
-    return ScriptMap;
-}
+    FScriptMap* FContainerRegistry::NewMap(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FLuaMap::FScriptMapFlag Flag)
+    {
+        FScriptMap* ScriptMap = new FScriptMap;
+        void* Userdata = New(L, FScriptContainerDesc::Map);
+        new(Userdata) FLuaMap(ScriptMap, KeyType, ValueType, Flag);
+        return ScriptMap;
+    }
 
-void UnLua::FContainerRegistry::FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FScriptArray* ContainerPtr)
-{
-    void* Userdata = CacheScriptContainer(L, ContainerPtr, FScriptContainerDesc::Array);
-    if (Userdata)
-        new(Userdata) FLuaArray(ContainerPtr, ElementType, FLuaArray::OwnedByOther);
-}
+    void FContainerRegistry::FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FScriptArray* ContainerPtr)
+    {
+        void* Userdata = CacheScriptContainer(L, ContainerPtr, FScriptContainerDesc::Array);
+        if (Userdata)
+            new(Userdata) FLuaArray(ContainerPtr, ElementType, FLuaArray::OwnedByOther);
+    }
 
-void UnLua::FContainerRegistry::FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FScriptSet* ContainerPtr)
-{
-    void* Userdata = CacheScriptContainer(L, ContainerPtr, FScriptContainerDesc::Set);
-    if (Userdata)
-        new(Userdata) FLuaSet(ContainerPtr, ElementType, FLuaSet::OwnedByOther);
-}
+    void FContainerRegistry::FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> ElementType, FScriptSet* ContainerPtr)
+    {
+        void* Userdata = CacheScriptContainer(L, ContainerPtr, FScriptContainerDesc::Set);
+        if (Userdata)
+            new(Userdata) FLuaSet(ContainerPtr, ElementType, FLuaSet::OwnedByOther);
+    }
 
-void UnLua::FContainerRegistry::FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FScriptMap* ContainerPtr)
-{
-    void* Userdata = CacheScriptContainer(L, ContainerPtr, FScriptContainerDesc::Map);
-    if (Userdata)
-        new(Userdata) FLuaMap(ContainerPtr, KeyType, ValueType, FLuaMap::OwnedByOther);
+    void FContainerRegistry::FindOrAdd(lua_State* L, TSharedPtr<ITypeInterface> KeyType, TSharedPtr<ITypeInterface> ValueType, FScriptMap* ContainerPtr)
+    {
+        void* Userdata = CacheScriptContainer(L, ContainerPtr, FScriptContainerDesc::Map);
+        if (Userdata)
+            new(Userdata) FLuaMap(ContainerPtr, KeyType, ValueType, FLuaMap::OwnedByOther);
+    }
 }
