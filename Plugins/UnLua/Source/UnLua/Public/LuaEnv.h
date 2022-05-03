@@ -93,19 +93,19 @@ namespace UnLua
 
         void ResumeThread(int32 ThreadRef);
 
-        UUnLuaManager* GetManager() const { return Manager; }
+        FORCEINLINE UUnLuaManager* GetManager() const { return Manager; }
 
-        TSharedPtr<FClassRegistry> GetClassRegistry() const { return ClassRegistry; }
+        FORCEINLINE TSharedPtr<FClassRegistry> GetClassRegistry() const { return ClassRegistry; }
 
-        TSharedPtr<FObjectRegistry> GetObjectRegistry() const { return ObjectRegistry; }
+        FORCEINLINE TSharedPtr<FObjectRegistry> GetObjectRegistry() const { return ObjectRegistry; }
 
-        TSharedPtr<FDelegateRegistry> GetDelegateRegistry() const { return DelegateRegistry; }
+        FORCEINLINE TSharedPtr<FDelegateRegistry> GetDelegateRegistry() const { return DelegateRegistry; }
 
-        TSharedPtr<FFunctionRegistry> GetFunctionRegistry() const { return FunctionRegistry; }
+        FORCEINLINE TSharedPtr<FFunctionRegistry> GetFunctionRegistry() const { return FunctionRegistry; }
 
-        TSharedPtr<FContainerRegistry> GetContainerRegistry() const { return ContainerRegistry; }
+        FORCEINLINE TSharedPtr<FContainerRegistry> GetContainerRegistry() const { return ContainerRegistry; }
 
-        TSharedPtr<FEnumRegistry> GetEnumRegistry() const { return EnumRegistry; }
+        FORCEINLINE TSharedPtr<FEnumRegistry> GetEnumRegistry() const { return EnumRegistry; }
 
         void AddLoader(const FLuaFileLoader Loader);
 
