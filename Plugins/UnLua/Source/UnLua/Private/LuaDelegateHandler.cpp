@@ -12,7 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-
 #include "LuaDelegateHandler.h"
 #include "LuaEnv.h"
 
@@ -22,12 +21,7 @@ void ULuaDelegateHandler::Dummy()
 {
 }
 
-bool ULuaDelegateHandler::IsAlive() const
-{
-    return Lifecycle.IsValid();
-}
-
-void ULuaDelegateHandler::BindTo(FDelegateProperty* InProperty, FScriptDelegate* InDelegate)
+void ULuaDelegateHandler::BindTo(FScriptDelegate* InDelegate)
 {
     Delegate = InDelegate;
     InDelegate->BindUFunction(this, NAME_Dummy);
@@ -54,11 +48,11 @@ void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
     Env->GetDelegateRegistry()->Execute(this, Parms);
 }
 
-ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifecycle)
+ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner)
 {
-    const auto Ret = NewObject<ULuaDelegateHandler>(InLifecycle);
+    const auto Ret = NewObject<ULuaDelegateHandler>();
     Ret->Env = InEnv;
     Ret->LuaRef = InLuaRef;
-    Ret->Lifecycle = InLifecycle;
+    Ret->Owner = InOwner;
     return Ret;
 }

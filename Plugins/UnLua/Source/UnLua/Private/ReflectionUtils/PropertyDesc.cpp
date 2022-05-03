@@ -1303,14 +1303,35 @@ class FDelegatePropertyDesc : public FStructPropertyDesc
 public:
     explicit FDelegatePropertyDesc(FProperty *InProperty) : FStructPropertyDesc(InProperty) {}
 
-    virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
+    virtual void GetValue(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
     {
+        if (!IsValid())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            lua_pushnil(L);
+            return;
+        }
+
         const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         FScriptDelegate* ScriptDelegate = (FScriptDelegate*)DelegateProperty->GetPropertyValuePtr(ValuePtr);
-		GetValueInternal(L, ScriptDelegate, bCreateCopy);
-
+        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, (UObject*)ContainerPtr);
+        GetValueInternal(L, ScriptDelegate, bCreateCopy);
     }
 
+    virtual bool SetValue(lua_State* L, void* ContainerPtr, int32 IndexInStack, bool bCopyValue) const override
+    {
+        if (!IsValid())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
+            return false;
+        }
+
+        void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
+        FScriptDelegate* ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, (UObject*)ContainerPtr);
+        return SetValueInternal(L, ValuePtr, IndexInStack, true);
+    }
+    
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
         if (Property->ArrayDim > 1)
@@ -1320,7 +1341,6 @@ public:
         else
         {
             FScriptDelegate *ScriptDelegate = DelegateProperty->GetPropertyValuePtr((void*)ValuePtr);
-            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty);
             UnLua::PushPointer(L, ScriptDelegate, "FScriptDelegate", bFirstPropOfScriptStruct);
         }
     }
@@ -1332,11 +1352,9 @@ public:
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
         if (FuncIdxInTable != INDEX_NONE)
         {
-            const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
             FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
-            Registry->Register(Delegate, DelegateProperty);
             lua_rawgeti(L, IndexInStack, FuncIdxInTable);
-            Registry->Bind(L, -1, Delegate, Object);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate);
             lua_pop(L, 1);
         }
         return true;
@@ -1369,14 +1387,35 @@ class TMulticastDelegatePropertyDesc : public FStructPropertyDesc
 public:
     explicit TMulticastDelegatePropertyDesc(FProperty *InProperty) : FStructPropertyDesc(InProperty) {}
 
-    virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
+    virtual void GetValue(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
     {
-        const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
-        T* ScriptDelegate = (T*)ValuePtr;
-		GetValueInternal(L, ScriptDelegate, bCreateCopy);
+        if (!IsValid())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            lua_pushnil(L);
+            return;
+        }
 
+        const void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
+        FScriptDelegate* ScriptDelegate = (FScriptDelegate*)DelegateProperty->GetPropertyValuePtr(ValuePtr);
+        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, (UObject*)ContainerPtr);
+        GetValueInternal(L, ScriptDelegate, bCreateCopy);
     }
 
+    virtual bool SetValue(lua_State* L, void* ContainerPtr, int32 IndexInStack, bool bCopyValue) const override
+    {
+        if (!IsValid())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
+            return false;
+        }
+
+        void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
+        FScriptDelegate* ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, (UObject*)ContainerPtr);
+        return SetValueInternal(L, ValuePtr, IndexInStack, true);
+    }
+    
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
     {
         if (Property->ArrayDim > 1)
@@ -1386,7 +1425,6 @@ public:
         else
         {
             T *ScriptDelegate = (T*)ValuePtr;
-            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, MulticastDelegateProperty);
             UnLua::PushPointer(L, ScriptDelegate, TMulticastDelegateTraits<T>::GetName(), bFirstPropOfScriptStruct);
         }
     }
@@ -1401,9 +1439,9 @@ public:
         {
             T *ScriptDelegate = (T*)ValuePtr;
             const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
-            Registry->Register(ScriptDelegate, MulticastDelegateProperty);
+            Registry->Register(ScriptDelegate, MulticastDelegateProperty, Object);
             lua_rawgeti(L, IndexInStack, FuncIdxInTable);
-            Registry->Add(L, -1, ScriptDelegate, Object);
+            Registry->Add(L, -1, ScriptDelegate);
             lua_pop(L, 1);
         }
         return true;

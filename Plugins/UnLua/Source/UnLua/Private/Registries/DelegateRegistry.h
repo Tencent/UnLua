@@ -27,17 +27,21 @@ namespace UnLua
     public:
         explicit FDelegateRegistry(FLuaEnv* Env);
 
-        void Register(void* Delegate, FProperty* Property);
+        ~FDelegateRegistry();
+
+        void OnPostGarbageCollect();
+
+        void Register(void* Delegate, FProperty* Property, UObject* Owner);
 
         void Execute(const ULuaDelegateHandler* Handler, void* Params);
 
         int32 Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex);
 
-        void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* Lifecycle);
+        void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate);
 
         void Unbind(FScriptDelegate* Delegate);
 
-        void Add(lua_State* L, int32 Index, void* Delegate, UObject* Lifecycle);
+        void Add(lua_State* L, int32 Index, void* Delegate);
 
         void Remove(lua_State* L, void* Delegate, int Index);
 
@@ -59,11 +63,13 @@ namespace UnLua
 
             UFunction* SignatureFunction;
             TSharedPtr<FFunctionDesc> Desc;
+            TWeakObjectPtr<UObject> Owner;
             TMap<int32, TWeakObjectPtr<ULuaDelegateHandler>> Handlers;
         };
 
         TMap<void*, FDelegateInfo> Delegates;
-        TMap<const void*, int32> LuaFunctions; // TODO: refactor this with object registry
+        TMap<const void*, int32> LuaFunctions;
         FLuaEnv* Env;
+        FDelegateHandle PostGarbageCollectHandle;
     };
 }

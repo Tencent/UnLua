@@ -32,9 +32,7 @@ public:
     UFUNCTION()
     void Dummy();
 
-    bool IsAlive() const;
-
-    void BindTo(FDelegateProperty* InProperty, FScriptDelegate* InDelegate);
+    void BindTo(FScriptDelegate* InDelegate);
 
     void AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate);
 
@@ -42,9 +40,9 @@ public:
 
     void RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate);
 
-    static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InLifecycle);
+    static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner);
 
-    TWeakObjectPtr<UObject> Lifecycle;
+    TWeakObjectPtr<UObject> Owner;
     UnLua::FLuaEnv* Env;
     int32 LuaRef;
     void* Delegate;

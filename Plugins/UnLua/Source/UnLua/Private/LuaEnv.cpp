@@ -190,7 +190,7 @@ namespace UnLua
     void FLuaEnv::OnUObjectArrayShutdown()
     {
         GUObjectArray.RemoveUObjectDeleteListener(this);
-        ObjectArrayListenerRegistered = false;
+        bObjectArrayListenerRegistered = false;
     }
 
     bool FLuaEnv::TryReplaceInputs(UObject* Object)
@@ -562,16 +562,16 @@ namespace UnLua
     {
         OnAsyncLoadingFlushUpdateHandle = FCoreDelegates::OnAsyncLoadingFlushUpdate.AddRaw(this, &FLuaEnv::OnAsyncLoadingFlushUpdate);
         GUObjectArray.AddUObjectDeleteListener(this);
-        ObjectArrayListenerRegistered = true;
+        bObjectArrayListenerRegistered = true;
     }
 
     FORCEINLINE void FLuaEnv::UnRegisterDelegates()
     {
         FCoreDelegates::OnAsyncLoadingFlushUpdate.Remove(OnAsyncLoadingFlushUpdateHandle);
-        if (!ObjectArrayListenerRegistered)
+        if (!bObjectArrayListenerRegistered)
             return;
         GUObjectArray.RemoveUObjectDeleteListener(this);
-        ObjectArrayListenerRegistered = false;
+        bObjectArrayListenerRegistered = false;
     }
 
     void* FLuaEnv::DefaultLuaAllocator(void* ud, void* ptr, size_t osize, size_t nsize)

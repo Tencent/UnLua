@@ -668,7 +668,7 @@ static void PushStructElement(lua_State *L, FProperty *Property, void *Value)
 static void PushDelegateElement(lua_State *L, FDelegateProperty *Property, void *Value)
 {
     FScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
-    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property);
+    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property, (UObject*)Value);
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), ScriptDelegate);
 }
 
@@ -683,7 +683,7 @@ static void PushMCDelegateElement(lua_State *L, FMulticastDelegateProperty *Prop
     void *ScriptDelegate = Value;
 #endif
 
-    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property);
+    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property, (UObject*)Value);
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), ScriptDelegate);
 }
 

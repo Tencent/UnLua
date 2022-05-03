@@ -157,6 +157,6 @@ namespace UnLua
         TArray<UInputComponent*> CandidateInputComponents;
         FDelegateHandle OnWorldTickStartHandle;
         FString Name = TEXT("Env_0");
-        bool ObjectArrayListenerRegistered;
+        bool bObjectArrayListenerRegistered;
     };
 }
