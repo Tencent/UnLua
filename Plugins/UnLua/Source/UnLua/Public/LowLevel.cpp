@@ -14,30 +14,62 @@
 
 #include "LowLevel.h"
 
-FString UnLua::LowLevel::GetMetatableName(const UObject* Object)
+namespace UnLua
 {
-    if (!Object)
-        return "";
-
-    if (UNLIKELY(Object->IsA<UEnum>()))
+    namespace LowLevel
     {
-        return Object->IsNative() ? Object->GetName() : Object->GetPathName();
+        /**
+         * Create weak key table
+         */
+        void LowLevel::CreateWeakKeyTable(lua_State* L)
+        {
+            lua_newtable(L);
+            lua_newtable(L);
+            lua_pushstring(L, "__mode");
+            lua_pushstring(L, "k");
+            lua_rawset(L, -3);
+            lua_setmetatable(L, -2);
+        }
+
+        /**
+         * Create weak value table
+         */
+        void LowLevel::CreateWeakValueTable(lua_State* L)
+        {
+            lua_newtable(L);
+            lua_newtable(L);
+            lua_pushstring(L, "__mode");
+            lua_pushstring(L, "v");
+            lua_rawset(L, -3);
+            lua_setmetatable(L, -2);
+        }
+
+        FString LowLevel::GetMetatableName(const UObject* Object)
+        {
+            if (!Object)
+                return "";
+
+            if (UNLIKELY(Object->IsA<UEnum>()))
+            {
+                return Object->IsNative() ? Object->GetName() : Object->GetPathName();
+            }
+
+            const UStruct* Struct = Cast<UStruct>(Object);
+            if (Struct)
+                return GetMetatableName(Struct);
+
+            Struct = Object->GetClass();
+            return GetMetatableName(Struct);
+        }
+
+        FString LowLevel::GetMetatableName(const UStruct* Struct)
+        {
+            if (!Struct)
+                return "";
+
+            if (Struct->IsNative())
+                return FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
+            return Struct->GetPathName();
+        }
     }
-
-    const UStruct* Struct = Cast<UStruct>(Object);
-    if (Struct)
-        return GetMetatableName(Struct);
-
-    Struct = Object->GetClass();
-    return GetMetatableName(Struct);
-}
-
-FString UnLua::LowLevel::GetMetatableName(const UStruct* Struct)
-{
-    if (!Struct)
-        return "";
-
-    if (Struct->IsNative())
-        return FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
-    return Struct->GetPathName();
 }

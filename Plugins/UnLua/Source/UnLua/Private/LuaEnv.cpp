@@ -14,6 +14,7 @@
 
 #include "LuaEnv.h"
 #include "Binding.h"
+#include "LowLevel.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "lstate.h"
@@ -66,11 +67,11 @@ namespace UnLua
         ManualObjectReference.SetName("UnLua_ManualReference");
 
         lua_pushstring(L, "StructMap"); // create weak table 'StructMap'
-        CreateWeakValueTable(L);
+        LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
         lua_pushstring(L, "ArrayMap"); // create weak table 'ArrayMap'
-        CreateWeakValueTable(L);
+        LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
         // register global Lua functions

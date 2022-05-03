@@ -14,10 +14,22 @@
 
 #pragma once
 
+#include "lua.h"
+
 namespace UnLua
 {
     namespace LowLevel
     {
+        /**
+         * Create weak key table
+         */
+        void CreateWeakKeyTable(lua_State* L);
+
+        /**
+         * Create weak value table
+         */
+        void CreateWeakValueTable(lua_State* L);
+
         FString GetMetatableName(const UObject* Object);
 
         FString GetMetatableName(const UStruct* Struct);

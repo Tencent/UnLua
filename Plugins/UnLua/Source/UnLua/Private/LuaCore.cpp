@@ -1238,32 +1238,6 @@ bool RegisterETraceTypeQuery(lua_State *L)
 }
 
 /**
- * Create weak key table
- */
-void CreateWeakKeyTable(lua_State *L)
-{
-    lua_newtable(L);
-    lua_newtable(L);
-    lua_pushstring(L, "__mode");
-    lua_pushstring(L, "k");
-    lua_rawset(L, -3);
-    lua_setmetatable(L, -2);
-}
-
-/**
- * Create weak value table
- */
-void CreateWeakValueTable(lua_State *L)
-{
-    lua_newtable(L);
-    lua_newtable(L);
-    lua_pushstring(L, "__mode");
-    lua_pushstring(L, "v");
-    lua_rawset(L, -3);
-    lua_setmetatable(L, -2);
-}
-
-/**
  * Debug only...
  */
 bool PeekTableElement(lua_State *L, void*)

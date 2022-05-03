@@ -14,6 +14,7 @@
 
 #include "ObjectRegistry.h"
 #include "lauxlib.h"
+#include "LowLevel.h"
 #include "LuaEnv.h"
 #include "UnLuaDelegates.h"
 
@@ -32,7 +33,7 @@ namespace UnLua
         const auto L = Env->GetMainState();
 
         lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
-        CreateWeakValueTable(L);
+        LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
         luaL_newmetatable(L, "TSharedPtr");

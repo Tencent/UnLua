@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "ContainerRegistry.h"
+#include "LowLevel.h"
 #include "LuaCore.h"
 #include "LuaEnv.h"
 
@@ -21,10 +22,12 @@ namespace UnLua
     FContainerRegistry::FContainerRegistry(FLuaEnv* Env)
         : Env(Env)
     {
-        // <FScriptArray, FLuaArray>
+        // <FScriptArray, FLuaArray/FLuaMap/FLuaSet>
         const auto L = Env->GetMainState();
         lua_pushstring(L, "ScriptContainerMap");
-        CreateWeakValueTable(L);
+        LowLevel::CreateWeakValueTable(L);
+        lua_pushvalue(L, -1);
+        MapRef = luaL_ref(L, -1);
         lua_rawset(L, LUA_REGISTRYINDEX);
     }
 

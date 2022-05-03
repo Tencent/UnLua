@@ -50,6 +50,7 @@ namespace UnLua
     private:
         static void* NewUserdata(lua_State* L, const FScriptContainerDesc& Desc);
 
+        int MapRef;
         FLuaEnv* Env;
     };
 }
