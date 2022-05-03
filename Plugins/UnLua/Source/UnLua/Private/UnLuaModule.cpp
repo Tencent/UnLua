@@ -230,8 +230,8 @@ private:
         Manager->OnMapLoaded(World);
     }
 
-    bool bIsActive;
-    ULuaEnvLocator* EnvLocator;
+    bool bIsActive = false;
+    ULuaEnvLocator* EnvLocator = nullptr;
     FDelegateHandle OnHandleSystemErrorHandle;
     FDelegateHandle OnHandleSystemEnsureHandle;
 };

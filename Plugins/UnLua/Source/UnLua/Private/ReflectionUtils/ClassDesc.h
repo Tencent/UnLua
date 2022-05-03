@@ -66,15 +66,9 @@ public:
 
     FORCEINLINE uint8 GetUserdataPadding() const { return UserdataPadding; }
 
-    FORCEINLINE int32 GetRefCount() const { return RefCount; }
-
     FORCEINLINE TSharedPtr<FPropertyDesc> GetProperty(int32 Index) { return Index > INDEX_NONE && Index < Properties.Num() ? Properties[Index] : nullptr; }
 
     FORCEINLINE TSharedPtr<FFunctionDesc> GetFunction(int32 Index) { return Index > INDEX_NONE && Index < Functions.Num() ? Functions[Index] : nullptr; }
-
-    void AddRef();
-
-    void SubRef();
 
     TSharedPtr<FFieldDesc> FindField(const char* FieldName);
 
@@ -99,7 +93,6 @@ private:
 
     int32 UserdataPadding : 8;            // only used for UScriptStruct
     int32 Size : 24;
-    int32 RefCount;
 
     TArray<FClassDesc*> Interfaces;
     TMap<FName, TSharedPtr<FFieldDesc>> Fields;

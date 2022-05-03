@@ -573,17 +573,10 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), Object);  // create a userdata and store the UObject address
     bool bSuccess = TryToSetMetatable(L, TCHAR_TO_UTF8(*MetatableName), (UObject*)Object);
-	if (bSuccess)
+	if (!bSuccess)
 	{
-        if(!Object->IsNative() && Object->IsA(UStruct::StaticClass()))
-        {
-            UnLua::FClassRegistry::RegisterReflectedType((UStruct*)Object)->AddRef();
-        }	    
-	}
-    else
-	{
-		UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable,Name %s, Object %s,%p!"), ANSI_TO_TCHAR(__FUNCTION__), *MetatableName, *Object->GetName(), Object);
-	}
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable,Name %s, Object %s,%p!"), ANSI_TO_TCHAR(__FUNCTION__), *MetatableName, *Object->GetName(), Object);
+    }
 }
 
 

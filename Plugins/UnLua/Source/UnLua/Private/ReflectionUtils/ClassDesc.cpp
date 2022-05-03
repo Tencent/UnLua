@@ -25,7 +25,7 @@
  * Class descriptor constructor
  */
 FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
-    : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), RefCount(0), FunctionCollection(nullptr)
+    : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), FunctionCollection(nullptr)
 {
     RawStructPtr = InStruct;
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
@@ -63,16 +63,6 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
         SuperClasses.Add(ClassDesc);
         SuperStruct = SuperStruct->GetInheritanceSuper();
     }
-}
-
-void FClassDesc::AddRef()
-{
-    RefCount++;
-}
-
-void FClassDesc::SubRef()
-{
-    RefCount--;
 }
 
 TSharedPtr<FFieldDesc> FClassDesc::FindField(const char* FieldName)
