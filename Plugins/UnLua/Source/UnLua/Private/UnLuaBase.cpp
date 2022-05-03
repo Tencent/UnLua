@@ -348,11 +348,14 @@ namespace UnLua
             return 0;
         }
 
+        const auto Registry = FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
         if (bCreateCopy)
         {
             int32 Num = ScriptArray->Num();
             int32 ElementSize = TypeInterface->GetSize();
-            FScriptArray *DestScriptArray = new FScriptArray;       // create a new FScriptArray
+
+            const auto LuaArray = Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
+            FScriptArray *DestScriptArray = LuaArray->GetContainerPtr();       // create a new FScriptArray
             DestScriptArray->Empty(Num, ElementSize);
             DestScriptArray->Add(Num, ElementSize);
             if (Num)
@@ -367,18 +370,11 @@ namespace UnLua
                     DestData += ElementSize;
                 }
             }
-
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);                // create a new userdata for the new created FScriptArray
-            new(Userdata) FLuaArray(DestScriptArray, TypeInterface, FLuaArray::OwnedBySelf);    // placement new
         }
         else
         {
             // get the cached array or create a new one if not found
-            void *Userdata = CacheScriptContainer(L, (FScriptArray*)ScriptArray, FScriptContainerDesc::Array);
-            if (Userdata)
-            {
-                FLuaArray *LuaArray = new(Userdata) FLuaArray(ScriptArray, TypeInterface, FLuaArray::OwnedByOther);     // placement new
-            }
+            Registry->FindOrAdd(L, (FScriptArray*)ScriptArray, TypeInterface);
         }
         return 1;
     }
@@ -393,12 +389,12 @@ namespace UnLua
             return 0;
         }
 
+        const auto Registry = FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
         if (bCreateCopy)
         {
             int32 Num = ScriptSet->Num();
             FLuaSet SrcSet(ScriptSet, TypeInterface, FLuaSet::OwnedByOther);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Set);
-            FLuaSet *DestSet = new(Userdata) FLuaSet(new FScriptSet, TypeInterface, FLuaSet::OwnedBySelf);
+            FLuaSet* DestSet = Registry->NewSet(L, TypeInterface, FLuaSet::OwnedBySelf);
             DestSet->Clear(Num);
             for (int32 SrcIndex = 0; Num; ++SrcIndex)
             {
@@ -415,11 +411,7 @@ namespace UnLua
         }
         else
         {
-            void *Userdata = CacheScriptContainer(L, (FScriptSet*)ScriptSet, FScriptContainerDesc::Set);
-            if (Userdata)
-            {
-                FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, TypeInterface, FLuaSet::OwnedByOther);
-            }
+            Registry->FindOrAdd(L, (FScriptSet*)ScriptSet, TypeInterface);
         }
         return 1;
     }
@@ -434,12 +426,12 @@ namespace UnLua
             return 0;
         }
 
+        const auto Registry = FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
         if (bCreateCopy)
         {
             int32 Num = ScriptMap->Num();
             FLuaMap SrcMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedByOther);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-            FLuaMap *DestMap = new(Userdata) FLuaMap(new FScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+            FLuaMap *DestMap = Registry->NewMap(L, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
             DestMap->Clear(Num);
             for (int32 SrcIndex = 0; Num; ++SrcIndex)
             {
@@ -457,11 +449,7 @@ namespace UnLua
         }
         else
         {
-            void *Userdata = CacheScriptContainer(L, (FScriptMap*)ScriptMap, FScriptContainerDesc::Map);
-            if (Userdata)
-            {
-                FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedByOther);
-            }
+            Registry->FindOrAdd(L, (FScriptMap*)ScriptMap, KeyInterface, ValueInterface);
         }
         return 1;
     }
