@@ -256,6 +256,27 @@ int32 UObject_Identical(lua_State *L)
  */
 int32 UObject_Delete(lua_State *L)
 {   
+    int32 NumParams = lua_gettop(L);
+    if (NumParams != 1)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    bool bTwoLvlPtr = false;
+    bool bClassMetatable = false;
+    void *Userdata = GetUserdata(L, 1, &bTwoLvlPtr, &bClassMetatable);
+    if (!Userdata)
+        return 0;
+
+    if (bClassMetatable)
+        return 0;
+
+    if (!bTwoLvlPtr)
+        return 0;
+
+    UObject* Object = (UObject*)*(void**)Userdata;
+    UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->NotifyUObjectLuaGC(Object);
     return 0;
 }
 

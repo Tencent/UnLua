@@ -151,18 +151,15 @@ void UUnLuaManager::OnWorldCleanup(UWorld* World, bool bArg, bool bCond)
 /**
  * Remove binded UObjects
  */
-void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
+void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object)
 {
-    if (bClass)
-    {
-        UClass* Class = (UClass*)Object;
+    UClass* Class = (UClass*)Object;
 
-        FString ModuleName;
-        if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
-        {
-            Classes.Remove(ModuleName);
-            ClearLoadedModule(Env->GetMainState(), TCHAR_TO_UTF8(*ModuleName));
-        }
+    FString ModuleName;
+    if (ModuleNames.RemoveAndCopyValue(Class, ModuleName))
+    {
+        Classes.Remove(ModuleName);
+        ClearLoadedModule(Env->GetMainState(), TCHAR_TO_UTF8(*ModuleName));
     }
 }
 

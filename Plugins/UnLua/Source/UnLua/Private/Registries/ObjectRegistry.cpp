@@ -20,6 +20,8 @@
 
 namespace UnLua
 {
+    static const char* ObjectMap = "ObjectMap";
+
     static int ReleaseSharedPtr(lua_State* L)
     {
         const auto Ptr = (TSharedPtr<void>*)lua_touserdata(L, 1);
@@ -32,7 +34,7 @@ namespace UnLua
     {
         const auto L = Env->GetMainState();
 
-        lua_pushstring(L, "ObjectMap"); // create weak table 'ObjectMap'
+        lua_pushstring(L, ObjectMap); // create weak table 'ObjectMap'
         LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
@@ -48,6 +50,36 @@ namespace UnLua
         Unbind(Object);
     }
 
+    void FObjectRegistry::NotifyUObjectLuaGC(const UObject* Object)
+    {
+        Env->AutoObjectReference.Remove(Object);
+    }
+
+    void FObjectRegistry::Push(lua_State* L, UObject* Object)
+    {
+        if (!Object)
+        {
+            lua_pushnil(L);
+            return;
+        }
+
+        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_pushlightuserdata(L, Object);
+        const auto Type = lua_rawget(L, -2);
+        if (Type == LUA_TNIL)
+        {
+            lua_pop(L, 1);
+            PushObjectCore(L, Object);
+            lua_pushlightuserdata(L, Object);
+            lua_pushvalue(L, -2);
+            lua_rawset(L, -4);
+
+            if (!Object->IsNative())
+                Env->AutoObjectReference.Add(Object);
+        }
+        lua_remove(L, -2);
+    }
+
     int FObjectRegistry::Bind(UObject* Object, const char* ModuleName)
     {
         // TODO: remove dependency of module name
@@ -58,7 +90,7 @@ namespace UnLua
 
         int OldTop = lua_gettop(L);
 
-        lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
+        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
         lua_pushlightuserdata(L, Object);
         lua_newtable(L); // create a Lua table ('INSTANCE')
         PushObjectCore(L, Object); // push UObject ('RAW_UOBJECT')

@@ -268,26 +268,7 @@ namespace UnLua
      */
     int32 PushUObject(lua_State *L, UObjectBaseUtility *Object, bool bAddRef)
     {
-        if (!IsUObjectValid(Object))
-        {
-            lua_pushnil(L);
-            return 1;
-        }
-
-        lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-        lua_pushlightuserdata(L, Object);
-        int32 Type = lua_rawget(L, -2);     // find the object from 'ObjectMap' first
-        if (Type == LUA_TNIL)
-        {
-            // 1. create a new userdata for the object if it's not found; 2. cache it in 'ObjectMap'
-            lua_pop(L, 1);
-            PushObjectCore(L, Object);
-            lua_pushlightuserdata(L, Object);
-            lua_pushvalue(L, -2);
-            lua_rawset(L, -4);
-        }
-        lua_remove(L, -2);
-
+        FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->Push(L, (UObject*)Object);
         return 1;
     }
 

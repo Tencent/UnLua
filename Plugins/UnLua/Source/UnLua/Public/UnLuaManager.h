@@ -39,7 +39,7 @@ public:
 
     void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
     
-    void NotifyUObjectDeleted(const UObjectBase *Object, bool bClass = false);
+    void NotifyUObjectDeleted(const UObjectBase *Object);
 
     void Cleanup();
 

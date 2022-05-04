@@ -177,7 +177,8 @@ namespace UnLua
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
-        Manager->NotifyUObjectDeleted(Object, Object->IsA<UStruct>());
+        FunctionRegistry->NotifyUObjectDeleted(Object);
+        Manager->NotifyUObjectDeleted(Object);
         ObjectRegistry->NotifyUObjectDeleted(Object);
 
         if (CandidateInputComponents.Num() <= 0)

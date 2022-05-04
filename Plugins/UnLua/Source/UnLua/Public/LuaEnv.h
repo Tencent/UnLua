@@ -34,6 +34,7 @@ namespace UnLua
     {
         friend FClassRegistry;
         friend FDelegateRegistry;
+        friend FObjectRegistry;
 
     public:
         DECLARE_DELEGATE_RetVal_ThreeParams(bool, FLuaFileLoader, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);

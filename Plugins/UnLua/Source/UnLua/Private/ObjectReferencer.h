@@ -24,11 +24,15 @@ namespace UnLua
     public:
         void Add(UObject* Object)
         {
+            if (Object == nullptr)
+                return;
             ReferencedObjects.Add(Object);
         }
 
         void Remove(const UObject* Object)
         {
+            if (Object == nullptr)
+                return;
             ReferencedObjects.Remove(Object);
         }
 
