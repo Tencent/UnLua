@@ -49,7 +49,7 @@ void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 
 ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject)
 {
-    const auto Ret = NewObject<ULuaDelegateHandler>(InSelfObject);
+    const auto Ret = NewObject<ULuaDelegateHandler>(GWorld);
     Ret->Env = InEnv;
     Ret->LuaRef = InLuaRef;
     Ret->Owner = InOwner;
