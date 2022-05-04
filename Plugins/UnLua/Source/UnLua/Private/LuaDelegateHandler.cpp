@@ -17,6 +17,13 @@
 
 static const FName NAME_Dummy = TEXT("Dummy");
 
+ULuaDelegateHandler::ULuaDelegateHandler()
+{
+    LuaRef = LUA_NOREF;
+    Env.Reset();
+    Delegate = nullptr;
+}
+
 void ULuaDelegateHandler::Dummy()
 {
 }
@@ -42,15 +49,27 @@ void ULuaDelegateHandler::RemoveFrom(FMulticastDelegateProperty* InProperty, voi
     TMulticastDelegateTraits<FMulticastDelegateType>::RemoveDelegate(InProperty, MoveTemp(DynamicDelegate), nullptr, InDelegate);
 }
 
+void ULuaDelegateHandler::BeginDestroy()
+{
+    if (Env.IsValid())
+    {
+        const auto PinnedEnv = Env.Pin();
+        PinnedEnv->GetObjectRegistry()->NotifyUObjectLuaGC(this);
+    }
+    UObject::BeginDestroy();
+}
+
 void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 {
-    Env->GetDelegateRegistry()->Execute(this, Parms);
+    if (!Env.IsValid())
+        return;
+    Env.Pin()->GetDelegateRegistry()->Execute(this, Parms);
 }
 
 ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject)
 {
     const auto Ret = NewObject<ULuaDelegateHandler>(GWorld);
-    Ret->Env = InEnv;
+    Ret->Env = InEnv->AsShared();
     Ret->LuaRef = InLuaRef;
     Ret->Owner = InOwner;
     Ret->SelfObject = InSelfObject;

@@ -29,6 +29,8 @@ class UNLUA_API ULuaDelegateHandler : public UObject
     GENERATED_BODY()
 
 public:
+    ULuaDelegateHandler();
+
     UFUNCTION()
     void Dummy();
 
@@ -40,11 +42,13 @@ public:
 
     void RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate);
 
+    virtual void BeginDestroy() override;
+
     static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject);
 
     TWeakObjectPtr<UObject> Owner;
     TWeakObjectPtr<UObject> SelfObject;
-    UnLua::FLuaEnv* Env;
+    TWeakPtr<UnLua::FLuaEnv> Env;
     int32 LuaRef;
     void* Delegate;
 };

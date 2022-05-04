@@ -30,7 +30,8 @@
 namespace UnLua
 {
     class UNLUA_API FLuaEnv
-        : public FUObjectArray::FUObjectDeleteListener
+        : public FUObjectArray::FUObjectDeleteListener,
+          public TSharedFromThis<FLuaEnv>
     {
         friend FClassRegistry;
         friend FDelegateRegistry;

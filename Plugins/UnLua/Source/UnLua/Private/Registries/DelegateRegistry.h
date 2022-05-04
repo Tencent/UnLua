@@ -47,7 +47,9 @@ namespace UnLua
 
         void Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex);
 
-        void Clear(lua_State* L, void* Delegate);
+        void Clear(void* Delegate);
+
+        void NotifyHandlerBeginDestroy(const ULuaDelegateHandler* Handler);
 
     private:
         TSharedPtr<FFunctionDesc> GetSignatureDesc(const void* Delegate);
@@ -64,11 +66,11 @@ namespace UnLua
             UFunction* SignatureFunction;
             TSharedPtr<FFunctionDesc> Desc;
             TWeakObjectPtr<UObject> Owner;
-            TMap<int32, TWeakObjectPtr<ULuaDelegateHandler>> Handlers;
+            TMap<const void*, TWeakObjectPtr<ULuaDelegateHandler>> LuaFunction2Handler;
+            bool bIsMulticast;
         };
 
         TMap<void*, FDelegateInfo> Delegates;
-        TMap<const void*, int32> LuaFunctions;
         FLuaEnv* Env;
         FDelegateHandle PostGarbageCollectHandle;
     };
