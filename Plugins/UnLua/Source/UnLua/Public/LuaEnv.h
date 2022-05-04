@@ -84,7 +84,7 @@ namespace UnLua
 
         virtual void HotReload();
 
-        lua_State* GetMainState() const { return L; }
+        FORCEINLINE lua_State* GetMainState() const { return L; }
 
         void AddThread(lua_State* Thread, int32 ThreadRef);
 

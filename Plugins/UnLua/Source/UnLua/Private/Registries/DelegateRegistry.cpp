@@ -94,7 +94,9 @@ namespace UnLua
         const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
         LuaFunctions.Add(lua_topointer(L, Index), Ref);
 
-        auto Info = Delegates.FindChecked(Delegate);
+        auto& Info = Delegates.FindChecked(Delegate);
+        if (!Info.Owner.IsValid())
+            Info.Owner = SelfObject;
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->BindTo(Delegate);
@@ -144,6 +146,8 @@ namespace UnLua
         LuaFunctions.Add(lua_topointer(L, Index), Ref);
 
         auto& Info = Delegates.FindChecked(Delegate);
+        if (!Info.Owner.IsValid())
+            Info.Owner = SelfObject;
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->AddTo(Info.MulticastProperty, Delegate);
