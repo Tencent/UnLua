@@ -1037,7 +1037,8 @@ static int32 GetField(lua_State* L)
             if (bInherited)
             {
                 FString SuperStructName = Field->GetOuterName();
-                check(Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName)));
+                const auto Pushed = Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName));
+                check(Pushed);
                 lua_pushvalue(L, 2);
                 Type = lua_rawget(L, -2);
                 bCached = Type != LUA_TNIL;

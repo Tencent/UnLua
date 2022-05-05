@@ -187,8 +187,10 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
 {
     lua_pushcfunction(L, UnLua::ReportLuaCallError);
     check(Function.IsValid());
-    check(lua_rawgeti(L, LUA_REGISTRYINDEX, FunctionRef) == LUA_TFUNCTION);
-    check(lua_rawgeti(L, LUA_REGISTRYINDEX, SelfRef) == LUA_TTABLE);
+    lua_rawgeti(L, LUA_REGISTRYINDEX, FunctionRef);
+    check(lua_isfunction(L, -1));
+    lua_rawgeti(L, LUA_REGISTRYINDEX, SelfRef);
+    check(lua_istable(L, -1));
     
     const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
     bool bSuccess;
