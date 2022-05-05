@@ -57,7 +57,7 @@ namespace UnLua
             if (Pair.Value.bIsMulticast)
                 Clear(Pair.Key);
             else
-                Unbind((FScriptDelegate*)Pair.Key);
+                Unbind(Pair.Key);
             Delegates.Remove(Pair.Key);
         }
     }
@@ -122,7 +122,7 @@ namespace UnLua
         Info.LuaFunction2Handler.Add(LuaFunction, Handler);
     }
 
-    void FDelegateRegistry::Unbind(FScriptDelegate* Delegate)
+    void FDelegateRegistry::Unbind(void* Delegate)
     {
         const auto Info = Delegates.Find(Delegate);
         if (!Info)
@@ -134,7 +134,8 @@ namespace UnLua
             if (!Handler.IsValid())
                 continue;
             Env->AutoObjectReference.Remove(Handler.Get());
-            Delegate->Unbind();
+            if (Info->Owner.IsValid())
+                ((FScriptDelegate*)Delegate)->Unbind();
         }
         Info->LuaFunction2Handler.Empty();
     }
@@ -215,7 +216,8 @@ namespace UnLua
             const auto Handler = Pair.Value;
             if (!Handler.IsValid())
                 continue;
-            Handler->RemoveFrom(Info->MulticastProperty, Delegate);
+            if (Info->Owner.IsValid())
+                Handler->RemoveFrom(Info->MulticastProperty, Delegate);
             Env->AutoObjectReference.Remove(Handler.Get());
         }
         Info->LuaFunction2Handler.Empty();

@@ -39,7 +39,7 @@ namespace UnLua
 
         void Bind(lua_State* L, int32 Index, FScriptDelegate* Delegate, UObject* SelfObject);
 
-        void Unbind(FScriptDelegate* Delegate);
+        void Unbind(void* Delegate);
 
         void Add(lua_State* L, int32 Index, void* Delegate, UObject* SelfObject);
 
