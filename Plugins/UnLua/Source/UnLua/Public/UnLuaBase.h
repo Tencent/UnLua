@@ -231,7 +231,7 @@ namespace UnLua
      * @param Index - Lua stack index
      * @return - the number of results on Lua stack
      */
-    UNLUA_API UObject* GetUObject(lua_State *L, int32 Index);
+    UNLUA_API UObject* GetUObject(lua_State *L, int32 Index, bool bReturnNullIfInvalid = true);
 
     /**
      * Allocate user data for smart pointer

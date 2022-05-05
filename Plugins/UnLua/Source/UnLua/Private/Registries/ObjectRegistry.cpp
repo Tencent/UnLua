@@ -76,6 +76,8 @@ namespace UnLua
 
             if (!Object->IsNative())
                 Env->AutoObjectReference.Add(Object);
+
+            ObjectRefs.Add(Object, LUA_NOREF);
         }
         lua_remove(L, -2);
     }
@@ -84,7 +86,10 @@ namespace UnLua
     {
         // TODO: remove dependency of module name
         if (const auto Exists = ObjectRefs.Find(Object))
-            return *Exists;
+        {
+            if (*Exists != LUA_NOREF)
+                return *Exists;
+        }
 
         const auto L = Env->GetMainState();
 
@@ -131,7 +136,8 @@ namespace UnLua
 
     bool FObjectRegistry::IsBound(const UObject* Object) const
     {
-        return ObjectRefs.Contains(Object);
+        const auto Exists = ObjectRefs.Find(Object);
+        return Exists && *Exists != LUA_NOREF;
     }
 
     int FObjectRegistry::GetBoundRef(const UObject* Object) const
@@ -148,15 +154,32 @@ namespace UnLua
         if (!ObjectRefs.RemoveAndCopyValue(Object, Ref))
             return;
 
+        RemoveFromObjectMapAndPushToStack(Object);
         const auto L = Env->GetMainState();
-        lua_rawgeti(L, LUA_REGISTRYINDEX, Ref); // get the object instance from 'ObjectMap'
+        if (Ref == LUA_NOREF)
+        {
+            if (lua_isnil(L, -1))
+            {
+                lua_pop(L, 1);
+                return;
+            }
+            check(lua_isuserdata(L, -1));
+            bool bTwoLvlPtr;
+            void* Userdata = GetUserdataFast(L, -1, &bTwoLvlPtr);
+            check(bTwoLvlPtr)
+            *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
+            lua_pop(L, 1);
+            return;
+        }
 
+        check(lua_istable(L, -1));
+        luaL_unref(L, LUA_REGISTRYINDEX, Ref);
         FUnLuaDelegates::OnObjectUnbinded.Broadcast(Object); // object instance ('INSTANCE') is on the top of stack now
 
         lua_pushstring(L, "Object");
         lua_rawget(L, -2);
         void* Userdata = lua_touserdata(L, -1);
-        *((void**)Userdata) = nullptr; // TODO: mark as BIT_DELETED_UOBJECT
+        *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
         lua_pop(L, 1);
 
         // INSTANCE.Object = nil
@@ -164,7 +187,17 @@ namespace UnLua
         lua_pushnil(L);
         lua_rawset(L, -3);
         lua_pop(L, 1);
+    }
 
-        luaL_unref(L, LUA_REGISTRYINDEX, Ref);
+    void FObjectRegistry::RemoveFromObjectMapAndPushToStack(UObject* Object)
+    {
+        const auto L = Env->GetMainState();
+        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_pushlightuserdata(L, Object);
+        lua_rawget(L, -2);
+        lua_pushlightuserdata(L, Object);
+        lua_pushnil(L);
+        lua_rawset(L, -4);
+        lua_remove(L, -2);
     }
 }

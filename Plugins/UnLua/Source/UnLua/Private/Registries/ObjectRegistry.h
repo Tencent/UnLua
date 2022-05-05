@@ -62,6 +62,8 @@ namespace UnLua
         void Unbind(UObject* Object);
 
     private:
+        void RemoveFromObjectMapAndPushToStack(UObject* Object);
+
         FLuaEnv* Env;
         TMap<UObject*, int32> ObjectRefs;
     };

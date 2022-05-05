@@ -376,16 +376,22 @@ namespace UnLua
         lua_State* Thread = *ThreadPtr;
 #if 504 == LUA_VERSION_NUM
         int NResults = 0;
-        int32 State = lua_resume(Thread, L, 0, &NResults);
+        int32 Status = lua_resume(Thread, L, 0, &NResults);
 #else
-        int32 State = lua_resume(Thread, L, 0);
+        int32 Status = lua_resume(Thread, L, 0);
 #endif
-        if (State == LUA_OK)
+        if (Status == LUA_YIELD)
+            return;
+
+        if (Status != LUA_OK)
         {
-            ThreadToRef.Remove(Thread);
-            RefToThread.Remove(ThreadRef);
-            luaL_unref(L, LUA_REGISTRYINDEX, ThreadRef); // remove the reference if the coroutine finishes its execution
+            const auto ErrMsg = lua_tostring(Thread, -1);
+            UE_LOG(LogUnLua, Error, TEXT("%s"), UTF8_TO_TCHAR(ErrMsg));
         }
+
+        ThreadToRef.Remove(Thread);
+        RefToThread.Remove(ThreadRef);
+        luaL_unref(L, LUA_REGISTRYINDEX, ThreadRef); // remove the reference if the coroutine finishes its execution
     }
 
     void FLuaEnv::AddThread(lua_State* Thread, int32 ThreadRef)

@@ -20,6 +20,10 @@ namespace UnLua
 {
     namespace LowLevel
     {
+        const static UObject* ReleasedPtr = (UObject*)0xDEAD;
+
+        bool IsReleasedPtr(const void* Ptr);
+
         /**
          * Create weak key table
          */

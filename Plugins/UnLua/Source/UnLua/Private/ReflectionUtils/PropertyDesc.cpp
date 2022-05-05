@@ -14,6 +14,7 @@
 
 #include "PropertyDesc.h"
 #include "ClassDesc.h"
+#include "LowLevel.h"
 #include "LuaCore.h"
 #include "LuaEnv.h"
 #include "Containers/LuaSet.h"
@@ -1310,7 +1311,14 @@ public:
     {
         if (!IsValid())
         {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property '%s'"), *Name);
+            lua_pushnil(L);
+            return;
+        }
+
+        if (UnLua::LowLevel::IsReleasedPtr(ContainerPtr))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Name);
             lua_pushnil(L);
             return;
         }
@@ -1325,7 +1333,13 @@ public:
     {
         if (!IsValid())
         {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property '%s'"), *Name);
+            return false;
+        }
+
+        if (UnLua::LowLevel::IsReleasedPtr(ContainerPtr))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Name);
             return false;
         }
 
@@ -1394,7 +1408,14 @@ public:
     {
         if (!IsValid())
         {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property '%s'"), *Name);
+            lua_pushnil(L);
+            return;
+        }
+
+        if (UnLua::LowLevel::IsReleasedPtr(ContainerPtr))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Name);
             lua_pushnil(L);
             return;
         }
@@ -1408,7 +1429,13 @@ public:
     {
         if (!IsValid())
         {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property '%s'"), *Name);
+            return false;
+        }
+
+        if (UnLua::LowLevel::IsReleasedPtr(ContainerPtr))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Name);
             return false;
         }
 

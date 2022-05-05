@@ -16,8 +16,10 @@
 #include "PropertyDesc.h"
 #include "LuaCore.h"
 #include "DefaultParamCollection.h"
+#include "LowLevel.h"
 #include "LuaFunction.h"
 #include "UnLua.h"
+#include "UnLuaDebugBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -258,14 +260,20 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     else
     {
         check(NumParams > 0);
-        Object = UnLua::GetUObject(L, 1);
+        Object = UnLua::GetUObject(L, 1, false);
         ++FirstParamIndex;
         --NumParams;
     }
 
-    if (!UnLua::IsUObjectValid(Object))
+    if (Object == UnLua::LowLevel::ReleasedPtr)
     {
-        UE_LOG(LogUnLua, Warning, TEXT("!!! NULL target object for UFunction '%s'! Check the usage of ':' and '.'!"), *FuncName);
+        luaL_error(L, "attempt to call UFunction '%s' on released object.", TCHAR_TO_UTF8(*FuncName));
+        return 0;
+    }
+
+    if (Object == nullptr)
+    {
+        luaL_error(L, "attempt to call UFunction '%s' on NULL object. (check the usage of ':' and '.')", TCHAR_TO_UTF8(*FuncName));
         return 0;
     }
 

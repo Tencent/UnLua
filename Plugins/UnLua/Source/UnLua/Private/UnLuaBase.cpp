@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "LuaCore.h"
 #include "UnLuaDelegates.h"
 #include "ObjectReferencer.h"
@@ -27,7 +28,7 @@ namespace UnLua
 {
     bool IsUObjectValid(UObjectBase* ObjPtr)
     {
-        if (!ObjPtr)
+        if (!ObjPtr || ObjPtr == LowLevel::ReleasedPtr)
             return false;
         return (ObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0 && ObjPtr->IsValidLowLevelFast();
     }
@@ -275,10 +276,10 @@ namespace UnLua
     /**
      * Get a UObject at the given stack index
      */
-    UObject* GetUObject(lua_State *L, int32 Index)
+    UObject* GetUObject(lua_State *L, int32 Index, bool bReturnNullIfInvalid)
     {
         UObject* Object = (UObject*)GetCppInstance(L, Index);
-        if (!UnLua::IsUObjectValid(Object))
+        if (bReturnNullIfInvalid && !IsUObjectValid(Object))
         {
             return nullptr;
         }

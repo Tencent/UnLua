@@ -72,6 +72,7 @@ namespace UnLua
 
     void FDelegateRegistry::Register(void* Delegate, FProperty* Property, UObject* Owner)
     {
+        check(!Owner || Owner->IsValidLowLevelFast());
         const auto Info = Delegates.Find(Delegate);
         if (Info)
         {
