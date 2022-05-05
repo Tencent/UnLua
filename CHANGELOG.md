@@ -4,7 +4,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.1.4] - 2021-4-8
+## [2.2.0] - 2022-5-7
+
+### Added
+- 官方交流QQ群：936285107
+- 编辑器主界面工具栏的菜单项入口
+- 配置支持，通过引擎菜单 `项目设置 -> 插件 -> UnLua` 修改运行时和编辑器环境的配置
+- 编辑器界面多语言支持，现在可以看到中文菜单了
+- 多虚拟机环境支持
+- `FSoftObjectPtr` 的静态导出缺少的接口 [#392](https://github.com/Tencent/UnLua/issues/392) [#397](https://github.com/Tencent/UnLua/issues/397)
+- Standalone模式支持 [#396](https://github.com/Tencent/UnLua/issues/396)
+- `GetModuleName` 的路径为空时无法生成模版文件的提示 [#341](https://github.com/Tencent/UnLua/issues/341)
+- 增加Enum的 `GetDisplayNameTextByValue` / `GetNameStringByValue` 接口，以支持多语言环境
+- 关于窗口和新版本检测
+- 演示工程调整为可以以 `Server` / `Client` 方式启动
+- 演示工程增加 `TPSGameInstance` 以演示GameInstance的Lua绑定
+
+### Changed
+- 原来需要在 `UnLua.Build.cs` 里手动修改的宏定义都可以通过项目设置来配置了
+- 默认启用热重载
+- `UnLuaEditor` 模块负责生成智能提示信息导出
+- `UnLuaTestSuite` 模块提取为独立的插件，省去拷贝插件到自己的工程时还需要手动删除
+- 调整Lua源码为 `.cpp` ，以使用C++环境来编译Lua模块
+- 调整 `UFunction` 的覆写机制，不再使用`EX_CallLua`字节码
+- 禁止从 `UE` 命名空间直接访问蓝图类型，需要使用 `UE.UClass.Load` 来加载
+- `UnLua::CreateState` 已经不符合语义，标记为 `DEPRECATED`
+
+### Fixed
+- 绑定状态图标没有刷新的问题
+- C++的类析构会在luaL_error后被跳过 [#386](https://github.com/Tencent/UnLua/issues/386)
+- 开启多窗口，一个有UI展示，一个没有UI展示 [#387](https://github.com/Tencent/UnLua/issues/387)
+- 源码版引擎 Test 版本 UStruct::SerializeExpr Crash [#374](https://github.com/Tencent/UnLua/issues/374)
+- 某个UObject如果不再被Lua引用，它在Lua添加的委托函数就会失效[#394](https://github.com/Tencent/UnLua/issues/394)
+
+### Removed
+- 移除诸如 `GLuaCxt` / `GReflectionRegistry` / `GObjectReferencer` 的全局变量
+- 移除宏定义 `SUPPORT_COMMANDLET` 和 `ENABLE_AUTO_CLEAN_NNATCLASS`
+- 移除 `UnLuaFrameWork` 模块
+- 移除 `IntelliSenseBP` 模块
+- 移除 `IntelliSense` 模块
+
+### PS
+
+我们把内部使用的工具提取成了独立的组件，欢迎点击[链接](https://marketplace.visualstudio.com/items?itemName=operali.lua-booster)体验，也可以通过VSCode应用商店中直接搜索`Lua Booster`安装。
+
+## [2.1.4] - 2022-4-8
 
 ### Fixed
 
@@ -14,11 +58,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 编辑器下PIE结束时可能Crash的问题 [#388](https://github.com/Tencent/UnLua/issues/388)
 - UE4.25之前的版本在cook时提示IntProperty initialized not properly
 
-### PS
-
-我们把内部使用的工具提取成了独立的组件，欢迎点击[链接](https://marketplace.visualstudio.com/items?itemName=operali.lua-booster)体验，也可以通过VSCode应用商店中直接搜索`Lua Booster`安装。
-
-## [2.1.3] - 2021-3-9
+## [2.1.3] - 2022-3-9
 
 ### Added
 
@@ -41,7 +81,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 子类被销毁时，可能会令父类的Lua绑定失效 [#375](https://github.com/Tencent/UnLua/issues/375)
 - 4.27在不启用Async Loading Thread Enabled的情况下打包后加载地图会导致Crash的问题 [#365](https://github.com/Tencent/UnLua/issues/365)
 
-## [2.1.2] - 2021-1-17
+## [2.1.2] - 2022-1-17
 
 ### Added
 

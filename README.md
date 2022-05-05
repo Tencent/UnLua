@@ -54,9 +54,8 @@
 
 # 模块说明
 * UnLua 主要运行时模块
-* UnLuaEditor 编辑器模块，提供Lua模版生成和commandlet控制台命令
+* UnLuaEditor 编辑器模块，提供Lua模版生成/智能提示导出/控制台命令等功能
 * UnLuaDefaultParamCollector 编码模块，收集UFUNCTION的默认参数
-* UnLuaIntelliSense 编码模块，生成用于智能提示的符号信息到内部使用的IDE（即将开放），默认不启用
 * UnLuaTestSuite 自动化测试模块，覆盖了UnLua提供的API的规范测试以及一些Issue对应的回归测试
 
 # 文档
@@ -68,3 +67,7 @@
 
 # 许可证
 * UnLua根据[MIT](LICENSE.TXT)分发。
+
+# 技术支持
+- 官方交流QQ群：936285107
+- 推荐VSCode插件：[Lua Booster](https://marketplace.visualstudio.com/items?itemName=operali.lua-booster)
