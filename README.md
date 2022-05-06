@@ -59,6 +59,7 @@
 * UnLuaTestSuite 自动化测试模块，覆盖了UnLua提供的API的规范测试以及一些Issue对应的回归测试
 
 # 文档
+* [控制台命令](Docs/ConsoleCommand.md)：介绍 UnLua 自带的控制台命令
 * [功能清单](Docs/Features.md)：更详细的功能列表
 * [实现原理](Docs/How_To_Implement_Overriding.md)：介绍 UnLua 的两种覆盖机制
 * [编程指南](Docs/UnLua_Programming_Guide.md)：介绍 UnLua 的主要功能和编程模式

@@ -18,6 +18,11 @@
 #include "Modules/ModuleManager.h"
 #endif
 
+#if ALLOW_CONSOLE
+#include "Engine/Console.h"
+#include "UnLuaConsoleCommands.h"
+#endif
+
 #include "UnLuaModule.h"
 #include "DefaultParamCollection.h"
 #include "LuaEnvLocator.h"
@@ -42,6 +47,10 @@ namespace UnLua
             FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
 #endif
             RegisterSettings();
+
+#if ALLOW_CONSOLE
+            ConsoleCommands = MakeUnique<FUnLuaConsoleCommands>(this);
+#endif
 
             FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FUnLuaModule::PostLoadMapWithWorld);
 
@@ -235,6 +244,9 @@ namespace UnLua
         ULuaEnvLocator* EnvLocator = nullptr;
         FDelegateHandle OnHandleSystemErrorHandle;
         FDelegateHandle OnHandleSystemEnsureHandle;
+#if ALLOW_CONSOLE
+        TUniquePtr<UnLua::FUnLuaConsoleCommands> ConsoleCommands;
+#endif
     };
 }
 
