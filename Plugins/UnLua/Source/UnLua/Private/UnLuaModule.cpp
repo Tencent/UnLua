@@ -29,213 +29,215 @@
 
 #define LOCTEXT_NAMESPACE "FUnLuaModule"
 
-
-class FUnLuaModule : public IUnLuaModule,
-                     public FUObjectArray::FUObjectCreateListener,
-                     public FUObjectArray::FUObjectDeleteListener
+namespace UnLua
 {
-public:
-    virtual void StartupModule() override
+    class FUnLuaModule : public IUnLuaModule,
+                         public FUObjectArray::FUObjectCreateListener,
+                         public FUObjectArray::FUObjectDeleteListener
     {
-#if WITH_EDITOR
-        FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
-#endif
-        RegisterSettings();
-
-        FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FUnLuaModule::PostLoadMapWithWorld);
-
-        CreateDefaultParamCollection();
-
-#if WITH_EDITOR
-        if (!IsRunningGame())
+    public:
+        virtual void StartupModule() override
         {
-            FEditorDelegates::PreBeginPIE.AddRaw(this, &FUnLuaModule::OnPreBeginPIE);
-            FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaModule::OnPostPIEStarted);
-            FEditorDelegates::EndPIE.AddRaw(this, &FUnLuaModule::OnEndPIE);
-        }
+#if WITH_EDITOR
+            FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
+#endif
+            RegisterSettings();
+
+            FCoreUObjectDelegates::PostLoadMapWithWorld.AddRaw(this, &FUnLuaModule::PostLoadMapWithWorld);
+
+            CreateDefaultParamCollection();
+
+#if WITH_EDITOR
+            if (!IsRunningGame())
+            {
+                FEditorDelegates::PreBeginPIE.AddRaw(this, &FUnLuaModule::OnPreBeginPIE);
+                FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaModule::OnPostPIEStarted);
+                FEditorDelegates::EndPIE.AddRaw(this, &FUnLuaModule::OnEndPIE);
+            }
 #endif
 
 #if AUTO_UNLUA_STARTUP
 #if WITH_EDITOR
-        if (IsRunningGame())
+            if (IsRunningGame())
 #endif
-            SetActive(true);
+                SetActive(true);
 #endif
-    }
-
-    virtual void ShutdownModule() override
-    {
-        UnregisterSettings();
-        SetActive(false);
-    }
-
-    virtual bool IsActive() override
-    {
-        return bIsActive;
-    }
-
-    virtual void SetActive(const bool bActive) override
-    {
-        if (bIsActive == bActive)
-            return;
-
-        if (bActive)
-        {
-            OnHandleSystemErrorHandle = FCoreDelegates::OnHandleSystemError.AddRaw(this, &FUnLuaModule::OnSystemError);
-            OnHandleSystemEnsureHandle = FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FUnLuaModule::OnSystemError);
-            GUObjectArray.AddUObjectCreateListener(this);
-            GUObjectArray.AddUObjectDeleteListener(this);
-
-            const auto& Settings = *GetMutableDefault<UUnLuaSettings>();
-            const auto EnvLocatorClass = Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : Settings.EnvLocatorClass;
-            EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
-            EnvLocator->AddToRoot();
         }
-        else
+
+        virtual void ShutdownModule() override
         {
-            FCoreDelegates::OnHandleSystemError.Remove(OnHandleSystemErrorHandle);
-            FCoreDelegates::OnHandleSystemEnsure.Remove(OnHandleSystemEnsureHandle);
+            UnregisterSettings();
+            SetActive(false);
+        }
+
+        virtual bool IsActive() override
+        {
+            return bIsActive;
+        }
+
+        virtual void SetActive(const bool bActive) override
+        {
+            if (bIsActive == bActive)
+                return;
+
+            if (bActive)
+            {
+                OnHandleSystemErrorHandle = FCoreDelegates::OnHandleSystemError.AddRaw(this, &FUnLuaModule::OnSystemError);
+                OnHandleSystemEnsureHandle = FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FUnLuaModule::OnSystemError);
+                GUObjectArray.AddUObjectCreateListener(this);
+                GUObjectArray.AddUObjectDeleteListener(this);
+
+                const auto& Settings = *GetMutableDefault<UUnLuaSettings>();
+                const auto EnvLocatorClass = Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : Settings.EnvLocatorClass;
+                EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
+                EnvLocator->AddToRoot();
+            }
+            else
+            {
+                FCoreDelegates::OnHandleSystemError.Remove(OnHandleSystemErrorHandle);
+                FCoreDelegates::OnHandleSystemEnsure.Remove(OnHandleSystemEnsureHandle);
+                GUObjectArray.RemoveUObjectCreateListener(this);
+                GUObjectArray.RemoveUObjectDeleteListener(this);
+                EnvLocator->Reset();
+                EnvLocator->RemoveFromRoot();
+                EnvLocator = nullptr;
+                FClassRegistry::Cleanup();
+                FEnumRegistry::Cleanup();
+                GPropertyCreator.Cleanup();
+            }
+
+            bIsActive = bActive;
+        }
+
+        virtual TSharedPtr<FLuaEnv> GetEnv(UObject* Object) override
+        {
+            if (!bIsActive)
+                return nullptr;
+            return EnvLocator->Locate(Object);
+        }
+
+        virtual void HotReload() override
+        {
+            if (!bIsActive)
+                return;
+            EnvLocator->HotReload();
+        }
+
+    private:
+        virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
+        {
+            // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectCreated : %p"), ObjectBase);
+            if (!bIsActive)
+                return;
+
+            UObject* Object = (UObject*)ObjectBase;
+
+            const auto Env = EnvLocator->Locate(Object);
+            // UE_LOG(LogTemp, Log, TEXT("Locate %s for %s"), *Env->GetName(), *ObjectBase->GetFName().ToString());
+            Env->TryBind(Object);
+            Env->TryReplaceInputs(Object);
+        }
+
+        virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
+        {
+            // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectDeleted : %p"), Object);
+            if (!bIsActive)
+                return;
+
+            if (FClassRegistry::StaticUnregister(Object))
+                return;
+
+            FEnumRegistry::StaticUnregister(Object);
+        }
+
+        virtual void OnUObjectArrayShutdown() override
+        {
+            if (!bIsActive)
+                return;
+
             GUObjectArray.RemoveUObjectCreateListener(this);
             GUObjectArray.RemoveUObjectDeleteListener(this);
-            EnvLocator->Reset();
-            EnvLocator->RemoveFromRoot();
-            EnvLocator = nullptr;
-            UnLua::FClassRegistry::Cleanup();
-            UnLua::FEnumRegistry::Cleanup();
-            GPropertyCreator.Cleanup();
+
+            bIsActive = false;
         }
 
-        bIsActive = bActive;
-    }
-
-    virtual TSharedPtr<UnLua::FLuaEnv> GetEnv(UObject* Object) override
-    {
-        if (!bIsActive)
-            return nullptr;
-        return EnvLocator->Locate(Object);
-    }
-
-    virtual void HotReload() override
-    {
-        if (!bIsActive)
-            return;
-        EnvLocator->HotReload();
-    }
-
-private:
-    virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
-    {
-        // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectCreated : %p"), ObjectBase);
-        if (!bIsActive)
-            return;
-
-        UObject* Object = (UObject*)ObjectBase;
-
-        const auto Env = EnvLocator->Locate(Object);
-        // UE_LOG(LogTemp, Log, TEXT("Locate %s for %s"), *Env->GetName(), *ObjectBase->GetFName().ToString());
-        Env->TryBind(Object);
-        Env->TryReplaceInputs(Object);
-    }
-
-    virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
-    {
-        // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectDeleted : %p"), Object);
-        if (!bIsActive)
-            return;
-
-        if (UnLua::FClassRegistry::StaticUnregister(Object))
-            return;
-
-        UnLua::FEnumRegistry::StaticUnregister(Object);
-    }
-
-    virtual void OnUObjectArrayShutdown() override
-    {
-        if (!bIsActive)
-            return;
-
-        GUObjectArray.RemoveUObjectCreateListener(this);
-        GUObjectArray.RemoveUObjectDeleteListener(this);
-
-        bIsActive = false;
-    }
-
-    void OnSystemError() const
-    {
-    }
+        void OnSystemError() const
+        {
+        }
 
 #if WITH_EDITOR
 
-    void OnPreBeginPIE(bool bIsSimulating)
-    {
-        SetActive(true);
-    }
+        void OnPreBeginPIE(bool bIsSimulating)
+        {
+            SetActive(true);
+        }
 
-    void OnPostPIEStarted(bool bIsSimulating)
-    {
-        UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
-        if (EditorEngine)
-            PostLoadMapWithWorld(EditorEngine->PlayWorld);
-    }
+        void OnPostPIEStarted(bool bIsSimulating)
+        {
+            UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine);
+            if (EditorEngine)
+                PostLoadMapWithWorld(EditorEngine->PlayWorld);
+        }
 
-    void OnEndPIE(bool bIsSimulating)
-    {
-        SetActive(false);
-    }
+        void OnEndPIE(bool bIsSimulating)
+        {
+            SetActive(false);
+        }
 
 #endif
 
-    void RegisterSettings()
-    {
+        void RegisterSettings()
+        {
 #if WITH_EDITOR
-        ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
-        if (!SettingsModule)
-            return;
+            ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
+            if (!SettingsModule)
+                return;
 
-        const auto Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua",
-                                                              LOCTEXT("UnLuaEditorSettingsName", "UnLua"),
-                                                              LOCTEXT("UnLuaEditorSettingsDescription", "UnLua Runtime Settings"),
-                                                              GetMutableDefault<UUnLuaSettings>());
-        Section->OnModified().BindRaw(this, &FUnLuaModule::OnSettingsModified);
+            const auto Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua",
+                                                                  LOCTEXT("UnLuaEditorSettingsName", "UnLua"),
+                                                                  LOCTEXT("UnLuaEditorSettingsDescription", "UnLua Runtime Settings"),
+                                                                  GetMutableDefault<UUnLuaSettings>());
+            Section->OnModified().BindRaw(this, &FUnLuaModule::OnSettingsModified);
 #endif
-    }
+        }
 
-    void UnregisterSettings()
-    {
+        void UnregisterSettings()
+        {
 #if WITH_EDITOR
-        ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
-        if (SettingsModule)
-            SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua");
+            ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
+            if (SettingsModule)
+                SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua");
 #endif
-    }
+        }
 
-    bool OnSettingsModified()
-    {
-        return true;
-    }
+        bool OnSettingsModified()
+        {
+            return true;
+        }
 
-    void PostLoadMapWithWorld(UWorld* World) const
-    {
-        if (!World || !bIsActive)
-            return;
+        void PostLoadMapWithWorld(UWorld* World) const
+        {
+            if (!World || !bIsActive)
+                return;
 
-        const auto Env = EnvLocator->Locate(World);
-        if (!Env)
-            return;
+            const auto Env = EnvLocator->Locate(World);
+            if (!Env)
+                return;
 
-        const auto Manager = Env->GetManager();
-        if (!Manager)
-            return;
+            const auto Manager = Env->GetManager();
+            if (!Manager)
+                return;
 
-        Manager->OnMapLoaded(World);
-    }
+            Manager->OnMapLoaded(World);
+        }
 
-    bool bIsActive = false;
-    ULuaEnvLocator* EnvLocator = nullptr;
-    FDelegateHandle OnHandleSystemErrorHandle;
-    FDelegateHandle OnHandleSystemEnsureHandle;
-};
+        bool bIsActive = false;
+        ULuaEnvLocator* EnvLocator = nullptr;
+        FDelegateHandle OnHandleSystemErrorHandle;
+        FDelegateHandle OnHandleSystemEnsureHandle;
+    };
+}
+
+IMPLEMENT_MODULE(UnLua::FUnLuaModule, UnLua)
 
 #undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FUnLuaModule, UnLua)
