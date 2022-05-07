@@ -34,6 +34,7 @@ namespace UnLua
     constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags::AsyncLoading | EInternalObjectFlags::Async;
 
     TMap<lua_State*, FLuaEnv*> FLuaEnv::AllEnvs;
+    FLuaEnv::FOnCreated FLuaEnv::OnCreated;
 
     FLuaEnv::FLuaEnv()
     {
@@ -129,6 +130,7 @@ namespace UnLua
             UnLuaHotReload = m.reload
         )");
 
+        OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
     }
 
