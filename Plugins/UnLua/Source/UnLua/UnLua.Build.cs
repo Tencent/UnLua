@@ -14,6 +14,7 @@
 
 using System;
 using System.IO;
+using Tools.DotNETCommon;
 using UnrealBuildTool;
 
 public class UnLua : ModuleRules
@@ -32,7 +33,6 @@ public class UnLua : ModuleRules
             }
         );
 
-
         PrivateIncludePaths.AddRange(
             new[]
             {
@@ -40,14 +40,12 @@ public class UnLua : ModuleRules
             }
         );
 
-
         PublicIncludePathModuleNames.AddRange(
             new[]
             {
                 "ApplicationCore",
             }
         );
-
 
         PrivateDependencyModuleNames.AddRange(
             new[]
@@ -68,7 +66,10 @@ public class UnLua : ModuleRules
             PrivateDependencyModuleNames.Add("UnrealEd");
 
         var projectDir = Target.ProjectFile.Directory;
-        var config = ConfigCache.ReadHierarchy(ConfigHierarchyType.Game, projectDir, Target.Platform);
+        var configFilePath = projectDir + "/Config/DefaultUnLuaEditor.ini";
+        var configFileReference = new FileReference(configFilePath); 
+        var configFile = FileReference.Exists(configFileReference) ? new ConfigFile(configFileReference) : new ConfigFile();
+        var config = new ConfigHierarchy(new[] { configFile });
         const string Section = "/Script/UnLuaEditor.UnLuaEditorSettings";
 
         Action<string, string, bool> loadBoolConfig = (key, macro, defaultValue) =>
