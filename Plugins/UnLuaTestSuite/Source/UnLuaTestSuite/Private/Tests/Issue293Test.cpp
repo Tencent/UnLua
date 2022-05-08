@@ -17,6 +17,7 @@
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#if ENABLE_TYPE_CHECK
 
 struct FUnLuaTest_Issue293 : FUnLuaTestBase
 {
@@ -48,4 +49,5 @@ struct FUnLuaTest_Issue293 : FUnLuaTestBase
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue293, TEXT("UnLua.Regression.Issue293 关闭RPC会导致部分函数在非Editor模式下crash"))
 
+#endif
 #endif //WITH_DEV_AUTOMATION_TESTS

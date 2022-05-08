@@ -16,6 +16,7 @@
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#if ENABLE_TYPE_CHECK
 
 struct FUnLuaTest_Issue344 : FUnLuaTestBase
 {
@@ -42,4 +43,5 @@ struct FUnLuaTest_Issue344 : FUnLuaTestBase
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue344, TEXT("UnLua.Regression.Issue344 在Lua中对UClass_Load出来的对象写入属性后，GC的时候会Crash"))
 
+#endif
 #endif //WITH_DEV_AUTOMATION_TESTS
