@@ -1,3 +1,5 @@
+#ifndef _WIN32
+
 #ifndef UNIX_H
 #define UNIX_H
 /*=========================================================================*\
@@ -24,3 +26,5 @@ typedef t_unix *p_unix;
 LUASOCKET_API int luaopen_socket_unix(lua_State *L);
 
 #endif /* UNIX_H */
+
+#endif

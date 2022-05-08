@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if _WIN32 && UNICODE
+#if (defined(_WIN32) && defined(UNICODE))
 #define gai_strerror(err) FTCHARToUTF8(gai_strerrorW(err)).Get()
 #endif
 

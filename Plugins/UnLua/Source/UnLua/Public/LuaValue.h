@@ -27,7 +27,7 @@ namespace UnLua
      */
     struct UNLUA_API FLuaIndex
     {
-        FLuaIndex(FLuaEnv* Env, int32 Index);
+        FLuaIndex(FLuaEnv* Env, int32 InIndex);
 
         FORCEINLINE int32 GetIndex() const { return Index; }
 

@@ -18,6 +18,7 @@
 #include "UnLuaBase.h"
 #include "UnLuaTemplate.h"
 #include "LuaValue.h"
+#include "LuaEnv.h"
 
 namespace UnLua
 {
@@ -33,12 +34,18 @@ namespace UnLua
     /**
      * Push values to the stack.
      */
-    template <typename T> int32 Push(lua_State *L, T *V, bool bCopy = false);
+    template <typename T>
+    int32 Push(lua_State *L, T *V, bool bCopy = false);
 
-    template <typename T> int32 Push(lua_State *L, T &&V, bool bCopy);
+    template <typename T>
+    int32 Push(lua_State *L, T &&V, bool bCopy);
 
-    template <template <typename, ESPMode> class SmartPtrType, typename T, ESPMode Mode> int32 Push(lua_State *L, SmartPtrType<T, Mode> V, bool bCopy = false);
+    template <template <typename, ESPMode> class SmartPtrType, typename T, ESPMode Mode>
+    int32 Push(lua_State *L, SmartPtrType<T, Mode> V, bool bCopy = false);
 
+    template <typename T>
+    TSharedPtr<ITypeInterface> GetTypeInterface();
+    
     FORCEINLINE int32 Push(lua_State *L, int8 V, bool bCopy = false)
     {
         lua_pushinteger(L, V);
@@ -877,6 +884,13 @@ namespace UnLua
         }
     };
 
+    template <typename T>
+    FORCEINLINE TSharedPtr<ITypeInterface> GetTypeInterface()
+    {
+        static TSharedPtr<ITypeInterface> TypeInterface(new TTypeInterface<T>);
+        return TypeInterface;
+    }
+    
     /**
      * Helper for pointer operation
      */

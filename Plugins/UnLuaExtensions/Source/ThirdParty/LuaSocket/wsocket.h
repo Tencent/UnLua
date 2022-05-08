@@ -1,5 +1,8 @@
+#ifdef _WIN32
+
 #ifndef WSOCKET_H
 #define WSOCKET_H
+
 /*=========================================================================*\
 * Socket compatibilization module for Win32
 * LuaSocket toolkit
@@ -31,3 +34,5 @@ typedef t_socket *p_socket;
 #endif
 
 #endif /* WSOCKET_H */
+
+#endif

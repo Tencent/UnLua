@@ -23,7 +23,6 @@
 #include "UnLuaManager.h"
 #include "lua.h"
 #include "LuaValue.h"
-#include "UnLuaLegacy.h"
 #include "ObjectReferencer.h"
 #include "HAL/Platform.h"
 
@@ -76,13 +75,6 @@ namespace UnLua
         {
             const FTCHARToUTF8 Bytes(*Chunk);
             return LoadBuffer(Bytes.Get(), Bytes.Length(), TCHAR_TO_UTF8(*ChunkName));
-        }
-
-        // TODO: refactor this
-        template <typename ... T>
-        FLuaRetValues CallTableFunc(const FString& TableName, const FString& FuncName, T&&... Args)
-        {
-            return UnLua::CallTableFunc(L, TCHAR_TO_UTF8(*TableName), TCHAR_TO_UTF8(*FuncName), Forward<T>(Args)...);
         }
 
         virtual void GC();

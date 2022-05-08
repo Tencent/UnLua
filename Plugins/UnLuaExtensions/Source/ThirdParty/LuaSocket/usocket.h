@@ -1,5 +1,8 @@
+#ifndef _WIN32
+
 #ifndef USOCKET_H
 #define USOCKET_H
+
 /*=========================================================================*\
 * Socket compatibilization module for Unix
 * LuaSocket toolkit
@@ -57,3 +60,5 @@ typedef struct sockaddr_storage t_sockaddr_storage;
 #define SOCKET_INVALID (-1)
 
 #endif /* USOCKET_H */
+
+#endif

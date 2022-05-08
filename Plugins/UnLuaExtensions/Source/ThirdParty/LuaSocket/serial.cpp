@@ -2,6 +2,8 @@
 * Serial stream
 * LuaSocket toolkit
 \*=========================================================================*/
+#ifndef _WIN32
+
 #include "luasocket.h"
 
 #include "auxiliar.h"
@@ -169,3 +171,5 @@ static int global_create(lua_State *L) {
     buffer_init(&un->buf, &un->io, &un->tm);
     return 1;
 }
+
+#endif

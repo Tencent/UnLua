@@ -26,13 +26,6 @@ namespace UnLua
 
     UNLUA_API void AddType(FString Name, TSharedPtr<ITypeInterface> TypeInterface);
 
-    template <typename T>
-    FORCEINLINE TSharedPtr<ITypeInterface> GetTypeInterface()
-    {
-        static TSharedPtr<ITypeInterface> TypeInterface(new TTypeInterface<T>);
-        return TypeInterface;
-    }
-
     UNLUA_API TMap<FString, IExportedClass*> GetExportedReflectedClasses();
 
     UNLUA_API TMap<FString, IExportedClass*> GetExportedNonReflectedClasses();

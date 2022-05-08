@@ -2,6 +2,8 @@
 * Unix domain socket
 * LuaSocket toolkit
 \*=========================================================================*/
+#ifndef _WIN32
+
 #include "luasocket.h"
 
 #include "unixstream.h"
@@ -67,3 +69,5 @@ LUASOCKET_API int luaopen_socket_unix(lua_State *L)
 
     return 1;
 }
+
+#endif

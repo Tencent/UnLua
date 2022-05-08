@@ -1,3 +1,5 @@
+#ifndef _WIN32
+
 #ifndef UNIXDGRAM_H
 #define UNIXDGRAM_H
 /*=========================================================================*\
@@ -13,6 +15,8 @@
 * break the connection.
 \*=========================================================================*/
 
+#ifndef _WIN32
+
 #include "unix.h"
 
 #ifndef _WIN32
@@ -26,3 +30,7 @@ int unixdgram_open(lua_State *L);
 #endif
 
 #endif /* UNIXDGRAM_H */
+
+#endif
+
+#endif

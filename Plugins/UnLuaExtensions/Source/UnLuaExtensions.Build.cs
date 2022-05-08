@@ -49,6 +49,5 @@ public class UnLuaExtensions : ModuleRules
 
         var BasePath = Path.GetFullPath(Path.Combine(ModuleDirectory, "ThirdParty", "LuaSocket"));
         PublicIncludePaths.Add(BasePath);
-        PublicIncludePaths.Add(Path.Combine(BasePath, Target.Platform.ToString()));
     }
 }

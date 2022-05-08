@@ -17,18 +17,6 @@
 #include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-#ifndef AUTO_UNLUA_STARTUP
-#define AUTO_UNLUA_STARTUP 0
-#endif
-
-#ifndef WITH_UE4_NAMESPACE
-#define WITH_UE4_NAMESPACE 0
-#endif
-
-#ifndef SUPPORTS_RPC_CALL
-#define SUPPORTS_RPC_CALL 0
-#endif
-
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(UnLuaDelegate, Log, All);
 

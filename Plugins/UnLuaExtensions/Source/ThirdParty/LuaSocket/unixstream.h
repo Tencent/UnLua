@@ -1,5 +1,8 @@
+#ifndef _WIN32
+
 #ifndef UNIXSTREAM_H
 #define UNIXSTREAM_H
+
 /*=========================================================================*\
 * UNIX STREAM object
 * LuaSocket toolkit
@@ -27,3 +30,5 @@ int unixstream_open(lua_State *L);
 #endif
 
 #endif /* UNIXSTREAM_H */
+
+#endif

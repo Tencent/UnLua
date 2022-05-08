@@ -21,14 +21,18 @@ namespace UnLua
         /**
      * Lua stack index wrapper
      */
-    FLuaIndex::FLuaIndex(FLuaEnv* Env, int32 Index)
-        : Env(Env), Index(Index)
+    FLuaIndex::FLuaIndex(FLuaEnv* Env, int32 InIndex)
+        : Env(Env)
     {
-        if (Index < 0 && Index > LUA_REGISTRYINDEX)
+        if (InIndex < 0 && InIndex > LUA_REGISTRYINDEX)
         {
             const auto L = Env->GetMainState();
             int32 Top = lua_gettop(L);
-            Index = Top + Index + 1;
+            Index = Top + InIndex + 1;
+        }
+        else
+        {
+            Index = InIndex;
         }
     }
 

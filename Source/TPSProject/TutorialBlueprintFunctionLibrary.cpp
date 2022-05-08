@@ -16,7 +16,7 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByGlobalTable()
     const auto bSuccess = Env.DoString("G_08_CppCallLua = require 'Tutorials.08_CppCallLua'");
     check(bSuccess);
 
-    const auto RetValues = Env.CallTableFunc("G_08_CppCallLua", "CallMe", 1.1f, 2.2f);
+    const auto RetValues = UnLua::CallTableFunc(Env.GetMainState(), "G_08_CppCallLua", "CallMe", 1.1f, 2.2f);
     check(RetValues.Num() == 1);
 
     const auto Msg = FString::Printf(TEXT("[C++]收到来自Lua的返回，结果=%f"), RetValues[0].Value<float>());

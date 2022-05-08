@@ -26,7 +26,7 @@ namespace UnLua
         /**
          * Create weak key table
          */
-        void LowLevel::CreateWeakKeyTable(lua_State* L)
+        void CreateWeakKeyTable(lua_State* L)
         {
             lua_newtable(L);
             lua_newtable(L);
@@ -39,7 +39,7 @@ namespace UnLua
         /**
          * Create weak value table
          */
-        void LowLevel::CreateWeakValueTable(lua_State* L)
+        void CreateWeakValueTable(lua_State* L)
         {
             lua_newtable(L);
             lua_newtable(L);
@@ -49,7 +49,7 @@ namespace UnLua
             lua_setmetatable(L, -2);
         }
 
-        FString LowLevel::GetMetatableName(const UObject* Object)
+        FString GetMetatableName(const UObject* Object)
         {
             if (!Object)
                 return "";
@@ -67,7 +67,7 @@ namespace UnLua
             return GetMetatableName(Struct);
         }
 
-        FString LowLevel::GetMetatableName(const UStruct* Struct)
+        FString GetMetatableName(const UStruct* Struct)
         {
             if (!Struct)
                 return "";

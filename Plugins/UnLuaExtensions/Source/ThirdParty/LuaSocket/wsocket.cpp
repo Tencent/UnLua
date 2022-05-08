@@ -5,6 +5,8 @@
 * The penalty of calling select to avoid busy-wait is only paid when
 * the I/O call fail in the first place.
 \*=========================================================================*/
+#ifdef _WIN32
+
 #include "luasocket.h"
 
 #include <string.h>
@@ -12,7 +14,7 @@
 #include "socket.h"
 #include "pierror.h"
 
-#if _WIN32 && UNICODE
+#ifdef UNICODE
 #define gai_strerror(err) FTCHARToUTF8(gai_strerrorW(err)).Get()
 #endif
 
@@ -436,3 +438,5 @@ const char *socket_gaistrerror(int err) {
         default: return gai_strerror(err);
     }
 }
+
+#endif

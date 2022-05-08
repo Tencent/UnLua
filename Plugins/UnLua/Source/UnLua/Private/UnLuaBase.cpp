@@ -20,7 +20,6 @@
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 
-class FUnLuaModule;
 DEFINE_LOG_CATEGORY(LogUnLua);
 DEFINE_LOG_CATEGORY(UnLuaDelegate);
 

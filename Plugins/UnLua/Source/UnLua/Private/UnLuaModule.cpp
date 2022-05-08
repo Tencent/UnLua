@@ -97,7 +97,7 @@ namespace UnLua
                 GUObjectArray.AddUObjectDeleteListener(this);
 
                 const auto& Settings = *GetMutableDefault<UUnLuaSettings>();
-                const auto EnvLocatorClass = Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : Settings.EnvLocatorClass;
+                const auto EnvLocatorClass = *Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : *Settings.EnvLocatorClass;
                 EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
                 EnvLocator->AddToRoot();
             }

@@ -2,6 +2,8 @@
 * Unix domain socket dgram submodule
 * LuaSocket toolkit
 \*=========================================================================*/
+#ifndef _WIN32
+
 #include "luasocket.h"
 
 #include "auxiliar.h"
@@ -403,3 +405,5 @@ static int global_create(lua_State *L)
         return 2;
     }
 }
+
+#endif
