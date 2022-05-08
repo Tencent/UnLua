@@ -142,6 +142,10 @@ private:
 
     bool OnSettingsModified() const
     {
+        const auto BuildFile = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir() / "Source/UnLua/UnLua.Build.cs";
+        auto& FileManager = IFileManager::Get();
+        if (FileManager.FileExists(*BuildFile))
+            FileManager.SetTimeStamp(*BuildFile, FDateTime::UtcNow());
         return true;
     }
 
