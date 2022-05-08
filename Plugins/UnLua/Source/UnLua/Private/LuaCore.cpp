@@ -1703,11 +1703,11 @@ int32 Class_NewIndex(lua_State *L)
             void* Self = GetCppInstance(L, 1);
             if (Self)
             {
-#if ENABLE_TYPE_CHECK
+#if ENABLE_TYPE_CHECK == 1
                 if (IsPropertyOwnerTypeValid(Property.Get(), Self))
                     Property->Write(L, Self, 3);
 #else
-                Property->Write(L, ContainerPtr, 3);
+                Property->Write(L, Self, 3);
 #endif
             }
         }
