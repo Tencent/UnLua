@@ -79,7 +79,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     {
         FProperty *Property = *It;
         FPropertyDesc* PropertyDesc = FPropertyDesc::Create(Property);
-        int32 Index = Properties.Add(PropertyDesc);
+        int32 Index = Properties.Add(TUniquePtr<FPropertyDesc>(PropertyDesc));
         if (PropertyDesc->IsReturnParameter())
         {
             ReturnPropertyIndex = Index;                                // return property
@@ -174,12 +174,6 @@ FFunctionDesc::~FFunctionDesc()
         OutParmRec = NextOut;
     }
 #endif
-
-    // release cached property descriptors
-    for (FPropertyDesc *Property : Properties)
-    {  
-        delete Property;
-    }
 }
 
 
@@ -419,7 +413,7 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
     int32 ParamIndex = 0;
     for (int32 i = 0; i < Properties.Num(); ++i)
     {
-        FPropertyDesc *Property = Properties[i];
+        const auto& Property = Properties[i];
         Property->InitializeValue(Params);
         if (i == LatentPropertyIndex)
         {
@@ -494,7 +488,7 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
 
     if (ReturnPropertyIndex > INDEX_NONE)
     {
-        FPropertyDesc *Property = Properties[ReturnPropertyIndex];
+        const auto& Property = Properties[ReturnPropertyIndex];
         if (!CleanupFlags[ReturnPropertyIndex])
         {
             int32 ReturnIndexInStack = FirstParamIndex + ReturnPropertyIndex;
@@ -515,7 +509,7 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
     // c++ may has return and out params, we must push it on stack
     for (int32 Index : OutPropertyIndices)
     {
-        FPropertyDesc *Property = Properties[Index];
+        const auto& Property = Properties[Index];
         if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
         {
             Property->GetValue(L, Params, true);
@@ -567,7 +561,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 {
     // prepare parameters for Lua function
     FOutParmRec *OutParam = OutParams;
-    for (const FPropertyDesc *Property : Properties)
+    for (const auto& Property : Properties)
     {
         if (Property->IsReturnParameter())
         {
@@ -615,7 +609,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 
         for (int32 i = 0; i < OutPropertyIndices.Num(); ++i)
         {
-            FPropertyDesc* OutProperty = Properties[OutPropertyIndices[i]];
+            const auto& OutProperty = Properties[OutPropertyIndices[i]];
             if (OutProperty->IsReferenceParameter())
             {
                 continue;
@@ -654,7 +648,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         }
         else
         {
-            const FPropertyDesc* ReturnProperty = Properties[ReturnPropertyIndex];
+            const auto& ReturnProperty = Properties[ReturnPropertyIndex];
 
             // set value for blueprint side return property
             const FOutParmRec* RetParam = OutParam ? FindOutParmRec(OutParam, ReturnProperty->GetProperty()) : nullptr;

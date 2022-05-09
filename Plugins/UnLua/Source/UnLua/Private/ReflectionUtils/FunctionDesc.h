@@ -129,7 +129,7 @@ public:
 #if !SUPPORTS_RPC_CALL
     FOutParmRec *OutParmRec;
 #endif
-    TArray<FPropertyDesc*> Properties;
+    TArray<TUniquePtr<FPropertyDesc>> Properties;
     TArray<int32> OutPropertyIndices;
     FParameterCollection *DefaultParams;
     int32 ReturnPropertyIndex;

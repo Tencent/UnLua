@@ -723,11 +723,6 @@ public:
         : FPropertyDesc(InProperty), InnerProperty(FPropertyDesc::Create(ArrayProperty->Inner))
     {}
 
-    ~FArrayPropertyDesc()
-    {
-        InnerProperty.Reset();                                              // release inner property descriptor
-    }
-
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
     {
         FScriptArray *Src = (FScriptArray*)GetScriptContainer(L, SrcIndexInStack);
@@ -880,12 +875,6 @@ public:
         : FPropertyDesc(InProperty), KeyProperty(FPropertyDesc::Create(MapProperty->KeyProp)), ValueProperty(FPropertyDesc::Create(MapProperty->ValueProp))
     {}
 
-    ~FMapPropertyDesc()
-    {
-        KeyProperty.Reset();                // release key property descriptor
-        ValueProperty.Reset();              // release value property descriptor
-    }
-
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
     {
         FScriptMap *Src = (FScriptMap*)GetScriptContainer(L, SrcIndexInStack);
@@ -1023,11 +1012,6 @@ public:
     explicit FSetPropertyDesc(FProperty *InProperty)
         : FPropertyDesc(InProperty), InnerProperty(FPropertyDesc::Create(SetProperty->ElementProp))
     {}
-
-    ~FSetPropertyDesc()
-    {
-        InnerProperty.Reset();                                                  // release element property descriptor
-    }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
     {
