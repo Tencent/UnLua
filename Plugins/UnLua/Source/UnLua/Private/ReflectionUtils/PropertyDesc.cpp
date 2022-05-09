@@ -780,17 +780,33 @@ public:
         }
         else if (Type == LUA_TUSERDATA)
         {
-            FScriptArray *Src = (FScriptArray*)GetScriptContainer(L, IndexInStack);
+            FLuaArray* Src = (FLuaArray*)lua_touserdata(L, IndexInStack);
             if (Src)
             {
                 if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
-                    FMemory::Memcpy(ValuePtr, Src, sizeof(FScriptArray));                   // shallow copy
+                    if (Src->ElementSize == ArrayProperty->ElementSize)
+                    {
+                        FMemory::Memcpy(ValuePtr, Src->ScriptArray, sizeof(FScriptArray)); // shallow copy
+                    }
+                    else if (Src->ElementSize < ArrayProperty->ElementSize)
+                    {
+                        FScriptArrayHelper Helper(ArrayProperty, ValuePtr);
+                        if (Src->Num() > 0)
+                        {
+                            Helper.AddValues(Src->Num());
+                            for (int32 ArrayIndex = 0; ArrayIndex < Src->Num(); ArrayIndex++)
+                            {
+                                void* Dst = Helper.GetRawPtr(ArrayIndex);
+                                Src->Get(ArrayIndex, Dst);
+                            }
+                        }
+                    }
                     return false;
                 }
                 else
                 {
-                    ArrayProperty->CopyCompleteValue(ValuePtr, Src);
+                    ArrayProperty->CopyCompleteValue(ValuePtr, Src->ScriptArray);
                     //ArrayProperty->SetPropertyValue(ValuePtr, *LuaArray->ScriptArray);    // copy constructor of FScriptArray doesn't work
                 }
             }
