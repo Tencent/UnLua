@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 配置支持，通过引擎菜单 `项目设置 -> 插件 -> UnLua` 修改运行时和编辑器环境的配置
 - 编辑器界面多语言支持，现在可以看到中文菜单了
 - 多虚拟机环境支持
+- 同名蓝图加载
 - `FSoftObjectPtr` 的静态导出缺少的接口 [#392](https://github.com/Tencent/UnLua/issues/392) [#397](https://github.com/Tencent/UnLua/issues/397)
 - Standalone模式支持 [#396](https://github.com/Tencent/UnLua/issues/396)
 - `GetModuleName` 的路径为空时无法生成模版文件的提示 [#341](https://github.com/Tencent/UnLua/issues/341)
@@ -37,6 +38,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 开启多窗口，一个有UI展示，一个没有UI展示 [#387](https://github.com/Tencent/UnLua/issues/387)
 - 源码版引擎 Test 版本 UStruct::SerializeExpr Crash [#374](https://github.com/Tencent/UnLua/issues/374)
 - 某个UObject如果不再被Lua引用，它在Lua添加的委托函数就会失效[#394](https://github.com/Tencent/UnLua/issues/394)
+- 接口列表从lua传到c++/蓝图层会丢失一半信息[#398](https://github.com/Tencent/UnLua/issues/398)
+- LUA覆写导致数组传参错误 [#401](https://github.com/Tencent/UnLua/issues/401)
 
 ### Removed
 - 移除诸如 `GLuaCxt` / `GReflectionRegistry` / `GObjectReferencer` 的全局变量
