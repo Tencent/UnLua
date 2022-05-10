@@ -22,6 +22,10 @@ function M:ReceiveDestroyed()
     self.ReceiveDestroyedCalled = true
 end
 
+function M:Greeting(txt)
+    return self.Overridden.Greeting(self, txt) .. " Lua"
+end
+
 function M:RunTest()
     local errors = {}
 

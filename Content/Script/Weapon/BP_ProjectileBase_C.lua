@@ -1,7 +1,8 @@
 require "UnLua"
 
+local BP_CharacterBase = UE.UClass.Load("/Game/Core/Blueprints/BP_CharacterBase.BP_CharacterBase_C")
+
 local BP_ProjectileBase_C = Class()
-local ABP_CharacterBase_C = UE.UClass.Load("/Game/Core/Blueprints/BP_CharacterBase.BP_CharacterBase_C")
 
 function BP_ProjectileBase_C:UserConstructionScript()
 	self.Damage = 128.0
@@ -14,7 +15,7 @@ function BP_ProjectileBase_C:ReceiveBeginPlay()
 end
 
 function BP_ProjectileBase_C:OnComponentHit_Sphere(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
-	local Character = OtherActor:Cast(ABP_CharacterBase_C)
+	local Character = OtherActor:Cast(BP_CharacterBase)
 	if Character then
 		Character.BoneName = Hit.BoneName;
 		local Controller = self.Instigator:GetController()

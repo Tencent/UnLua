@@ -17,18 +17,6 @@
 #include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-#ifndef AUTO_UNLUA_STARTUP
-#define AUTO_UNLUA_STARTUP 0
-#endif
-
-#ifndef WITH_UE4_NAMESPACE
-#define WITH_UE4_NAMESPACE 0
-#endif
-
-#ifndef SUPPORTS_RPC_CALL
-#define SUPPORTS_RPC_CALL 0
-#endif
-
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(LogUnLua, Log, All);
 UNLUA_API DECLARE_LOG_CATEGORY_EXTERN(UnLuaDelegate, Log, All);
 
@@ -41,7 +29,7 @@ struct luaL_Reg;
 
 namespace UnLua
 {   
-    //!!!Fix!!!
+    bool IsUObjectValid(UObjectBase* ObjPtr);
 
     /**
      * Interface to manage Lua stack for a C++ type
@@ -121,7 +109,7 @@ namespace UnLua
         virtual void Register(lua_State *L) = 0;
         virtual void AddLib(const luaL_Reg *Lib) = 0;
         virtual bool IsReflected() const = 0;
-        virtual FName GetName() const = 0;
+        virtual FString GetName() const = 0;
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const = 0;
@@ -143,54 +131,12 @@ namespace UnLua
 #endif
     };
 
-
-    /**
-     * Add type info
-     *
-     * @param Name - name of the type
-     * @param TypeInterface - instance of the type info
-     * @return - true if type interface is added successfully, false otherwise
-     */
-    UNLUA_API bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface);
-
-    /**
-     * Find the exported class with its name
-     *
-     * @param Name - name of the exported class
-     * @return - the exported class
-     */
-    UNLUA_API IExportedClass* FindExportedClass(FName Name);
-
-    /**
-     * Export a class
-     *
-     * @param Class - exported class instance
-     * @return - true if the class is exported successfully, false otherwise
-     */
-    UNLUA_API bool ExportClass(IExportedClass *Class);
-
-    /**
-     * Export a global function
-     *
-     * @param Function - exported function instance
-     * @return - true if the global function is exported successfully, false otherwise
-     */
-    UNLUA_API bool ExportFunction(IExportedFunction *Function);
-
-    /**
-     * Export an enum
-     *
-     * @param Enum - exported enum instance
-     * @return - true if the enum is exported successfully, false otherwise
-     */
-    UNLUA_API bool ExportEnum(IExportedEnum *Enum);
-
-
     /**
      * Create Lua state
      *
      * @return - created Lua state
      */
+    UE_DEPRECATED(4.20, "Use FLuaEnv to create lua vm instead.")
     UNLUA_API lua_State* CreateState();
 
     /**
@@ -210,26 +156,8 @@ namespace UnLua
      */
     UNLUA_API void Shutdown();
 
-    /**
-     * Load a Lua file without running it
-     *
-     * @param RelativeFilePath - the relative (to project's content dir) Lua file path
-     * @param Mode - mode of the chunk, it may be the string "b" (only binary chunks), "t" (only text chunks), or "bt" (both binary and text)
-     * @param Env - Lua stack index of the 'Env'
-     * @return - true if Lua file is loaded successfully, false otherwise
-     */
-    UNLUA_API bool LoadFile(lua_State *L, const FString &RelativeFilePath, const char *Mode = "bt", int32 Env = 0);
-
-    /**
-     * Run a Lua file
-     *
-     * @param RelativeFilePath - the relative (to project's content dir) Lua file path
-     * @param Mode - mode of the chunk, it may be the string "b" (only binary chunks), "t" (only text chunks), or "bt" (both binary and text)
-     * @param Env - Lua stack index of the 'Env'
-     * @return - true if the Lua file runs successfully, false otherwise
-     */
-    UNLUA_API bool RunFile(lua_State *L, const FString &RelativeFilePath, const char *Mode = "bt", int32 Env = 0);
-
+    UNLUA_API bool IsEnabled();
+ 
     /**
      * Load a Lua chunk without running it
      *
@@ -291,7 +219,7 @@ namespace UnLua
      * @param Index - Lua stack index
      * @return - the number of results on Lua stack
      */
-    UNLUA_API UObject* GetUObject(lua_State *L, int32 Index);
+    UNLUA_API UObject* GetUObject(lua_State *L, int32 Index, bool bReturnNullIfInvalid = true);
 
     /**
      * Allocate user data for smart pointer
@@ -380,10 +308,11 @@ namespace UnLua
      */
     struct UNLUA_API FAutoStack
     {
-        FAutoStack();
+        FAutoStack(lua_State *L);
         ~FAutoStack();
 
     private:
+        lua_State* L;
         int32 OldTop;
     };
 } // namespace UnLua

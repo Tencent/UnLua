@@ -30,5 +30,9 @@ public:
     TSharedPtr<FUICommandInfo> CopyAsRelativePath;
     TSharedPtr<FUICommandInfo> BindToLua;
     TSharedPtr<FUICommandInfo> UnbindFromLua;
-    TSharedPtr<FUICommandInfo> HotfixLua;
+    TSharedPtr<FUICommandInfo> HotReload;
+    TSharedPtr<FUICommandInfo> OpenEditorSettings;
+    TSharedPtr<FUICommandInfo> ReportIssue;
+    TSharedPtr<FUICommandInfo> About;
+    TSharedPtr<FUICommandInfo> GenerateIntelliSense;
 };

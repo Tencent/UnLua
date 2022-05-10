@@ -102,7 +102,7 @@ static int32 UWorld_SpawnActor(lua_State *L)
 
     {
         const char *ModuleName = NumParams > 6 ? lua_tostring(L, 7) : nullptr;
-        int32 TableRef = INDEX_NONE;
+        int32 TableRef = LUA_NOREF;
         if (NumParams > 7 && lua_type(L, 8) == LUA_TTABLE)
         {
             lua_pushvalue(L, 8);
@@ -158,7 +158,7 @@ static int32 UWorld_SpawnActorEx(lua_State *L)
     }
 
     {
-        int32 TableRef = INDEX_NONE;
+        int32 TableRef = LUA_NOREF;
         if (NumParams > 3 && lua_type(L, 4) == LUA_TTABLE)
         {
             lua_pushvalue(L, 4);
@@ -192,9 +192,11 @@ BEGIN_EXPORT_CLASS(FActorSpawnParameters)
     ADD_PROPERTY(Instigator)
     ADD_PROPERTY(OverrideLevel)
 #if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
     ADD_PROPERTY(OverridePackage)
     ADD_PROPERTY(OverrideParentComponent)
     ADD_PROPERTY(OverrideActorGuid)
+#endif
 #endif
     ADD_PROPERTY(SpawnCollisionHandlingOverride)
     ADD_FUNCTION(IsRemoteOwned)
@@ -204,7 +206,9 @@ BEGIN_EXPORT_CLASS(FActorSpawnParameters)
 #if WITH_EDITOR
     ADD_BITFIELD_BOOL_PROPERTY(bTemporaryEditorActor)
     ADD_BITFIELD_BOOL_PROPERTY(bHideFromSceneOutliner)
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
     ADD_BITFIELD_BOOL_PROPERTY(bCreateActorPackage)
+#endif
     ADD_PROPERTY(NameMode)
     ADD_PROPERTY(ObjectFlags)
 #endif
@@ -220,5 +224,6 @@ static const luaL_Reg UWorldLib[] =
 
 BEGIN_EXPORT_REFLECTED_CLASS(UWorld)
     ADD_LIB(UWorldLib)
+    ADD_FUNCTION(GetTimeSeconds)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(UWorld)

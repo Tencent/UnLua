@@ -1,9 +1,7 @@
 ﻿#include "TutorialBlueprintFunctionLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-#include "LuaCore.h"
 #include "UnLua.h"
-#include "UnLuaDelegates.h"
 
 static void PrintScreen(const FString& Msg)
 {
@@ -13,11 +11,12 @@ static void PrintScreen(const FString& Msg)
 void UTutorialBlueprintFunctionLibrary::CallLuaByGlobalTable()
 {
     PrintScreen(TEXT("[C++]CallLuaByGlobalTable 开始"));
-    const auto L = UnLua::GetState();
-    const auto bSuccess = UnLua::RunChunk(L, "G_08_CppCallLua = require 'Tutorials.08_CppCallLua'");
+
+    UnLua::FLuaEnv Env;
+    const auto bSuccess = Env.DoString("G_08_CppCallLua = require 'Tutorials.08_CppCallLua'");
     check(bSuccess);
 
-    const auto RetValues = UnLua::CallTableFunc(L, "G_08_CppCallLua", "CallMe", 1.1f, 2.2f);
+    const auto RetValues = UnLua::CallTableFunc(Env.GetMainState(), "G_08_CppCallLua", "CallMe", 1.1f, 2.2f);
     check(RetValues.Num() == 1);
 
     const auto Msg = FString::Printf(TEXT("[C++]收到来自Lua的返回，结果=%f"), RetValues[0].Value<float>());
@@ -28,13 +27,14 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByGlobalTable()
 void UTutorialBlueprintFunctionLibrary::CallLuaByFLuaTable()
 {
     PrintScreen(TEXT("[C++]CallLuaByFLuaTable 开始"));
-    const auto L = UnLua::GetState();
+    UnLua::FLuaEnv Env;
 
-    const auto Require = UnLua::FLuaFunction("_G", "require");
+    const auto Require = UnLua::FLuaFunction(&Env, "_G", "require");
     const auto RetValues1 = Require.Call("Tutorials.08_CppCallLua");
     check(RetValues1.Num() == 1);
 
-    const auto LuaTable = UnLua::FLuaTable(RetValues1[0]);
+    const auto RetValue = RetValues1[0];
+    const auto LuaTable = UnLua::FLuaTable(&Env, RetValue);
     const auto RetValues2 = LuaTable.Call("CallMe", 3.3f, 4.4f);
     check(RetValues2.Num() == 1);
 

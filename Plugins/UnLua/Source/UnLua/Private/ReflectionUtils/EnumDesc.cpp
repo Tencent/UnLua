@@ -13,25 +13,31 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "EnumDesc.h"
-#include "ReflectionRegistry.h"
 
-FEnumDesc::FEnumDesc(UEnum *InEnum, EType EType)
-	: Enum(InEnum), Type(EType)
+FEnumDesc::FEnumDesc(UEnum* InEnum)
+    : Enum(InEnum)
 {
-	GReflectionRegistry.AddToDescSet(this, DESC_ENUM);
-
-	if (Enum)
-	{
-		EnumName = Enum->GetName();
-	}
+    check(Enum);
+    EnumName = Enum->GetName();
+    bUserDefined = InEnum->IsA<UUserDefinedEnum>();
 }
 
-FEnumDesc::~FEnumDesc() 
+void FEnumDesc::Load()
 {
-	GReflectionRegistry.RemoveFromDescSet(this); 
+    if (Enum)
+        return;
 
-	UnLua::FAutoStack AutoStack;
+    Enum = FindObject<UEnum>(ANY_PACKAGE, *EnumName);
+    if (!Enum)
+        Enum = LoadObject<UEnum>(nullptr, *EnumName);
 
-	// !!!Fix!!!
-	// clear enum lua table
+    check(Enum);
+}
+
+void FEnumDesc::UnLoad()
+{
+    if (!Enum)
+        return;
+
+    Enum = nullptr;
 }

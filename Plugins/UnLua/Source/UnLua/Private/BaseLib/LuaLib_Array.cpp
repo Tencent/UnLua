@@ -32,9 +32,8 @@ static int32 TArray_New(lua_State *L)
         return 0;
     }
 
-    FScriptArray *ScriptArray = new FScriptArray;
-    void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);
-    new(Userdata) FLuaArray(ScriptArray, TypeInterface, FLuaArray::OwnedBySelf);
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
     return 1;
 }
 
@@ -601,6 +600,9 @@ static int32 TArray_Delete(lua_State *L)
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
+
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->Remove(Array);
 
     Array->~FLuaArray();
     return 0;

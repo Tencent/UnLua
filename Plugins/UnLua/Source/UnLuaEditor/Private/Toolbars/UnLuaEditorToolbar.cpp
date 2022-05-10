@@ -10,8 +10,10 @@
 #include "BlueprintEditor.h"
 #include "SBlueprintEditorToolbar.h"
 #include "Framework/Docking/SDockingTabWell.h"
+#include "Framework/Notifications/NotificationManager.h"
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Layout/Children.h"
+#include "Widgets/Notifications/SNotificationList.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -42,46 +44,52 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
     ToolbarBuilder.BeginSection(NAME_None);
 
     const auto Blueprint = Cast<UBlueprint>(InContextObject);
-    const auto BindingStatus = GetBindingStatus(Blueprint);
-    FString InStyleName;
-    switch (BindingStatus)
-    {
-    case NotBound:
-        InStyleName = "UnLuaEditor.Status_NotBound";
-        break;
-    case Bound:
-        InStyleName = "UnLuaEditor.Status_Bound";
-        break;
-    case BoundButInvalid:
-        InStyleName = "UnLuaEditor.Status_BoundButInvalid";
-        break;
-    default:
-        check(false);
-    }
-    UE_LOG(LogUnLua, Log, TEXT("InStyleName=%s"), *InStyleName);
-
     ToolbarBuilder.AddComboButton(
         FUIAction(),
-        FOnGetContent::CreateLambda([&, BindingStatus, InContextObject]()
+        FOnGetContent::CreateLambda([&, Blueprint, InContextObject]()
         {
             ContextObject = InContextObject;
+            const auto BindingStatus = GetBindingStatus(Blueprint);
             const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
             FMenuBuilder MenuBuilder(true, CommandList);
             if (BindingStatus == NotBound)
             {
-                MenuBuilder.AddMenuEntry(Commands.BindToLua);
+                MenuBuilder.AddMenuEntry(Commands.BindToLua, NAME_None, LOCTEXT("Bind", "Bind"));
             }
             else
             {
-                MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath);
-                MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate);
-                MenuBuilder.AddMenuEntry(Commands.UnbindFromLua);
+                MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath, NAME_None, LOCTEXT("CopyAsRelativePath", "Copy as Relative Path"));
+                MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate, NAME_None, LOCTEXT("CreateLuaTemplate", "Create Lua Template"));
+                MenuBuilder.AddMenuEntry(Commands.UnbindFromLua, NAME_None, LOCTEXT("Unbind", "Unbind"));
             }
             return MenuBuilder.MakeWidget();
         }),
         LOCTEXT("UnLua_Label", "UnLua"),
         LOCTEXT("UnLua_ToolTip", "UnLua"),
-        FSlateIcon("UnLuaEditorStyle", *InStyleName)
+        TAttribute<FSlateIcon>::Create([Blueprint]
+        {
+            const auto BindingStatus = GetBindingStatus(Blueprint);
+            FString InStyleName;
+            switch (BindingStatus)
+            {
+            case Unknown:
+                InStyleName = "UnLuaEditor.Status_Unknown";
+                break;
+            case NotBound:
+                InStyleName = "UnLuaEditor.Status_NotBound";
+                break;
+            case Bound:
+                InStyleName = "UnLuaEditor.Status_Bound";
+                break;
+            case BoundButInvalid:
+                InStyleName = "UnLuaEditor.Status_BoundButInvalid";
+                break;
+            default:
+                check(false);
+            }
+
+            return FSlateIcon("UnLuaEditorStyle", *InStyleName);
+        })
     );
 
     ToolbarBuilder.EndSection();
@@ -198,7 +206,12 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     Class->ProcessEvent(Func, &ModuleName);
 
     if (ModuleName.IsEmpty())
+    {
+        FNotificationInfo Info(LOCTEXT("ModuleNameRequired", "Please specify a module name first"));
+        Info.ExpireDuration = 5;
+        FSlateNotificationManager::Get().AddNotification(Info);
         return;
+    }
 
     TArray<FString> ModuleNameParts;
     ModuleName.ParseIntoArray(ModuleNameParts, TEXT("."));
@@ -209,7 +222,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
 
     if (FPaths::FileExists(FileName))
     {
-        UE_LOG(LogUnLua, Warning, TEXT("Lua file (%s) is already existed!"), *ClassName);
+        UE_LOG(LogUnLua, Warning, TEXT("%s"), *FText::Format(LOCTEXT("FileAlreadyExists", "Lua file ({0}) is already existed!"), FText::FromString(ClassName)).ToString());
         return;
     }
 

@@ -57,8 +57,6 @@ public:
 
     ~FLuaMap()
     {
-        DetachInterface();
-
         if (ScriptMapFlag == OwnedBySelf)
         {
             Clear();
@@ -67,16 +65,7 @@ public:
         FMemory::Free(ElementCache);
     }
 
-    void DetachInterface()
-    {
-        if (Interface)
-        {
-            Interface->RemoveContainer(this);
-            Interface = nullptr;
-        }
-    }
-
-    FORCEINLINE void* GetContainerPtr() const { return Map; }
+    FORCEINLINE FScriptMap* GetContainerPtr() const { return Map; }
 
     /**
      * Get the length of the map

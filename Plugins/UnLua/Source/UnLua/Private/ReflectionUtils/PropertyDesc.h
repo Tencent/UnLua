@@ -14,8 +14,10 @@
 
 #pragma once
 
+#include "lauxlib.h"
 #include "UnLuaBase.h"
 #include "UnLuaCompatibility.h"
+#include "UObject/WeakFieldPtr.h"
 
 /**
  * new FProperty types
@@ -111,8 +113,14 @@ public:
      * @param ContainerPtr - the address of the container for this property
      * @param bCreateCopy (Optional) - whether to create a copy for the value
      */
-    FORCEINLINE void GetValue(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const 
-    {   
+    FORCEINLINE virtual void GetValue(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const 
+    {
+        if (!IsValid())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            lua_pushnil(L);
+            return;
+        }
         GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy);
     }
 
@@ -124,8 +132,13 @@ public:
      * @param bCopyValue - whether to create a copy for the value
      * @return - true if 'ContainerPtr' should be cleaned up by 'DestroyValue_InContainer', false otherwise
      */
-    FORCEINLINE bool SetValue(lua_State *L, void *ContainerPtr, int32 IndexInStack = -1, bool bCopyValue = true) const
+    FORCEINLINE virtual bool SetValue(lua_State *L, void *ContainerPtr, int32 IndexInStack = -1, bool bCopyValue = true) const
     {
+        if (!IsValid())
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
+            return false;
+        }
         return SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, bCopyValue);
     }
 
@@ -163,16 +176,16 @@ public:
     virtual void Destruct(void *Dest) const override { Property->DestroyValue(Dest); }
     virtual void Copy(void *Dest, const void *Src) const override { Property->CopySingleValue(Dest, Src); }
     virtual bool Identical(const void *A, const void *B) const override { return Property->Identical(A, B); }
-    virtual FString GetName() const override { return TEXT(""); }
+    virtual FString GetName() const override { return Name; }
     virtual FProperty* GetUProperty() const override { return Property; }
 
     virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override 
-    { 
-        GetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), bCreateCopy);
+    {
+        GetValue(L, ContainerPtr, bCreateCopy);
     }
     virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override 
-    { 
-        SetValueInternal(L, Property->ContainerPtrToValuePtr<void>(ContainerPtr), IndexInStack, true); 
+    {
+        SetValue(L, ContainerPtr, IndexInStack, true); 
     }
 
 #if ENABLE_TYPE_CHECK == 1
@@ -204,8 +217,9 @@ protected:
         FDelegateProperty *DelegateProperty;
         FMulticastDelegateProperty *MulticastDelegateProperty;
     };
-
+    TWeakFieldPtr<FProperty> PropertyPtr;
     int8 PropertyType;
+    FString Name = TEXT("");
 public:
     static TMap<FProperty*,FPropertyDesc*> Property2Desc;
 };

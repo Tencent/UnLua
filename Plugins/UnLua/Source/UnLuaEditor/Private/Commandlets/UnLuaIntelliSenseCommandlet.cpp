@@ -13,11 +13,12 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "Commandlets/UnLuaIntelliSenseCommandlet.h"
-#include "LuaContext.h"
+
+#include "Binding.h"
+#include "Misc/FileHelper.h"
 
 UUnLuaIntelliSenseCommandlet::UUnLuaIntelliSenseCommandlet(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
-    , Context(nullptr)
 {
     //IntermediateDir = FPaths::ProjectIntermediateDir();
     IntermediateDir = FPaths::ProjectPluginsDir();
@@ -27,7 +28,7 @@ UUnLuaIntelliSenseCommandlet::UUnLuaIntelliSenseCommandlet(const FObjectInitiali
 int32 UUnLuaIntelliSenseCommandlet::Main(const FString &Params)
 {
     // class black list
-    TArray<FName> ClassBlackList;
+    TArray<FString> ClassBlackList;
     ClassBlackList.Add("int8");
     ClassBlackList.Add("int16");
     ClassBlackList.Add("int32");
@@ -50,62 +51,50 @@ int32 UUnLuaIntelliSenseCommandlet::Main(const FString &Params)
     TArray<FString> FuncBlackList;
     FuncBlackList.Add("OnModuleHotfixed");
 
-    Context = FLuaContext::Create();
-    const TMap<FName, UnLua::IExportedClass*> &ExportedReflectedClasses = Context->GetExportedReflectedClasses();
-    const TMap<FName, UnLua::IExportedClass*> &ExportedNonReflectedClasses = Context->GetExportedNonReflectedClasses();
-    const TArray<UnLua::IExportedEnum*> &ExportedEnums = Context->GetExportedEnums();
-    const TArray<UnLua::IExportedFunction*> &ExportedFunctions = Context->GetExportedFunctions();
-
+    const auto ExportedReflectedClasses = UnLua::GetExportedReflectedClasses();
+    const auto ExportedNonReflectedClasses = UnLua::GetExportedNonReflectedClasses();
+    const auto ExportedEnums = UnLua::GetExportedEnums();
+    const auto ExportedFunctions = UnLua::GetExportedFunctions();
+    
     FString GeneratedFileContent;
     FString ModuleName(TEXT("StaticallyExports"));
-
+    
     // reflected classes
-    for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedReflectedClasses); It; ++It)
+    for (auto Pair : ExportedReflectedClasses)
     {
-        if (ClassBlackList.Find(It.Key()) != INDEX_NONE)
-        {
+        if (ClassBlackList.Contains(Pair.Key))
             continue;
-        }
 
-        It.Value()->GenerateIntelliSense(GeneratedFileContent);
-        SaveFile(ModuleName, It.Key().ToString(), GeneratedFileContent);
+        Pair.Value->GenerateIntelliSense(GeneratedFileContent);
+        SaveFile(ModuleName, Pair.Key, GeneratedFileContent);
     }
 
-    // non-reflected classes
-    for (TMap<FName, UnLua::IExportedClass*>::TConstIterator It(ExportedNonReflectedClasses); It; ++It)
+    for (auto Pair : ExportedNonReflectedClasses)
     {
-        if (ClassBlackList.Find(It.Key()) != INDEX_NONE)
-        {
+        if (ClassBlackList.Contains(Pair.Key))
             continue;
-        }
 
-        It.Value()->GenerateIntelliSense(GeneratedFileContent);
-        SaveFile(ModuleName, It.Key().ToString(), GeneratedFileContent);
+        Pair.Value->GenerateIntelliSense(GeneratedFileContent);
+        SaveFile(ModuleName, Pair.Key, GeneratedFileContent);
     }
 
-    // enums
-    for (UnLua::IExportedEnum *Enum : ExportedEnums)
+    for (auto Enum : ExportedEnums)
     {
-        if (EnumBlackList.Find(Enum->GetName()) != INDEX_NONE)
-        {
+        if (EnumBlackList.Contains(Enum->GetName()))
             continue;
-        }
 
         Enum->GenerateIntelliSense(GeneratedFileContent);
         SaveFile(ModuleName, Enum->GetName(), GeneratedFileContent);
     }
 
-    // global functions
-    GeneratedFileContent.Empty();
-    for (UnLua::IExportedFunction *Function : ExportedFunctions)
+    for (auto Function : ExportedFunctions)
     {
-        if (FuncBlackList.Find(Function->GetName()) != INDEX_NONE)
-        {
+        if (FuncBlackList.Contains(Function->GetName()))
             continue;
-        }
-
+    
         Function->GenerateIntelliSense(GeneratedFileContent);
     }
+    
     SaveFile(ModuleName, TEXT("GlobalFunctions"), GeneratedFileContent);
 
     return 0;

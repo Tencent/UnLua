@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
@@ -28,10 +29,10 @@ static int32 FQuat_New(lua_State* L)
         }
     case 5:
         {
-            const float& X = lua_tonumber(L, 2);
-            const float& Y = lua_tonumber(L, 3);
-            const float& Z = lua_tonumber(L, 4);
-            const float& W = lua_tonumber(L, 5);
+            const unluaReal& X = lua_tonumber(L, 2);
+            const unluaReal& Y = lua_tonumber(L, 3);
+            const unluaReal& Z = lua_tonumber(L, 4);
+            const unluaReal& W = lua_tonumber(L, 5);
             new(Userdata) FQuat(X, Y, Z, W);
             break;
         }
@@ -130,8 +131,7 @@ static int32 FQuat_Set(lua_State* L)
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FQuat!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
-
-    UnLua::TFieldSetter4<float>::Set(L, NumParams, &V->X);
+    UnLua::TFieldSetter4<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
 }
 
@@ -140,8 +140,8 @@ static const luaL_Reg FQuatLib[] =
     {"Normalize", FQuat_Normalize},
     {"FromAxisAndAngle", FQuat_FromAxisAndAngle},
     {"Set", FQuat_Set},
-    {"Mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, true, UnLua::TMul<FQuat, float>>::Calculate},
-    {"__mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, false, UnLua::TMul<FQuat, float>>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, true, UnLua::TMul<FQuat, unluaReal>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FQuat, UnLua::TMul<FQuat>, false, UnLua::TMul<FQuat, unluaReal>>::Calculate},
     {"__tostring", UnLua::TMathUtils<FQuat>::ToString},
     {"__call", FQuat_New},
     {nullptr, nullptr}
@@ -152,7 +152,11 @@ BEGIN_EXPORT_REFLECTED_CLASS(FQuat)
     ADD_FUNCTION(IsNormalized)
     ADD_FUNCTION(Size)
     ADD_FUNCTION(SizeSquared)
+#if ENGINE_MAJOR_VERSION >=5
+    ADD_CONST_FUNCTION_EX("ToAxisAndAngle", void, TQuat::ToAxisAndAngle, UE::Math::TVector<unluaReal>&, unluaReal&)
+#else
     ADD_FUNCTION(ToAxisAndAngle)
+#endif
     ADD_FUNCTION(Inverse)
     ADD_FUNCTION(RotateVector)
     ADD_FUNCTION(UnrotateVector)
@@ -167,10 +171,10 @@ BEGIN_EXPORT_REFLECTED_CLASS(FQuat)
     ADD_NAMED_FUNCTION("ToRotator", Rotator)
     ADD_CONST_FUNCTION_EX("__add", FQuat, operator+, const FQuat&)
     ADD_CONST_FUNCTION_EX("__sub", FQuat, operator-, const FQuat&)
-    ADD_CONST_FUNCTION_EX("__div", FQuat, operator/, const float)
+    ADD_CONST_FUNCTION_EX("__div", FQuat, operator/, const unluaReal)
     ADD_FUNCTION_EX("Add", FQuat, operator+=, const FQuat&)
     ADD_FUNCTION_EX("Sub", FQuat, operator-=, const FQuat&)
-    ADD_FUNCTION_EX("Div", FQuat, operator/=, const float)
+    ADD_FUNCTION_EX("Div", FQuat, operator/=, const unluaReal)
     ADD_LIB(FQuatLib)
 END_EXPORT_CLASS()
 
