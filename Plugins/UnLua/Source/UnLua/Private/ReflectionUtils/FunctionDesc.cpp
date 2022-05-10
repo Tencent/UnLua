@@ -254,9 +254,8 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         UClass *OuterClass = Function->GetOuterUClass();
         Object = OuterClass->GetDefaultObject();                // get CDO for static function
     }
-    else
+    else if (NumParams > 0)
     {
-        check(NumParams > 0);
         Object = UnLua::GetUObject(L, 1, false);
         ++FirstParamIndex;
         --NumParams;
