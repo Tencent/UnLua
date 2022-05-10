@@ -119,7 +119,7 @@ public:
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 
-    void SkipCodes(FFrame& Stack, void* Params) const;
+    void SkipCodes(FFrame& Stack, void* Params);
  
     TWeakObjectPtr<UFunction> Function;
     FString FuncName;
