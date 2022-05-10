@@ -23,6 +23,7 @@ public class UnLuaExtensions : ModuleRules
         bEnforceIWYU = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bUseUnity = false;
+        bEnableUndefinedIdentifierWarnings = false;
         
         PublicDependencyModuleNames.AddRange(
             new string[]
