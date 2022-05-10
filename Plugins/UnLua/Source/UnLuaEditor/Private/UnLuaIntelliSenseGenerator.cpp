@@ -1,4 +1,4 @@
-﻿// Tencent is pleased to support the open source community by making UnLua available.
+// Tencent is pleased to support the open source community by making UnLua available.
 // 
 // Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
 //
@@ -97,7 +97,19 @@ bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData)
     if (!IsBlueprint(AssetData))
         return false;
 
-    return true;
+	UObject* tUobj = AssetData.FastGetAsset();
+	if (tUobj)
+	{
+		if (UBlueprint* Blueprint = Cast<UBlueprint>(tUobj))
+		{
+			if (Blueprint->SkeletonGeneratedClass || Blueprint->GeneratedClass)
+			{
+				return true;
+			}
+		}
+	}
+
+    return false;
 }
 
 void FUnLuaIntelliSenseGenerator::Export(const UBlueprint* Blueprint)
