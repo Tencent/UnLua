@@ -31,9 +31,13 @@ struct FUnLuaTest_Issue401 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        lua_getglobal(L, "Result");
-        const auto Result = static_cast<int32>(lua_tonumber(L, -1));
-        RUNNER_TEST_EQUAL(Result, 2);
+        lua_getglobal(L, "Result1");
+        const auto Result1 = static_cast<int32>(lua_tonumber(L, -1));
+        RUNNER_TEST_EQUAL(Result1, 2);
+
+        const auto Result2 = static_cast<int32>(lua_tonumber(L, -1));
+        RUNNER_TEST_EQUAL(Result2, 2);
+
         return true;
     }
 };
