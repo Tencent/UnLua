@@ -23,6 +23,7 @@ namespace UnLua
     {
         static const FName NAME_ToolTip(TEXT("ToolTip")); // key of ToolTip meta data
         static const FName NAME_LatentInfo = TEXT("LatentInfo"); // tag of latent function
+        static FString LuaKeywords[] = {TEXT("local"), TEXT("function"), TEXT("end")};
 
         static FString GetCommentBlock(const UField* Field)
         {
@@ -65,7 +66,7 @@ namespace UnLua
             }
 
             // declaration
-            Ret += FString::Printf(TEXT("\r\nlocal %s = {}\r\n"), *TypeName);
+            Ret += FString::Printf(TEXT("\r\nlocal %s = {}\r\n"), *EscapeSymbolName(TypeName));
 
             return Ret;
         }
@@ -106,7 +107,7 @@ namespace UnLua
             }
 
             // declaration
-            Ret += FString::Printf(TEXT("local %s = {}\r\n"), *TypeName);
+            Ret += FString::Printf(TEXT("local %s = {}\r\n"), *EscapeSymbolName(TypeName));
 
 
             return Ret;
@@ -131,7 +132,7 @@ namespace UnLua
             }
 
             // declaration
-            Ret += FString::Printf(TEXT("local %s = {}\r\n\r\n"), *TypeName);
+            Ret += FString::Printf(TEXT("local %s = {}\r\n\r\n"), *EscapeSymbolName(TypeName));
 
             // functions
             for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::ExcludeInterfaces); FunctionIt; ++FunctionIt)
@@ -152,17 +153,13 @@ namespace UnLua
             FString Ret = GetCommentBlock(Function);
             FString Properties;
 
-            // black list of Lua key words
-            static FString LuaKeyWords[] = {TEXT("local"), TEXT("function"), TEXT("end")};
-            static constexpr int32 NumLuaKeyWords = sizeof(LuaKeyWords) / sizeof(FString);
-
             for (TFieldIterator<FProperty> It(Function); It && (It->PropertyFlags & CPF_Parm); ++It)
             {
                 const FProperty* Property = *It;
                 if (Property->GetFName() == NAME_LatentInfo)
                     continue;
 
-                FString TypeName = GetTypeName(Property);
+                FString TypeName = EscapeSymbolName(GetTypeName(Property));
                 const FString& PropertyComment = Property->GetMetaData(NAME_ToolTip);
                 FString ExtraDesc;
 
@@ -172,16 +169,7 @@ namespace UnLua
                 }
                 else
                 {
-                    FString PropertyName = Property->GetName();
-                    for (int32 KeyWordIdx = 0; KeyWordIdx < NumLuaKeyWords; ++KeyWordIdx)
-                    {
-                        if (PropertyName.Equals(LuaKeyWords[KeyWordIdx], ESearchCase::CaseSensitive))
-                        {
-                            PropertyName += TEXT("__"); // add suffix for Lua key words
-                            break;
-                        }
-                    }
-
+                    FString PropertyName = EscapeSymbolName(*Property->GetName());
                     if (Properties.IsEmpty())
                         Properties = PropertyName;
                     else
@@ -210,8 +198,19 @@ namespace UnLua
                 Ret += TEXT("\r\n");
             }
 
-            const FString ClassName = GetTypeName(Function->GetOwnerClass());
-            Ret += FString::Printf(TEXT("function %s%s%s(%s) end\r\n"), *ClassName, Function->HasAnyFunctionFlags(FUNC_Static) ? TEXT(".") : TEXT(":"), *Function->GetName(), *Properties);
+            const auto ClassName = EscapeSymbolName(GetTypeName(Function->GetOwnerClass()));
+            const auto FunctionName = Function->GetName();
+            const auto bIsStatic = Function->HasAnyFunctionFlags(FUNC_Static);
+            if (IsValidFunctionName(FunctionName))
+            {
+                Ret += FString::Printf(TEXT("function %s%s%s(%s) end\r\n"), *ClassName, bIsStatic ? TEXT(".") : TEXT(":"), *FunctionName, *Properties);
+            }
+            else
+            {
+                const auto Self = bIsStatic ? TEXT("") : TEXT("self");
+                const auto Comma = bIsStatic || Properties.IsEmpty() ? TEXT("") : TEXT(", ");
+                Ret += FString::Printf(TEXT("%s[\"%s\"] = function(%s%s%s) end\r\n"), *ClassName, *FunctionName, Self, Comma, *Properties);
+            }
             return Ret;
         }
 
@@ -425,6 +424,44 @@ namespace UnLua
             return Ret;
         }
 
+        FString EscapeSymbolName(const FString InName)
+        {
+            FString Name = InName;
+
+            // 和Lua关键字重名就加前缀
+            for (const auto& Keyword : LuaKeywords)
+            {
+                if (Name.Equals(Keyword, ESearchCase::CaseSensitive))
+                {
+                    Name = TEXT("_") + Name;
+                    break;
+                }
+            }
+
+            // 替换掉除中文外的特殊字符
+            for (int32 Index = 0; Index < Name.Len(); Index++)
+            {
+                const auto Char = Name[Index];
+                if ((Char < '0' || Char > '9')
+                    && (Char < 'a' || Char > 'z')
+                    && (Char < 'A' || Char > 'Z')
+                    && Char != '_'
+                    && Char < 0x100)
+                {
+                    Name[Index] = TCHAR('_');
+                }
+            }
+
+            // 数字开头就加前缀
+            const auto PrefixChar = Name[0];
+            if (PrefixChar >= '0' && PrefixChar <= '9')
+            {
+                Name = TEXT("_") + Name;
+            }
+
+            return Name;
+        }
+
         bool IsValid(const UFunction* Function)
         {
             if (!Function)
@@ -437,10 +474,37 @@ namespace UnLua
                 return false;
 
             const FString Name = Function->GetName();
-            if (Name.Len() == 0)
+            if (Name.IsEmpty())
                 return false;
 
-            if (Name.Contains(" "))
+            return true;
+        }
+
+        bool IsValidFunctionName(const FString Name)
+        {
+            if (Name.IsEmpty())
+                return false;
+
+            // 不能有Lua关键字
+            for (const auto& Keyword : LuaKeywords)
+            {
+                if (Name.Equals(Keyword, ESearchCase::CaseSensitive))
+                    return false;
+            }
+
+            // 不能有中文和特殊字符
+            for (const auto& Char : Name)
+            {
+                if ((Char < '0' || Char > '9')
+                    && (Char < 'a' || Char > 'z')
+                    && (Char < 'A' || Char > 'Z')
+                    && Char != '_')
+                    return false;
+            }
+
+            // 不能以数字开头
+            const auto& PrefixChar = Name[0];
+            if (PrefixChar >= '0' && PrefixChar <= '9')
                 return false;
 
             return true;

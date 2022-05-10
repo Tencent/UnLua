@@ -44,6 +44,10 @@ namespace UnLua
 
         UNLUAEDITOR_API FString EscapeComments(const FString Comments, bool bSingleLine);
 
+        UNLUAEDITOR_API FString EscapeSymbolName(const FString InName);
+
         UNLUAEDITOR_API bool IsValid(const UFunction* Function);
+
+        UNLUAEDITOR_API bool IsValidFunctionName(const FString Name);
     }
 }
