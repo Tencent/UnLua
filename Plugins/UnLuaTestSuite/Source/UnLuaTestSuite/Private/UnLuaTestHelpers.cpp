@@ -27,3 +27,7 @@ END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FUnLuaTestLib)
 
 #endif
+int32 UUnLuaTestStub::TestForIssue407(TArray<int32> Array)
+{
+    return Array.Num();
+}

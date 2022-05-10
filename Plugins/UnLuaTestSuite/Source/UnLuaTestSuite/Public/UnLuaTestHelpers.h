@@ -81,6 +81,18 @@ public:
 
     UFUNCTION(BlueprintCallable)
     void AddCount() { Counter++; }
+
+    UPROPERTY()
+    TMap<int32, int32> MapForIssue407;
+
+    UUnLuaTestStub()
+    {
+        MapForIssue407.Add(1, 1);
+        MapForIssue407.Add(2, 2);
+    }
+    
+    UFUNCTION(BlueprintCallable)
+    int32 TestForIssue407(TArray<int32> Array);
 };
 
 UCLASS()
