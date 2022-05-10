@@ -60,6 +60,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     if (InFunction->ParmsSize > 0)
     {
         Buffer = FMemory::Malloc(InFunction->ParmsSize, 16);
+        FMemory::Memzero(Buffer, InFunction->ParmsSize);
 #if STATS
         const uint32 Size = FMemory::GetAllocSize(Buffer);
         INC_MEMORY_STAT_BY(STAT_UnLua_PersistentParamBuffer_Memory, Size);
