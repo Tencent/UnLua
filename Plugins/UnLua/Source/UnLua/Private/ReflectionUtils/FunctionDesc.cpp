@@ -569,7 +569,8 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             continue;
         }
 
-        if (Property->IsConstOutParameter())
+        const bool bIsOutParameter = static_cast<bool>(Property->GetProperty()->PropertyFlags & CPF_OutParm);
+        if (bIsOutParameter)
         {
             OutParam = FindOutParmRec(OutParam, Property->GetProperty());
             if (OutParam)
@@ -580,7 +581,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             }
         }
 
-        Property->GetValue(L, InParams, !(Property->GetProperty()->PropertyFlags & CPF_OutParm));
+        Property->GetValue(L, InParams, false);
     }
 
     // object is also pushed, return is push when return
