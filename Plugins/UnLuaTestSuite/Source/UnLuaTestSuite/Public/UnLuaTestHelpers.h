@@ -21,10 +21,6 @@
 #include "GameFramework/Character.h"
 #include "UnLuaTestHelpers.generated.h"
 
-namespace UnLuaTestHelpers
-{
-}
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
 
 DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
@@ -32,23 +28,6 @@ DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FIssue362Delegate, TArray<int32>&, Array);
-
-UINTERFACE(Blueprintable, MinimalAPI)
-class UInterfaceForIssue398 : public UInterface
-{
-    GENERATED_BODY()
-};
-
-class IInterfaceForIssue398
-{
-    GENERATED_BODY()
-};
-
-UCLASS()
-class UNLUATESTSUITE_API ACharacterForIssue398 : public ACharacter, public IInterfaceForIssue398
-{
-    GENERATED_BODY()
-};
 
 UENUM()
 enum EEnumForIssue331
