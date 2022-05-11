@@ -70,6 +70,10 @@ end
 
 function BP_CharacterBase_C:Destroy(Duration)
 	UE.UKismetSystemLibrary.Delay(self, Duration)
+	if not self:IsValid() then
+		return false
+	end
+
 	if self.Weapon then
 		self.Weapon:K2_DestroyActor()
 	end

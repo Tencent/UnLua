@@ -75,11 +75,15 @@ function BP_PlayerController_C:Fire_Released()
 end
 
 function BP_PlayerController_C:Aim_Pressed()
-	BPI_Interfaces.UpdateAiming(self.Pawn, true)
+	if self.Pawn then
+		BPI_Interfaces.UpdateAiming(self.Pawn, true)
+	end
 end
 
 function BP_PlayerController_C:Aim_Released()
-	BPI_Interfaces.UpdateAiming(self.Pawn, false)
+	if self.Pawn then
+		BPI_Interfaces.UpdateAiming(self.Pawn, false)
+	end
 end
 
 return BP_PlayerController_C
