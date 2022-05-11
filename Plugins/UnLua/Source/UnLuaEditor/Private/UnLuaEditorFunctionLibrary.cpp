@@ -112,7 +112,7 @@ FString UUnLuaEditorFunctionLibrary::GetCurrentVersion()
 void UUnLuaEditorFunctionLibrary::OnLuaFilesModified(const TArray<FFileChangeData>& FileChanges)
 {
     const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
-    if (Settings.HotReloadMode == EHotReloadMode::Auto)
+    if (Settings.HotReloadMode != EHotReloadMode::Auto)
         return;
     UUnLuaFunctionLibrary::HotReload();
 }
