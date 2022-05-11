@@ -39,7 +39,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 源码版引擎 Test 版本 UStruct::SerializeExpr Crash [#374](https://github.com/Tencent/UnLua/issues/374)
 - 某个UObject如果不再被Lua引用，它在Lua添加的委托函数就会失效[#394](https://github.com/Tencent/UnLua/issues/394)
 - 接口列表从lua传到c++/蓝图层会丢失一半信息[#398](https://github.com/Tencent/UnLua/issues/398)
+- 不同实例的多播委托绑定相同实例函数，清理时崩溃 [#400](https://github.com/Tencent/UnLua/issues/400)
 - LUA覆写导致数组传参错误 [#401](https://github.com/Tencent/UnLua/issues/401)
+- LUA以Out形式传参给蓝图数组始终为空 [#404](https://github.com/Tencent/UnLua/issues/404)
 
 ### Removed
 - 移除诸如 `GLuaCxt` / `GReflectionRegistry` / `GObjectReferencer` 的全局变量
