@@ -71,7 +71,14 @@ namespace UnLua
             LuaFunctions.Add(Function, MoveTemp(Info));
         }
 
-        check(FuncRef != LUA_NOREF);
+        if (FuncRef == LUA_NOREF)
+        {
+            // 可能因为Lua模块加载失败导致找不到对应的function，转发给原函数
+            const auto Overridden = Function->GetOverridden();
+            if (Overridden && Stack.Code)
+                Overridden->Invoke(Context, Stack, RESULT_PARAM);
+            return;
+        }
         FuncDesc->CallLua(L, FuncRef, SelfRef, Stack, RESULT_PARAM);
     }
 }
