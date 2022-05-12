@@ -291,9 +291,9 @@ namespace UnLua
         {
             Type = GetFieldFromSuperClass(L, lua_upvalueindex(1), 2);
         }
-        if (Type == LUA_TLIGHTUSERDATA)
+        if (Type == LUA_TUSERDATA)
         {
-            IExportedProperty *Property = (IExportedProperty*)lua_touserdata(L, -1);
+            TSharedPtr<IExportedProperty> Property = *(TSharedPtr<IExportedProperty>*)lua_touserdata(L, -1);
             void *ContainerPtr = UnLua::GetPointer(L, 1);
             if (ContainerPtr)
             {
@@ -312,9 +312,9 @@ namespace UnLua
         {
             Type = GetFieldFromSuperClass(L, lua_upvalueindex(1), 2);
         }
-        if (Type == LUA_TLIGHTUSERDATA)
+        if (Type == LUA_TUSERDATA)
         {
-            IExportedProperty *Property = (IExportedProperty*)lua_touserdata(L, -1);
+            TSharedPtr<IExportedProperty> Property = *(TSharedPtr<IExportedProperty>*)lua_touserdata(L, -1);
             void *ContainerPtr = UnLua::GetPointer(L, 1);
             if (ContainerPtr)
             {
@@ -771,23 +771,6 @@ namespace UnLua
     {}
 
     template <bool bIsReflected>
-    TExportedClassBase<bIsReflected>::~TExportedClassBase()
-    {
-        for (IExportedProperty *Property : Properties)
-        {
-            delete Property;
-        }
-        for (IExportedFunction *MemberFunc : Functions)
-        {
-            delete MemberFunc;
-        }
-        for (IExportedFunction *Func : GlueFunctions)
-        {
-            delete Func;
-        }
-    }
-
-    template <bool bIsReflected>
     void TExportedClassBase<bIsReflected>::Register(lua_State *L)
     {
         // make sure the meta table is on the top of the stack if 'bIsReflected' is true
@@ -847,20 +830,14 @@ namespace UnLua
             }
         }
 
-        for (IExportedProperty *Property : Properties)
-        {
+        for (const auto Property : Properties)
             Property->Register(L);
-        }
 
-        for (IExportedFunction *MemberFunc : Functions)
-        {
+        for (const auto MemberFunc : Functions)
             MemberFunc->Register(L);
-        }
 
-        for (IExportedFunction *Func : GlueFunctions)
-        {
+        for (const auto Func : GlueFunctions)
             Func->Register(L);
-        }
 
         if (!bIsReflected)
         {
@@ -906,7 +883,7 @@ namespace UnLua
         Buffer += TEXT("\r\n");
 
         // fields
-        for (IExportedProperty *Property : Properties)
+        for (const auto Property : Properties)
         {
             Property->GenerateIntelliSense(Buffer);
         }
@@ -932,7 +909,7 @@ namespace UnLua
         Buffer += TEXT("local M = {}\r\n");
 
         // fields
-        for (IExportedProperty *Property : Properties)
+        for (const auto Property : Properties)
         {
             FString Field;
             TArray<FString> OutArray;
@@ -974,7 +951,7 @@ namespace UnLua
         {
             if (uint8 Mask = Buffer[Offset])
             {
-                FExportedClassBase::Properties.Add(new FExportedBitFieldBoolProperty(InName, Offset, Mask));
+                FExportedClassBase::Properties.Add(MakeShared<FExportedBitFieldBoolProperty>(InName, Offset, Mask));
                 return true;
             }
         }
@@ -985,20 +962,20 @@ namespace UnLua
     template <typename T> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddProperty(const FString &InName, T ClassType::*Property)
     {
         TPropertyOffset<ClassType, T> PropertyOffset(Property);
-        FExportedClassBase::Properties.Add(new TExportedProperty<T>(InName, PropertyOffset.Offset));
+        FExportedClassBase::Properties.Add(MakeShared<TExportedProperty<T>>(InName, PropertyOffset.Offset));
     }
 
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     template <typename T, int32 N> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddProperty(const FString &InName, T (ClassType::*Property)[N])
     {
         TArrayPropertyOffset<ClassType, T, N> PropertyOffset(Property);
-        FExportedClassBase::Properties.Add(new TExportedArrayProperty<T>(InName, PropertyOffset.Offset, N));
+        FExportedClassBase::Properties.Add(MakeShared<TExportedArrayProperty<T>>(InName, PropertyOffset.Offset, N));
     }
 
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     template <typename T> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddStaticProperty(const FString &InName, T *Property)
     {
-        FExportedClassBase::Properties.Add(new TExportedStaticProperty<T>(InName, Property));
+        FExportedClassBase::Properties.Add(MakeShared<TExportedStaticProperty<T>>(InName, Property));
     }
     
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>

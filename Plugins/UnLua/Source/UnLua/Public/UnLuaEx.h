@@ -196,13 +196,14 @@ namespace UnLua
     /**
      * Exported property
      */
-    struct FExportedProperty : public IExportedProperty
+    struct FExportedProperty : public IExportedProperty, public TSharedFromThis<FExportedProperty>
     {
         virtual void Register(lua_State *L) override
         {
             // make sure the meta table is on the top of the stack
             lua_pushstring(L, TCHAR_TO_UTF8(*Name));
-            lua_pushlightuserdata(L, this);
+            const auto Userdata = NewSmartPointer(L, sizeof(TSharedPtr<FExportedProperty>), "TSharedPtr");
+            new(Userdata) TSharedPtr<FExportedProperty>(this->AsShared());
             lua_rawset(L, -3);
         }
 
@@ -214,8 +215,6 @@ namespace UnLua
         FExportedProperty(const FString &InName, uint32 InOffset)
             : Name(InName), Offset(InOffset)
         {}
-
-        virtual ~FExportedProperty() {}
 
         FString Name;
         uint32 Offset;
@@ -313,7 +312,6 @@ namespace UnLua
     struct TExportedClassBase : public IExportedClass
     {
         TExportedClassBase(const char *InName, const char *InSuperClassName = nullptr);
-        virtual ~TExportedClassBase();
 
         virtual void Register(lua_State *L) override;
         virtual void AddLib(const luaL_Reg *InLib) override;
@@ -333,7 +331,7 @@ namespace UnLua
     protected:
         FString Name;
         FString SuperClassName;
-        TArray<IExportedProperty*> Properties;
+        TArray<TSharedPtr<IExportedProperty>> Properties;
         TArray<IExportedFunction*> Functions;
         TArray<IExportedFunction*> GlueFunctions;
     };
@@ -574,6 +572,16 @@ UnLua::AddType(#Name, UnLua::GetTypeInterface<Type>()); \
     { \
         typedef Enum EnumType; \
         FExported##Enum(const FString &InName) \
+            : UnLua::FExportedEnum(InName) \
+        { \
+            UnLua::ExportEnum(this);
+
+#define BEGIN_EXPORT_ENUM_EX(Enum, Name) \
+    DEFINE_NAMED_TYPE(#Name, Enum) \
+    static struct FExported##Name : public UnLua::FExportedEnum \
+    { \
+        typedef Enum EnumType; \
+        FExported##Name(const FString &InName) \
             : UnLua::FExportedEnum(InName) \
         { \
             UnLua::ExportEnum(this);
