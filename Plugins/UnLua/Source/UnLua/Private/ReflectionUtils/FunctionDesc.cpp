@@ -42,7 +42,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     else
         LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
 #else
-    LuaFunctionName = MakeUnique<FTCHARToUTF8>(*GetName());
+    LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
 #endif
     
     bStaticFunc = InFunction->HasAnyFunctionFlags(FUNC_Static);         // a static function?
