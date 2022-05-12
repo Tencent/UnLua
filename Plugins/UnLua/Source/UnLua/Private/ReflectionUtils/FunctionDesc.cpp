@@ -188,7 +188,6 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     check(lua_istable(L, -1));
     
     const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
-    bool bSuccess;
 
     if (bUnpackParams)
     {
@@ -206,7 +205,7 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
 
         SkipCodes(Stack, Params);
 
-        bSuccess = CallLuaInternal(L, Params, Stack.OutParms, RESULT_PARAM); // call Lua function...
+        CallLuaInternal(L, Params, Stack.OutParms, RESULT_PARAM); // call Lua function...
 
         if (Params)
         {
@@ -218,14 +217,7 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     }
     else
     {
-        bSuccess = CallLuaInternal(L, Stack.Locals, Stack.OutParms, RESULT_PARAM); // call Lua function...
-    }
-
-    if (!bSuccess && bUnpackParams)
-    {
-        FMemMark Mark(FMemStack::Get());
-        void* Params = New<uint8>(FMemStack::Get(), ParmsSize, 16);
-        SkipCodes(Stack, Params);
+        CallLuaInternal(L, Stack.Locals, Stack.OutParms, RESULT_PARAM); // call Lua function...
     }
 }
 
