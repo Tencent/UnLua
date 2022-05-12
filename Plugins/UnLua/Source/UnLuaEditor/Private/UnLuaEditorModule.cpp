@@ -92,7 +92,7 @@ private:
     {
         RegisterSettings();
 
-        if (IsRunningGame())
+        if (!GEditor)
         {
             // Loading MainFrame module with '-game' is not supported
             return;
