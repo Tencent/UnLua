@@ -27,7 +27,9 @@ function BP_AICharacter_C:Died_Multicast_RPC(DamageType)
 	self.Mesh:K2_SetRelativeLocation(NewLocation, false, SweepHitResult, false)
 	self.Mesh:SetAllBodiesBelowSimulatePhysics(self.BoneName, true, true)
 	local GameMode = UE.UGameplayStatics.GetGameMode(self)
-	BPI_Interfaces.NotifyEnemyDied(GameMode)
+	if GameMode then
+		BPI_Interfaces.NotifyEnemyDied(GameMode)
+	end
 	--self.Sphere.OnComponentBeginOverlap:Remove(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
 end
 
