@@ -643,6 +643,7 @@ static int32 TArray_ToTable(lua_State *L)
 static const luaL_Reg TArrayLib[] =
 {
     { "Length", TArray_Length },
+    { "Num", TArray_Length },
     { "Add", TArray_Add },
     { "AddUnique", TArray_AddUnique },
     { "Find", TArray_Find },
