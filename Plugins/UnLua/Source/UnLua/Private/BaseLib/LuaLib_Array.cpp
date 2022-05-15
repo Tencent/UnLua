@@ -37,7 +37,7 @@ static int32 TArray_New(lua_State *L)
     return 1;
 }
 
-int Enumerable(lua_State* L)
+static int TArray_Enumerable(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
 
@@ -49,13 +49,19 @@ int Enumerable(lua_State* L)
 
     FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)(lua_touserdata(L, 1));
 
-    if (!Enumerator)
+    if (!Enumerator || !*Enumerator)
     {
         UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid enumerator!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
     const auto Array = (*Enumerator)->LuaArray;
+
+    if (!Array)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
 
     if (Array->IsValidIndex((*Enumerator)->Index))
     {
@@ -96,7 +102,7 @@ static int32 TArray_Pairs(lua_State* L)
     }
 
     // Enumerable
-    lua_pushcfunction(L, Enumerable);
+    lua_pushcfunction(L, TArray_Enumerable);
 
     // Enumerable userdata
     FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)lua_newuserdata(

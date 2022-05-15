@@ -21,6 +21,29 @@
 class FLuaMap
 {
 public:
+    struct FLuaMapEnumerator
+    {
+        FLuaMapEnumerator(FLuaMap* InLuaMap, const int32 InIndex): LuaMap(InLuaMap), Index(InIndex)
+        {
+        }
+
+        static int gc(lua_State* L)
+        {
+            if (FLuaMapEnumerator** Enumerator = (FLuaMapEnumerator**)lua_touserdata(L, 1))
+            {
+                (*Enumerator)->LuaMap = nullptr;
+
+                delete *Enumerator;
+            }
+
+            return 0;
+        }
+
+        FLuaMap* LuaMap;
+
+        int32 Index = 0;
+    };
+    
     enum FScriptMapFlag
     {
         OwnedByOther,   // 'Map' is owned by others

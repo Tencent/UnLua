@@ -44,6 +44,113 @@ static int32 TMap_New(lua_State *L)
     return 1;
 }
 
+static int TMap_Enumerable(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+
+    if (NumParams != 2)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaMap::FLuaMapEnumerator** Enumerator = (FLuaMap::FLuaMapEnumerator**)(lua_touserdata(L, 1));
+
+    if (!Enumerator || !*Enumerator)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid enumerator!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    const auto Map = (*Enumerator)->LuaMap;
+
+    if (!Map)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TMap!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    auto ScriptMapHelper = FScriptMapHelper::CreateHelperFormInnerProperties(
+        Map->KeyInterface->GetUProperty(), Map->ValueInterface->GetUProperty(), Map->Map);
+
+    while ((*Enumerator)->Index < ScriptMapHelper.GetMaxIndex())
+    {
+        if (!ScriptMapHelper.IsValidIndex((*Enumerator)->Index))
+        {
+            ++(*Enumerator)->Index;
+        }
+        else
+        {
+            Map->KeyInterface->Initialize(Map->ElementCache);
+
+            void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
+
+            Map->KeyInterface->Initialize(Map->ElementCache);
+
+            Map->ValueInterface->Initialize(ValueCache);
+
+            Map->KeyInterface->Read(L, ScriptMapHelper.GetKeyPtr((*Enumerator)->Index), true);
+
+            Map->ValueInterface->Read(L, ScriptMapHelper.GetValuePtr((*Enumerator)->Index), true);
+
+            Map->KeyInterface->Destruct(Map->ElementCache);
+
+            Map->ValueInterface->Destruct(ValueCache);
+
+            ++(*Enumerator)->Index;
+
+            return 2;
+        }
+    }
+
+    return 0;
+}
+
+static int32 TMap_Pairs(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+
+    if (NumParams != 1)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
+
+    if (!Map)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TMap!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    // Enumerable
+    lua_pushcfunction(L, TMap_Enumerable);
+
+    // Enumerable userdata
+    FLuaMap::FLuaMapEnumerator** Enumerator = (FLuaMap::FLuaMapEnumerator**)lua_newuserdata(
+        L, sizeof(FLuaMap::FLuaMapEnumerator*));
+
+    *Enumerator = new FLuaMap::FLuaMapEnumerator(Map, 0);
+
+    // Enumerable userdata mt
+    lua_newtable(L);
+
+    // Enumerable userdata mt gc
+    lua_pushcfunction(L, FLuaMap::FLuaMapEnumerator::gc);
+
+    // Enumerable userdata mt
+    lua_setfield(L, -2, "__gc");
+
+    // Enumerable userdata
+    lua_setmetatable(L, -2);
+
+    // Enumerable userdata nil
+    lua_pushnil(L);
+
+    return 3;
+}
+
 /**
  * @see FLuaMap::Num(...)
  */
@@ -355,6 +462,7 @@ static const luaL_Reg TMapLib[] =
     { "ToTable", TMap_ToTable },
     { "__gc", TMap_Delete },
     { "__call", TMap_New },
+    { "__pairs", TMap_Pairs },
     { nullptr, nullptr }
 };
 
