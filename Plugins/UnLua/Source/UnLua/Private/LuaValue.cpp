@@ -92,12 +92,18 @@ namespace UnLua
 
     FLuaValue FLuaTable::operator[](int32 i) const
     {
+        const auto L = Env->GetMainState();
+        lua_pushinteger(L, i);
+        lua_gettable(L, Index);
         ++PushedValues;
         return FLuaValue(Env, -1);
     }
 
     FLuaValue FLuaTable::operator[](int64 i) const
     {
+        const auto L = Env->GetMainState();
+        lua_pushinteger(L, i);
+        lua_gettable(L, Index);
         ++PushedValues;
         return FLuaValue(Env, -1);
     }
