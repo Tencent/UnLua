@@ -299,6 +299,34 @@ void FUnLuaLibMapSpec::Define()
         });
     });
 
+    Describe(TEXT("pairs"), [this]
+    {
+        It(TEXT("迭代获取Key与Value"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            local Map = UE.TMap(0, 0)
+            Map:Add(1, 100)
+            Map:Add(2, 200)
+
+            local ret = {}
+            for key, value in pairs(Map) do
+                table.insert(ret, key)
+                table.insert(ret, value)
+            end
+            return ret;
+            )";
+            TEST_TRUE(UnLua::RunChunk(L, Chunk));
+
+            const auto& Env = UnLua::FLuaEnv::FindEnv(L);
+            const auto Ret = UnLua::FLuaTable(Env, -1);
+            TEST_EQUAL(Ret.Length(), 4);
+            TEST_EQUAL(Ret[1].Value<int>(), 1)
+            TEST_EQUAL(Ret[2].Value<int>(), 100)
+            TEST_EQUAL(Ret[3].Value<int>(), 2)
+            TEST_EQUAL(Ret[4].Value<int>(), 200)
+        });
+    });
+
     AfterEach([this]
     {
         UnLua::Shutdown();
