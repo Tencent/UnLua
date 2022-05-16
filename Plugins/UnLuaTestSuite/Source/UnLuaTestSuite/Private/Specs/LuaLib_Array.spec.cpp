@@ -104,6 +104,28 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(Array->operator[](0), FVector(1, 2, 3));
             TEST_EQUAL(Array->operator[](1), FVector(3, 2, 1));
         });
+
+        It(TEXT("构造TArray<UStruct>"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            local Struct_TableRow = UE.UObject.Load("/UnLuaTestSuite/Tests/Misc/Struct_TableRow.Struct_TableRow")
+            local Array = UE.TArray(Struct_TableRow)
+
+            local Item1 = Struct_TableRow()
+            local Item2 = Struct_TableRow()
+
+            Array:Add(Item1)
+            Array:Add(Item2)
+
+            return Array
+            )";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const TArray<FVector>* Array = (TArray<FVector>*)ScriptArray;
+            TEST_EQUAL(Array->Num(), 2);
+        });
     });
 
     Describe(TEXT("Length"), [this]
@@ -120,7 +142,7 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(lua_tointeger(L, -1), 2LL);
         });
 
-        xIt(TEXT("Num"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("Num"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             const char* Chunk = "\
             local Array = UE.TArray(0)\

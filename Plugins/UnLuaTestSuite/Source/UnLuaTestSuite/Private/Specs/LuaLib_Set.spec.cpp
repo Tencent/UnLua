@@ -77,6 +77,27 @@ void FUnLuaLibSetSpec::Define()
             TEST_TRUE(Set->Contains(FVector(1,1,1)));
             TEST_TRUE(Set->Contains(FVector(2,2,2)));
         });
+
+        It(TEXT("构造TSet<UScriptStruct>"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            local Struct_TableRow = UE.UObject.Load("/UnLuaTestSuite/Tests/Misc/Struct_TableRow.Struct_TableRow")
+            local Set = UE.TSet(Struct_TableRow)
+
+            local Item1 = Struct_TableRow()
+            Item1.TestFloat = 1
+            local Item2 = Struct_TableRow()
+            Item2.TestFloat = 2
+
+            Set:Add(Item1)
+            Set:Add(Item2)
+
+            return Set
+            )";
+            UnLua::RunChunk(L, Chunk);
+            const auto Set = UnLua::GetSet(L, -1);
+            TEST_EQUAL(Set->Num(), 2);
+        });
     });
 
     Describe(TEXT("Length"), [this]()

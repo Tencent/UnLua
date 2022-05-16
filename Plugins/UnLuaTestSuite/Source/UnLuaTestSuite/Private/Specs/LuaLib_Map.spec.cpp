@@ -77,6 +77,26 @@ void FUnLuaLibMapSpec::Define()
             TEST_EQUAL(Map->operator[](FVector(1,1,1)), true);
             TEST_EQUAL(Map->operator[](FVector(2,2,2)), false);
         });
+
+        It(TEXT("构造TMap<UStruct,UStruct>"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            local Struct_TableRow = UE.UObject.Load("/UnLuaTestSuite/Tests/Misc/Struct_TableRow.Struct_TableRow")
+            local Map = UE.TMap(Struct_TableRow, Struct_TableRow)
+
+            local Item1 = Struct_TableRow()
+            Item1.TestString = "foo"
+            local Item2 = Struct_TableRow()
+            Item2.TestString = "bar"
+            
+            Map:Add(Item1, Item2)
+            Map:Add(Item2, Item1)
+            return Map
+            )";
+            UnLua::RunChunk(L, Chunk);
+            const auto& Map = *UnLua::GetMap(L, -1);
+            TEST_EQUAL(Map.Num(), 2);
+        });
     });
 
     Describe(TEXT("Length"), [this]()
