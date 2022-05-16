@@ -65,7 +65,7 @@ static int TArray_Enumerable(lua_State* L)
 
     if (Array->IsValidIndex((*Enumerator)->Index))
     {
-        UnLua::Push(L, (*Enumerator)->Index);
+        UnLua::Push(L, (*Enumerator)->Index + 1);
 
         Array->Inner->Initialize(Array->ElementCache);
 
