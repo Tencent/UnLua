@@ -19,6 +19,29 @@
 class FLuaArray
 {
 public:
+    struct FLuaArrayEnumerator
+    {
+        FLuaArrayEnumerator(FLuaArray* InLuaArray, const int32 InIndex): LuaArray(InLuaArray), Index(InIndex)
+        {
+        }
+
+        static int gc(lua_State* L)
+        {
+            if (FLuaArrayEnumerator** Enumerator = (FLuaArrayEnumerator**)lua_touserdata(L, 1))
+            {
+                (*Enumerator)->LuaArray = nullptr;
+
+                delete *Enumerator;
+            }
+
+            return 0;
+        }
+
+        FLuaArray* LuaArray = nullptr;
+
+        int32 Index = 0;
+    };
+
     enum EScriptArrayFlag
     {
         OwnedByOther,   // 'ScriptArray' is owned by others
