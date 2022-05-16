@@ -604,6 +604,34 @@ void FUnLuaLibArraySpec::Define()
         });
     });
 
+    Describe(TEXT("pairs"), [this]
+    {
+        It(TEXT("迭代获取数组索引与元素"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const char* Chunk = R"(
+            local Array = UE.TArray(0)
+            Array:Add(100)
+            Array:Add(200)
+
+            local ret = {}
+            for i, v in pairs(Array) do
+                table.insert(ret, i)
+                table.insert(ret, v)
+            end
+            return ret;
+            )";
+            TEST_TRUE(UnLua::RunChunk(L, Chunk));
+
+            const auto& Env = UnLua::FLuaEnv::FindEnv(L);
+            const auto Ret = UnLua::FLuaTable(Env, -1);
+            TEST_EQUAL(Ret.Length(), 4);
+            TEST_EQUAL(Ret[1].Value<int>(), 1)
+            TEST_EQUAL(Ret[2].Value<int>(), 100)
+            TEST_EQUAL(Ret[3].Value<int>(), 2)
+            TEST_EQUAL(Ret[4].Value<int>(), 200)
+        });
+    });
+    
     AfterEach([this]
     {
         UnLua::Shutdown();
