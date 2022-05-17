@@ -162,7 +162,9 @@ namespace UnLua
     template <typename T1, typename... T2>
     FORCEINLINE int32 PushNonConstRefParam(lua_State *L, T1 &&V1, T2&&... V2)
     {
-        return PushNonConstRefParam(L, Forward<T1>(V1)) + PushNonConstRefParam(L, Forward<T2>(V2)...);
+        const auto Ret1 = PushNonConstRefParam(L, Forward<T1>(V1));
+        const auto Ret2 = PushNonConstRefParam(L, Forward<T2>(V2)...); 
+        return Ret1 + Ret2;
     }
 
     template <typename... ArgType, uint32... N>
