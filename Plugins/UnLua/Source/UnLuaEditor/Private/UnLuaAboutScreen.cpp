@@ -66,7 +66,7 @@ void SUnLuaAboutScreen::Construct(const FArguments& InArgs)
                     .ButtonStyle(FEditorStyle::Get(), "NoBorder")
                     .OnClicked(this, &SUnLuaAboutScreen::OnLogoButtonClicked)
                     [
-                        SNew(SImage).Image(FUnLuaEditorStyle::GetInstance().GetBrush("UnLuaEditor.UnLuaLogo"))
+                        SNew(SImage).Image(FUnLuaEditorStyle::GetInstance()->GetBrush("UnLuaEditor.UnLuaLogo"))
                     ]
                 ]
                 + SHorizontalBox::Slot()

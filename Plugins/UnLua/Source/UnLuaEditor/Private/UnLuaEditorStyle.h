@@ -22,9 +22,11 @@ public:
     FUnLuaEditorStyle();
     ~FUnLuaEditorStyle();
 
-    static ISlateStyle& GetInstance()
+    static TSharedPtr<ISlateStyle> GetInstance()
     {
-        return *Instance.Get();
+        if (!Instance.IsValid())
+            Instance = MakeShared<FUnLuaEditorStyle>();
+        return Instance;
     }
 
 private:

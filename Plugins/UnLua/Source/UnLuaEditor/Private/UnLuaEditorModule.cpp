@@ -67,7 +67,7 @@ public:
 
     virtual void StartupModule() override
     {
-        Style = MakeShareable(new FUnLuaEditorStyle);
+        Style = FUnLuaEditorStyle::GetInstance();
 
         FUnLuaEditorCommands::Register();
 
