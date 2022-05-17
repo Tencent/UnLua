@@ -830,13 +830,13 @@ namespace UnLua
             }
         }
 
-        for (const auto Property : Properties)
+        for (const auto& Property : Properties)
             Property->Register(L);
 
-        for (const auto MemberFunc : Functions)
+        for (const auto& MemberFunc : Functions)
             MemberFunc->Register(L);
 
-        for (const auto Func : GlueFunctions)
+        for (const auto& Func : GlueFunctions)
             Func->Register(L);
 
         if (!bIsReflected)

@@ -63,7 +63,7 @@ TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::Locate(const UObject* 
 void ULuaEnvLocator_ByGameInstance::HotReload()
 {
     Env->HotReload();
-    for (const auto Pair : Envs)
+    for (const auto& Pair : Envs)
         Pair.Value->HotReload();
 }
 
