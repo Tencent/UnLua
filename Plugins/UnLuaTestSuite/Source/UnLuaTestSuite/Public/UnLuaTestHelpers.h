@@ -189,6 +189,9 @@ EPIC_TEST_BOOLEAN_(TEXT(#expression), expression, false)
 #define TEST_EQUAL(expression, expected) \
 EPIC_TEST_BOOLEAN_(TEXT(#expression), expression, expected)
 
+#define TEST_QUAT_EQUAL(expression, expected) \
+EPIC_TEST_BOOLEAN_(TEXT(#expression), FQuat::ErrorAutoNormalize(expression, expected) < 0.0001, true)
+
 #define EPIC_TEST_BOOLEAN_(text, expression, expected) \
 TestEqual(text, expression, expected);
 

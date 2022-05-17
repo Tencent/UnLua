@@ -45,79 +45,79 @@ void FUnLuaLibWorldSpec::Define()
         lua_setglobal(L, "World");
     });
 
-    Describe(TEXT("SpawnActor"), [this]()
+    Describe(TEXT("SpawnActor"), [this]
     {
-        It(TEXT("创建Actor，仅指定Actor类型"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("创建Actor，仅指定Actor类型"), EAsyncExecution::TaskGraphMainThread, [this]
         {
-            const char* Chunk = "\
-            local Actor = World:SpawnActor(UE.AActor)\
-            return Actor\
-            ";
+            const auto Chunk = R"(
+            local Actor = World:SpawnActor(UE.AActor)
+            return Actor
+            )";
             UnLua::RunChunk(L, Chunk);
             const auto Actor = (AActor*)UnLua::GetUObject(L, -1);
             TEST_EQUAL(Actor->GetClass(), AActor::StaticClass());
         });
 
-        It(TEXT("创建Actor，指定初始Transform"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("创建Actor，指定初始Transform"), EAsyncExecution::TaskGraphMainThread, [this]
         {
-            const char* Chunk = "\
-            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
-            local Translation = UE.FVector(1,1,1)\
-            local Scale = UE.FVector(2,2,2)\
-            local Transform = UE.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE.ACharacter, Transform)\
-            return Actor\
-            ";
+            const auto Chunk = R"(
+            local Rotation = UE.FQuat(4,3,2,1)
+            local Translation = UE.FVector(1,1,1)
+            local Scale = UE.FVector(2,2,2)
+            local Transform = UE.FTransform(Rotation, Translation, Scale)
+            local Actor = World:SpawnActor(UE.ACharacter, Transform)
+            return Actor
+            )";
             UnLua::RunChunk(L, Chunk);
             const auto Actor = (AActor*)UnLua::GetUObject(L, -1);
             const auto& Transform = Actor->GetActorTransform();
-            TEST_EQUAL(Transform.GetRotation(), FQuat(FVector(0,0,1), 3.14));
-            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1))
-            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2))
+            TEST_QUAT_EQUAL(Transform.GetRotation(), FQuat(4,3,2,1));
+            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1));
+            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2));
         });
 
-        It(TEXT("创建Actor，指定初始Transform/CollisionHandling"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("创建Actor，指定初始Transform/CollisionHandling"), EAsyncExecution::TaskGraphMainThread, [this]
         {
-            const char* Chunk = "\
-            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
-            local Translation = UE.FVector(1,1,1)\
-            local Scale = UE.FVector(2,2,2)\
-            local Transform = UE.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)\
-            return Actor\
-            ";
+            const auto Chunk = R"(
+            local Rotation = UE.FQuat(4,3,2,1)
+            local Translation = UE.FVector(1,1,1)
+            local Scale = UE.FVector(2,2,2)
+            local Transform = UE.FTransform(Rotation, Translation, Scale)
+            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn)
+            return Actor
+            )";
             UnLua::RunChunk(L, Chunk);
             const auto Actor = (AActor*)UnLua::GetUObject(L, -1);
             const auto& Transform = Actor->GetActorTransform();
-            TEST_EQUAL(Transform.GetRotation(), FQuat(FVector(0,0,1), 3.14));
-            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1))
-            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2))
+            TEST_QUAT_EQUAL(Transform.GetRotation(), FQuat(4,3,2,1));
+            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1));
+            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2));
         });
 
-        It(TEXT("创建Actor，指定初始Transform/CollisionHanding/Owner"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("创建Actor，指定初始Transform/CollisionHanding/Owner"), EAsyncExecution::TaskGraphMainThread, [this]
         {
             const auto OwnerActor = World->SpawnActor(AActor::StaticClass());
             UnLua::PushUObject(L, OwnerActor);
             lua_setglobal(L, "G_OwnerActor");
 
-            const char* Chunk = "\
-            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
-            local Translation = UE.FVector(1,1,1)\
-            local Scale = UE.FVector(2,2,2)\
-            local Transform = UE.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor)\
-            return Actor\
-            ";
+            const auto Chunk = R"(
+            local Rotation = UE.FQuat(4,3,2,1)
+            local Translation = UE.FVector(1,1,1)
+            local Scale = UE.FVector(2,2,2)
+            local Transform = UE.FTransform(Rotation, Translation, Scale)
+            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor)
+            return Actor
+            )";
             UnLua::RunChunk(L, Chunk);
             const auto Actor = (AActor*)UnLua::GetUObject(L, -1);
             const auto& Transform = Actor->GetActorTransform();
-            TEST_EQUAL(Transform.GetRotation(), FQuat(FVector(0,0,1), 3.14));
-            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1))
-            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2))
+            TEST_QUAT_EQUAL(Transform.GetRotation(), FQuat(4,3,2,1));
+            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1));
+            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2));
             TEST_EQUAL(Actor->GetOwner(), OwnerActor);
         });
 
-        It(TEXT("创建Actor，指定初始Transform/CollisionHanding/Owner/Instigator"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("创建Actor，指定初始Transform/CollisionHanding/Owner/Instigator"), EAsyncExecution::TaskGraphMainThread, [this]
         {
             const auto OwnerActor = World->SpawnActor(AActor::StaticClass());
             UnLua::PushUObject(L, OwnerActor);
@@ -127,31 +127,31 @@ void FUnLuaLibWorldSpec::Define()
             UnLua::PushUObject(L, InstigatorPawn);
             lua_setglobal(L, "G_InstigatorPawn");
 
-            const char* Chunk = "\
-            local Rotation = UE.FQuat.FromAxisAndAngle(UE.FVector(0,0,1),3.14)\
-            local Translation = UE.FVector(1,1,1)\
-            local Scale = UE.FVector(2,2,2)\
-            local Transform = UE.FTransform(Rotation, Translation, Scale)\
-            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor, G_InstigatorPawn)\
-            return Actor\
-            ";
+            const auto Chunk = R"(
+            local Rotation = UE.FQuat(4,3,2,1)
+            local Translation = UE.FVector(1,1,1)
+            local Scale = UE.FVector(2,2,2)
+            local Transform = UE.FTransform(Rotation, Translation, Scale)
+            local Actor = World:SpawnActor(UE.ACharacter, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, G_OwnerActor, G_InstigatorPawn)
+            return Actor
+            )";
             UnLua::RunChunk(L, Chunk);
             const auto Actor = (AActor*)UnLua::GetUObject(L, -1);
             const auto& Transform = Actor->GetActorTransform();
-            TEST_EQUAL(Transform.GetRotation(), FQuat(FVector(0,0,1), 3.14));
-            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1))
-            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2))
+            TEST_QUAT_EQUAL(Transform.GetRotation(), FQuat(4,3,2,1));
+            TEST_EQUAL(Transform.GetTranslation(), FVector(1,1,1));
+            TEST_EQUAL(Transform.GetScale3D(), FVector(2,2,2));
             TEST_EQUAL(Actor->SpawnCollisionHandlingMethod, ESpawnActorCollisionHandlingMethod::AlwaysSpawn);
             TEST_EQUAL(Actor->GetOwner(), OwnerActor);
             TEST_EQUAL(Actor->GetInstigator(), InstigatorPawn);
         });
 
-        xIt(TEXT("创建Actor，指定初始Transform/CollisionHanding/Owner/Instigator/LuaModule"), EAsyncExecution::TaskGraphMainThread, [this]()
+        xIt(TEXT("创建Actor，指定初始Transform/CollisionHanding/Owner/Instigator/LuaModule"), EAsyncExecution::TaskGraphMainThread, [this]
         {
             check(false);
         });
 
-        xIt(TEXT("创建Actor，自定义构造参数"), EAsyncExecution::TaskGraphMainThread, [this]()
+        xIt(TEXT("创建Actor，自定义构造参数"), EAsyncExecution::TaskGraphMainThread, [this]
         {
             check(false);
         });
