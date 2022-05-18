@@ -15,7 +15,6 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "TestCommands.h"
-#include "Tests/AutomationEditorCommon.h"
 
 #if WITH_EDITOR
 #include "FileHelpers.h"
