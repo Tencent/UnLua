@@ -72,7 +72,8 @@ public class UnLuaEditor : ModuleRules
                 "Networking",
                 "Sockets",
                 "UnLua",
-                "Lua"
+                "Lua",
+                "ToolMenus"
             }
         );
 
