@@ -16,6 +16,8 @@
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 BEGIN_TESTSUITE(FIssue372Test, TEXT("UnLua.Regression.Issue372 Actor调用K2_DestroyActor销毁时，lua部分会在注册表残留"));
 
     bool FIssue372Test::RunTest(const FString& Parameters)
@@ -53,3 +55,5 @@ BEGIN_TESTSUITE(FIssue372Test, TEXT("UnLua.Regression.Issue372 Actor调用K2_Des
     }
 
 END_TESTSUITE(FRegression_Issue276)
+
+#endif

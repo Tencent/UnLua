@@ -16,6 +16,8 @@
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 BEGIN_TESTSUITE(FIssue295Test, TEXT("UnLua.Regression.Issue295 动态绑定的UMG对象，在切换地图回调Destruct导致崩溃"))
 
     bool FIssue295Test::RunTest(const FString& Parameters)
@@ -68,3 +70,5 @@ BEGIN_TESTSUITE(FIssue295Test, TEXT("UnLua.Regression.Issue295 动态绑定的UM
     }
 
 END_TESTSUITE(FRegression_Issue276)
+
+#endif

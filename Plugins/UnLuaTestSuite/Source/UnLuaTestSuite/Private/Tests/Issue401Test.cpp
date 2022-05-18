@@ -16,6 +16,8 @@
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 BEGIN_TESTSUITE(FIssue401Test, TEXT("UnLua.Regression.Issue401 LUA覆写导致数组传参错误"))
 
     bool FIssue401Test::RunTest(const FString& Parameters)
@@ -36,3 +38,5 @@ BEGIN_TESTSUITE(FIssue401Test, TEXT("UnLua.Regression.Issue401 LUA覆写导致�
     }
 
 END_TESTSUITE(FRegression_Issue276)
+
+#endif

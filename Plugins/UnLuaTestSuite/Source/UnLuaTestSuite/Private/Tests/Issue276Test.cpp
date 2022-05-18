@@ -17,21 +17,25 @@
 #include "Misc/AutomationTest.h"
 #include "Tests/AutomationCommon.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 BEGIN_TESTSUITE(FIssue276Test, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
 
-bool FIssue276Test::RunTest(const FString& Parameters)
-{
-    const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue276/Issue276");
-    ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
-    ADD_LATENT_AUTOMATION_COMMAND(FEngineWaitLatentCommand(1.0));
-    ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
-        const auto L = UnLua::GetState();
-        lua_getglobal(L, "Flag");
-        const auto Flag = !!lua_toboolean(L, -1);
-        TestTrue(TEXT("Flag"), Flag);
+    bool FIssue276Test::RunTest(const FString& Parameters)
+    {
+        const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue276/Issue276");
+        ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
+        ADD_LATENT_AUTOMATION_COMMAND(FEngineWaitLatentCommand(1.0));
+        ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
+            const auto L = UnLua::GetState();
+            lua_getglobal(L, "Flag");
+            const auto Flag = !!lua_toboolean(L, -1);
+            TestTrue(TEXT("Flag"), Flag);
+            return true;
+            }));
         return true;
-        }));
-    return true;
-}
+    }
 
 END_TESTSUITE(FRegression_Issue276)
+
+#endif

@@ -16,6 +16,8 @@
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 BEGIN_TESTSUITE(FIssue286Test, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
 
     bool FIssue286Test::RunTest(const FString& Parameters)
@@ -33,3 +35,5 @@ BEGIN_TESTSUITE(FIssue286Test, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindR
     }
 
 END_TESTSUITE(FRegression_Issue276)
+
+#endif

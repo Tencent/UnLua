@@ -16,6 +16,8 @@
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 BEGIN_TESTSUITE(FIssue300Test, TEXT("UnLua.Regression.Issue300 LUA覆写的函数返回给蓝图的值错误"))
 
     bool FIssue300Test::RunTest(const FString& Parameters)
@@ -39,3 +41,5 @@ BEGIN_TESTSUITE(FIssue300Test, TEXT("UnLua.Regression.Issue300 LUA覆写的函�
     }
 
 END_TESTSUITE(FRegression_Issue276)
+
+#endif
