@@ -17,6 +17,8 @@
 #include "Misc/AutomationTest.h"
 #include "Tests/AutomationCommon.h"
 
+#if WITH_DEV_AUTOMATION_TESTS
+
 namespace UnLuaTestSuite
 {
     class FOpenMapLatentCommand : public IAutomationLatentCommand
@@ -27,10 +29,12 @@ namespace UnLuaTestSuite
         virtual bool Update() override;
 
         void LoadMap();
-        
+
     private:
         FString MapName;
         bool bForceReload;
         TUniquePtr<FWaitForMapToLoadCommand> WaitForMapToLoad;
     };
 }
+
+#endif

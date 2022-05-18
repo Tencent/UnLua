@@ -19,6 +19,9 @@
 #if WITH_EDITOR
 #include "FileHelpers.h"
 #include "LevelEditor.h"
+#if ENGINE_MAJOR_VERSION >= 5
+#include "Tests/AutomationEditorCommon.h"
+#endif
 #endif
 
 namespace UnLuaTestSuite
