@@ -12,67 +12,59 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "TestCommands.h"
 #include "UnLuaTestCommon.h"
-#include "Components/CapsuleComponent.h"
 #include "Misc/AutomationTest.h"
 
-#if WITH_DEV_AUTOMATION_TESTS
+BEGIN_TESTSUITE(FIssue295Test, TEXT("UnLua.Regression.Issue295 动态绑定的UMG对象，在切换地图回调Destruct导致崩溃"))
 
-struct FUnLuaTest_Issue295 : FUnLuaTestBase
-{
-    virtual bool InstantTest() override
+    bool FIssue295Test::RunTest(const FString& Parameters)
     {
+        const auto MapName1 = TEXT("/UnLuaTestSuite/Tests/Regression/Issue295/Issue295_1");
+        const auto MapName2 = TEXT("/UnLuaTestSuite/Tests/Regression/Issue295/Issue295_2");
+
+        ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName1))
+        ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
+            const auto L = UnLua::GetState();
+            UnLua::PushUObject(L, GWorld);
+            lua_setglobal(L, "GWorld");
+
+            const char* Chunk = R"(
+            local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') 
+            local Outer = GWorld
+            
+            local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')
+            UMG1:AddToViewport()
+            
+            local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')
+            UMG2:AddToViewport()
+            )";
+            UnLua::RunChunk(L, Chunk);
+
+            lua_gc(L, LUA_GCCOLLECT, 0);
+            CollectGarbage(RF_NoFlags, true);
+            return true;
+            }));
+        ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName2))
+        ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
+            const auto L = UnLua::GetState();
+            UnLua::PushUObject(L, GWorld);
+            lua_setglobal(L, "GWorld");
+
+            const char* Chunk = R"(
+            local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') 
+            local Outer = GWorld
+            
+            local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')
+            UMG1:AddToViewport()
+            
+            local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')
+            UMG2:AddToViewport()
+            )";
+            UnLua::RunChunk(L, Chunk);
+            return true;
+            }));
         return true;
     }
 
-    virtual FString GetMapName() override
-    {
-        return "/UnLuaTestSuite/Tests/Regression/Issue295/Issue295_1";
-    }
-
-    virtual bool SetUp() override
-    {
-        FUnLuaTestBase::SetUp();
-
-        UnLua::PushUObject(L, GetWorld());
-        lua_setglobal(L, "G_World");
-
-        const char* Chunk1 = "\
-            local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
-            local Outer = G_World\
-            \
-            local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')\
-            UMG1:AddToViewport()\
-            \
-            local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')\
-            UMG2:AddToViewport()\
-            ";
-        UnLua::RunChunk(L, Chunk1);
-
-        lua_gc(L, LUA_GCCOLLECT, 0);
-        CollectGarbage(RF_NoFlags, true);
-
-        LoadMap("/UnLuaTestSuite/Tests/Regression/Issue295/Issue295_2");
-
-        UnLua::PushUObject(L, GetWorld());
-        lua_setglobal(L, "G_World");
-
-        const char* Chunk2 = "\
-            local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue295/UnLuaTestUMG_Issue295.UnLuaTestUMG_Issue295_C') \
-            local Outer = G_World\
-            \
-            local UMG1 = NewObject(UMGClass, Outer, 'UMG1', 'Tests.Regression.Issue295.TestUMG')\
-            UMG1:AddToViewport()\
-            \
-            local UMG2 = NewObject(UMGClass, Outer, 'UMG2', 'Tests.Regression.Issue295.TestUMG')\
-            UMG2:AddToViewport()\
-            ";
-        UnLua::RunChunk(L, Chunk2);
-
-        return true;
-    }
-};
-
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue295, TEXT("UnLua.Regression.Issue295 动态绑定的UMG对象，在切换地图回调Destruct导致崩溃"))
-
-#endif //WITH_DEV_AUTOMATION_TESTS
+END_TESTSUITE(FRegression_Issue276)

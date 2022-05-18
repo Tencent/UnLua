@@ -78,13 +78,20 @@ bool FUnLuaTestBase::SetUp()
     }
     else
     {
-        const auto OldWorld = GWorld;
-        const FURL URL(*MapName);
-        FString Error;
-        LoadPackage(nullptr, *URL.Map, LOAD_None);
-        FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
-        GEngine->LoadMap(*WorldContext, URL, nullptr, Error);
-        GWorld = OldWorld;
+        if (InstantTest())
+        {
+            const auto OldWorld = GWorld;
+            const FURL URL(*MapName);
+            FString Error;
+            LoadPackage(nullptr, *URL.Map, LOAD_None);
+            FTaskGraphInterface::Get().ProcessThreadUntilIdle(ENamedThreads::GameThread);
+            GEngine->LoadMap(*WorldContext, URL, nullptr, Error);
+            GWorld = OldWorld;    
+        }
+        else
+        {
+            AutomationOpenMap(MapName);
+        }
     }
 
     return true;
@@ -101,11 +108,8 @@ void FUnLuaTestBase::TearDown()
     }
     else
     {
-        AddLatent([this]()
+        AddLatent([this]
         {
-            const auto World = GetWorld();
-            GEngine->DestroyWorldContext(World);
-            World->DestroyWorld(false);
             UnLua::Shutdown();
         });
     }

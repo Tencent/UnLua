@@ -12,36 +12,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "TestCommands.h"
 #include "UnLuaTestCommon.h"
-#include "Components/CapsuleComponent.h"
 #include "Misc/AutomationTest.h"
 
-#if WITH_DEV_AUTOMATION_TESTS
+BEGIN_TESTSUITE(FIssue401Test, TEXT("UnLua.Regression.Issue401 LUA覆写导致数组传参错误"))
 
-struct FUnLuaTest_Issue401 : FUnLuaTestBase
-{
-    virtual FString GetMapName() override { return TEXT("/UnLuaTestSuite/Tests/Regression/Issue401/Issue401"); }
-
-    virtual bool InstantTest() override
+    bool FIssue401Test::RunTest(const FString& Parameters)
     {
+        const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue401/Issue401");
+        ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
+        ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
+            const auto L = UnLua::GetState();
+            lua_getglobal(L, "Result1");
+            const auto Result1 = static_cast<int32>(lua_tonumber(L, -1));
+            TestEqual(TEXT("Result1"), Result1, 2);
+
+            const auto Result2 = static_cast<int32>(lua_tonumber(L, -1));
+            TestEqual(TEXT("Result2"), Result2, 2);
+            return true;
+            }));
         return true;
     }
 
-    virtual bool SetUp() override
-    {
-        FUnLuaTestBase::SetUp();
-
-        lua_getglobal(L, "Result1");
-        const auto Result1 = static_cast<int32>(lua_tonumber(L, -1));
-        RUNNER_TEST_EQUAL(Result1, 2);
-
-        const auto Result2 = static_cast<int32>(lua_tonumber(L, -1));
-        RUNNER_TEST_EQUAL(Result2, 2);
-
-        return true;
-    }
-};
-
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue401, TEXT("UnLua.Regression.Issue401 LUA覆写导致数组传参错误"))
-
-#endif //WITH_DEV_AUTOMATION_TESTS
+END_TESTSUITE(FRegression_Issue276)

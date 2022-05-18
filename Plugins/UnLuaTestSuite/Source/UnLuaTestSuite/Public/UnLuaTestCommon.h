@@ -204,6 +204,16 @@ delete TestInstance; \
 return bSuccess; \
 }
 
+#define IMPLEMENT_TESTSUITE_TEST(TestClass, PrettyName) \
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestClass, PrettyName, (EAutomationTestFlags::ClientContext | EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter))
+
+#define BEGIN_TESTSUITE(TestClass, PrettyName) \
+namespace UnLuaTestSuite { \
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestClass, PrettyName, (EAutomationTestFlags::ClientContext | EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter))
+
+#define END_TESTSUITE(TestClass) \
+}
+
 ///////////////////////////////
 // RUNNER_TEST MACROS
 

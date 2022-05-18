@@ -12,31 +12,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "TestCommands.h"
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
 
-#if WITH_DEV_AUTOMATION_TESTS
+BEGIN_TESTSUITE(FIssue286Test, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
 
-struct FUnLuaTest_Issue286 : FUnLuaTestBase
-{
-    virtual FString GetMapName() override { return TEXT("/UnLuaTestSuite/Tests/Regression/Issue286/Issue286"); }
-
-    virtual bool InstantTest() override
+    bool FIssue286Test::RunTest(const FString& Parameters)
     {
+        const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue286/Issue286");
+        ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
+        ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
+            const auto L = UnLua::GetState();
+            lua_getglobal(L, "Result");
+            const auto Error = lua_tostring(L, -1);
+            TestEqual(TEXT("Result"), Error, "passed");
+            return true;
+            }));
         return true;
     }
-    
-    virtual bool SetUp() override
-    {
-        FUnLuaTestBase::SetUp();
 
-        lua_getglobal(L, "Result");
-        const char* Error = lua_tostring(L, -1);
-        RUNNER_TEST_EQUAL(Error, TEXT("passed"));
-        return true;
-    }
-};
-
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue286, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindRef 错误"))
-
-#endif //WITH_DEV_AUTOMATION_TESTS
+END_TESTSUITE(FRegression_Issue276)

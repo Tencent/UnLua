@@ -12,34 +12,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "TestCommands.h"
 #include "UnLuaTestCommon.h"
 #include "Misc/AutomationTest.h"
+#include "Tests/AutomationCommon.h"
 
+BEGIN_TESTSUITE(FIssue276Test, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
 
-#if WITH_DEV_AUTOMATION_TESTS
-
-struct FUnLuaTest_Issue276 : FUnLuaTestBase
+bool FIssue276Test::RunTest(const FString& Parameters)
 {
-    virtual FString GetMapName() override { return TEXT("/UnLuaTestSuite/Tests/Regression/Issue276/Issue276"); }
-
-    virtual bool InstantTest() override
-    {
-        return true;
-    }
-
-    virtual bool SetUp() override
-    {
-        FUnLuaTestBase::SetUp();
-
-        SimulateTick(1.0f);
+    const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue276/Issue276");
+    ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
+    ADD_LATENT_AUTOMATION_COMMAND(FEngineWaitLatentCommand(1.0));
+    ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
+        const auto L = UnLua::GetState();
         lua_getglobal(L, "Flag");
-        const bool Flag = !!lua_toboolean(L, -1);
-        RUNNER_TEST_TRUE(Flag);
-
+        const auto Flag = !!lua_toboolean(L, -1);
+        TestTrue(TEXT("Flag"), Flag);
         return true;
-    }
-};
+        }));
+    return true;
+}
 
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue276, TEXT("UnLua.Regression.Issue276 游戏世界暂停后，coroutine delay 功能不工作"))
-
-#endif //WITH_DEV_AUTOMATION_TESTS
+END_TESTSUITE(FRegression_Issue276)
