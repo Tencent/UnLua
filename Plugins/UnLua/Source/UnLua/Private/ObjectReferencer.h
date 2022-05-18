@@ -29,7 +29,8 @@ namespace UnLua
             ReferencedObjects.Add(Object);
         }
 
-        void Remove(const UObject* Object)
+        // ReSharper disable once CppParameterMayBeConstPtrOrRef
+        void Remove(UObject* Object)
         {
             if (Object == nullptr)
                 return;
