@@ -24,6 +24,7 @@
 #include "UnLuaEditorSettings.h"
 #include "UnLuaFunctionLibrary.h"
 #include "Interfaces/IMainFrameModule.h"
+#include "ToolMenus.h"
 
 #define LOCTEXT_NAMESPACE "UnLuaMainMenuToolbar"
 
@@ -76,48 +77,55 @@ FMainMenuToolbar::FMainMenuToolbar()
 
 void FMainMenuToolbar::Initialize()
 {
-    TSharedPtr<FExtender> Extender = MakeShareable(new FExtender);
-    Extender->AddToolBarExtension("Settings", EExtensionHook::After, CommandList,
-                                  FToolBarExtensionDelegate::CreateRaw(this, &FMainMenuToolbar::AddToolbarExtension)
-    );
-
-    FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
-    LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(Extender);
-
+#if ENGINE_MAJOR_VERSION >= 5
+    UToolMenu* ToolbarMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.LevelEditorToolBar.User");
+    FToolMenuSection& Section = ToolbarMenu->AddSection("UnluaSettings");
+    Section.AddEntry(FToolMenuEntry::InitComboButton(
+		"UnluaSettings",
+		FUIAction(),
+		FOnGetContent::CreateRaw(this, &FMainMenuToolbar::GenerateUnLuaSettingsMenu),
+		LOCTEXT("UnLua_Label", "UnLua"),
+		LOCTEXT("UnLua_ToolTip", "UnLua"),
+		FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.UnLuaLogo")
+		));
+#else
+	TSharedPtr<FExtender> Extender = MakeShareable(new FExtender);
+	Extender->AddToolBarExtension("Settings", EExtensionHook::After, CommandList,
+        FToolBarExtensionDelegate::CreateLambda([this](FToolBarBuilder& Builder) {
+		    Builder.BeginSection(NAME_None);
+		    Builder.AddComboButton(FUIAction(),
+                FOnGetContent::CreateRaw(this, &FMainMenuToolbar::GenerateUnLuaSettingsMenu),
+                LOCTEXT("UnLua_Label", "UnLua"),
+                LOCTEXT("UnLua_ToolTip", "UnLua"),
+                FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.UnLuaLogo")
+            );
+		    Builder.EndSection();
+        })
+	);
+	FLevelEditorModule& LevelEditorModule = FModuleManager::LoadModuleChecked<FLevelEditorModule>("LevelEditor");
+	LevelEditorModule.GetToolBarExtensibilityManager()->AddExtender(Extender);
+#endif
     const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
     if (Settings.UpdateMode == EUpdateMode::Start)
         UUnLuaEditorFunctionLibrary::FetchNewVersion();
 }
 
-void FMainMenuToolbar::AddToolbarExtension(FToolBarBuilder& Builder)
-{
-    Builder.BeginSection(NAME_None);
+TSharedRef<SWidget> FMainMenuToolbar::GenerateUnLuaSettingsMenu() {
+	const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
+	FMenuBuilder MenuBuilder(true, CommandList);
 
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Action", "Action"));
+	MenuBuilder.AddMenuEntry(Commands.HotReload, NAME_None, LOCTEXT("HotReload", "Hot Reload"));
+	MenuBuilder.AddMenuEntry(Commands.GenerateIntelliSense, NAME_None, LOCTEXT("GenerateIntelliSense", "Generate IntelliSense"));
+	MenuBuilder.EndSection();
 
-    Builder.AddComboButton(FUIAction(), FOnGetContent::CreateLambda([this]()
-                           {
-                               const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
-                               FMenuBuilder MenuBuilder(true, CommandList);
+	MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Help", "Help"));
+	MenuBuilder.AddMenuEntry(Commands.OpenEditorSettings, NAME_None, LOCTEXT("OpenEditorSettings", "Settings"));
+	MenuBuilder.AddMenuEntry(Commands.ReportIssue, NAME_None, LOCTEXT("ReportIssue", "Report Issue"));
+	MenuBuilder.AddMenuEntry(Commands.About, NAME_None, LOCTEXT("About", "About"));
+	MenuBuilder.EndSection();
 
-                               MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Action", "Action"));
-                               MenuBuilder.AddMenuEntry(Commands.HotReload, NAME_None, LOCTEXT("HotReload", "Hot Reload"));
-                               MenuBuilder.AddMenuEntry(Commands.GenerateIntelliSense, NAME_None, LOCTEXT("GenerateIntelliSense", "Generate IntelliSense"));
-                               MenuBuilder.EndSection();
-
-                               MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Help", "Help"));
-                               MenuBuilder.AddMenuEntry(Commands.OpenEditorSettings, NAME_None, LOCTEXT("OpenEditorSettings", "Settings"));
-                               MenuBuilder.AddMenuEntry(Commands.ReportIssue, NAME_None, LOCTEXT("ReportIssue", "Report Issue"));
-                               MenuBuilder.AddMenuEntry(Commands.About, NAME_None, LOCTEXT("About", "About"));
-                               MenuBuilder.EndSection();
-
-                               return MenuBuilder.MakeWidget();
-                           }),
-                           LOCTEXT("UnLua_Label", "UnLua"),
-                           LOCTEXT("UnLua_ToolTip", "UnLua"),
-                           FSlateIcon("UnLuaEditorStyle", "UnLuaEditor.UnLuaLogo")
-    );
-
-    Builder.EndSection();
+	return MenuBuilder.MakeWidget();
 }
 
 #undef LOCTEXT_NAMESPACE

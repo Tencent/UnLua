@@ -23,8 +23,8 @@ public:
 	virtual ~FMainMenuToolbar() = default;
 
 	void Initialize();
-    
-	void AddToolbarExtension(FToolBarBuilder& Builder);
+
+	TSharedRef<SWidget> GenerateUnLuaSettingsMenu();
 
     const TSharedRef<FUICommandList> CommandList;
 };
