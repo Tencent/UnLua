@@ -15,9 +15,12 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 #include "TestCommands.h"
+#include "Tests/AutomationEditorCommon.h"
+
+#if WITH_EDITOR
 #include "FileHelpers.h"
 #include "LevelEditor.h"
-#include "Tests/AutomationEditorCommon.h"
+#endif
 
 namespace UnLuaTestSuite
 {
@@ -37,6 +40,7 @@ namespace UnLuaTestSuite
 
     void FOpenMapLatentCommand::LoadMap()
     {
+#if WITH_EDITOR
         struct FFailedGameStartHandler
         {
             bool bCanProceed;
@@ -95,7 +99,7 @@ namespace UnLuaTestSuite
 
         FLevelEditorModule& LevelEditorModule = FModuleManager::Get().GetModuleChecked<FLevelEditorModule>(TEXT("LevelEditor"));
         TSharedPtr<IAssetViewport> ActiveLevelViewport = LevelEditorModule.GetFirstActiveViewport();
-            
+
         FRequestPlaySessionParams RequestParams;
         ULevelEditorPlaySettings* EditorPlaySettings = NewObject<ULevelEditorPlaySettings>();
         EditorPlaySettings->SetPlayNumberOfClients(1);
@@ -118,6 +122,7 @@ namespace UnLuaTestSuite
 
         check(FailHandler.CanProceed());
         WaitForMapToLoad = MakeUnique<FWaitForMapToLoadCommand>();
+#endif
     }
 }
 
