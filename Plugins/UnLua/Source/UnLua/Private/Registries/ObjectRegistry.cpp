@@ -50,7 +50,7 @@ namespace UnLua
         Unbind(Object);
     }
 
-    void FObjectRegistry::NotifyUObjectLuaGC(const UObject* Object)
+    void FObjectRegistry::NotifyUObjectLuaGC(UObject* Object)
     {
         Env->AutoObjectReference.Remove(Object);
     }

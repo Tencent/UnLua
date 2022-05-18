@@ -29,7 +29,7 @@ namespace UnLua
 
         void NotifyUObjectDeleted(UObject* Object);
 
-        void NotifyUObjectLuaGC(const UObject* Object);
+        void NotifyUObjectLuaGC(UObject* Object);
 
         template <typename T>
         void Push(lua_State* L, TSharedPtr<T> Ptr);
