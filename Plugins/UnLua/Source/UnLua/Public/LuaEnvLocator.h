@@ -23,13 +23,6 @@ class UNLUA_API ULuaEnvLocator : public UObject
 {
     GENERATED_BODY()
 public:
-    ULuaEnvLocator()
-    {
-        if (HasAnyFlags(RF_ClassDefaultObject))
-            return;
-        Env = MakeShared<UnLua::FLuaEnv>();
-    }
-
     virtual TSharedPtr<UnLua::FLuaEnv> Locate(const UObject* Object);
 
     virtual void HotReload();

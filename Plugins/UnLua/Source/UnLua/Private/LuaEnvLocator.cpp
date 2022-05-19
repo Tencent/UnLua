@@ -16,6 +16,8 @@
 
 TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator::Locate(const UObject* Object)
 {
+    if (!Env.IsValid())
+        Env = MakeShared<UnLua::FLuaEnv>();
     return Env;
 }
 

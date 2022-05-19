@@ -40,10 +40,6 @@ namespace UnLua
     {
         RegisterDelegates();
 
-        Manager = NewObject<UUnLuaManager>();
-        Manager->Env = this;
-        Manager->AddToRoot();
-
         L = lua_newstate(GetLuaAllocator(), nullptr);
         AllEnvs.Add(L, this);
 
@@ -139,9 +135,11 @@ namespace UnLua
         lua_close(L);
         AllEnvs.Remove(L);
 
-        Manager->Cleanup();
-        Manager->RemoveFromRoot();
-        Manager = nullptr;
+        if (Manager)
+        {
+            Manager->Cleanup();
+            Manager->RemoveFromRoot();
+        }
 
         AutoObjectReference.Clear();
         ManualObjectReference.Clear();
@@ -180,7 +178,8 @@ namespace UnLua
     {
         UObject* Object = (UObject*)ObjectBase;
         FunctionRegistry->NotifyUObjectDeleted(Object);
-        Manager->NotifyUObjectDeleted(Object);
+        if (Manager)
+            Manager->NotifyUObjectDeleted(Object);
         ObjectRegistry->NotifyUObjectDeleted(Object);
 
         if (CandidateInputComponents.Num() <= 0)
@@ -267,7 +266,7 @@ namespace UnLua
             if (!GLuaDynamicBinding.IsValid(Class))
                 return false;
 
-            return Manager->Bind(Object, Class, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
+            return GetManager()->Bind(Object, Class, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
         }
 
         // filter some object in bp nest case
@@ -319,7 +318,7 @@ namespace UnLua
         }
 #endif
 
-        return Manager->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);
+        return GetManager()->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);
     }
 
     bool FLuaEnv::DoString(const FString& Chunk, const FString& ChunkName)
@@ -396,6 +395,17 @@ namespace UnLua
         luaL_unref(L, LUA_REGISTRYINDEX, ThreadRef); // remove the reference if the coroutine finishes its execution
     }
 
+    UUnLuaManager* FLuaEnv::GetManager()
+    {
+        if (!Manager)
+        {
+            Manager = NewObject<UUnLuaManager>();
+            Manager->Env = this;
+            Manager->AddToRoot();
+        }
+        return Manager;
+    }
+    
     void FLuaEnv::AddThread(lua_State* Thread, int32 ThreadRef)
     {
         ThreadToRef.Add(Thread, ThreadRef);

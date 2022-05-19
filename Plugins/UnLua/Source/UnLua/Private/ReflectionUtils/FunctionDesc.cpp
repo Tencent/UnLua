@@ -420,8 +420,8 @@ void* FFunctionDesc::PreCall(lua_State *L, int32 NumParams, int32 FirstParamInde
             }
 
             // bind a callback to the latent function
-            const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
-            FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (UObject*)Env.GetManager());
+            auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+            FLatentActionInfo LatentActionInfo(ThreadRef, GetTypeHash(FGuid::NewGuid()), TEXT("OnLatentActionCompleted"), (Env.GetManager()));
             Property->CopyValue(ContainerPtr, &LatentActionInfo);
             continue;
         }
