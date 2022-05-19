@@ -37,6 +37,21 @@ enum EEnumForIssue331
     RECORD_TO_LOG = 4,
 };
 
+namespace EScopedEnum
+{
+    enum Type
+    {
+        Value1 = 1,
+        Value2 = 2,
+    };
+}
+
+enum class EEnumClass
+{
+    Value1 = 1,
+    Value2 = 2
+};
+
 UCLASS()
 class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
 {
@@ -58,6 +73,10 @@ public:
     UPROPERTY()
     int32 Counter;
 
+    EScopedEnum::Type ScopedEnum;
+
+    EEnumClass EnumClass;
+    
     UFUNCTION(BlueprintCallable)
     void AddCount() { Counter++; }
 
@@ -66,6 +85,8 @@ public:
 
     UUnLuaTestStub()
     {
+        ScopedEnum = EScopedEnum::Value1;
+        EnumClass = EEnumClass::Value1;
         MapForIssue407.Add(1, 1);
         MapForIssue407.Add(2, 2);
     }
