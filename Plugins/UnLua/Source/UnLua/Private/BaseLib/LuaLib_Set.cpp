@@ -252,6 +252,7 @@ static int32 TSet_ToTable(lua_State *L)
 static const luaL_Reg TSetLib[] =
 {
     { "Length", TSet_Length },
+    { "Num", TSet_Length },
     { "Add", TSet_Add },
     { "Remove", TSet_Remove },
     { "Contains", TSet_Contains },

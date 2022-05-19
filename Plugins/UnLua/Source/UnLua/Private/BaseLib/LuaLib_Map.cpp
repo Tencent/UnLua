@@ -452,6 +452,7 @@ static int32 TMap_ToTable(lua_State *L)
 static const luaL_Reg TMapLib[] =
 {
     { "Length", TMap_Length },
+    { "Num", TMap_Length },
     { "Add", TMap_Add },
     { "Remove", TMap_Remove },
     { "Find", TMap_Find },
