@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "UnLuaEx.h"
 #include "LuaCore.h"
 #include "ObjectReferencer.h"
@@ -57,7 +58,7 @@ int32 UObject_Load(lua_State *L)
         if (Enum)
         {
             UnLua::FLuaEnv::FindEnvChecked(L).GetEnumRegistry()->Register(Enum);
-            int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*Enum->GetName()));
+            int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*UnLua::LowLevel::GetMetatableName(Enum)));
             check(Type == LUA_TTABLE);
         }
         else
