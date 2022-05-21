@@ -465,7 +465,7 @@ namespace UnLua
             const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
             TArray<uint8> Data;
             FString RealFilePath;
-            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, RealFilePath))
+            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(*Env, FileName, Data, RealFilePath))
             {
                 if (Env->LoadString(Data))
                     return 1;

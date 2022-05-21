@@ -31,7 +31,7 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByFLuaTable()
 
     const auto Require = UnLua::FLuaFunction(&Env, "_G", "require");
     const auto RetValues1 = Require.Call("Tutorials.08_CppCallLua");
-    check(RetValues1.Num() == 1);
+    check(RetValues1.Num() == 2);
 
     const auto RetValue = RetValues1[0];
     const auto LuaTable = UnLua::FLuaTable(&Env, RetValue);
@@ -43,7 +43,7 @@ void UTutorialBlueprintFunctionLibrary::CallLuaByFLuaTable()
     PrintScreen(TEXT("[C++]CallLuaByFLuaTable 结束"));
 }
 
-bool CustomLoader1(const FString& RelativePath, TArray<uint8>& Data, FString& FullPath)
+bool CustomLoader1(UnLua::FLuaEnv& Env, const FString& RelativePath, TArray<uint8>& Data, FString& FullPath)
 {
     const auto SlashedRelativePath = RelativePath.Replace(TEXT("."), TEXT("/"));
     FullPath = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *SlashedRelativePath);
@@ -58,10 +58,10 @@ bool CustomLoader1(const FString& RelativePath, TArray<uint8>& Data, FString& Fu
     return false;
 }
 
-bool CustomLoader2(const FString& RelativePath, TArray<uint8>& Data, FString& FullPath)
+bool CustomLoader2(UnLua::FLuaEnv& Env, const FString& RelativePath, TArray<uint8>& Data, FString& FullPath)
 {
     const auto SlashedRelativePath = RelativePath.Replace(TEXT("."), TEXT("/"));
-    const auto L = UnLua::GetState();
+    const auto L = Env.GetMainState();
     lua_getglobal(L, "package");
     lua_getfield(L, -1, "path");
     const char* Path = lua_tostring(L, -1);
@@ -92,6 +92,9 @@ void UTutorialBlueprintFunctionLibrary::SetupCustomLoader(int Index)
 {
     switch (Index)
     {
+    case 0:
+        FUnLuaDelegates::CustomLoadLuaFile.Unbind();
+        break;
     case 1:
         FUnLuaDelegates::CustomLoadLuaFile.BindStatic(CustomLoader1);
         break;
