@@ -731,6 +731,30 @@ static int32 TArray_ToTable(lua_State *L)
     return 1;
 }
 
+static int32 TArray_Index(lua_State* L)
+{
+    if (lua_isinteger(L, 2))
+    {
+        return TArray_Get(L);
+    }
+
+    // mt
+    lua_getmetatable(L, 1);
+
+    // mt,mt.key/nil
+    lua_getfield(L, -1, lua_tostring(L, 2));
+
+    // mt.key/nil
+    lua_remove(L, -2);
+
+    return 1;
+}
+
+static int32 TArray_NewIndex(lua_State* L)
+{
+    return TArray_Set(L);
+}
+
 static const luaL_Reg TArrayLib[] =
 {
     { "Length", TArray_Length },
@@ -758,6 +782,8 @@ static const luaL_Reg TArrayLib[] =
     { "__gc", TArray_Delete },
     { "__call", TArray_New },
     { "__pairs", TArray_Pairs },
+    { "__index", TArray_Index },
+    { "__newindex", TArray_NewIndex },
     { nullptr, nullptr }
 };
 
