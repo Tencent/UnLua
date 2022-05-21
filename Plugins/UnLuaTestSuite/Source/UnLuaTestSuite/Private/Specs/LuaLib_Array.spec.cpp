@@ -420,6 +420,23 @@ void FUnLuaLibArraySpec::Define()
             const auto& Array = *(TArray<FVector>*)ScriptArray;
             TEST_EQUAL(Array[0], FVector(1,1,1));
         });
+
+        It(TEXT("使用[]获取"), EAsyncExecution::TaskGraphMainThread, [this]
+        {
+            const auto Chunk = R"(
+            local Array = UE.TArray(UE.FVector)
+            Array:Add(UE.FVector(1,1,1))
+            local Copied = Array[1]
+            Copied:Set(2)
+            return Array
+            )";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const auto& Array = *(TArray<FVector>*)ScriptArray;
+            TEST_EQUAL(Array[0], FVector(1,1,1));
+        });
     });
 
     Describe(TEXT("GetRef"), [this]
@@ -451,6 +468,23 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(1)
             Array:Add(1)
             Array:Set(1,2)
+            return Array
+            )";
+            UnLua::RunChunk(L, Chunk);
+            const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
+            TEST_TRUE(ScriptArray!=nullptr);
+
+            const auto& Array = *(TArray<int32>*)ScriptArray;
+            TEST_EQUAL(Array[0], 2);
+        });
+
+        It(TEXT("使用[]赋值"), EAsyncExecution::TaskGraphMainThread, [this]
+        {
+            const auto Chunk = R"(
+            local Array = UE.TArray(0)
+            Array:Add(1)
+            Array:Add(1)
+            Array[1] = 2
             return Array
             )";
             UnLua::RunChunk(L, Chunk);
