@@ -131,8 +131,11 @@ local function make_sandbox()
     end
 
     local function require(module_name)
+        -- https://github.com/lua/lua/blob/v5.4.0/loadlib.c#L680
+        -- https://github.com/lua/lua/blob/v5.3/loadlib.c#L617
+        -- lua5.4之后会返回2个值，这里保持一样的行为
         if package.loaded[module_name] ~= nil then
-            return package.loaded[module_name]
+            return package.loaded[module_name], nil
         end
 
         local loaded = loaded_modules[module_name]
@@ -140,7 +143,7 @@ local function make_sandbox()
             if package.loaded[module_name] == nil then
                 package.loaded[module_name] = loaded
             end
-            return loaded
+            return loaded, nil
         end
 
         local func, env = load(module_name)
@@ -154,12 +157,12 @@ local function make_sandbox()
                 package.loaded[module_name] = new_module
                 loaded_module_times[module_name] = get_last_modified_time(module_name)
                 call_hook("module_loaded", new_module, module_name, false)
-                return new_module
+                return new_module, nil
             end
         else
             return origin_require(module_name)
         end
-        return env
+        return env, nil
     end
 
     local function enter(modules)
