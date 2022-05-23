@@ -534,17 +534,25 @@ namespace UnLua
 
     void FLuaEnv::OnAsyncLoadingFlushUpdate()
     {
+        TArray<FWeakObjectPtr> CandidatesTemp;
+        TArray<int> CandidatesRemovedIndexes;
+        
         TArray<UObject*> LocalCandidates;
         {
-            FScopeLock Lock(&CandidatesLock);
-
-            for (int32 i = Candidates.Num() - 1; i >= 0; --i)
             {
-                FWeakObjectPtr ObjectPtr = Candidates[i];
+                FScopeLock Lock(&CandidatesLock);
+                CandidatesTemp.Append(Candidates);    
+            }
+            
+
+            for (int32 i = CandidatesTemp.Num() - 1; i >= 0; --i)
+            {
+                FWeakObjectPtr ObjectPtr = CandidatesTemp[i];
                 if (!ObjectPtr.IsValid())
                 {
                     // discard invalid objects
-                    Candidates.RemoveAt(i);
+                    // Candidates.RemoveAt(i);
+                    CandidatesRemovedIndexes.Add(i);
                     continue;
                 }
 
@@ -558,7 +566,16 @@ namespace UnLua
                 }
 
                 LocalCandidates.Add(Object);
-                Candidates.RemoveAt(i);
+                // Candidates.RemoveAt(i);
+                CandidatesRemovedIndexes.Add(i);
+            }
+        }
+
+        {
+            FScopeLock Lock(&CandidatesLock);
+            for(int32 j = 0; j < CandidatesRemovedIndexes.Num();++j)
+            {
+                Candidates.RemoveAt(CandidatesRemovedIndexes[j]);
             }
         }
 
