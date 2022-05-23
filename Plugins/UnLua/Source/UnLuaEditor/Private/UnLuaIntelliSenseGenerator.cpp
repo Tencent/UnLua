@@ -121,7 +121,11 @@ void FUnLuaIntelliSenseGenerator::Export(const UBlueprint* Blueprint)
 
 void FUnLuaIntelliSenseGenerator::Export(const UField* Field)
 {
+#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
     const UPackage* Package = Field->GetPackage();
+#else
+    const UPackage* Package = (UPackage*)Field->GetTypedOuter(UPackage::StaticClass());
+#endif
     const FString ModuleName = Package->GetName();
     const FString FileName = UnLua::IntelliSense::GetTypeName(Field);
     const FString Content = UnLua::IntelliSense::Get(Field);
