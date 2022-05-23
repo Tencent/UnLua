@@ -25,6 +25,7 @@
 #include "LuaValue.h"
 #include "ObjectReferencer.h"
 #include "HAL/Platform.h"
+#include "LuaDeadLoopCheck.h"
 
 namespace UnLua
 {
@@ -105,6 +106,8 @@ namespace UnLua
 
         FORCEINLINE TSharedPtr<FEnumRegistry> GetEnumRegistry() const { return EnumRegistry; }
 
+        FORCEINLINE TSharedPtr<FDeadLoopCheck> GetDeadLoopCheck() const { return DeadLoopCheck; }
+
         void AddLoader(const FLuaFileLoader Loader);
 
         void AddBuiltInLoader(const FString InName, lua_CFunction Loader);
@@ -149,6 +152,7 @@ namespace UnLua
         TSharedPtr<FFunctionRegistry> FunctionRegistry;
         TSharedPtr<FContainerRegistry> ContainerRegistry;
         TSharedPtr<FEnumRegistry> EnumRegistry;
+        TSharedPtr<FDeadLoopCheck> DeadLoopCheck;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;

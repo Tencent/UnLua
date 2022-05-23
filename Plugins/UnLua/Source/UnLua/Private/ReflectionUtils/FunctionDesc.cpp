@@ -22,6 +22,7 @@
 #include "UnLuaDebugBase.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "LuaDeadLoopCheck.h"
 
 /**
  * Function descriptor constructor
@@ -594,6 +595,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     {
         NumResult++;
     }
+    LuaScriptCallGuard Guard(L);
     bool bSuccess = CallFunction(L, NumParams, NumResult);      // pcall
     if (!bSuccess)
     {
