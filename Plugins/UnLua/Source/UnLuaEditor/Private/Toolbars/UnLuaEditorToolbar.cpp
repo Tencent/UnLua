@@ -123,6 +123,19 @@ void FUnLuaEditorToolbar::BindToLua_Executed() const
     if (!Ok)
         return;
 
+    const auto ModifierKeys = FSlateApplication::Get().GetModifierKeys(); 
+    const auto bIsAltDown = ModifierKeys.IsLeftAltDown() || ModifierKeys.IsRightAltDown();
+    if (bIsAltDown)
+    {
+        const auto Package = Blueprint->GetTypedOuter(UPackage::StaticClass());
+        const auto LuaModuleName = Package->GetName().RightChop(6).Replace(TEXT("/"), TEXT("."));
+        const auto InterfaceDesc = *Blueprint->ImplementedInterfaces.FindByPredicate([](const FBPInterfaceDescription& Desc)
+        {
+            return Desc.Interface == UUnLuaInterface::StaticClass();
+        });
+        InterfaceDesc.Graphs[0]->Nodes[1]->Pins[1]->DefaultValue = LuaModuleName;
+    }
+
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
 
     const auto BlueprintEditors = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet").GetBlueprintEditors();

@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - TArray 支持使用 `[]` 访问与获取元素，等同于 `Get()` 和 `Set()`
 - TArray/TMap/TSet 的 `Num` 接口，作为 `Length` 的别名
 - 容器支持使用 `UStruct` 作为元素
+- 增加 `UNLUA_LEGACY_RETURN_ORDER` 配置项，以兼容老项目返回值顺序的问题
+- 按住`Alt`点击绑定可以直接快速按蓝图路径填充Lua模块路径到`GetModuleName`
 
 ### Fixed
 - 从Lua侧返回一个数组给蓝图，可能导致卡死
