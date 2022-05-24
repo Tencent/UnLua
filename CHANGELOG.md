@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.2.1] - 2022-5-25
+
+### Added
+- TArray/TMap 支持 `pairs` 遍历
+- TArray 支持使用 `[]` 访问与获取元素，等同于 `Get()` 和 `Set()`
+- TArray/TMap/TSet 的 `Num` 接口，作为 `Length` 的别名
+- 容器支持使用 `UStruct` 作为元素
+
+### Fixed
+- 从Lua侧返回一个数组给蓝图，可能导致卡死
+- UE5下编译报错找不到Tools.DotNETCommon
+- TPSProject在以客户端模式运行时报找不到GameMode的问题
+- 以-server参数启动时会出现断言 [#415](https://github.com/Tencent/UnLua/pull/415)
+- 退出编辑器时候产生崩溃 [#421](https://github.com/Tencent/UnLua/issues/421)
+- UE5主菜单不显示菜单按钮的问题 [#422](https://github.com/Tencent/UnLua/issues/422)
+- UE5下非const引用参数返回顺序异常
+- UE4.25下一些编译报错
+- 导出非UENUM的枚举成员类型异常 [#425](https://github.com/Tencent/UnLua/issues/425)
+
 ## [2.2.0] - 2022-5-7
 
 ### Added
