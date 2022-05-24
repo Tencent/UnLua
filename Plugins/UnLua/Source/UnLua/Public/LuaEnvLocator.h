@@ -15,6 +15,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Engine/GameInstance.h"
 #include "LuaEnv.h"
 #include "LuaEnvLocator.generated.h"
 

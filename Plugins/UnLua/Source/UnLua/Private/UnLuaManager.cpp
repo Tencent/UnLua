@@ -12,6 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "GameFramework/InputSettings.h"
+#include "Components/InputComponent.h"
+#include "Animation/AnimInstance.h"
+#include "Engine/LevelScriptActor.h"
 #include "UnLuaManager.h"
 #include "LuaEnv.h"
 #include "UnLuaLegacy.h"
@@ -19,10 +23,6 @@
 #include "LuaCore.h"
 #include "LuaFunction.h"
 #include "ObjectReferencer.h"
-#include "GameFramework/InputSettings.h"
-#include "Components/InputComponent.h"
-#include "Animation/AnimInstance.h"
-#include "Engine/LevelScriptActor.h"
 
 
 static const TCHAR* SReadableInputEvent[] = { TEXT("Pressed"), TEXT("Released"), TEXT("Repeat"), TEXT("DoubleClick"), TEXT("Axis"), TEXT("Max") };

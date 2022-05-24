@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "CollisionHelper.h"
 #include "LuaCore.h"
 
 #include "Binding.h"
@@ -19,7 +20,6 @@
 #include "UnLua.h"
 #include "UnLuaDelegates.h"
 #include "ObjectReferencer.h"
-#include "CollisionHelper.h"
 #include "LowLevel.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"

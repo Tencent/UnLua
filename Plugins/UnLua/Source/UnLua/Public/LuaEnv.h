@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "Engine/EngineBaseTypes.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
 #include "Registries/DelegateRegistry.h"

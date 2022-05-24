@@ -17,8 +17,8 @@
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
-#include "UnLua.h"
 #include "GameFramework/Character.h"
+#include "UnLua.h"
 #include "UnLuaTestHelpers.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
