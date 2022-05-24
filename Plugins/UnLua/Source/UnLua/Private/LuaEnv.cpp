@@ -454,10 +454,10 @@ namespace UnLua
             // legacy support
             const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
             TArray<uint8> Data;
-            FString RealFilePath;
-            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, RealFilePath))
+            FString ChunkName(TEXT("chunk"));
+            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, ChunkName))
             {
-                if (Env->LoadString(Data))
+                if (Env->LoadString(Data, ChunkName))
                     return 1;
 
                 return luaL_error(L, "file loading from custom loader error");
@@ -471,13 +471,13 @@ namespace UnLua
         const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
 
         TArray<uint8> Data;
-        FString RealFilePath;
+        FString ChunkName(TEXT("chunk"));
         for (auto Loader : Env->CustomLoaders)
         {
-            if (!Loader.Execute(FileName, Data, RealFilePath))
+            if (!Loader.Execute(FileName, Data, ChunkName))
                 continue;
 
-            if (Env->LoadString(Data))
+            if (Env->LoadString(Data, ChunkName))
                 break;
 
             return luaL_error(L, "file loading from custom loader error");
