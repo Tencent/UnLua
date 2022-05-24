@@ -12,6 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Engine/World.h"
+#include "Components/InputComponent.h"
+#include "GameFramework/PlayerController.h"
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "LowLevel.h"
@@ -26,8 +29,6 @@
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
 #include "UnLuaLegacy.h"
-#include "Components/InputComponent.h"
-#include "GameFramework/PlayerController.h"
 
 namespace UnLua
 {

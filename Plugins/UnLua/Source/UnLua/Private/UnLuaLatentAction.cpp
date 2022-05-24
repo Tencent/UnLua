@@ -12,8 +12,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Engine/World.h"
+#include "Engine/LatentActionManager.h"
 #include "UnLuaLatentAction.h"
-
 #include "LuaCore.h"
 #include "UnLuaEx.h"
 

@@ -28,7 +28,7 @@ public class UnLua : ModuleRules
         SetupScripts();
 
         bEnforceIWYU = false;
-
+        bUseUnity = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicIncludePaths.AddRange(

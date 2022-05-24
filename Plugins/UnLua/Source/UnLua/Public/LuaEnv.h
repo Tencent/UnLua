@@ -91,7 +91,7 @@ namespace UnLua
 
         void ResumeThread(int32 ThreadRef);
 
-        FORCEINLINE UUnLuaManager* GetManager();
+        UUnLuaManager* GetManager();
 
         FORCEINLINE TSharedPtr<FClassRegistry> GetClassRegistry() const { return ClassRegistry; }
 

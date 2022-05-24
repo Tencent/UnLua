@@ -23,6 +23,7 @@
 #include "UnLuaConsoleCommands.h"
 #endif
 
+#include "Engine/World.h"
 #include "UnLuaModule.h"
 #include "DefaultParamCollection.h"
 #include "LuaEnvLocator.h"
