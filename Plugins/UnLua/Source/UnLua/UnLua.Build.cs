@@ -91,6 +91,7 @@ public class UnLua : ModuleRules
         loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
         loadBoolConfig("bEnableCallOverriddenFunction", "ENABLE_CALL_OVERRIDDEN_FUNCTION", true);
         loadBoolConfig("bWithUENamespace", "WITH_UE4_NAMESPACE", true);
+        loadBoolConfig("bLegacyReturnOrder", "UNLUA_LEGACY_RETURN_ORDER", false);
     }
 
     private void SetupScripts()

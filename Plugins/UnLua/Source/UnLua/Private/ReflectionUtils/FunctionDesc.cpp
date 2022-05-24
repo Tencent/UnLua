@@ -478,6 +478,18 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
 {
     int32 NumReturnValues = 0;
 
+#if UNLUA_LEGACY_RETURN_ORDER
+    for (int32 Index : OutPropertyIndices)
+    {
+        const auto& Property = Properties[Index];
+        if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
+        {
+            Property->GetValue(L, Params, true);
+            ++NumReturnValues;
+        }
+    }
+#endif
+
     if (ReturnPropertyIndex > INDEX_NONE)
     {
         const auto& Property = Properties[ReturnPropertyIndex];
@@ -495,6 +507,7 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
         ++NumReturnValues;
     }
 
+#if !UNLUA_LEGACY_RETURN_ORDER
     // !!!Fix!!!
     // out parameters always use return format, copyback is better,but some parameters such 
     // as int can not be copy back
@@ -508,6 +521,7 @@ int32 FFunctionDesc::PostCall(lua_State *L, int32 NumParams, int32 FirstParamInd
             ++NumReturnValues;
         }
     }
+#endif
 
     for (int32 i = 0; i < Properties.Num(); ++i)
     {

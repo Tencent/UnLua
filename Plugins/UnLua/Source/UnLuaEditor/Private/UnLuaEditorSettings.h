@@ -67,6 +67,9 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated)", ToolTip = "Requires restart to take effect."))
     bool bWithUENamespace = true;
 
+    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Place out parameters before return value", ToolTip = "Requires restart to take effect."))
+    bool bLegacyReturnOrder = false;
+
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (DisplayName = "Update Mode", defaultValue = 0))
     EUpdateMode UpdateMode;
 };
