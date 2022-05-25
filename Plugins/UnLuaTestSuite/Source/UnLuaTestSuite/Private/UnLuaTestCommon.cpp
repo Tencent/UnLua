@@ -59,6 +59,11 @@ bool FUnLuaTestCommand_TearDownTest::Update()
 
 bool FUnLuaTestBase::SetUp()
 {
+#if WITH_EDITOR
+    if (GEditor && GEditor->PlayWorld)
+        GEditor->EndPlayMap();
+#endif
+
     UnLua::Startup();
     L = UnLua::GetState();
 
