@@ -33,6 +33,7 @@ BEGIN_TESTSUITE(FIssue276Test, TEXT("UnLua.Regression.Issue276 游戏世界暂�
             TestTrue(TEXT("Flag"), Flag);
             return true;
             }));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
         return true;
     }
 

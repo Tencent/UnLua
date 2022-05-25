@@ -37,6 +37,7 @@ BEGIN_TESTSUITE(FIssue300Test, TEXT("UnLua.Regression.Issue300 LUA覆写的函�
             TestEqual(TEXT("Result2"), Result2, 10);
             return true;
             }));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
         return true;
     }
 

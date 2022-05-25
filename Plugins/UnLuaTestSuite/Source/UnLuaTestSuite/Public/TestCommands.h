@@ -35,6 +35,12 @@ namespace UnLuaTestSuite
         bool bForceReload;
         TUniquePtr<FWaitForMapToLoadCommand> WaitForMapToLoad;
     };
+
+    class FEndPlayMapCommand : public IAutomationLatentCommand
+    {
+    public:
+        virtual bool Update() override;
+    };
 }
 
 #endif

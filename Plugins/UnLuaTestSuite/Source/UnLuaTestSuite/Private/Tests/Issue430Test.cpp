@@ -24,7 +24,7 @@ BEGIN_TESTSUITE(FIssue430Test, TEXT("UnLua.Regression.Issue430 动画通知调�
     {
         const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue430/Issue430");
         ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
-        ADD_LATENT_AUTOMATION_COMMAND(FDelayedFunctionLatentCommand([] { }, 1.0f));
+        ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.0f));
         ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
             const auto L = UnLua::GetState();
             lua_getglobal(L, "Result");
@@ -32,6 +32,7 @@ BEGIN_TESTSUITE(FIssue430Test, TEXT("UnLua.Regression.Issue430 动画通知调�
             TestTrue(TEXT("Result"), Result);
             return true;
             }));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
         return true;
     }
 

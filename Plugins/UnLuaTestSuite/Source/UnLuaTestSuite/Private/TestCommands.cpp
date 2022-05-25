@@ -126,6 +126,17 @@ namespace UnLuaTestSuite
         WaitForMapToLoad = MakeUnique<FWaitForMapToLoadCommand>();
 #endif
     }
+
+    bool FEndPlayMapCommand::Update()
+    {
+#if WITH_EDITOR
+#if ENGINE_MAJOR_VERSION < 5
+        if (GEditor && GEditor->PlayWorld)
+            GEditor->EndPlayMap();
+#endif
+#endif
+        return true;
+    }
 }
 
 #endif
