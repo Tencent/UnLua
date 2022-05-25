@@ -188,6 +188,7 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     check(lua_istable(L, -1));
     
     const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
+    const auto OldParms = Stack.OutParms;
 
     if (bUnpackParams)
     {
@@ -219,6 +220,8 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     {
         CallLuaInternal(L, Stack.Locals, Stack.OutParms, RESULT_PARAM); // call Lua function...
     }
+
+    Stack.OutParms = OldParms;
 }
 
 bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self)
