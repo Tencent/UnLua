@@ -465,10 +465,10 @@ namespace UnLua
             // legacy support
             const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
             TArray<uint8> Data;
-            FString RealFilePath;
-            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(*Env, FileName, Data, RealFilePath))
+            FString ChunkName(TEXT("chunk"));
+            if (FUnLuaDelegates::CustomLoadLuaFile.Execute(*Env, FileName, Data, ChunkName))
             {
-                if (Env->LoadString(Data))
+                if (Env->LoadString(Data, ChunkName))
                     return 1;
 
                 return luaL_error(L, "file loading from custom loader error");
@@ -482,13 +482,13 @@ namespace UnLua
         const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
 
         TArray<uint8> Data;
-        FString RealFilePath;
+        FString ChunkName(TEXT("chunk"));
         for (auto Loader : Env->CustomLoaders)
         {
-            if (!Loader.Execute(FileName, Data, RealFilePath))
+            if (!Loader.Execute(FileName, Data, ChunkName))
                 continue;
 
-            if (Env->LoadString(Data))
+            if (Env->LoadString(Data, ChunkName))
                 break;
 
             return luaL_error(L, "file loading from custom loader error");
@@ -544,17 +544,24 @@ namespace UnLua
 
     void FLuaEnv::OnAsyncLoadingFlushUpdate()
     {
+        TArray<FWeakObjectPtr> CandidatesTemp;
+        TArray<int> CandidatesRemovedIndexes;
+
         TArray<UObject*> LocalCandidates;
         {
-            FScopeLock Lock(&CandidatesLock);
-
-            for (int32 i = Candidates.Num() - 1; i >= 0; --i)
             {
-                FWeakObjectPtr ObjectPtr = Candidates[i];
+                FScopeLock Lock(&CandidatesLock);
+                CandidatesTemp.Append(Candidates);    
+            }
+
+
+            for (int32 i = CandidatesTemp.Num() - 1; i >= 0; --i)
+            {
+                FWeakObjectPtr ObjectPtr = CandidatesTemp[i];
                 if (!ObjectPtr.IsValid())
                 {
                     // discard invalid objects
-                    Candidates.RemoveAt(i);
+                    CandidatesRemovedIndexes.Add(i);
                     continue;
                 }
 
@@ -568,7 +575,15 @@ namespace UnLua
                 }
 
                 LocalCandidates.Add(Object);
-                Candidates.RemoveAt(i);
+                CandidatesRemovedIndexes.Add(i);
+            }
+        }
+
+        {
+            FScopeLock Lock(&CandidatesLock);
+            for(int32 j = 0; j < CandidatesRemovedIndexes.Num();++j)
+            {
+                Candidates.RemoveAt(CandidatesRemovedIndexes[j]);
             }
         }
 
