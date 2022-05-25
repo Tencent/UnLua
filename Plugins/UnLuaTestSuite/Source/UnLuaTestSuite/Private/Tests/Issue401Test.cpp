@@ -37,6 +37,6 @@ BEGIN_TESTSUITE(FIssue401Test, TEXT("UnLua.Regression.Issue401 LUA覆写导致�
         return true;
     }
 
-END_TESTSUITE(FRegression_Issue276)
+END_TESTSUITE(FIssue401Test)
 
 #endif
