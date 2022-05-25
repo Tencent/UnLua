@@ -35,7 +35,7 @@ public:
 
     UUnLuaManager();
 
-    bool Bind(UObject *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
+    bool Bind(UObject *Object, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
 
     void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
     
@@ -75,14 +75,12 @@ public:
     void TriggerAnimNotify();
 
 private:
-    void OnDerivedClassBinded(UClass *DerivedClass, UClass *BaseClass);
-
     UClass* GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc = nullptr);
 
-    bool BindInternal(UObjectBaseUtility *Object, UClass *Class, const FString &InModuleName, bool bNewCreated, bool bMultipleLuaBind, FString &Error);
+    bool BindInternal(UClass *Class, const FString &InModuleName, bool bMultipleLuaBind, FString &Error);
     bool ConditionalUpdateClass(UClass *Class, const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions);
 
-    void OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode = false);
+    void OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass);
 
     void ReplaceActionInputs(AActor *Actor, UInputComponent *InputComponent, TSet<FName> &LuaFunctions);
     void ReplaceKeyInputs(AActor *Actor, UInputComponent *InputComponent, TSet<FName> &LuaFunctions);
@@ -96,9 +94,6 @@ private:
     TMap<FString, int16> RealModuleNames;
     TMap<FString, UClass*> Classes;
     TMap<FString, TSet<FName>> ModuleFunctions;
-
-    TMap<UClass*, TArray<UClass*>> Base2DerivedClasses;
-    TMap<UClass*, UClass*> Derived2BaseClasses;
 
     TSet<FName> DefaultAxisNames;
     TSet<FName> DefaultActionNames;

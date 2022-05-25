@@ -53,9 +53,9 @@ UUnLuaManager::UUnLuaManager()
 /**
  * Bind a Lua module for a UObject
  */
-bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef)
+bool UUnLuaManager::Bind(UObject *Object, const TCHAR *InModuleName, int32 InitializerTableRef)
 {   
-    if (!Object || !Class)
+    if (!Object)
     {
         UE_LOG(LogUnLua, Warning, TEXT("Invalid target object!"));
         return false;
@@ -64,8 +64,8 @@ bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleNa
 #if UNLUA_ENABLE_DEBUG != 0
     UE_LOG(LogUnLua, Log, TEXT("UUnLuaManager::Bind : %p,%s,%s"), Object, *Object->GetName(),InModuleName);
 #endif
-    
-    bool bSuccess = true;
+
+    UClass* Class = Object->GetClass();
     lua_State *L = Env->GetMainState();
 
     bool bMultipleLuaBind = false;
@@ -82,6 +82,7 @@ bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleNa
     // try bind lua if not bind or use a copyed table
     UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_UTF8(InModuleName));    // require Lua module
     FString Error;
+    bool bSuccess;
     if (!RetValues.IsValid() || RetValues.Num() == 0)
     {
         Error = "invalid return value of require()";
@@ -98,23 +99,17 @@ bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleNa
     }
     else
     {
-        bSuccess = BindInternal(Object, Class, InModuleName, true, bMultipleLuaBind, Error);                             // bind!!!
+        bSuccess = BindInternal(Class, InModuleName, bMultipleLuaBind, Error);                             // bind!!!
     }
 
     if (bSuccess)
     {   
-        if (Object->GetClass() != Class)
-        {
-            OnDerivedClassBinded(Object->GetClass(), Class);
-        }
-
         FString RealModuleName = *ModuleNames.Find(Class);
 
         // create a Lua instance for this UObject
         Env->GetObjectRegistry()->Bind(Object, TCHAR_TO_UTF8(*RealModuleName));
 
         // try call user first user function handler
-        bool bResult = false;
         int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
         if (FunctionRef != LUA_NOREF)
         {
@@ -126,7 +121,7 @@ bool UUnLuaManager::Bind(UObject *Object, UClass *Class, const TCHAR *InModuleNa
             {
                 lua_pushnil(L);
             }
-            bResult = ::CallFunction(L, 2, 0);                                 // call 'Initialize'
+            bool bResult = ::CallFunction(L, 2, 0);                                 // call 'Initialize'
             if (!bResult)
             {
                 UE_LOG(LogUnLua, Warning, TEXT("Failed to call 'Initialize' function!"));
@@ -231,17 +226,9 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
     }
 
     UClass *Class = Actor->GetClass();
-    FString *ModuleNamePtr = ModuleNames.Find(Class);
+    FString* ModuleNamePtr = ModuleNames.Find(Class);
     if (!ModuleNamePtr)
-    {
-        UClass **SuperClassPtr = Derived2BaseClasses.Find(Class);
-        if (!SuperClassPtr || !(*SuperClassPtr))
-        {
-            return false;
-        }
-        ModuleNamePtr = ModuleNames.Find(*SuperClassPtr);
-    }
-    check(ModuleNamePtr);
+        return false;
     TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleNamePtr);
     check(LuaFunctionsPtr);
 
@@ -288,24 +275,6 @@ void UUnLuaManager::OnLatentActionCompleted(int32 LinkID)
 }
 
 /**
- * Notify that a derived class is binded to its base class
- */
-void UUnLuaManager::OnDerivedClassBinded(UClass *DerivedClass, UClass *BaseClass)
-{
-    TArray<UClass*> &DerivedClasses = Base2DerivedClasses.FindOrAdd(BaseClass);
-    do
-    {
-        if (DerivedClasses.Find(DerivedClass) != INDEX_NONE)
-        {
-            break;
-        }
-        Derived2BaseClasses.Add(DerivedClass, BaseClass);
-        DerivedClasses.Add(DerivedClass);
-        DerivedClass = DerivedClass->GetSuperClass();
-    } while (DerivedClass != BaseClass);
-}
-
-/**
  * Get target UCLASS for Lua binding
  */
 UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc)
@@ -332,12 +301,10 @@ UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFu
 /**
  * Bind a Lua module for a UObject
  */
-bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, const FString& InModuleName, bool bNewCreated, bool bMultipleLuaBind, FString& Error)
+bool UUnLuaManager::BindInternal(UClass* Class, const FString& InModuleName, bool bMultipleLuaBind, FString& Error)
 {
-    if (!Object || !Class)
-    {
+    if (!Class)
         return false;
-    }
 
     // module may be already loaded for other class,etc muti bp bind to same lua
     FString RealModuleName = InModuleName;
@@ -390,7 +357,7 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
     TMap<FName, UFunction*> UEFunctions;
     ULuaFunction::GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
 
-    OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated);           // try to override UFunctions
+    OverrideFunctions(LuaFunctions, UEFunctions, Class);           // try to override UFunctions
 
     return ConditionalUpdateClass(Class, LuaFunctions, UEFunctions);
 }
@@ -425,7 +392,7 @@ bool UUnLuaManager::ConditionalUpdateClass(UClass *Class, const TSet<FName> &Lua
 /**
  * Override candidate UFunctions
  */
-void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode)
+void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass)
 {
     for (const FName &LuaFuncName : LuaFunctions)
     {

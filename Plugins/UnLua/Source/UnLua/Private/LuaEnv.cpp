@@ -267,7 +267,7 @@ namespace UnLua
             if (!GLuaDynamicBinding.IsValid(Class))
                 return false;
 
-            return GetManager()->Bind(Object, Class, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
+            return GetManager()->Bind(Object, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
         }
 
         // filter some object in bp nest case
@@ -319,7 +319,7 @@ namespace UnLua
         }
 #endif
 
-        return GetManager()->Bind(Object, Class, *ModuleName, GLuaDynamicBinding.InitializerTableRef);
+        return GetManager()->Bind(Object, *ModuleName, GLuaDynamicBinding.InitializerTableRef);
     }
 
     bool FLuaEnv::DoString(const FString& Chunk, const FString& ChunkName)
