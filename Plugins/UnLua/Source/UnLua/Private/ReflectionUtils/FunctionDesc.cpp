@@ -689,6 +689,7 @@ void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params)
             ensure(Stack.MostRecentPropertyAddress);
             Out->PropAddr = (Stack.MostRecentPropertyAddress != nullptr) ? Stack.MostRecentPropertyAddress : Property->ContainerPtrToValuePtr<uint8>(Params);
             Out->Property = Property;
+            Out->NextOutParm = nullptr;
 
             if (*LastOut)
             {
@@ -705,9 +706,6 @@ void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params)
             Stack.Step(Stack.Object, Property->ContainerPtrToValuePtr<uint8>(Params));
         }
     }
-
-    if (LastOut && *LastOut)
-        (*LastOut)->NextOutParm = nullptr;
 
     check(Stack.PeekCode() == EX_EndFunctionParms);
     Stack.SkipCode(1); // skip EX_EndFunctionParms
