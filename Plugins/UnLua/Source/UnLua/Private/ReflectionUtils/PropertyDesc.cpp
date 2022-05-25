@@ -1166,7 +1166,7 @@ class FScriptStructPropertyDesc : public FStructPropertyDesc
 {
 public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
-        : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
+        : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
     {
         FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
@@ -1176,7 +1176,7 @@ public:
     }
 
     FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
-        : FStructPropertyDesc(InProperty), StructName(*FString::Printf(TEXT("F%s"), *StructProperty->Struct->GetName()))
+        : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
     {
         FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
         StructSize = ClassDesc->GetSize();
