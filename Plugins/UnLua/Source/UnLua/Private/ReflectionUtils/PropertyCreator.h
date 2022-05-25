@@ -23,7 +23,7 @@ struct FPropertyCollector
 {
 };
 
-class IPropertyCreator
+class UNLUA_API IPropertyCreator
 {
 public:
     static IPropertyCreator& Instance();
