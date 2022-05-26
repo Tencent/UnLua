@@ -44,5 +44,7 @@ public:
 
     virtual void Reset() override;
 
+    FORCEINLINE virtual TSharedPtr<UnLua::FLuaEnv> GetDefault();
+
     TMap<UGameInstance*, TSharedPtr<UnLua::FLuaEnv>> Envs;
 };
