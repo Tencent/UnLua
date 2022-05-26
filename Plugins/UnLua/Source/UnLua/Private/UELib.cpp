@@ -110,7 +110,12 @@ int UnLua::UELib::Open(lua_State* L)
 
     lua_setglobal(L, NAMESPACE_NAME);
 
+#if WITH_UE4_NAMESPACE
     lua_pushboolean(L, true);
+#else
+    lua_pushboolean(L, false);
+#endif
+    
     lua_setglobal(L, "WITH_UE4_NAMESPACE");
 
     return 1;
