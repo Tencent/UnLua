@@ -67,8 +67,11 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "With UE Namespace (Deprecated)", ToolTip = "Requires restart to take effect."))
     bool bWithUENamespace = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Place out parameters before return value", ToolTip = "Requires restart to take effect."))
+    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "Place out parameters before return value", ToolTip = "Requires restart to take effect."))
     bool bLegacyReturnOrder = false;
+
+    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "Auto append '_C' to blueprint class path", ToolTip = "Requires restart to take effect."))
+    bool bLegacyBlueprintPath = false;
 
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (DisplayName = "Update Mode", defaultValue = 0))
     EUpdateMode UpdateMode;

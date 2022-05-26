@@ -92,6 +92,7 @@ public class UnLua : ModuleRules
         loadBoolConfig("bEnableCallOverriddenFunction", "ENABLE_CALL_OVERRIDDEN_FUNCTION", true);
         loadBoolConfig("bWithUENamespace", "WITH_UE4_NAMESPACE", true);
         loadBoolConfig("bLegacyReturnOrder", "UNLUA_LEGACY_RETURN_ORDER", false);
+        loadBoolConfig("bLegacyBlueprintPath", "UNLUA_LEGACY_BLUEPRINT_PATH", false);
     }
 
     private void SetupScripts()
