@@ -192,9 +192,7 @@ namespace UnLua
         auto& Info = Delegates.FindChecked(Delegate);
 
         const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        TWeakObjectPtr<ULuaDelegateHandler> Handler;
-        if (!Info.LuaFunction2Handler.RemoveAndCopyValue(LuaFunction2, Handler))
-            return;
+        const auto Handler = Info.LuaFunction2Handler.FindAndRemoveChecked(LuaFunction2);
         if (!Handler.IsValid())
             return;
         Handler->RemoveFrom(Info.MulticastProperty, Delegate);
