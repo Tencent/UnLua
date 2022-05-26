@@ -27,9 +27,18 @@ BEGIN_TESTSUITE(FIssue430Test, TEXT("UnLua.Regression.Issue430 动画通知调�
         ADD_LATENT_AUTOMATION_COMMAND(FWaitLatentCommand(1.0f));
         ADD_LATENT_AUTOMATION_COMMAND(FFunctionLatentCommand([this] {
             const auto L = UnLua::GetState();
-            lua_getglobal(L, "Result");
-            const auto Result = (bool)lua_toboolean(L, -1);
-            TestTrue(TEXT("Result"), Result);
+
+            lua_getglobal(L, "Result1");
+            const auto Result1 = (int32)lua_tointeger(L, -1);
+            lua_getglobal(L, "Result2");
+            const auto Result2 = (int32)lua_tointeger(L, -1);
+            lua_getglobal(L, "Result3");
+            const auto Result3 = (int32)lua_tointeger(L, -1);
+
+            TestEqual(TEXT("Result1"), Result1, 2);
+            TestEqual(TEXT("Result2"), Result2, 2);
+            TestEqual(TEXT("Result3"), Result3, 2);
+
             return true;
             }));
         ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
