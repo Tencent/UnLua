@@ -93,7 +93,7 @@ struct TMulticastDelegateLib
         }
 
         const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
-        Registry->Remove(L, (FMulticastScriptDelegate*)Delegate, 3);
+        Registry->Remove(L, Object, (FMulticastScriptDelegate*)Delegate, 3);
         return 0;
     }
 
