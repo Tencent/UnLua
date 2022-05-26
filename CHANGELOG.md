@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - UE4.25下一些编译报错
 - 导出非UENUM的枚举成员类型异常 [#425](https://github.com/Tencent/UnLua/issues/425)
 - UE5动画通知调用组件Lua覆写函数崩溃 [#430](https://github.com/Tencent/UnLua/issues/430)
+- Lua调用的函数返回蓝图结构体会check [#432](https://github.com/Tencent/UnLua/issues/432)
 
 ## [2.2.0] - 2022-5-7
 

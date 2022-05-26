@@ -31,6 +31,7 @@ BEGIN_TESTSUITE(FIssue286Test, TEXT("UnLua.Regression.Issue286 蓝图 TMap FindR
             TestEqual(TEXT("Result"), Error, "passed");
             return true;
             }));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
         return true;
     }
 

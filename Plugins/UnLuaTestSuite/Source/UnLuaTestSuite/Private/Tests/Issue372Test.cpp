@@ -51,6 +51,7 @@ BEGIN_TESTSUITE(FIssue372Test, TEXT("UnLua.Regression.Issue372 Actor调用K2_Des
             TestNotEqual(TEXT("Actual"), Actual, LUA_TTABLE);
             return true;
             }));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
         return true;
     }
 

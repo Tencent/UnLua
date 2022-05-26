@@ -66,6 +66,7 @@ BEGIN_TESTSUITE(FIssue295Test, TEXT("UnLua.Regression.Issue295 动态绑定的UM
             UnLua::RunChunk(L, Chunk);
             return true;
             }));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
         return true;
     }
 

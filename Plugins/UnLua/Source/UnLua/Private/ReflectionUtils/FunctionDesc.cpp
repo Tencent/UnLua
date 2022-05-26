@@ -188,6 +188,7 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     check(lua_istable(L, -1));
     
     const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
+    const auto OldParms = Stack.OutParms;
 
     if (bUnpackParams)
     {
@@ -219,6 +220,8 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     {
         CallLuaInternal(L, Stack.Locals, Stack.OutParms, RESULT_PARAM); // call Lua function...
     }
+
+    Stack.OutParms = OldParms;
 }
 
 bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self)
@@ -674,8 +677,6 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 
 void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params)
 {
-    FOutParmRec** LastOut = &Stack.OutParms;
-
     for (FProperty* Property = (FProperty*)(Function->ChildProperties);
          *Stack.Code != EX_EndFunctionParms;
          Property = (FProperty*)(Property->Next))
@@ -689,17 +690,8 @@ void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params)
             ensure(Stack.MostRecentPropertyAddress);
             Out->PropAddr = (Stack.MostRecentPropertyAddress != nullptr) ? Stack.MostRecentPropertyAddress : Property->ContainerPtrToValuePtr<uint8>(Params);
             Out->Property = Property;
-            Out->NextOutParm = nullptr;
-
-            if (*LastOut)
-            {
-                (*LastOut)->NextOutParm = Out;
-                LastOut = &(*LastOut)->NextOutParm;
-            }
-            else
-            {
-                *LastOut = Out;
-            }
+            Out->NextOutParm = Stack.OutParms;
+            Stack.OutParms = Out;
         }
         else
         {
