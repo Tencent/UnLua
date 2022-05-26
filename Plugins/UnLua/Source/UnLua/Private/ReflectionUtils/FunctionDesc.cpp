@@ -677,6 +677,8 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 
 void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params)
 {
+    FOutParmRec** LastOut = &Stack.OutParms;
+
     for (FProperty* Property = (FProperty*)(Function->ChildProperties);
          *Stack.Code != EX_EndFunctionParms;
          Property = (FProperty*)(Property->Next))
@@ -690,8 +692,17 @@ void FFunctionDesc::SkipCodes(FFrame& Stack, void* Params)
             ensure(Stack.MostRecentPropertyAddress);
             Out->PropAddr = (Stack.MostRecentPropertyAddress != nullptr) ? Stack.MostRecentPropertyAddress : Property->ContainerPtrToValuePtr<uint8>(Params);
             Out->Property = Property;
-            Out->NextOutParm = Stack.OutParms;
-            Stack.OutParms = Out;
+            Out->NextOutParm = nullptr;
+
+            if (*LastOut)
+            {
+                (*LastOut)->NextOutParm = Out;
+                LastOut = &(*LastOut)->NextOutParm;
+            }
+            else
+            {
+                *LastOut = Out;
+            }
         }
         else
         {
