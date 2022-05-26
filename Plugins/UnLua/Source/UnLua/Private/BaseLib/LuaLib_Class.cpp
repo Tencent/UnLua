@@ -16,6 +16,33 @@
 #include "LuaCore.h"
 #include "ReflectionUtils/ClassDesc.h"
 
+#if UNLUA_LEGACY_BLUEPRINT_PATH
+    static void LeagcyAppendSuffix(FString& ClassPath)
+    {
+        const TCHAR* Suffix = TEXT("_C");
+        int32 Index = INDEX_NONE;
+        ClassPath.FindChar(TCHAR('.'), Index);
+        if (Index == INDEX_NONE)
+        {
+            ClassPath.FindLastChar(TCHAR('/'), Index);
+            if (Index != INDEX_NONE)
+            {
+                const FString Name = ClassPath.Mid(Index + 1);
+                ClassPath += TCHAR('.');
+                ClassPath += Name;
+                ClassPath.AppendChars(Suffix, 2);
+            }
+        }
+        else
+        {
+            if (ClassPath.Right(2) != TEXT("_C"))
+            {
+                ClassPath.AppendChars(TEXT("_C"), 2);
+            }
+        }
+    }
+#endif
+
 /**
  * Load a class. for example: UClass.Load("/Game/Core/Blueprints/AICharacter.AICharacter_C")
  */
@@ -35,7 +62,13 @@ int32 UClass_Load(lua_State* L)
         return 0;
     }
 
-    UClass* Class = LoadObject<UClass>(nullptr, UTF8_TO_TCHAR(ClassPath));
+    FString Name = UTF8_TO_TCHAR(ClassPath);
+
+#if UNLUA_LEGACY_BLUEPRINT_PATH
+    LeagcyAppendSuffix(Name);
+#endif
+    
+    UClass* Class = LoadObject<UClass>(nullptr, *Name);
     if (!Class)
         return 0;
 
