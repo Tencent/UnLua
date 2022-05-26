@@ -37,17 +37,25 @@ TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::Locate(const UObject* 
     if (!Object)
         return GetDefault();
 
-    const auto Outer = Object->GetOuter();
-    if (!Outer)
-        return GetDefault();
+    UGameInstance* GameInstance;
+    if (Object->IsA(UGameInstance::StaticClass()))
+    {
+        GameInstance = (UGameInstance*)Object;
+    }
+    else
+    {
+        const auto Outer = Object->GetOuter();
+        if (!Outer)
+            return GetDefault();
 
-    const auto World = Outer->GetWorld();
-    if (!World)
-        return GetDefault();
+        const auto World = Outer->GetWorld();
+        if (!World)
+            return GetDefault();
 
-    const auto GameInstance = World->GetGameInstance();
-    if (!GameInstance)
-        return GetDefault();
+        GameInstance = World->GetGameInstance();
+        if (!GameInstance)
+            return GetDefault();
+    }
 
     TSharedPtr<UnLua::FLuaEnv> Ret;
     if (Envs.Contains(GameInstance))
