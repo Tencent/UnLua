@@ -263,7 +263,10 @@ bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* S
     bool bOk = PushFunction(L, Self, LuaRef);
     if (!bOk)
         return false;
-    bOk = CallLuaInternal(L, Params, nullptr, nullptr); // call Lua function...
+
+    const bool bHasReturnParam = Function->ReturnValueOffset != MAX_uint16;
+    uint8* ReturnValueAddress = bHasReturnParam ? ((uint8*)Params + Function->ReturnValueOffset) : nullptr;
+    bOk = CallLuaInternal(L, Params, nullptr, ReturnValueAddress);
     return bOk;
 }
 
@@ -648,7 +651,11 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     int32 NumResultOnStack = lua_gettop(L);
     if (NumResult <= NumResultOnStack)
     {
+#if UNLUA_LEGACY_RETURN_ORDER
         int32 OutPropertyIndex = -NumResult;
+#else
+        int32 OutPropertyIndex = NumResult;
+#endif
         OutParam = OutParams;
 
         for (int32 i = 0; i < OutPropertyIndices.Num(); ++i)
@@ -679,7 +686,11 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
                 }
                 OutParam = OutParam->NextOutParm;
             }
+#if UNLUA_LEGACY_RETURN_ORDER
             ++OutPropertyIndex;
+#else
+            --OutPropertyIndex;
+#endif
         }
     }
     
@@ -694,14 +705,20 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         {
             const auto& ReturnProperty = Properties[ReturnPropertyIndex];
 
+#if UNLUA_LEGACY_RETURN_ORDER
+            constexpr auto IndexInStack = -1;
+#else
+            constexpr auto IndexInStack = 1;
+#endif
+            
             // set value for blueprint side return property
             const FOutParmRec* RetParam = OutParam ? FindOutParmRec(OutParam, ReturnProperty->GetProperty()) : nullptr;
             if (RetParam)
-                ReturnProperty->SetValueInternal(L, RetParam->PropAddr, -1, true);
+                ReturnProperty->SetValueInternal(L, RetParam->PropAddr, IndexInStack, true);
 
             // set value for return property
             check(RetValueAddress);
-            ReturnProperty->SetValueInternal(L, RetValueAddress, -1, true);
+            ReturnProperty->SetValueInternal(L, RetValueAddress, IndexInStack, true);
         }
     }
 
