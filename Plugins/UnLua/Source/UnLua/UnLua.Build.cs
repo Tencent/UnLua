@@ -105,7 +105,7 @@ public class UnLua : ModuleRules
 
         var SrcPath = Path.Combine(PluginContentDirectory, UnLuaSourceFileName);
         var DstPath = Path.Combine(DefaultScriptDirectory, UnLuaSourceFileName);
-        if (!File.Exists(DstPath))
+        if (!File.Exists(DstPath) && File.Exists(SrcPath))
             File.Copy(SrcPath, DstPath);
     }
 }
