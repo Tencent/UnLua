@@ -22,10 +22,14 @@ public:
 
 	void UnbindFromLua_Executed() const;
 
+	void FindInExpoler_Executed();
+
 protected:
 	virtual void BindCommands();
 
 	void BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject);
+
+	void BuildNodeMenu();
 
 	TSharedRef<FExtender> GetExtender(UObject* InContextObject);
 
