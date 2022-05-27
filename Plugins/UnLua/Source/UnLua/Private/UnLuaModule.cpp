@@ -68,7 +68,7 @@ namespace UnLua
 
 #if AUTO_UNLUA_STARTUP
 #if WITH_EDITOR
-            if (IsRunningGame())
+            if (IsRunningGame() || IsRunningDedicatedServer())
 #endif
                 SetActive(true);
 #endif
