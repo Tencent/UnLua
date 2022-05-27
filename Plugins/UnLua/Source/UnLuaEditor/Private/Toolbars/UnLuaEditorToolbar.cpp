@@ -14,6 +14,7 @@
 #include "Kismet2/BlueprintEditorUtils.h"
 #include "Layout/Children.h"
 #include "Widgets/Notifications/SNotificationList.h"
+#include "ToolMenus.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -34,6 +35,7 @@ void FUnLuaEditorToolbar::BindCommands()
     CommandList->MapAction(Commands.CopyAsRelativePath, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CopyAsRelativePath_Executed));
     CommandList->MapAction(Commands.BindToLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::BindToLua_Executed));
     CommandList->MapAction(Commands.UnbindFromLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::UnbindFromLua_Executed));
+    CommandList->MapAction(Commands.FindInExpoler, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::FindInExpoler_Executed));
 }
 
 void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject)
@@ -93,7 +95,24 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
     );
 
     ToolbarBuilder.EndSection();
+
+    BuildNodeMenu();
 }
+
+void FUnLuaEditorToolbar::BuildNodeMenu() {
+	FToolMenuOwnerScoped OwnerScoped(this);
+	UToolMenu* BPMenu = UToolMenus::Get()->ExtendMenu("GraphEditor.GraphNodeContextMenu.K2Node_FunctionResult");
+	BPMenu->AddDynamicSection("UnLua", FNewToolMenuDelegate::CreateLambda([this](UToolMenu* ToolMenu) {
+		UGraphNodeContextMenuContext* GraphNodeCtx = ToolMenu->FindContext<UGraphNodeContextMenuContext>();
+		if (GraphNodeCtx && GraphNodeCtx->Graph) {
+			if (GraphNodeCtx->Graph->GetName() == "GetModuleName") {
+				FToolMenuSection& UnLuaSection = ToolMenu->AddSection("UnLua", FText::FromString("UnLua"));
+				UnLuaSection.AddEntry(FToolMenuEntry::InitMenuEntryWithCommandList(FUnLuaEditorCommands::Get().FindInExpoler, CommandList, LOCTEXT("FindInExpoler", "Find In Expoler")));
+			}
+		}
+	}), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+}
+
 
 TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender(UObject* InContextObject)
 {
@@ -268,6 +287,42 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     Content = Content.Replace(TEXT("TemplateName"), *ClassName);
 
     FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+}
+
+void FUnLuaEditorToolbar::FindInExpoler_Executed()  {
+	const auto Blueprint = Cast<UBlueprint>(ContextObject);
+	if (!IsValid(Blueprint))
+		return;
+
+	const auto TargetClass = Blueprint->GeneratedClass;
+	if (!IsValid(TargetClass))
+		return;
+
+	if (!TargetClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
+		return;
+
+	const auto Func = TargetClass->FindFunctionByName(FName("GetModuleName"));
+	if (!IsValid(Func))
+		return;
+
+	FString ModuleName;
+	const auto DefaultObject = TargetClass->GetDefaultObject();
+	DefaultObject->UObject::ProcessEvent(Func, &ModuleName);
+
+	const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/"));
+    const auto FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *RelativePath);
+
+    if (IFileManager::Get().FileExists(*FileName)) {
+        FPlatformProcess::ExploreFolder(*FileName);
+    }
+    else {
+		FNotificationInfo NotificationInfo(FText::FromString("UnLua Notification"));
+		NotificationInfo.Text = LOCTEXT("FileNotExist","The file is not exist.");
+		NotificationInfo.bFireAndForget = true;
+		NotificationInfo.ExpireDuration = 100.0f;
+		NotificationInfo.bUseThrobber = true;
+		FSlateNotificationManager::Get().AddNotification(NotificationInfo);
+    }
 }
 
 void FUnLuaEditorToolbar::CopyAsRelativePath_Executed() const

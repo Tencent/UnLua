@@ -35,4 +35,5 @@ public:
     TSharedPtr<FUICommandInfo> ReportIssue;
     TSharedPtr<FUICommandInfo> About;
     TSharedPtr<FUICommandInfo> GenerateIntelliSense;
+    TSharedPtr<FUICommandInfo> FindInExpoler;
 };
