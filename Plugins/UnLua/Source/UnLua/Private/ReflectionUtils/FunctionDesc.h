@@ -119,8 +119,6 @@ public:
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 
-    FORCEINLINE void SkipCodes(FFrame& Stack, void* Params);
- 
     TWeakObjectPtr<UFunction> Function;
     FString FuncName;
 #if ENABLE_PERSISTENT_PARAM_BUFFER

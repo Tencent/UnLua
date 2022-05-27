@@ -20,6 +20,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 BEGIN_DEFINE_SPEC(FUnLuaLibDelegateSpec, "UnLua.API.FScriptDelegate", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+    TSharedPtr<UnLua::FLuaEnv> Env;
     lua_State* L;
     UUnLuaTestStub* Stub;
 END_DEFINE_SPEC(FUnLuaLibDelegateSpec)
@@ -28,39 +29,45 @@ void FUnLuaLibDelegateSpec::Define()
 {
     BeforeEach([this]
     {
-        UnLua::Startup();
-        L = UnLua::GetState();
+        Env = MakeShared<UnLua::FLuaEnv>();
+        L = Env->GetMainState();
         Stub = NewObject<UUnLuaTestStub>();
         UnLua::PushUObject(L, Stub);
         lua_setglobal(L, "Stub");
+    });
+
+    AfterEach([this]
+    {
+        Env.Reset();
+        L = nullptr;
     });
 
     Describe(TEXT("Bind"), [this]()
     {
         It(TEXT("绑定"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = R"(
+            const auto Chunk = R"(
             Stub.SimpleHandler:Bind(Stub, function() end)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_TRUE(Stub->SimpleHandler.IsBound());
         });
         It(TEXT("绑定：UFunction"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = R"(
+            const auto Chunk = R"(
             Stub.SimpleHandler:Bind(Stub, Stub.AddCount)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_TRUE(Stub->SimpleHandler.IsBound());
             Stub->SimpleHandler.Execute();
             TEST_EQUAL(Stub->Counter, 1);
         });
         It(TEXT("绑定：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = R"(
+            const auto Chunk = R"(
             Stub.SimpleHandler = { Stub, function() end }
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_TRUE(Stub->SimpleHandler.IsBound());
         });
     });
@@ -69,12 +76,12 @@ void FUnLuaLibDelegateSpec::Define()
     {
         It(TEXT("解绑"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = R"(
+            const auto Chunk = R"(
             local Callback = function() end
             Stub.SimpleHandler:Bind(Stub, Callback)
             Stub.SimpleHandler:Unbind()
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_FALSE(Stub->SimpleHandler.IsBound());
         });
     });
@@ -83,33 +90,41 @@ void FUnLuaLibDelegateSpec::Define()
     {
         It(TEXT("执行委托"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = R"(
+            const auto Chunk = R"(
             local Counter = 0
             Stub.SimpleHandler:Bind(Stub, function() Counter = Counter + 1 end)
             Stub.SimpleHandler:Execute()
             return Counter
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 1LL);
         });
 
         It(TEXT("执行委托：赋值"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const char* Chunk = R"(
+            const auto Chunk = R"(
             local Counter = 0
             Stub.SimpleHandler = {Stub, function() Counter = Counter + 1 end}
             Stub.SimpleHandler:Execute()
             return Counter
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 1LL);
         });
-    });
 
-    AfterEach([this]
-    {
-        UnLua::Shutdown();
+        It(TEXT("执行委托：从Lua返回值"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const auto Chunk = R"(
+            Stub.ComplexHandler:Bind(Stub, function(self, name) return 1, "hello" end)
+            )";
+            Env->DoString(Chunk);
+            TEST_TRUE(Stub->ComplexHandler.IsBound());
+            FString Name;
+            const auto Result = Stub->ComplexHandler.Execute(Name);
+            TEST_EQUAL(Result, 1);
+            TEST_EQUAL(Name, TEXT("hello"));
+        });
     });
 }
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif

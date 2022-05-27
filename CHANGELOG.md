@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 使用CustomLoader导致打印堆栈时无法显示文件名 [#429](https://github.com/Tencent/UnLua/pull/429)
 - UE5动画通知调用组件Lua覆写函数崩溃 [#430](https://github.com/Tencent/UnLua/issues/430)
 - Lua调用的函数返回蓝图结构体会check [#432](https://github.com/Tencent/UnLua/issues/432)
+- 执行带返回值的委托时，无法从lua返回值
 
 ## [2.2.0] - 2022-5-7
 

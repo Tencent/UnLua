@@ -25,6 +25,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
 
 DECLARE_DYNAMIC_DELEGATE(FUnLuaTestSimpleHandler);
 
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(int32, FUnLuaTestComplexHandler, FString&, Name);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FIssue304Event, TArray<FString>, Array);
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FIssue362Delegate, TArray<int32>&, Array);
@@ -63,6 +65,9 @@ public:
 
     UPROPERTY()
     FUnLuaTestSimpleHandler SimpleHandler;
+
+    UPROPERTY()
+    FUnLuaTestComplexHandler ComplexHandler;
 
     UPROPERTY()
     FIssue304Event Issue304Event;
@@ -216,4 +221,4 @@ EPIC_TEST_BOOLEAN_(TEXT(#expression), FQuat::ErrorAutoNormalize(expression, expe
 #define EPIC_TEST_BOOLEAN_(text, expression, expected) \
 TestEqual(text, expression, expected);
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif
