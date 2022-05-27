@@ -27,6 +27,7 @@ void FUnLuaEditorCommands::RegisterCommands()
     UI_COMMAND(ReportIssue, "Report issue", "Create an issue on github", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(About, "About", "About this version", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(GenerateIntelliSense, "Generate IntelliSense", "Generate intelliSense files", EUserInterfaceActionType::Button, FInputChord());
+    UI_COMMAND(FindInExpoler, "Find In Expoler", "Find In Expoler ", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

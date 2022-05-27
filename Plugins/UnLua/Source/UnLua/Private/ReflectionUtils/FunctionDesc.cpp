@@ -651,11 +651,12 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     int32 NumResultOnStack = lua_gettop(L);
     if (NumResult <= NumResultOnStack)
     {
-#if UNLUA_LEGACY_RETURN_ORDER
         int32 OutPropertyIndex = -NumResult;
-#else
-        int32 OutPropertyIndex = NumResult;
+#if !UNLUA_LEGACY_RETURN_ORDER
+        if (ReturnPropertyIndex > INDEX_NONE)
+            OutPropertyIndex++;
 #endif
+
         OutParam = OutParams;
 
         for (int32 i = 0; i < OutPropertyIndices.Num(); ++i)
@@ -686,11 +687,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
                 }
                 OutParam = OutParam->NextOutParm;
             }
-#if UNLUA_LEGACY_RETURN_ORDER
             ++OutPropertyIndex;
-#else
-            --OutPropertyIndex;
-#endif
         }
     }
     
@@ -708,7 +705,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 #if UNLUA_LEGACY_RETURN_ORDER
             constexpr auto IndexInStack = -1;
 #else
-            constexpr auto IndexInStack = 1;
+            const auto IndexInStack = -NumParams;
 #endif
             
             // set value for blueprint side return property
