@@ -99,20 +99,23 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
     BuildNodeMenu();
 }
 
-void FUnLuaEditorToolbar::BuildNodeMenu() {
-	FToolMenuOwnerScoped OwnerScoped(this);
-	UToolMenu* BPMenu = UToolMenus::Get()->ExtendMenu("GraphEditor.GraphNodeContextMenu.K2Node_FunctionResult");
-	BPMenu->AddDynamicSection("UnLua", FNewToolMenuDelegate::CreateLambda([this](UToolMenu* ToolMenu) {
-		UGraphNodeContextMenuContext* GraphNodeCtx = ToolMenu->FindContext<UGraphNodeContextMenuContext>();
-		if (GraphNodeCtx && GraphNodeCtx->Graph) {
-			if (GraphNodeCtx->Graph->GetName() == "GetModuleName") {
-				FToolMenuSection& UnLuaSection = ToolMenu->AddSection("UnLua", FText::FromString("UnLua"));
-				UnLuaSection.AddEntry(FToolMenuEntry::InitMenuEntryWithCommandList(FUnLuaEditorCommands::Get().FindInExpoler, CommandList, LOCTEXT("FindInExpoler", "Find In Expoler")));
-			}
-		}
-	}), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
+void FUnLuaEditorToolbar::BuildNodeMenu()
+{
+    FToolMenuOwnerScoped OwnerScoped(this);
+    UToolMenu* BPMenu = UToolMenus::Get()->ExtendMenu("GraphEditor.GraphNodeContextMenu.K2Node_FunctionResult");
+    BPMenu->AddDynamicSection("UnLua", FNewToolMenuDelegate::CreateLambda([this](UToolMenu* ToolMenu)
+    {
+        UGraphNodeContextMenuContext* GraphNodeCtx = ToolMenu->FindContext<UGraphNodeContextMenuContext>();
+        if (GraphNodeCtx && GraphNodeCtx->Graph)
+        {
+            if (GraphNodeCtx->Graph->GetName() == "GetModuleName")
+            {
+                FToolMenuSection& UnLuaSection = ToolMenu->AddSection("UnLua", FText::FromString("UnLua"));
+                UnLuaSection.AddEntry(FToolMenuEntry::InitMenuEntryWithCommandList(FUnLuaEditorCommands::Get().FindInExpoler, CommandList, LOCTEXT("FindInExpoler", "Find In Expoler")));
+            }
+        }
+    }), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
 }
-
 
 TSharedRef<FExtender> FUnLuaEditorToolbar::GetExtender(UObject* InContextObject)
 {
@@ -142,7 +145,7 @@ void FUnLuaEditorToolbar::BindToLua_Executed() const
     if (!Ok)
         return;
 
-    const auto ModifierKeys = FSlateApplication::Get().GetModifierKeys(); 
+    const auto ModifierKeys = FSlateApplication::Get().GetModifierKeys();
     const auto bIsAltDown = ModifierKeys.IsLeftAltDown() || ModifierKeys.IsRightAltDown();
     if (bIsAltDown)
     {
@@ -289,39 +292,42 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
-void FUnLuaEditorToolbar::FindInExpoler_Executed()  {
-	const auto Blueprint = Cast<UBlueprint>(ContextObject);
-	if (!IsValid(Blueprint))
-		return;
+void FUnLuaEditorToolbar::FindInExpoler_Executed()
+{
+    const auto Blueprint = Cast<UBlueprint>(ContextObject);
+    if (!IsValid(Blueprint))
+        return;
 
-	const auto TargetClass = Blueprint->GeneratedClass;
-	if (!IsValid(TargetClass))
-		return;
+    const auto TargetClass = Blueprint->GeneratedClass;
+    if (!IsValid(TargetClass))
+        return;
 
-	if (!TargetClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
-		return;
+    if (!TargetClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
+        return;
 
-	const auto Func = TargetClass->FindFunctionByName(FName("GetModuleName"));
-	if (!IsValid(Func))
-		return;
+    const auto Func = TargetClass->FindFunctionByName(FName("GetModuleName"));
+    if (!IsValid(Func))
+        return;
 
-	FString ModuleName;
-	const auto DefaultObject = TargetClass->GetDefaultObject();
-	DefaultObject->UObject::ProcessEvent(Func, &ModuleName);
+    FString ModuleName;
+    const auto DefaultObject = TargetClass->GetDefaultObject();
+    DefaultObject->UObject::ProcessEvent(Func, &ModuleName);
 
-	const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/"));
+    const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/"));
     const auto FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *RelativePath);
 
-    if (IFileManager::Get().FileExists(*FileName)) {
+    if (IFileManager::Get().FileExists(*FileName))
+    {
         FPlatformProcess::ExploreFolder(*FileName);
     }
-    else {
-		FNotificationInfo NotificationInfo(FText::FromString("UnLua Notification"));
-		NotificationInfo.Text = LOCTEXT("FileNotExist","The file is not exist.");
-		NotificationInfo.bFireAndForget = true;
-		NotificationInfo.ExpireDuration = 100.0f;
-		NotificationInfo.bUseThrobber = true;
-		FSlateNotificationManager::Get().AddNotification(NotificationInfo);
+    else
+    {
+        FNotificationInfo NotificationInfo(FText::FromString("UnLua Notification"));
+        NotificationInfo.Text = LOCTEXT("FileNotExist", "The file is not exist.");
+        NotificationInfo.bFireAndForget = true;
+        NotificationInfo.ExpireDuration = 100.0f;
+        NotificationInfo.bUseThrobber = true;
+        FSlateNotificationManager::Get().AddNotification(NotificationInfo);
     }
 }
 

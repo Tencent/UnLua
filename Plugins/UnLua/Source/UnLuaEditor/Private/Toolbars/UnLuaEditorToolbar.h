@@ -4,36 +4,36 @@
 class FUnLuaEditorToolbar
 {
 public:
-	virtual ~FUnLuaEditorToolbar() = default;
-	FUnLuaEditorToolbar();
+    virtual ~FUnLuaEditorToolbar() = default;
+    FUnLuaEditorToolbar();
 
-	TSharedRef<FUICommandList> GetCommandList() const
-	{
-		return CommandList;
-	}
+    TSharedRef<FUICommandList> GetCommandList() const
+    {
+        return CommandList;
+    }
 
-	virtual void Initialize();
+    virtual void Initialize();
 
-	void CreateLuaTemplate_Executed();
+    void CreateLuaTemplate_Executed();
 
-	void CopyAsRelativePath_Executed() const;
+    void CopyAsRelativePath_Executed() const;
 
-	void BindToLua_Executed() const;
+    void BindToLua_Executed() const;
 
-	void UnbindFromLua_Executed() const;
+    void UnbindFromLua_Executed() const;
 
-	void FindInExpoler_Executed();
+    void FindInExpoler_Executed();
 
 protected:
-	virtual void BindCommands();
+    virtual void BindCommands();
 
-	void BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject);
+    void BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject);
 
-	void BuildNodeMenu();
+    void BuildNodeMenu();
 
-	TSharedRef<FExtender> GetExtender(UObject* InContextObject);
+    TSharedRef<FExtender> GetExtender(UObject* InContextObject);
 
-	const TSharedRef<FUICommandList> CommandList;
+    const TSharedRef<FUICommandList> CommandList;
 
-	UObject* ContextObject;
+    UObject* ContextObject;
 };
