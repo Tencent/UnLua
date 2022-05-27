@@ -19,21 +19,54 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-
 BEGIN_DEFINE_SPEC(FUELibSpec, "UnLua.API.UE", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+    TSharedPtr<UnLua::FLuaEnv> Env;
+    lua_State* L;
 END_DEFINE_SPEC(FUELibSpec)
 
 void FUELibSpec::Define()
 {
+    BeforeEach([this]
+    {
+        Env = MakeShared<UnLua::FLuaEnv>();
+        L = Env->GetMainState();
+    });
+
+    AfterEach([this]
+    {
+        Env.Reset();
+        L = nullptr;
+    });
+
     Describe(TEXT("全局UE命名空间"), [this]()
     {
-        It(TEXT("访问原生类"), EAsyncExecution::TaskGraphMainThread, [this]()
+        It(TEXT("访问反射类"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            UnLua::FLuaEnv Env;
-            const auto Result = Env.DoString("return UE.FVector");
+            Env->DoString("return UE.AActor");
+            const auto Result = lua_istable(L, -1);
             TEST_TRUE(Result);
+        });
+
+        It(TEXT("访问导出类"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            Env->DoString("return UE.FVector");
+            const auto Result = lua_istable(L, -1);
+            TEST_TRUE(Result);
+        });
+        
+        It(TEXT("访问反射枚举"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            const auto Chunk = R"(
+                local Enum = UE.EUnLuaTestEnum
+                return Enum.None, Enum.Value2
+            )";
+            Env->DoString(Chunk);
+            const auto Result1 = (EUnLuaTestEnum)lua_tointeger(L, -2);
+            const auto Result2 = (EUnLuaTestEnum)lua_tointeger(L, -1);
+            TEST_EQUAL(Result1, EUnLuaTestEnum::None);
+            TEST_EQUAL(Result2, EUnLuaTestEnum::Value2);
         });
     });
 }
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif

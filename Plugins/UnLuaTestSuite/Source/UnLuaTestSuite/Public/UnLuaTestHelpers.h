@@ -54,6 +54,14 @@ enum class EEnumClass
     Value2 = 2
 };
 
+UENUM(BlueprintType)
+enum class EUnLuaTestEnum : uint8
+{
+    None = 0 UMETA(DisplayName = "无"),
+    Value1 = 1 UMETA(DisplayName = "数值1"),
+    Value2 = 2 UMETA(DisplayName = "数值2"),
+};
+
 UCLASS()
 class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
 {
@@ -81,7 +89,7 @@ public:
     EScopedEnum::Type ScopedEnum;
 
     EEnumClass EnumClass;
-    
+
     UFUNCTION(BlueprintCallable)
     void AddCount() { Counter++; }
 
@@ -95,7 +103,7 @@ public:
         MapForIssue407.Add(1, 1);
         MapForIssue407.Add(2, 2);
     }
-    
+
     UFUNCTION(BlueprintCallable)
     int32 TestForIssue407(TArray<int32> Array);
 };
@@ -166,7 +174,7 @@ class UNLUATESTSUITE_API UUnLuaTestFunctionLibrary : public UBlueprintFunctionLi
         C++;
         return true;
     }
-    
+
     UFUNCTION(BlueprintCallable)
     static int32 TestForIssue293(const FString& A, int32 B, const TArray<FColor>& C) { return C.Num(); }
 
