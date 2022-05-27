@@ -22,7 +22,7 @@ public:
 
     void UnbindFromLua_Executed() const;
 
-    void FindInExpoler_Executed();
+    void RevealInExplorer_Executed();
 
 protected:
     virtual void BindCommands();

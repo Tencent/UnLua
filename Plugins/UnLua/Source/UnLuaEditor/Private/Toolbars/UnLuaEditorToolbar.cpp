@@ -35,7 +35,7 @@ void FUnLuaEditorToolbar::BindCommands()
     CommandList->MapAction(Commands.CopyAsRelativePath, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CopyAsRelativePath_Executed));
     CommandList->MapAction(Commands.BindToLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::BindToLua_Executed));
     CommandList->MapAction(Commands.UnbindFromLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::UnbindFromLua_Executed));
-    CommandList->MapAction(Commands.FindInExpoler, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::FindInExpoler_Executed));
+    CommandList->MapAction(Commands.RevealInExplorer, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::RevealInExplorer_Executed));
 }
 
 void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject* InContextObject)
@@ -61,6 +61,7 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
             else
             {
                 MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath, NAME_None, LOCTEXT("CopyAsRelativePath", "Copy as Relative Path"));
+                MenuBuilder.AddMenuEntry(Commands.RevealInExplorer, NAME_None, LOCTEXT("RevealInExplorer", "Reveal in Explorer"));
                 MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate, NAME_None, LOCTEXT("CreateLuaTemplate", "Create Lua Template"));
                 MenuBuilder.AddMenuEntry(Commands.UnbindFromLua, NAME_None, LOCTEXT("Unbind", "Unbind"));
             }
@@ -111,7 +112,7 @@ void FUnLuaEditorToolbar::BuildNodeMenu()
             if (GraphNodeCtx->Graph->GetName() == "GetModuleName")
             {
                 FToolMenuSection& UnLuaSection = ToolMenu->AddSection("UnLua", FText::FromString("UnLua"));
-                UnLuaSection.AddEntry(FToolMenuEntry::InitMenuEntryWithCommandList(FUnLuaEditorCommands::Get().FindInExpoler, CommandList, LOCTEXT("FindInExpoler", "Find In Expoler")));
+                UnLuaSection.AddEntry(FToolMenuEntry::InitMenuEntryWithCommandList(FUnLuaEditorCommands::Get().RevealInExplorer, CommandList, LOCTEXT("RevealInExplorer", "Reveal in Explorer")));
             }
         }
     }), FToolMenuInsert(NAME_None, EToolMenuInsertType::First));
@@ -292,7 +293,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
-void FUnLuaEditorToolbar::FindInExpoler_Executed()
+void FUnLuaEditorToolbar::RevealInExplorer_Executed()
 {
     const auto Blueprint = Cast<UBlueprint>(ContextObject);
     if (!IsValid(Blueprint))
@@ -323,7 +324,7 @@ void FUnLuaEditorToolbar::FindInExpoler_Executed()
     else
     {
         FNotificationInfo NotificationInfo(FText::FromString("UnLua Notification"));
-        NotificationInfo.Text = LOCTEXT("FileNotExist", "The file is not exist.");
+        NotificationInfo.Text = LOCTEXT("FileNotExist", "The file does not exist.");
         NotificationInfo.bFireAndForget = true;
         NotificationInfo.ExpireDuration = 100.0f;
         NotificationInfo.bUseThrobber = true;

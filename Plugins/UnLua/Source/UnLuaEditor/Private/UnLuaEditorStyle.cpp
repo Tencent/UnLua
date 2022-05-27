@@ -36,6 +36,7 @@ FUnLuaEditorStyle::FUnLuaEditorStyle()
     Set("UnLuaEditor.Status_Unknown", new IMAGE_BRUSH("Icons/icon_status_unknown_40x", Icon40x40));
     Set("UnLuaEditor.Status_Bound", new IMAGE_BRUSH("Icons/icon_status_bound_40x", Icon40x40));
     Set("UnLuaEditor.Status_BoundButInvalid", new IMAGE_BRUSH("Icons/icon_status_bound_but_invalid_40x", Icon40x40));
+    Set("UnLuaEditor.RevealInExplorer", new IMAGE_BRUSH("Icons/icon_reveal_in_explorer_40x", Icon40x40));
     Set("UnLuaEditor.CreateLuaTemplate", new IMAGE_BRUSH("Icons/icon_create_template_40x", Icon40x40));
     Set("UnLuaEditor.CopyAsRelativePath", new IMAGE_BRUSH("Icons/icon_copy_40x", Icon40x40));
     Set("UnLuaEditor.BindToLua", new IMAGE_BRUSH("Icons/icon_bind_to_lua_40x", Icon40x40));
