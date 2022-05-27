@@ -114,10 +114,8 @@ private:
             FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
 
         // copy dependency files
-        bool bSuccess = CopyDependencyFile(TEXT("UnLua.lua"));
-        check(bSuccess);
-        CopyDependencyFile(TEXT("UnLuaPerformanceTestProxy.lua"));
-        check(bSuccess);
+        CopyDependencyFile(TEXT("UnLua.lua"));
+        CopyDependencyFile(TEXT("UnLuaHotReload.lua"));
     }
 
     void RegisterSettings() const
