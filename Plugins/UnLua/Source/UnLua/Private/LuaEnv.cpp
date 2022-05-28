@@ -60,7 +60,7 @@ namespace UnLua
         DelegateRegistry = MakeShared<FDelegateRegistry>(this);
         ContainerRegistry = MakeShared<FContainerRegistry>(this);
         EnumRegistry = MakeShared<FEnumRegistry>(this);
-        DeadLoopCheck = MakeShared<FDeadLoopCheck>();
+        DeadLoopCheck = MakeShared<FDeadLoopCheck>(this);
 
         AutoObjectReference.SetName("UnLua_AutoReference");
         ManualObjectReference.SetName("UnLua_ManualReference");
@@ -326,7 +326,8 @@ namespace UnLua
     bool FLuaEnv::DoString(const FString& Chunk, const FString& ChunkName)
     {
         // TODO: env support
-        // TODO: return value support 
+        // TODO: return value support
+        const auto Guard = GetDeadLoopCheck()->MakeGuard();
         bool bOk = !luaL_dostring(L, TCHAR_TO_UTF8(*Chunk));
         if (bOk)
             return bOk;

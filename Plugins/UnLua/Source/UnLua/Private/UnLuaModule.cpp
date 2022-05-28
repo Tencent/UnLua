@@ -101,6 +101,7 @@ namespace UnLua
                 const auto EnvLocatorClass = *Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : *Settings.EnvLocatorClass;
                 EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
                 EnvLocator->AddToRoot();
+                FDeadLoopCheck::Timeout = Settings.DeadLoopCheck; 
             }
             else
             {

@@ -1,48 +1,77 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Tencent is pleased to support the open source community by making UnLua available.
+// 
+// Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+//
+// Licensed under the MIT License (the "License"); 
+// you may not use this file except in compliance with the License. You may obtain a copy of the License at
+//
+// http://opensource.org/licenses/MIT
+//
+// Unless required by applicable law or agreed to in writing, 
+// software distributed under the License is distributed on an "AS IS" BASIS, 
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+// See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
 
 #include "CoreMinimal.h"
+#include "HAL/Runnable.h"
 #include "lua.h"
 #include <atomic>
-#include "HAL/Runnable.h"
-#include "Tickable.h"
 
-struct ScriptTimeoutEvent
+namespace UnLua
 {
-    virtual void OnTimeout() = 0;
-};
+    class FLuaEnv;
 
-class FDeadLoopCheck : public FRunnable
-{
-public:
-    FDeadLoopCheck();
-    ~FDeadLoopCheck();
+    class FDeadLoopCheck
+    {
+    public:
+        static int32 Timeout; // in seconds
+        
+        class FGuard final
+        {
+        public:
+            explicit FGuard(FDeadLoopCheck* Owner);
 
-    int EnterScript(ScriptTimeoutEvent* pEvent);
-    int LeaveScript();
+            ~FGuard();
 
-protected:
-    uint32 Run() override;
-    void Stop() override;
-    void onScriptTimeout();
+            void SetTimeout();
 
-private:
-    std::atomic<ScriptTimeoutEvent*> timeoutEvent;
-    FThreadSafeCounter timeoutCounter;
-    FThreadSafeCounter stopCounter;
-    FThreadSafeCounter frameCounter;
-    FRunnableThread* thread;
-};
+        private:
+            static void OnLuaLineEvent(lua_State* L, lua_Debug* ar);
 
-class LuaScriptCallGuard : public ScriptTimeoutEvent
-{
-public:
-    LuaScriptCallGuard(lua_State* L);
-    virtual ~LuaScriptCallGuard();
-    void OnTimeout() override;
+            FDeadLoopCheck* Owner;
+        };
 
-private:
-    lua_State* L;
-    static void scriptTimeout(lua_State* L, lua_Debug* ar);
-};
+        class FRunner final : public FRunnable
+        {
+        public:
+            explicit FRunner();
+
+            virtual uint32 Run() override;
+
+            virtual void Stop() override;
+
+            virtual void Exit() override;
+
+            void GuardEnter(FGuard* Guard);
+
+            void GuardLeave();
+
+        private:
+            FThreadSafeBool bRunning;
+            FRunnableThread* Thread;
+            FThreadSafeCounter GuardCounter;
+            FThreadSafeCounter TimeoutCounter;
+            std::atomic<FGuard*> TimeoutGuard;
+        };
+        
+        explicit FDeadLoopCheck(FLuaEnv* Env);
+
+        TUniquePtr<FGuard> MakeGuard();
+
+    private:
+        FRunner* Runner;
+        FLuaEnv* Env;
+    };
+}

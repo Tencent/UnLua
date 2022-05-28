@@ -641,7 +641,9 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     {
         NumResult++;
     }
-    LuaScriptCallGuard Guard(L);
+
+    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    const auto Guard = Env.GetDeadLoopCheck()->MakeGuard();
     bool bSuccess = CallFunction(L, NumParams, NumResult);      // pcall
     if (!bSuccess)
     {

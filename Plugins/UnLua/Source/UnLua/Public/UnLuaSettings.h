@@ -27,6 +27,9 @@ class UNLUA_API UUnLuaSettings : public UObject
 public:
     UUnLuaSettings(const FObjectInitializer& ObjectInitializer);
 
+    UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(ToolTip="Prevent from infinite loops in lua. Timeout in seconds."))
+    int32 DeadLoopCheck = 0;
+    
     UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(AllowAbstract="false", DisplayName="LuaEnvLocator"))
     TSubclassOf<ULuaEnvLocator> EnvLocatorClass = ULuaEnvLocator::StaticClass();
 };
