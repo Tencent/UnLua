@@ -60,7 +60,6 @@ namespace UnLua
         DelegateRegistry = MakeShared<FDelegateRegistry>(this);
         ContainerRegistry = MakeShared<FContainerRegistry>(this);
         EnumRegistry = MakeShared<FEnumRegistry>(this);
-        DeadLoopCheck = MakeShared<FDeadLoopCheck>();
 
         AutoObjectReference.SetName("UnLua_AutoReference");
         ManualObjectReference.SetName("UnLua_ManualReference");
