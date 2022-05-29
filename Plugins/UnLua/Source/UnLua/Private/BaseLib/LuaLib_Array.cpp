@@ -67,13 +67,7 @@ static int TArray_Enumerable(lua_State* L)
     {
         UnLua::Push(L, (*Enumerator)->Index + 1);
 
-        Array->Inner->Initialize(Array->ElementCache);
-
-        Array->Get((*Enumerator)->Index, Array->ElementCache);
-
-        Array->Inner->Read(L, Array->ElementCache, true);
-
-        Array->Inner->Destruct(Array->ElementCache);
+        Array->Inner->Read(L, Array->GetData((*Enumerator)->Index), false);
 
         (*Enumerator)->Index += 1;
 

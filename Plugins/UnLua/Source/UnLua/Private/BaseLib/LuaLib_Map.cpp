@@ -81,22 +81,10 @@ static int TMap_Enumerable(lua_State* L)
         }
         else
         {
-            Map->KeyInterface->Initialize(Map->ElementCache);
-
-            void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
-
-            Map->KeyInterface->Initialize(Map->ElementCache);
-
-            Map->ValueInterface->Initialize(ValueCache);
-
-            Map->KeyInterface->Read(L, ScriptMapHelper.GetKeyPtr((*Enumerator)->Index), true);
+            Map->KeyInterface->Read(L, ScriptMapHelper.GetKeyPtr((*Enumerator)->Index), false);
 
             Map->ValueInterface->Read(
-                L, ScriptMapHelper.GetValuePtr((*Enumerator)->Index) - Map->ValueInterface->GetOffset(), true);
-
-            Map->KeyInterface->Destruct(Map->ElementCache);
-
-            Map->ValueInterface->Destruct(ValueCache);
+                L, ScriptMapHelper.GetValuePtr((*Enumerator)->Index) - Map->ValueInterface->GetOffset(), false);
 
             ++(*Enumerator)->Index;
 
