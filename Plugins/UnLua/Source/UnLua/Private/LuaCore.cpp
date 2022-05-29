@@ -72,15 +72,11 @@ FString GetFullPathFromRelativePath(const FString& RelativePath)
  */
 void SetTableForClass(lua_State *L, const char *Name)
 {
-#if WITH_UE4_NAMESPACE
     lua_getglobal(L, "UE");
     lua_pushstring(L, Name);
     lua_pushvalue(L, -3);
     lua_rawset(L, -3);
     lua_pop(L, 2);
-#else
-    lua_setglobal(L, Name);
-#endif
 }
 
 #define USERDATA_MAGIC  0x1688

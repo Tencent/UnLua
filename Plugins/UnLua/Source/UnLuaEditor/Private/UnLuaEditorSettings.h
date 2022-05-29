@@ -64,8 +64,8 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Call Overridden Function (Deprecated).", ToolTip = "Requires restart to take effect."))
     bool bEnableCallOverriddenFunction = true;
     
-    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "With UE Namespace (Deprecated)", ToolTip = "Requires restart to take effect."))
-    bool bWithUENamespace = true;
+    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "With UE4 Namespace", ToolTip = "Requires restart to take effect."))
+    bool bWithUE4Namespace = true;
 
     UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "Place out parameters before return value", ToolTip = "Requires restart to take effect."))
     bool bLegacyReturnOrder = false;

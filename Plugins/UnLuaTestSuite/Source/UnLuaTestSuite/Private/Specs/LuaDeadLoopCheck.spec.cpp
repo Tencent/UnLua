@@ -12,10 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaTestHelpers.h"
 #include "UnLuaModule.h"
 #include "UnLuaSettings.h"
 #include "UnLuaTemplate.h"
-#include "UnLuaTestHelpers.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS

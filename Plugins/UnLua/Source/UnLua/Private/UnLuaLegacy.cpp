@@ -44,15 +44,11 @@ namespace UnLua
             lua_rawset(L, -3);
         }
 
-#if WITH_UE4_NAMESPACE
         lua_getglobal(L, "UE");
         lua_pushstring(L, EnumName.Get());
         lua_pushvalue(L, -3);
         lua_rawset(L, -3);
         lua_pop(L, 2);
-#else
-        lua_setglobal(L, EnumName.Get());
-#endif
     }
 
 #if WITH_EDITOR

@@ -2,18 +2,12 @@ local rawget = rawget
 local rawset = rawset
 local type = type
 local getmetatable = getmetatable
-local setmetatable = setmetatable
 local require = require
-local str_sub = string.sub
 
 local GetUProperty = GetUProperty
 local SetUProperty = SetUProperty
-local RegisterClass = RegisterClass
-local RegisterEnum = RegisterEnum
-local print = UEPrint
 
-_NotExist = _NotExist or {}
-local NotExist = _NotExist
+local NotExist = {}
 
 local function Index(t, k)
 	local mt = getmetatable(t)
@@ -66,31 +60,4 @@ local function Class(super_name)
   return new_class
 end
 
-local function global_index(t, k)
-	if type(k) == "string" then
-		local s = str_sub(k, 1, 1)
-		if s == "U" or s == "A" or s == "F" then
-			RegisterClass(k)
-		elseif s == "E" then
-			RegisterEnum(k)
-		end
-	end
-	return rawget(t, k)
-end
-
-if WITH_UE4_NAMESPACE then
-	print("WITH_UE4_NAMESPACE==true");
-else
-	local global_mt = {}
-	global_mt.__index = global_index
-	setmetatable(_G, global_mt)
-	UE4 = _G
-    UE = _G
-
-	print("WITH_UE4_NAMESPACE==false");
-end
-
-_G.print = print
-_G.Index = Index
-_G.NewIndex = NewIndex
 _G.Class = Class
