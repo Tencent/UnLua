@@ -102,6 +102,17 @@ public:
     }
 
     /**
+     * Get the max index of the map
+     *
+     * @return - the max index of the array
+     */
+    FORCEINLINE int32 GetMaxIndex() const
+    {
+        //return MapHelper.GetMaxIndex();
+        return Map->GetMaxIndex();
+    }
+
+    /**
      * Add a pair to the map
      *
      * @param Key - the key
@@ -340,6 +351,11 @@ public:
         return nullptr;
     }
 
+    FORCEINLINE bool IsValidIndex(int32 Index) const
+    {
+        return Map->IsValidIndex(Index);
+    }
+
     FScriptMap *Map;
     FScriptMapLayout MapLayout;
     TSharedPtr<UnLua::ITypeInterface> KeyInterface;
@@ -415,10 +431,5 @@ private:
         void *ValueDest = Dest + MapLayout.ValueOffset;
         KeyInterface->Initialize(Dest);
         ValueInterface->Initialize(ValueDest);
-    }
-
-    FORCEINLINE bool IsValidIndex(int32 Index) const
-    {
-        return Map->IsValidIndex(Index);
     }
 };
