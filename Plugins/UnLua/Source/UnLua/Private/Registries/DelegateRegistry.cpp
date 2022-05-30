@@ -111,7 +111,8 @@ namespace UnLua
         if (!Info.Owner.IsValid())
             Info.Owner = SelfObject;
 
-        const auto Exists = Info.LuaFunction2Handler.Find(LuaFunction);
+        const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
+        const auto Exists = Info.LuaFunction2Handler.Find(LuaFunction2);
         if (Exists && Exists->IsValid())
             return;
 
@@ -120,7 +121,7 @@ namespace UnLua
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Handler->BindTo(Delegate);
         Env->AutoObjectReference.Add(Handler);
-        Info.LuaFunction2Handler.Add(LuaFunction, Handler);
+        Info.LuaFunction2Handler.Add(LuaFunction2, Handler);
     }
 
     void FDelegateRegistry::Unbind(void* Delegate)
@@ -171,7 +172,8 @@ namespace UnLua
         if (!Info.Owner.IsValid())
             Info.Owner = SelfObject;
 
-        const auto Exists = Info.LuaFunction2Handler.Find(LuaFunction);
+        const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
+        const auto Exists = Info.LuaFunction2Handler.Find(LuaFunction2);
         if (Exists && Exists->IsValid())
             return;
 
@@ -180,15 +182,17 @@ namespace UnLua
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->AddTo(Info.MulticastProperty, Delegate);
-        Info.LuaFunction2Handler.Add(LuaFunction, Handler);
+        Info.LuaFunction2Handler.Add(LuaFunction2, Handler);
     }
 
-    void FDelegateRegistry::Remove(lua_State* L, void* Delegate, int Index)
+    void FDelegateRegistry::Remove(lua_State* L, UObject* SelfObject, void* Delegate, int Index)
     {
         check(lua_type(L, Index) == LUA_TFUNCTION);
         const auto LuaFunction = lua_topointer(L, Index);
         auto& Info = Delegates.FindChecked(Delegate);
-        const auto Handler = Info.LuaFunction2Handler.FindAndRemoveChecked(LuaFunction);
+
+        const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
+        const auto Handler = Info.LuaFunction2Handler.FindAndRemoveChecked(LuaFunction2);
         if (!Handler.IsValid())
             return;
         Handler->RemoveFrom(Info.MulticastProperty, Delegate);

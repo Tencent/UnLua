@@ -18,6 +18,35 @@
 #include "LuaDelegateHandler.h"
 #include "ReflectionUtils/FunctionDesc.h"
 
+struct FLuaFunction2
+{
+	FLuaFunction2(TWeakObjectPtr<UObject> InSelfObject, const void* InLuaFunction)
+		: SelfObject(InSelfObject)
+		, LuaFunction(InLuaFunction)
+	{
+
+	}
+
+	TWeakObjectPtr<UObject> SelfObject;
+
+	const void* LuaFunction;
+
+	friend inline bool operator==(const FLuaFunction2& A, const FLuaFunction2& B)
+	{
+		return A.LuaFunction == B.LuaFunction && A.SelfObject == B.SelfObject;
+	}
+
+	friend inline uint32 GetTypeHash(const FLuaFunction2& Key)
+	{
+		uint32 Hash = 0;
+
+		Hash = HashCombine(Hash, GetTypeHash(Key.SelfObject));
+		Hash = HashCombine(Hash, GetTypeHash(Key.LuaFunction));
+
+		return Hash;
+	}
+};
+
 namespace UnLua
 {
     class FLuaEnv;
@@ -43,7 +72,7 @@ namespace UnLua
 
         void Add(lua_State* L, int32 Index, void* Delegate, UObject* SelfObject);
 
-        void Remove(lua_State* L, void* Delegate, int Index);
+        void Remove(lua_State* L, UObject* SelfObject, void* Delegate, int Index);
 
         void Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex);
 
@@ -66,7 +95,7 @@ namespace UnLua
             UFunction* SignatureFunction;
             TSharedPtr<FFunctionDesc> Desc;
             TWeakObjectPtr<UObject> Owner;
-            TMap<const void*, TWeakObjectPtr<ULuaDelegateHandler>> LuaFunction2Handler;
+            TMap<FLuaFunction2, TWeakObjectPtr<ULuaDelegateHandler>> LuaFunction2Handler;
             bool bIsMulticast;
         };
 
