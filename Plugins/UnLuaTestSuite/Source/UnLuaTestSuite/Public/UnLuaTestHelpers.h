@@ -19,6 +19,7 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "GameFramework/Character.h"
 #include "UnLua.h"
+#include "UnLuaInterface.h"
 #include "UnLuaTestHelpers.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FUnLuaTestSimpleEvent);
@@ -106,6 +107,31 @@ public:
 
     UFUNCTION(BlueprintCallable)
     int32 TestForIssue407(TArray<int32> Array);
+};
+
+UCLASS()
+class UNLUATESTSUITE_API UUnLuaTestStubForIssue446 : public UObject, public FTickableGameObject, public IUnLuaInterface
+{
+    GENERATED_BODY()
+
+public:
+    virtual FString GetModuleName_Implementation() const override
+    {
+        return TEXT("Tests.Regression.Issue446.TestStub");
+    }
+    
+    UFUNCTION(BlueprintImplementableEvent)
+    void Test();
+
+    virtual void Tick(float DeltaTime) override
+    {
+        Test();
+    }
+    
+    virtual TStatId GetStatId() const override
+    {
+        return GetStatID();
+    }
 };
 
 UCLASS()
