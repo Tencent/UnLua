@@ -238,13 +238,6 @@ namespace UnLua
 
     bool FLuaEnv::TryBind(UObject* Object)
     {
-        const bool bIsCDO = Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject);
-        if (bIsCDO)
-        {
-            // filter out class default and template objects
-            return false;
-        }
-
         UClass* Class = Object->GetClass();
         if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>() || Class->HasAnyClassFlags(CLASS_NewerVersionExists))
         {
@@ -307,8 +300,12 @@ namespace UnLua
             }
         }
 
+        const bool bIsCDO = Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject);
+        if (bIsCDO && (Object->GetFlags() & RF_NeedInitialization))
+            return false;
+
         FString ModuleName;
-        UObject* CDO = Class->GetDefaultObject();
+        UObject* CDO = bIsCDO ? Object : Class->GetDefaultObject();
         CDO->ProcessEvent(Func, &ModuleName);
         if (ModuleName.IsEmpty())
             return false;

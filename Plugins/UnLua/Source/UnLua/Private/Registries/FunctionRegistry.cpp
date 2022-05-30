@@ -26,8 +26,10 @@ namespace UnLua
         if (!Env->GetObjectRegistry()->IsBound(Context))
             Env->TryBind(Context);
 
-        const auto L = Env->GetMainState();
         const auto SelfRef = Env->GetObjectRegistry()->GetBoundRef(Context);
+        check(SelfRef!=LUA_NOREF);
+
+        const auto L = Env->GetMainState();
         lua_Integer FuncRef;
         FFunctionDesc* FuncDesc;
 
