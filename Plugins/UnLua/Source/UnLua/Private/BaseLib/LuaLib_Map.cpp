@@ -70,32 +70,19 @@ static int TMap_Enumerable(lua_State* L)
         return 0;
     }
 
-    auto ScriptMapHelper = FScriptMapHelper::CreateHelperFormInnerProperties(
-        Map->KeyInterface->GetUProperty(), Map->ValueInterface->GetUProperty(), Map->Map);
-
-    while ((*Enumerator)->Index < ScriptMapHelper.GetMaxIndex())
+    while ((*Enumerator)->Index < Map->GetMaxIndex())
     {
-        if (!ScriptMapHelper.IsValidIndex((*Enumerator)->Index))
+        if (!Map->IsValidIndex((*Enumerator)->Index))
         {
             ++(*Enumerator)->Index;
         }
         else
         {
-            Map->KeyInterface->Initialize(Map->ElementCache);
+            Map->KeyInterface->Read(L, Map->GetData((*Enumerator)->Index), false);
 
-            void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
-
-            Map->KeyInterface->Initialize(Map->ElementCache);
-
-            Map->ValueInterface->Initialize(ValueCache);
-
-            Map->KeyInterface->Read(L, ScriptMapHelper.GetKeyPtr((*Enumerator)->Index), true);
-
-            Map->ValueInterface->Read(L, ScriptMapHelper.GetValuePtr((*Enumerator)->Index), true);
-
-            Map->KeyInterface->Destruct(Map->ElementCache);
-
-            Map->ValueInterface->Destruct(ValueCache);
+            Map->ValueInterface->Read(
+                L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset - Map->ValueInterface->GetOffset(),
+                false);
 
             ++(*Enumerator)->Index;
 
