@@ -503,13 +503,19 @@ void FDelegateHelper::Cleanup(bool bFullCleanup)
 
     for (TMap<FScriptDelegate*, FFunctionDesc*>::TIterator It(Delegate2Signatures); It; ++It)
     {
-        GReflectionRegistry.UnRegisterFunction(It.Value()->GetFunction());
+        if (It.Value()->IsValid())
+        {
+            GReflectionRegistry.UnRegisterFunction(It.Value()->GetFunction());
+        }
     }
     Delegate2Signatures.Empty();
 
     for (TMap<FMulticastDelegateType*, FFunctionDesc*>::TIterator It(MulticastDelegate2Signatures); It; ++It)
     {
-        GReflectionRegistry.UnRegisterFunction(It.Value()->GetFunction());
+        if (It.Value()->IsValid())
+        {
+            GReflectionRegistry.UnRegisterFunction(It.Value()->GetFunction());
+        }
     }
     MulticastDelegate2Signatures.Empty();
 
