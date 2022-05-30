@@ -48,7 +48,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const auto ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -66,7 +66,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add('B')
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -84,7 +84,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(false)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -102,7 +102,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(UE.FVector(3,2,1))
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -126,7 +126,7 @@ void FUnLuaLibArraySpec::Define()
 
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -145,7 +145,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array:Length()
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 2LL);
         });
 
@@ -157,7 +157,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array:Num()
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 2LL);
         });
     });
@@ -172,7 +172,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -193,7 +193,7 @@ void FUnLuaLibArraySpec::Define()
             Array:AddUnique(1)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -213,7 +213,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array:Find(2)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 2LL);
         });
 
@@ -225,7 +225,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array:Find(100)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 0LL);
         });
     });
@@ -241,7 +241,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Insert(3, 2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -263,7 +263,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Remove(2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -284,7 +284,7 @@ void FUnLuaLibArraySpec::Define()
             Array:RemoveItem(1)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -305,7 +305,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Clear()
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -323,7 +323,7 @@ void FUnLuaLibArraySpec::Define()
             local Result = Array:Reserve(10)
             return Result, Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_TRUE(lua_toboolean(L, -2));
 
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
@@ -342,7 +342,7 @@ void FUnLuaLibArraySpec::Define()
             local Result = Array:Reserve(10)
             return Result, Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_FALSE(lua_toboolean(L, -2));
         });
     });
@@ -357,7 +357,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Resize(3)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -377,7 +377,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Resize(1)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -395,7 +395,7 @@ void FUnLuaLibArraySpec::Define()
             local Array = UE.TArray(0)
             return Array, Array:GetData()
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -2);
             TEST_TRUE(ScriptArray!=nullptr);
             TEST_EQUAL(lua_topointer(L, -1), ScriptArray->GetData());
@@ -413,7 +413,7 @@ void FUnLuaLibArraySpec::Define()
             Copied:Set(2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -430,7 +430,7 @@ void FUnLuaLibArraySpec::Define()
             Copied:Set(2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -450,7 +450,7 @@ void FUnLuaLibArraySpec::Define()
             Ref:Set(2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -470,7 +470,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Set(1,2)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -487,7 +487,7 @@ void FUnLuaLibArraySpec::Define()
             Array[1] = 2
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
 
@@ -508,7 +508,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Swap(1,3)
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
             const auto& Array = *(TArray<int32>*)ScriptArray;
@@ -530,7 +530,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Shuffle()
             return Array
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
             const auto& Array = *(TArray<int32>*)ScriptArray;
@@ -550,7 +550,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(2)
             return Array:LastIndex()
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 2LL);
         });
     });
@@ -564,7 +564,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(1)
             return Array:IsValidIndex(1)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_TRUE(lua_toboolean(L, -1));
         });
         It(TEXT("非法位置索引返回false"), EAsyncExecution::TaskGraphMainThread, [this]
@@ -574,7 +574,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(1)
             return Array:IsValidIndex(0)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_FALSE(lua_toboolean(L, -1));
         });
     });
@@ -588,7 +588,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(1)
             return Array:Contains(1)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_TRUE(lua_toboolean(L, -1));
         });
         It(TEXT("数组不包含指定元素返回false"), EAsyncExecution::TaskGraphMainThread, [this]
@@ -598,7 +598,7 @@ void FUnLuaLibArraySpec::Define()
             Array:Add(1)
             return Array:Contains(0)
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_FALSE(lua_toboolean(L, -1));
         });
     });
@@ -617,7 +617,7 @@ void FUnLuaLibArraySpec::Define()
             Array1:Append(Array2)
             return Array1
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             const FScriptArray* ScriptArray = UnLua::GetArray(L, -1);
             TEST_TRUE(ScriptArray!=nullptr);
             const auto& Array = *(TArray<int32>*)ScriptArray;
@@ -639,7 +639,7 @@ void FUnLuaLibArraySpec::Define()
             local Table = Array:ToTable()
             return Table[1], Table[2]
             )";
-            UnLua::RunChunk(L, Chunk);
+            Env->DoString(Chunk);
             TEST_EQUAL(lua_tointeger(L, -1), 2LL);
             TEST_EQUAL(lua_tointeger(L, -2), 1LL);
         });
@@ -661,7 +661,7 @@ void FUnLuaLibArraySpec::Define()
             end
             return ret;
             )";
-            TEST_TRUE(UnLua::RunChunk(L, Chunk));
+            TEST_TRUE(Env->DoString(Chunk));
 
             const auto Ret = UnLua::FLuaTable(Env.Get(), -1);
             TEST_EQUAL(Ret.Length(), 4);
@@ -669,6 +669,60 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(Ret[2].Value<int>(), 100)
             TEST_EQUAL(Ret[3].Value<int>(), 2)
             TEST_EQUAL(Ret[4].Value<int>(), 200)
+        });
+
+        It(TEXT("按引用获取元素（原生）"), EAsyncExecution::TaskGraphMainThread, [this]
+        {
+            const auto Chunk = R"(
+            local UUnLuaTestStub = UE.UUnLuaTestStub
+            local Array = UE.TArray(UE.UUnLuaTestStub)
+
+            local Stub1 = NewObject(UUnLuaTestStub)
+            local Stub2 = NewObject(UUnLuaTestStub)
+
+            Array:Add(Stub1)
+            Array:Add(Stub2)
+
+            for i, v in pairs(Array) do
+                v.Counter = i
+            end
+
+            return Array:Get(1).Counter, Array:Get(2).Counter  
+            )";
+            TEST_TRUE(Env->DoString(Chunk));
+
+            const auto Result1 = (int)lua_tointeger(L, -2);
+            const auto Result2 = (int)lua_tointeger(L, -1);
+
+            TEST_EQUAL(Result1, 1);
+            TEST_EQUAL(Result2, 2);
+        });
+
+        It(TEXT("按引用获取元素（蓝图）"), EAsyncExecution::TaskGraphMainThread, [this]
+        {
+            const auto Chunk = R"(
+            local Struct_TableRow = UE.UObject.Load("/UnLuaTestSuite/Tests/Misc/Struct_TableRow.Struct_TableRow")
+            local Array = UE.TArray(Struct_TableRow)
+
+            local Row1 = Struct_TableRow()
+            local Row2 = Struct_TableRow()
+
+            Array:Add(Row1)
+            Array:Add(Row2)
+
+            for i, v in pairs(Array) do
+                v.TestFloat = i
+            end
+
+            return Array:Get(1).TestFloat, Array:Get(2).TestFloat  
+            )";
+            TEST_TRUE(Env->DoString(Chunk));
+
+            const auto Result1 = (int)lua_tointeger(L, -2);
+            const auto Result2 = (int)lua_tointeger(L, -1);
+
+            TEST_EQUAL(Result1, 1);
+            TEST_EQUAL(Result2, 2);
         });
     });
 }
