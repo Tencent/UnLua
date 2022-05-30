@@ -4,8 +4,7 @@ local M = Class()
 
 function M:InitState(Parent, Name)
     self.Name = Name
-    local Handler = function(self, Count) M.OnTestDelegate(self, Count) end
-    Parent.TestDelegate:Add(self, Handler)
+    Parent.TestDelegate:Add(self, M.OnTestDelegate)
 end
 
 function M:OnTestDelegate(Count)
