@@ -709,7 +709,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 #if UNLUA_LEGACY_RETURN_ORDER
             constexpr auto IndexInStack = -1;
 #else
-            const auto IndexInStack = -NumParams;
+            const auto IndexInStack = -NumResult;
 #endif
             
             // set value for blueprint side return property

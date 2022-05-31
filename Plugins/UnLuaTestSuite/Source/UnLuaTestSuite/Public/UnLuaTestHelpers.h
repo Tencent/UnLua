@@ -147,7 +147,7 @@ public:
     bool TestForIssue328();
 
     UFUNCTION(BlueprintImplementableEvent)
-    TSubclassOf<UUserWidget> TestForIssue445();
+    TSubclassOf<UUserWidget> TestForIssue445(int32 Index);
 };
 
 USTRUCT(BlueprintType)
