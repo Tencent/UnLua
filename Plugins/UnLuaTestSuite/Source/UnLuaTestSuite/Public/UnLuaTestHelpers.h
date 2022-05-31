@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "Tickable.h"
 #include "Engine/DataTable.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
