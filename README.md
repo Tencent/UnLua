@@ -61,9 +61,6 @@
 * [API](Docs/CN/API.md)：更详细的 UnLua API 说明
 * [FAQ](Docs/CN/FAQ.md)：常见问题解答
 
-# 许可证
-* UnLua根据[MIT](LICENSE.TXT)分发。
-
 # 技术支持
 - 官方交流QQ群：936285107
 - 推荐VSCode插件：[Lua Booster](https://marketplace.visualstudio.com/items?itemName=operali.lua-booster)
