@@ -12,12 +12,12 @@ UnLua provides a simple way to bind Lua and engine, including static binding and
 
 #### C++
 Your UCLASS only need to implement **IUnLuaInterface**, and return a Lua file path in **GetModuleName_Implementation()**.
-![CPP_UNLUA_INTERFACE](./Images/cpp_unlua_interface.png)
+![CPP_UNLUA_INTERFACE](../Images/cpp_unlua_interface.png)
 
 #### Blueprints
 Your blueprint only need to implement **UnLuaInterface**, and return a Lua file path in **GetModuleName()**.
-![BP_UNLUA_INTERFACE](./Images/bp_unlua_interface.png)
-![BP_GETMODULENAME](./Images/bp_getmodulename.png)
+![BP_UNLUA_INTERFACE](../Images/bp_unlua_interface.png)
+![BP_GETMODULENAME](../Images/bp_getmodulename.png)
 
 ## Dynamic Binding
 Dynamic binding is suitable for runtime spawned Actors and Objects.
@@ -65,7 +65,7 @@ Output Values includes **non-const reference parameters** and **return parameter
 
 ##### Non-Const Reference Parameters
 ###### Primitive Types
-![OUT_PRIMITIVE_TYPES](./Images/out_primitive_types.png)
+![OUT_PRIMITIVE_TYPES](../Images/out_primitive_types.png)
 
 Lua codes：
 ```
@@ -73,7 +73,7 @@ local Level, Health, Name = self:GetPlayerBaseInfo()
 ```
 
 ###### Non-Primitive Types
-![OUT_NON_PRIMITIVE_TYPES](./Images/out_non_primitive_types.png)
+![OUT_NON_PRIMITIVE_TYPES](../Images/out_non_primitive_types.png)
 
 There are two ways to call it in Lua:
 ```
@@ -88,7 +88,7 @@ The first one is similiar to C++, it's much more efficient than the second one w
 
 ##### Return Parameter
 ###### Primitive Types
-![RET_PRIMITIVE_TYPES](./Images/return_primitive_types.png)
+![RET_PRIMITIVE_TYPES](../Images/return_primitive_types.png)
 
 Lua codes：
 ```
@@ -96,7 +96,7 @@ local MeleeDamage = self:GetMeleeDamage()
 ```
 
 ###### Non-Primitive Types
-![RET_NON_PRIMITIVE_TYPES](./Images/return_non_primitive_types.png)
+![RET_NON_PRIMITIVE_TYPES](../Images/return_non_primitive_types.png)
 
 There are three ways to call it in Lua:
 ```
@@ -122,7 +122,7 @@ local LocationCopy = Location
 #### Latent Function
 Latent functions allow developers to develop asynchronous logic using synchronous coding style. A typical latent function is **Delay**:
 
-![LATENT_FUNCTION](./Images/latent_function.png)
+![LATENT_FUNCTION](../Images/latent_function.png)
 
 You can call latent function in Lua coroutines:
 ```
@@ -202,7 +202,7 @@ Weapon:K2_AttachToComponent(Point, nil, EAttachmentRule.SnapToTarget, EAttachmen
 **EAttachmentRule** is a UENUM, **SnapToTarget** is an entry of **EAttachmentRule**.
 
 #### Customized Collision Enums
-![ENUM_COLLISION](./Images/enum_collision.png)
+![ENUM_COLLISION](../Images/enum_collision.png)
 
 * EObjectTypeQuery
 ```
@@ -411,7 +411,7 @@ END_EXPORT_ENUM(EEye)
 ## Optional 'UE' Namespace
 UnLua provides an option to add a namespace **'UE'** to all classes and enums in the engine. You can find this option in **UnLua.Build.cs**.
 
-![UE4_NAMESPACE](./Images/ue4_namespace.png)
+![UE4_NAMESPACE](../Images/ue4_namespace.png)
 
 If this option is enabled, your Lua codes should be:
 ```
@@ -432,7 +432,7 @@ Your can override all **BlueprintEvent** in Lua codes. **BlueprintEvent** includ
 
 ### Example (BlueprintEvent without Return Value)
 
-![BP_IMP_EVENT](./Images/bp_imp_event.png)
+![BP_IMP_EVENT](../Images/bp_imp_event.png)
 
 You can override it in Lua:
 ```
@@ -443,7 +443,7 @@ end
 
 ### Example (BlueprintEvent with Return Values)
 
-![BP_IMP_EVENT_RET](./Images/bp_imp_event_return_values.png)
+![BP_IMP_EVENT_RET](../Images/bp_imp_event_return_values.png)
 
 There are two ways to override it in Lua:
 ```
@@ -465,7 +465,7 @@ The first one is preferred.
 ## Override Animation Notifies
 AnimNotify:
 
-![ANIM_NOTIFY](./Images/anim_notify.png)
+![ANIM_NOTIFY](../Images/anim_notify.png)
 
 Lua codes:
 ```
@@ -476,7 +476,7 @@ end
 Lua function's name must be **'AnimNotify_'** + **NotifyName**.
 
 ## Override Input Events
-![ACTION_AXIS_INPUTS](./Images/action_axis_inputs.png)
+![ACTION_AXIS_INPUTS](../Images/action_axis_inputs.png)
 
 #### Action Inputs
 ```
@@ -520,7 +520,7 @@ You can also override **Touch/AxisKey/VectorAxis/Gesture Inputs** in Lua.
 ## Override Replication Notifies
 If you are developing dedicated/listenning server&amp;clients game, you can override replication notifies in Lua codes:
 
-![REP_NOTIFY](./Images/rep_notify.png)
+![REP_NOTIFY](../Images/rep_notify.png)
 
 ```
 function BP_PlayerCharacter_C:OnRep_Health(...)
@@ -563,9 +563,9 @@ FLuaRetValues CallTableFunc(lua_State *L, const char *TableName, const char *Fun
 
 You can export Lua template file for blueprints:
 
-![TEMPLATE](./Images/lua_template.png)
+![TEMPLATE](../Images/lua_template.png)
 
 The template file:
 
-![TEMPLATE_CODES](./Images/generated_lua_template.png)
+![TEMPLATE_CODES](../Images/generated_lua_template.png)
 

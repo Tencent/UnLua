@@ -13,13 +13,13 @@ UnLua提供了两种绑定Lua和引擎层的方式，分别是静态绑定和动
 #### C++
 你的 UCLASS 只需要实现 `IUnLuaInterface` 接口，在 `GetModuleName_Implementation()` 里返回Lua文件路径即可。
 
-![CPP_UNLUA_INTERFACE](./Images/cpp_unlua_interface.png)
+![CPP_UNLUA_INTERFACE](../Images/cpp_unlua_interface.png)
 
 #### 蓝图
 你的蓝图只需要实现 `UnLuaInterface` 接口， 在 `GetModuleName()` 里返回Lua文件路径即可。
 
-![BP_UNLUA_INTERFACE](./Images/bp_unlua_interface.png)
-![BP_GETMODULENAME](./Images/bp_getmodulename.png)
+![BP_UNLUA_INTERFACE](../Images/bp_unlua_interface.png)
+![BP_GETMODULENAME](../Images/bp_getmodulename.png)
 
 ## 动态绑定
 动态绑定适用于运行时Spawn出来的Actor和Object。
@@ -74,7 +74,7 @@ Widget:AddToViewport()
 
 ##### 非常量参数
 ###### 基本类型
-![OUT_PRIMITIVE_TYPES](./Images/out_primitive_types.png)
+![OUT_PRIMITIVE_TYPES](../Images/out_primitive_types.png)
 
 Lua代码：
 ```
@@ -82,7 +82,7 @@ local Level, Health, Name = self:GetPlayerBaseInfo()
 ```
 
 ###### 非基本类型
-![OUT_NON_PRIMITIVE_TYPES](./Images/out_non_primitive_types.png)
+![OUT_NON_PRIMITIVE_TYPES](../Images/out_non_primitive_types.png)
 
 有两种方式在Lua里调用：
 
@@ -98,7 +98,7 @@ local HitResult = self:GetHitResult()
 
 ##### 返回参数
 ###### 基本类型
-![RET_PRIMITIVE_TYPES](./Images/return_primitive_types.png)
+![RET_PRIMITIVE_TYPES](../Images/return_primitive_types.png)
 
 Lua代码：
 ```
@@ -106,7 +106,7 @@ local MeleeDamage = self:GetMeleeDamage()
 ```
 
 ###### 非基本类型
-![RET_NON_PRIMITIVE_TYPES](./Images/return_non_primitive_types.png)
+![RET_NON_PRIMITIVE_TYPES](../Images/return_non_primitive_types.png)
 
 有三种方式在Lua里调用：
 ```
@@ -132,7 +132,7 @@ local LocationCopy = Location
 #### Latent 函数
 Latent 函数 允许开发者用同步代码的风格来写异步逻辑。**Delay** 是一个经典的 Latent 函数：
 
-![LATENT_FUNCTION](./Images/latent_function.png)
+![LATENT_FUNCTION](../Images/latent_function.png)
 
 我们可以在Lua协程里调用Latent 函数：
 
@@ -212,7 +212,7 @@ Weapon:K2_AttachToComponent(Point, nil, EAttachmentRule.SnapToTarget, EAttachmen
 **EAttachmentRule** 是一个 UENUM, **SnapToTarget** 是 **EAttachmentRule** 的一项。
 
 #### 自定义碰撞枚举
-![ENUM_COLLISION](./Images/enum_collision.png)
+![ENUM_COLLISION](../Images/enum_collision.png)
 
 * EObjectTypeQuery
 ```
@@ -422,7 +422,7 @@ END_EXPORT_ENUM(EEye)
 ## 可选的 'UE' 命名空间
 UnLua 提供了一个选项，可以将所有的类和枚举都放到 **'UE'** 这个命名空间下。 可以在 `UnLua.Build.cs` 里找到。
 
-![UE4_NAMESPACE](./Images/ue4_namespace.png)
+![UE4_NAMESPACE](../Images/ue4_namespace.png)
 
 如果启用了这个选项，在Lua里应该这么写：
 ```
@@ -445,7 +445,7 @@ UnLua provides a Blueprint-like solution to cross the C++/Script boundary. It al
 
 ### 示例 (无返回值的蓝图事件)
 
-![BP_IMP_EVENT](./Images/bp_imp_event.png)
+![BP_IMP_EVENT](../Images/bp_imp_event.png)
 
 我们可以在Lua里直接替换：
 ```
@@ -456,7 +456,7 @@ end
 
 ### 示例 (带返回值的蓝图事件)
 
-![BP_IMP_EVENT_RET](./Images/bp_imp_event_return_values.png)
+![BP_IMP_EVENT_RET](../Images/bp_imp_event_return_values.png)
 
 有两种用Lua替换的方式：
 
@@ -478,7 +478,7 @@ end
 
 ## 替换动画事件
 
-![ANIM_NOTIFY](./Images/anim_notify.png)
+![ANIM_NOTIFY](../Images/anim_notify.png)
 
 Lua 代码:
 ```
@@ -489,7 +489,7 @@ end
 Lua函数的名字必须为：**'AnimNotify_'** + **{事件名}**
 
 ## 替换输入事件
-![ACTION_AXIS_INPUTS](./Images/action_axis_inputs.png)
+![ACTION_AXIS_INPUTS](../Images/action_axis_inputs.png)
 
 #### Action 输入
 ```
@@ -533,7 +533,7 @@ Lua函数的名字必须为： **按键名** + **'_Pressed'** / **'_Released'**
 ## 替换Replication事件
 If you are developing dedicated/listenning server&amp;clients game, you can override replication notifies in Lua codes:
 
-![REP_NOTIFY](./Images/rep_notify.png)
+![REP_NOTIFY](../Images/rep_notify.png)
 
 ```
 function BP_PlayerCharacter_C:OnRep_Health(...)
@@ -576,9 +576,9 @@ FLuaRetValues CallTableFunc(lua_State *L, const char *TableName, const char *Fun
 
 你可以为蓝图直接导出模版代码：
 
-![TEMPLATE](./Images/lua_template.png)
+![TEMPLATE](../Images/lua_template.png)
 
 生成的模版代码文件：
 
-![TEMPLATE_CODES](./Images/generated_lua_template.png)
+![TEMPLATE_CODES](../Images/generated_lua_template.png)
 

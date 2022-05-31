@@ -1,4 +1,4 @@
-![LOGO](./Images/UnLua.png)
+![LOGO](./Docs/Images/UnLua.png)
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/Tencent/UnLua/blob/master/LICENSE.TXT)
 [![release](https://img.shields.io/github/v/release/Tencent/UnLua)](https://github.com/Tencent/UnLua/releases)
@@ -12,7 +12,7 @@
 * 替换蓝图中定义的实现 ( Event / Function )。
 * 处理各类事件通知 ( Replication / Animation / Input )。
 
-更详细的功能介绍请查看[功能清单](Docs/Features.md)。
+更详细的功能介绍请查看[功能清单](Docs/CN/Features.md)。
 
 # 优化特性
 * UFUNCTION调用，包括持久化参数缓存、优化的参数传递、优化的非常量引用和返回值处理。
@@ -32,7 +32,7 @@
   2. 重新启动你的UE工程
 
 ## 开始UnLua之旅
-**注意**: 如果你是一位UE萌新，推荐使用更详细的[图文版教学](Docs/Quickstart_For_UE_Newbie.md)继续以下步骤。
+**注意**: 如果你是一位UE萌新，推荐使用更详细的[图文版教学](Docs/CN/Quickstart_For_UE_Newbie.md)继续以下步骤。
   1. 新建蓝图后打开，在UnLua工具栏中选择 `绑定`（可同时按住`Alt`键自动生成第2步的路径）
   2. 在接口的 `GetModule` 函数中填入Lua文件路径，如 `GameModes.BP_MyGameMode_C`
   3. 选择UnLua工具栏中的 `创建Lua模版文件`
@@ -53,13 +53,13 @@
   * [12_CustomLoader](Content/Script/Tutorials/12_CustomLoader.lua) 自定义加载器
 
 # 文档
-* [控制台命令](Docs/ConsoleCommand.md)：介绍 UnLua 自带的控制台命令
-* [插件与模块](Docs/Plugins_And_Modules.md)：介绍 Plugins 目录下的插件列表以及它们所包含的模块
-* [功能清单](Docs/Features.md)：更详细的功能列表
-* [实现原理](Docs/How_To_Implement_Overriding.md)：介绍 UnLua 的两种覆盖机制
-* [编程指南](Docs/UnLua_Programming_Guide.md)：介绍 UnLua 的主要功能和编程模式
-* [API](Docs/API.md)：更详细的 UnLua API 说明
-* [FAQ](Docs/FAQ.md)：常见问题解答
+* [控制台命令](Docs/CN/ConsoleCommand.md)：介绍 UnLua 自带的控制台命令
+* [插件与模块](Docs/CN/Plugins_And_Modules.md)：介绍 Plugins 目录下的插件列表以及它们所包含的模块
+* [功能清单](Docs/CN/Features.md)：更详细的功能列表
+* [实现原理](Docs/CN/How_To_Implement_Overriding.md)：介绍 UnLua 的两种覆盖机制
+* [编程指南](Docs/CN/UnLua_Programming_Guide.md)：介绍 UnLua 的主要功能和编程模式
+* [API](Docs/CN/API.md)：更详细的 UnLua API 说明
+* [FAQ](Docs/CN/FAQ.md)：常见问题解答
 
 # 许可证
 * UnLua根据[MIT](LICENSE.TXT)分发。

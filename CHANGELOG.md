@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - 官方交流QQ群：936285107
 - 编辑器主界面工具栏的菜单项入口
-- 内置一些基础的[控制台命令](Docs/ConsoleCommand.md)
+- 内置一些基础的[控制台命令](Docs/CN/ConsoleCommand.md)
 - 配置支持，通过引擎菜单 `项目设置 -> 插件 -> UnLua` 修改运行时和编辑器环境的配置
 - 编辑器界面多语言支持，现在可以看到中文菜单了
 - 多虚拟机环境支持
