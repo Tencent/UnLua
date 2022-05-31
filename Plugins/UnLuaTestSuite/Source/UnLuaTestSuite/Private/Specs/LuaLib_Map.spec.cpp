@@ -324,7 +324,7 @@ void FUnLuaLibMapSpec::Define()
             )";
             TEST_TRUE(Env->DoString(Chunk));
 
-            const auto Ret = UnLua::FLuaTable(Env, -1);
+            const auto Ret = UnLua::FLuaTable(Env.Get(), -1);
             TEST_EQUAL(Ret.Length(), 4);
             TEST_EQUAL(Ret[1].Value<int>(), 1)
             TEST_EQUAL(Ret[2].Value<int>(), 100)
