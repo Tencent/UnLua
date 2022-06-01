@@ -15,6 +15,7 @@
 #include "lauxlib.h"
 #include "UELib.h"
 
+#include "Binding.h"
 #include "Registries/ClassRegistry.h"
 #include "LuaCore.h"
 #include "LuaEnv.h"
@@ -52,9 +53,15 @@ static int UE_Index(lua_State* L)
         return 0;
 
     const char* Name = lua_tostring(L, 2);
-    const char Prefix = Name[0];
-    // LoadUEType(Name + 1);
+    const auto Exported = UnLua::FindExportedNonReflectedClass(Name);
+    if (Exported)
+    {
+        Exported->Register(L);
+        lua_rawget(L, 1);
+        return 1;
+    }
 
+    const char Prefix = Name[0];
     const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     if (Prefix == 'U' || Prefix == 'A' || Prefix == 'F')
     {
@@ -90,6 +97,7 @@ static int UE_Index(lua_State* L)
             return 0;
         }
     }
+
     lua_rawget(L, 1);
     return 1;
 }
