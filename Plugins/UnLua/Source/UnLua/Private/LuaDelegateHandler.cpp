@@ -69,7 +69,19 @@ void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 
 ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject)
 {
-    const auto Ret = NewObject<ULuaDelegateHandler>(GWorld);
+    UObject* Outer;
+
+    if (InSelfObject)
+        Outer = InSelfObject->GetOuter();
+    else if (InOwner)
+        Outer = InOwner->GetOuter();
+    else
+        Outer = nullptr;
+
+    if (!Outer)
+        Outer = GetTransientPackage();
+
+    const auto Ret = NewObject<ULuaDelegateHandler>(Outer);
     Ret->Env = InEnv->AsShared();
     Ret->LuaRef = InLuaRef;
     Ret->Owner = InOwner;
