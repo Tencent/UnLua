@@ -145,7 +145,11 @@ namespace UnLua
     void FDelegateRegistry::Execute(const ULuaDelegateHandler* Handler, void* Params)
     {
         const auto SignatureDesc = GetSignatureDesc(Handler->Delegate);
-        check(SignatureDesc);
+        if (!SignatureDesc)
+            return;
+
+        if (Handler->SelfObject.IsStale())
+            return;
 
         const auto L = Env->GetMainState();
         SignatureDesc->CallLua(L, Handler->LuaRef, Params, Handler->SelfObject.Get());
@@ -154,7 +158,8 @@ namespace UnLua
     int32 FDelegateRegistry::Execute(lua_State* L, FScriptDelegate* Delegate, int32 NumParams, int32 FirstParamIndex)
     {
         const auto SignatureDesc = GetSignatureDesc(Delegate);
-        check(SignatureDesc);
+        if (!SignatureDesc)
+            return 0;
 
         const auto Ret = SignatureDesc->ExecuteDelegate(L, NumParams, FirstParamIndex, Delegate);
         return Ret;

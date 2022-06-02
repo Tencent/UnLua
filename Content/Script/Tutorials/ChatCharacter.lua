@@ -6,16 +6,24 @@ local Screen = require "Tutorials.Screen"
 
 function M:UserConstructionScript()
     self.Name = ""
-    self.NameTextRender:SetText("")
+    if self.NameTextRender then
+        self.NameTextRender:SetText("")
+    end
 end
 
 function M:ReceivePossessed()
     self.Name = string.format("PLAYER_%d", self:GetController().PlayerState.PlayerId)
-    self.NameTextRender:SetText(self.Name)
-    self:Say("我来了")
+    if self.NameTextRender then
+        self.NameTextRender:SetText(self.Name)
+    end
+    self:Say_Multicast("我来了")
 end
 
-function M:Say_RPC(text)
+function M:Say_Server_RPC(text)
+    self:Say_Multicast(text)
+end
+
+function M:Say_Multicast_RPC(text)
     local msg = string.format("[%s]说：%s", self.Name, text)
     Screen.Print(msg)
 end
@@ -26,7 +34,7 @@ end
 
 function M:SpaceBar_Pressed()
     self:Jump()
-    self:Say("我跳~")
+    self:Say_Server("我跳~")
 end
 
 function M:MoveForward(AxisValue)
