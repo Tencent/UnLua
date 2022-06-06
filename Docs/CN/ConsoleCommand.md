@@ -25,3 +25,7 @@ lua.do print("hello world")
 ```
 lua.do test1.test2
 ```
+
+### lua.gc
+
+在默认环境强制执行一次垃圾回收。

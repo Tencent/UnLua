@@ -15,6 +15,11 @@ namespace UnLua
               *LOCTEXT("CommandText_DoFile", "Runs the given module path in lua env.").ToString(),
               FConsoleCommandWithArgsDelegate::CreateRaw(this, &FUnLuaConsoleCommands::DoFile)
           ),
+          CollectGarbageCommand(
+              TEXT("lua.gc"),
+              *LOCTEXT("CommandText_CollectGarbage", "Force collect garbage in lua env.").ToString(),
+              FConsoleCommandWithArgsDelegate::CreateRaw(this, &FUnLuaConsoleCommands::CollectGarbage)
+          ),
           Module(InModule)
     {
     }
@@ -61,6 +66,18 @@ namespace UnLua
         )");
         const auto Chunk = FString::Printf(Format, *Args[0]);
         Env->DoString(Chunk);
+    }
+
+    void FUnLuaConsoleCommands::CollectGarbage(const TArray<FString>& Args) const
+    {
+        auto Env = Module->GetEnv();
+        if (!Env)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("no available lua env found to collect garbage."));
+            return;
+        }
+
+        Env->GC();
     }
 }
 

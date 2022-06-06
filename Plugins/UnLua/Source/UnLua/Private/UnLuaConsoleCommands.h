@@ -25,11 +25,15 @@ namespace UnLua
 
         FAutoConsoleCommand DoFileCommand;
 
+        FAutoConsoleCommand CollectGarbageCommand;
+
         explicit FUnLuaConsoleCommands(IUnLuaModule* InModule);
 
         void Do(const TArray<FString>& Args) const;
 
         void DoFile(const TArray<FString>& Args) const;
+
+        void CollectGarbage(const TArray<FString>& Args) const;
 
     private:
         IUnLuaModule* Module;
