@@ -30,23 +30,32 @@ BEGIN_TESTSUITE(FIssue372Test, TEXT("UnLua.Regression.Issue372 Actor调用K2_Des
             lua_setglobal(L, "World");
 
             UnLua::PushUObject(L, GWorld);
-            const auto NextRef = luaL_ref(L, LUA_REGISTRYINDEX);
-            luaL_unref(L, LUA_REGISTRYINDEX, NextRef);
 
             const auto Chunk = R"(
             local ActorClass = UE.UClass.Load("/UnLuaTestSuite/Tests/Binding/BP_UnLuaTestActor_StaticBinding.BP_UnLuaTestActor_StaticBinding_C")
             Actor = World:SpawnActor(ActorClass)
+
+            local registry = debug.getregistry()
+            for k, v in pairs(registry) do
+                if v == Actor then
+                    return k
+                end
+            end
+            return -2 -- LUA_NOREF
             )";
             UnLua::RunChunk(L, Chunk);
 
-            lua_rawgeti(L, LUA_REGISTRYINDEX, NextRef);
+            auto Ref = (int32)lua_tointeger(L, -1);
+            TestNotEqual(TEXT("Ref"), Ref, LUA_NOREF);
+
+            lua_rawgeti(L, LUA_REGISTRYINDEX, Ref);
             auto Actual = lua_type(L, -1);
             TestEqual(TEXT("Actual"), Actual, LUA_TTABLE);
 
             UnLua::RunChunk(L, "Actor:K2_DestroyActor()");
             CollectGarbage(RF_NoFlags, true);
 
-            lua_rawgeti(L, LUA_REGISTRYINDEX, NextRef);
+            lua_rawgeti(L, LUA_REGISTRYINDEX, Ref);
             Actual = lua_type(L, -1);
             TestNotEqual(TEXT("Actual"), Actual, LUA_TTABLE);
             return true;
