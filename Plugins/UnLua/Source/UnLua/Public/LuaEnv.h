@@ -26,6 +26,7 @@
 #include "ObjectReferencer.h"
 #include "HAL/Platform.h"
 #include "LuaDeadLoopCheck.h"
+#include "LuaModuleLocator.h"
 
 namespace UnLua
 {
@@ -142,6 +143,7 @@ namespace UnLua
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FLuaFileLoader> CustomLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
+        ULuaModuleLocator* ModuleLocator;
         FCriticalSection CandidatesLock;
         FObjectReferencer AutoObjectReference;
         FObjectReferencer ManualObjectReference;

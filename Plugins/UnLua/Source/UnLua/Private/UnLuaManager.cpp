@@ -103,11 +103,10 @@ bool UUnLuaManager::Bind(UObject *Object, const TCHAR *InModuleName, int32 Initi
     }
 
     if (bSuccess)
-    {   
-        FString RealModuleName = *ModuleNames.Find(Class);
-
-        // create a Lua instance for this UObject
-        Env->GetObjectRegistry()->Bind(Object, TCHAR_TO_UTF8(*RealModuleName));
+    {
+        const char* RealModuleName = TCHAR_TO_UTF8(*ModuleNames.FindRef(Class));
+        Env->GetObjectRegistry()->Bind(Class, RealModuleName);
+        Env->GetObjectRegistry()->Bind(Object, RealModuleName);
 
         // try call user first user function handler
         int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
