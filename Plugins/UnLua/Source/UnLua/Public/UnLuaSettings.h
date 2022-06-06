@@ -16,6 +16,7 @@
 
 #include "CoreMinimal.h"
 #include "LuaEnvLocator.h"
+#include "LuaModuleLocator.h"
 #include "UnLuaSettings.generated.h"
 
 
@@ -29,7 +30,10 @@ public:
 
     UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(ToolTip="Prevent from infinite loops in lua. Timeout in seconds."))
     int32 DeadLoopCheck = 0;
-    
+
     UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(AllowAbstract="false", DisplayName="LuaEnvLocator"))
     TSubclassOf<ULuaEnvLocator> EnvLocatorClass = ULuaEnvLocator::StaticClass();
+
+    UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(AllowAbstract="false", DisplayName="LuaModuleLocator"))
+    TSubclassOf<ULuaModuleLocator> ModuleLocatorClass = ULuaModuleLocator::StaticClass();
 };
