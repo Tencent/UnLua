@@ -47,10 +47,15 @@ FString ULuaModuleLocator_ByPackage::Locate(const UObject* Object)
 
     FString ModuleName;
     if (Class->IsNative())
+    {
         ModuleName = Class->GetName();
+    }
     else
+    {
         ModuleName = Object->GetOutermost()->GetName();
-    ModuleName = ModuleName.Replace(TEXT("/"), TEXT(".")).RightChop(1);
+        const auto ChopCount = ModuleName.Find(TEXT("/"), ESearchCase::IgnoreCase, ESearchDir::FromStart, 1) + 1;
+        ModuleName = ModuleName.Replace(TEXT("/"), TEXT(".")).RightChop(ChopCount);
+    }
     Cache.Add(Key, ModuleName);
     return ModuleName;
 }
