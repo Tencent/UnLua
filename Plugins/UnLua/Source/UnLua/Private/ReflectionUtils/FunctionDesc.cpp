@@ -62,10 +62,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     {
         Buffer = FMemory::Malloc(InFunction->ParmsSize, 16);
         FMemory::Memzero(Buffer, InFunction->ParmsSize);
-#if STATS
-        const uint32 Size = FMemory::GetAllocSize(Buffer);
-        INC_MEMORY_STAT_BY(STAT_UnLua_PersistentParamBuffer_Memory, Size);
-#endif
+        UNLUA_STAT_MEMORY_ALLOC(Buffer, Lua)
     }
 #endif
 
@@ -97,10 +94,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
             // pre-create OutParmRec for 'out' property
 #if !SUPPORTS_RPC_CALL
             FOutParmRec *Out = (FOutParmRec*)FMemory::Malloc(sizeof(FOutParmRec), alignof(FOutParmRec));
-#if STATS
-            const uint32 Size = FMemory::GetAllocSize(Out);
-            INC_MEMORY_STAT_BY(STAT_UnLua_OutParmRec_Memory, Size);
-#endif
+            UNLUA_STAT_MEMORY_ALLOC(Out, OutParmRec);
             Out->PropAddr = Property->ContainerPtrToValuePtr<uint8>(Buffer);
             Out->Property = Property;
             if (CurrentOutParmRec)
@@ -155,10 +149,7 @@ FFunctionDesc::~FFunctionDesc()
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     if (Buffer)
     {
-#if STATS
-        const uint32 Size = FMemory::GetAllocSize(Buffer);
-        DEC_MEMORY_STAT_BY(STAT_UnLua_PersistentParamBuffer_Memory, Size);
-#endif
+        UNLUA_STAT_MEMORY_FREE(Buffer, PersistentParamBuffer);
         FMemory::Free(Buffer);
     }
 #endif
@@ -168,10 +159,7 @@ FFunctionDesc::~FFunctionDesc()
     while (OutParmRec)
     {
         FOutParmRec *NextOut = OutParmRec->NextOutParm;
-#if STATS
-        const uint32 Size = FMemory::GetAllocSize(OutParmRec);
-        DEC_MEMORY_STAT_BY(STAT_UnLua_OutParmRec_Memory, Size);
-#endif
+        UNLUA_STAT_MEMORY_FREE(OutParmRec, OutParmRec);
         FMemory::Free(OutParmRec);
         OutParmRec = NextOut;
     }

@@ -18,6 +18,7 @@
 DEFINE_STAT(STAT_UnLua_Lua_Memory);
 DEFINE_STAT(STAT_UnLua_PersistentParamBuffer_Memory);
 DEFINE_STAT(STAT_UnLua_OutParmRec_Memory);
+DEFINE_STAT(STAT_UnLua_ContainerElementCache_Memory);
 
 namespace UnLua
 {

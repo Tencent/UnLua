@@ -53,6 +53,7 @@ public:
     {
         // allocate cache for a single element
         ElementCache = FMemory::Malloc(ElementSize, Inner->GetAlignment());
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
     ~FLuaArray()
@@ -62,6 +63,7 @@ public:
             Clear();
             delete ScriptArray;
         }
+        UNLUA_STAT_MEMORY_FREE(ElementCache, ContainerElementCache);
         FMemory::Free(ElementCache);
     }
 

@@ -613,10 +613,7 @@ namespace UnLua
     {
         if (nsize == 0)
         {
-#if STATS
-            const uint32 Size = FMemory::GetAllocSize(ptr);
-            DEC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, Size);
-#endif
+            UNLUA_STAT_MEMORY_FREE(ptr, Lua);
             FMemory::Free(ptr);
             return nullptr;
         }
@@ -625,28 +622,12 @@ namespace UnLua
         if (!ptr)
         {
             Buffer = FMemory::Malloc(nsize);
-#if STATS
-            const uint32 Size = FMemory::GetAllocSize(Buffer);
-            INC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, Size);
-#endif
+            UNLUA_STAT_MEMORY_ALLOC(Buffer, Lua);
         }
         else
         {
-#if STATS
-            const uint32 OldSize = FMemory::GetAllocSize(ptr);
-#endif
+            UNLUA_STAT_MEMORY_REALLOC(ptr, Buffer, Lua);
             Buffer = FMemory::Realloc(ptr, nsize);
-#if STATS
-            const uint32 NewSize = FMemory::GetAllocSize(Buffer);
-            if (NewSize > OldSize)
-            {
-                INC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, NewSize - OldSize);
-            }
-            else
-            {
-                DEC_MEMORY_STAT_BY(STAT_UnLua_Lua_Memory, OldSize - NewSize);
-            }
-#endif
         }
         return Buffer;
     }

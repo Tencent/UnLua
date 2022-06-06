@@ -31,6 +31,7 @@ public:
     {
         // allocate cache for a single element
         ElementCache = FMemory::Malloc(ElementInterface->GetSize(), ElementInterface->GetAlignment());
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
     FLuaSet(const FScriptSet *InScriptSet, TLuaContainerInterface<FLuaSet> *Interface, FScriptSetFlag Flag = OwnedByOther)
@@ -41,6 +42,7 @@ public:
 
         // allocate cache for a single element
         ElementCache = FMemory::Malloc(ElementInterface->GetSize(), ElementInterface->GetAlignment());
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
     ~FLuaSet()
@@ -50,6 +52,7 @@ public:
             Clear();
             delete Set;
         }
+        UNLUA_STAT_MEMORY_FREE(ElementCache, ContainerElementCache);
         FMemory::Free(ElementCache);
     }
 
