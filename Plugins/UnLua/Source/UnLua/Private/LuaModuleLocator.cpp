@@ -17,9 +17,6 @@
 
 FString ULuaModuleLocator::Locate(const UObject* Object)
 {
-    if (!Object)
-        return "";
-
     const UObject* CDO;
     if (Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))
     {
@@ -50,7 +47,7 @@ FString ULuaModuleLocator_ByPackage::Locate(const UObject* Object)
 
     FString ModuleName;
     if (Class->IsNative())
-        ModuleName = Class->GetPathName();
+        ModuleName = Class->GetName();
     else
         ModuleName = Object->GetOutermost()->GetName();
     ModuleName = ModuleName.Replace(TEXT("/"), TEXT(".")).RightChop(1);
