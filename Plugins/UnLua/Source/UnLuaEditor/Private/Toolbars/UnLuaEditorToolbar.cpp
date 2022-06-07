@@ -19,7 +19,8 @@
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
 FUnLuaEditorToolbar::FUnLuaEditorToolbar()
-    : CommandList(new FUICommandList)
+    : CommandList(new FUICommandList),
+      ContextObject(nullptr)
 {
 }
 

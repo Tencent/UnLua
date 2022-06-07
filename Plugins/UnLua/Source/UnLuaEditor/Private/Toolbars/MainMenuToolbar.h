@@ -19,12 +19,13 @@
 class FMainMenuToolbar
 {
 public:
-	FMainMenuToolbar();
-	virtual ~FMainMenuToolbar() = default;
+    FMainMenuToolbar();
 
-	void Initialize();
+    virtual ~FMainMenuToolbar() = default;
 
-	TSharedRef<SWidget> GenerateUnLuaSettingsMenu();
+    void Initialize();
+
+    TSharedRef<SWidget> GenerateUnLuaSettingsMenu();
 
     const TSharedRef<FUICommandList> CommandList;
 };
