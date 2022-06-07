@@ -38,6 +38,12 @@ FMainMenuToolbar::FMainMenuToolbar()
         FUnLuaIntelliSenseGenerator::Get()->UpdateAll();
     }), FCanExecuteAction());
 
+    CommandList->MapAction(FUnLuaEditorCommands::Get().OpenRuntimeSettings, FExecuteAction::CreateLambda([]
+    {
+        if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
+            SettingsModule->ShowViewer("Project", "Plugins", "UnLua");
+    }), FCanExecuteAction());
+
     CommandList->MapAction(FUnLuaEditorCommands::Get().OpenEditorSettings, FExecuteAction::CreateLambda([]
     {
         if (ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings"))
@@ -110,7 +116,8 @@ void FMainMenuToolbar::Initialize()
         UUnLuaEditorFunctionLibrary::FetchNewVersion();
 }
 
-TSharedRef<SWidget> FMainMenuToolbar::GenerateUnLuaSettingsMenu() {
+TSharedRef<SWidget> FMainMenuToolbar::GenerateUnLuaSettingsMenu()
+{
 	const FUnLuaEditorCommands& Commands = FUnLuaEditorCommands::Get();
 	FMenuBuilder MenuBuilder(true, CommandList);
 
@@ -120,7 +127,13 @@ TSharedRef<SWidget> FMainMenuToolbar::GenerateUnLuaSettingsMenu() {
 	MenuBuilder.EndSection();
 
 	MenuBuilder.BeginSection(NAME_None, LOCTEXT("Section_Help", "Help"));
-	MenuBuilder.AddMenuEntry(Commands.OpenEditorSettings, NAME_None, LOCTEXT("OpenEditorSettings", "Settings"));
+	MenuBuilder.AddSubMenu(LOCTEXT("Section_SettingsMenu", "Settings"),
+	                       LOCTEXT("Section_SettingsMenu_ToolTip", "UnLua Settings"),
+	                       FNewMenuDelegate::CreateLambda([Commands](FMenuBuilder& SubMenuBuilder)
+	                       {
+		                       SubMenuBuilder.AddMenuEntry(Commands.OpenRuntimeSettings, NAME_None, LOCTEXT("OpenRuntimeSettings", "Runtime"));
+		                       SubMenuBuilder.AddMenuEntry(Commands.OpenEditorSettings, NAME_None, LOCTEXT("OpenEditorSettings", "Editor"));
+	                       }));
 	MenuBuilder.AddMenuEntry(Commands.ReportIssue, NAME_None, LOCTEXT("ReportIssue", "Report Issue"));
 	MenuBuilder.AddMenuEntry(Commands.About, NAME_None, LOCTEXT("About", "About"));
 	MenuBuilder.EndSection();
