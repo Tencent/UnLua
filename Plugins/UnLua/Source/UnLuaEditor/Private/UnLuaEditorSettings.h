@@ -18,6 +18,8 @@
 #include "UObject/Object.h"
 #include "UnLuaEditorSettings.generated.h"
 
+#define LOCTEXT_NAMESPACE "UnLuaEditorSettings"
+
 UENUM()
 enum class EUpdateMode : uint8
 {
@@ -40,39 +42,52 @@ class UNLUAEDITOR_API UUnLuaEditorSettings : public UObject
     GENERATED_BODY()
 
 public:
-    UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Hot Reload Mode", defaultValue = 0))
+    /** Pick a method for lua hot-reload. */
+    UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (defaultValue = 0))
     EHotReloadMode HotReloadMode;
 
-    UPROPERTY(config, EditAnywhere, Category = "Coding", meta = (DisplayName = "Generate IntelliSense Files"))
+    /** Whether or not generate intellisense files for lua. */
+    UPROPERTY(config, EditAnywhere, Category = "Coding")
     bool bGenerateIntelliSense = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Auto Startup", ToolTip = "Requires restart to take effect."))
+    /** Whether or not startup UnLua module on game start. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bAutoStart = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Debug", ToolTip = "Requires restart to take effect."))
+    /** Enable UnLua debug routine codes. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableDebug = false;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable persistent buffer for UFunction's parameters.", ToolTip = "Requires restart to take effect."))
+    /** Enable persistent buffer for UFunction's parameters. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnablePersistentParamBuffer = true;
-    
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Type Checking", ToolTip = "Requires restart to take effect."))
+
+    /** Enable type checking at lua runtime. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableTypeChecking = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable RPC Call (Deprecated).", ToolTip = "Requires restart to take effect."))
+    /** Enable RPC support (Deprecated). (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableRPCCall = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Build", meta = (DisplayName = "Enable Call Overridden Function (Deprecated).", ToolTip = "Requires restart to take effect."))
+    /** Enable 'Overridden' support at lua runtime. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableCallOverriddenFunction = true;
-    
-    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "With UE4 Namespace", ToolTip = "Requires restart to take effect."))
+
+    /** Create UE4 global table on lua env. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bWithUE4Namespace = true;
 
-    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "Place out parameters before return value", ToolTip = "Requires restart to take effect."))
+    /** Place out parameters before return value. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bLegacyReturnOrder = false;
 
-    UPROPERTY(config, EditAnywhere, Category = "Legacy", meta = (DisplayName = "Auto append '_C' to blueprint class path", ToolTip = "Requires restart to take effect."))
+    /** Auto append '_C' to blueprint class path. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bLegacyBlueprintPath = false;
 
-    UPROPERTY(config, EditAnywhere, Category = "System", meta = (DisplayName = "Update Mode", defaultValue = 0))
+    UPROPERTY(config, EditAnywhere, Category = "System", meta = (defaultValue = 0))
     EUpdateMode UpdateMode;
 };
+
+#undef LOCTEXT_NAMESPACE
