@@ -1,10 +1,10 @@
 {
 	"folders": [
 		{
-			"path": "Content\\Script"
+			"path": "Content/Script"
 		},
 		{
-			"path": "Plugins\\UnLua\\Intermediate\\IntelliSense"
+			"path": "Plugins/UnLua/Intermediate/IntelliSense"
 		}
 	],
 	"settings": {}
