@@ -780,11 +780,7 @@ public:
             {
                 if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
-                    if (Src->ElementSize == ArrayProperty->ElementSize)
-                    {
-                        FMemory::Memcpy(ValuePtr, Src->ScriptArray, sizeof(FScriptArray)); // shallow copy
-                    }
-                    else if (Src->ElementSize < ArrayProperty->ElementSize)
+                    if (Src->ElementSize < ArrayProperty->ElementSize)
                     {
                         FScriptArrayHelper Helper(ArrayProperty, ValuePtr);
                         if (Src->Num() > 0)
@@ -796,6 +792,10 @@ public:
                                 Src->Get(ArrayIndex, Dst);
                             }
                         }
+                    }
+                    else
+                    {
+                        FMemory::Memcpy(ValuePtr, Src->ScriptArray, sizeof(FScriptArray)); // shallow copy
                     }
                     return false;
                 }
