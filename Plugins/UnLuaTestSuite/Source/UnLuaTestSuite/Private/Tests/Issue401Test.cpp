@@ -30,6 +30,7 @@ BEGIN_TESTSUITE(FIssue401Test, TEXT("UnLua.Regression.Issue401 LUA覆写导致�
             const auto Result1 = static_cast<int32>(lua_tonumber(L, -1));
             TestEqual(TEXT("Result1"), Result1, 2);
 
+            lua_getglobal(L, "Result2");
             const auto Result2 = static_cast<int32>(lua_tonumber(L, -1));
             TestEqual(TEXT("Result2"), Result2, 2);
             return true;
