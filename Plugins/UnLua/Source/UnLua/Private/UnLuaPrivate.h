@@ -76,7 +76,7 @@ DECLARE_MEMORY_STAT_EXTERN(TEXT("Container Element Cache Memory"), STAT_UnLua_Co
 #else
 
 #define UNLUA_STAT_MEMORY_ALLOC(Pointer, CounterName)
-#define UNLUA_STAT_MEMORY_FREE(CounterName)
+#define UNLUA_STAT_MEMORY_FREE(PointerName, CounterName)
 #define UNLUA_STAT_MEMORY_REALLOC(Pointer, NewPointer, CounterName)
 
 #endif
