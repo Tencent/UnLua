@@ -251,17 +251,22 @@ namespace UnLua
             return false;
         }
 
+        static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
+        const bool bImplUnluaInterface = Class->ImplementsInterface(InterfaceClass);
+        
         if (!IsInGameThread() || Object->HasAnyInternalFlags(AsyncObjectFlags))
         {
-            // all bind operation should be in game thread, include dynamic bind
-            FScopeLock Lock(&CandidatesLock);
-            Candidates.AddUnique(Object);
-            return false;
+            // avoid adding too many objects, affecting performance.
+            if (bImplUnluaInterface || (!bImplUnluaInterface && GLuaDynamicBinding.IsValid(Class)))
+            {
+                // all bind operation should be in game thread, include dynamic bind
+                FScopeLock Lock(&CandidatesLock);
+                Candidates.AddUnique(Object);
+                return false;
+            }
         }
 
-        static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
-
-        if (!Class->ImplementsInterface(InterfaceClass))
+        if (!bImplUnluaInterface)
         {
             // dynamic binding
             if (!GLuaDynamicBinding.IsValid(Class))
