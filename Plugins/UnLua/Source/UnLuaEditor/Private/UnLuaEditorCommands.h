@@ -31,6 +31,7 @@ public:
     TSharedPtr<FUICommandInfo> BindToLua;
     TSharedPtr<FUICommandInfo> UnbindFromLua;
     TSharedPtr<FUICommandInfo> HotReload;
+    TSharedPtr<FUICommandInfo> OpenRuntimeSettings;
     TSharedPtr<FUICommandInfo> OpenEditorSettings;
     TSharedPtr<FUICommandInfo> ReportIssue;
     TSharedPtr<FUICommandInfo> About;
