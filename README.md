@@ -34,9 +34,9 @@
 ## 开始UnLua之旅
 **注意**: 如果你是一位UE萌新，推荐使用更详细的[图文版教学](Docs/CN/Quickstart_For_UE_Newbie.md)继续以下步骤。
   1. 新建蓝图后打开，在UnLua工具栏中选择 `绑定`（可同时按住`Alt`键自动生成第2步的路径）
-  2. 在接口的 `GetModule` 函数中填入Lua文件路径，如 `GameModes.BP_MyGameMode_C`
+  2. 在接口的 `GetModule` 函数中填入Lua文件路径，如 `GameModes.BP_MyGameMode`
   3. 选择UnLua工具栏中的 `创建Lua模版文件`
-  4. 打开 `Content/Script/GameModes/BP_MyGameMode_C.lua` 编写你的代码
+  4. 打开 `Content/Script/GameModes/BP_MyGameMode.lua` 编写你的代码
 
 # 更多示例
   * [01_HelloWorld](Content/Script/Tutorials/01_HelloWorld.lua) 快速开始的例子
