@@ -837,57 +837,6 @@ int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &
 }
 
 /**
- * Callback function to get function name 
- */
-static bool GetFunctionName(lua_State *L, void *Userdata)
-{
-    int32 ValueType = lua_type(L, -1);
-    if (ValueType == LUA_TFUNCTION)
-    {
-        TSet<FName> *FunctionNames = (TSet<FName>*)Userdata;
-#if SUPPORTS_RPC_CALL
-        FString FuncName(lua_tostring(L, -2));
-        if (FuncName.EndsWith(TEXT("_RPC")))
-        {
-            FuncName = FuncName.Left(FuncName.Len() - 4);
-        }
-        FunctionNames->Add(FName(*FuncName));
-#else
-        FunctionNames->Add(FName(lua_tostring(L, -2)));
-#endif
-    }
-    return true;
-}
-
-/**
- * Get all Lua function names defined in a required module/table
- */
-bool GetFunctionList(lua_State *L, const char *InModuleName, TSet<FName> &FunctionNames)
-{
-    int32 Type = GetLoadedModule(L, InModuleName);
-    if (Type == LUA_TNIL)
-    {
-        return false;
-    }
-
-    int32 N = 1;
-    bool bNext = false;
-    do 
-    {
-        bNext = TraverseTable(L, -1, &FunctionNames, GetFunctionName) > INDEX_NONE;
-        if (bNext)
-        {
-            lua_pushstring(L, "Super");
-            lua_rawget(L, -2);
-            ++N;
-            bNext = lua_istable(L, -1);
-        }
-    } while (bNext);
-    lua_pop(L, N);
-    return true;
-}
-
-/**
  * Push a Lua function (by a function name) and push a UObject instance as its first parameter
  */
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName)
@@ -1096,46 +1045,6 @@ void AddPackagePath(lua_State *L, const char *Path)
     lua_pushstring(L, FinalPath);
     lua_setfield(L, -3, "path");
     lua_pop(L, 2);
-}
-
-/**
- * package.loaded[ModuleName] = nil
- */
-void ClearLoadedModule(lua_State *L, const char *ModuleName)
-{   
-    if (L)
-    {
-        if (!ModuleName)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s, Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return;
-        }
-
-        lua_getglobal(L, "package");
-        lua_getfield(L, -1, "loaded");
-        lua_pushnil(L);
-        lua_setfield(L, -2, ModuleName);
-        lua_pop(L, 2);
-    }
-}
-
-/**
- * Get package.loaded[ModuleName]
- */
-int32 GetLoadedModule(lua_State *L, const char *ModuleName)
-{
-    if (!ModuleName)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s, Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return LUA_TNIL;
-    }
-
-    lua_getglobal(L, "package");
-    lua_getfield(L, -1, "loaded");
-    int32 Type = lua_getfield(L, -1, ModuleName);
-    lua_remove(L, -2);
-    lua_remove(L, -2);
-    return Type;
 }
 
 /**

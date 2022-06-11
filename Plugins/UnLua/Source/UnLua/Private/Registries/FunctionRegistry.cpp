@@ -12,12 +12,12 @@ namespace UnLua
 
     void FFunctionRegistry::NotifyUObjectDeleted(UObject* Object)
     {
-        if (!LuaFunctions.Contains((ULuaFunction*)Object))
+        const auto Function = (ULuaFunction*)Object;
+        const auto Info = LuaFunctions.Find(Function);
+        if (!Info)
             return;
-
-        FFunctionInfo Info;
-        LuaFunctions.RemoveAndCopyValue((ULuaFunction*)Object, Info);
-        luaL_unref(Env->GetMainState(), LUA_REGISTRYINDEX, Info.LuaRef);
+        luaL_unref(Env->GetMainState(), LUA_REGISTRYINDEX, Info->LuaRef);
+        LuaFunctions.Remove(Function);
     }
 
     void FFunctionRegistry::Invoke(ULuaFunction* Function, UObject* Context, FFrame& Stack, RESULT_DECL)

@@ -82,9 +82,8 @@ namespace UnLua
         lua_remove(L, -2);
     }
 
-    int FObjectRegistry::Bind(UObject* Object, const char* ModuleName)
+    int FObjectRegistry::Bind(UObject* Object)
     {
-        // TODO: remove dependency of module name
         if (const auto Exists = ObjectRefs.Find(Object))
         {
             if (*Exists != LUA_NOREF)
@@ -105,10 +104,10 @@ namespace UnLua
 
         // in some case may occur module or object metatable can 
         // not be found problem
-        int32 TypeModule = GetLoadedModule(L, ModuleName); // push the required module/table ('REQUIRED_MODULE') to the top of the stack
+        const auto ClassBoundRef = Env->GetManager()->GetBoundRef(Object->GetClass());
+        int32 TypeModule = lua_rawgeti(L, LUA_REGISTRYINDEX, ClassBoundRef); // push the required module/table ('REQUIRED_MODULE') to the top of the stack
         int32 TypeMetatable = lua_getmetatable(L, -2); // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
-        if ((TypeModule != LUA_TTABLE)
-            || (0 == TypeMetatable))
+        if (TypeModule != LUA_TTABLE || TypeMetatable == LUA_TNIL)
         {
             lua_pop(L, lua_gettop(L) - OldTop);
             return LUA_REFNIL;
