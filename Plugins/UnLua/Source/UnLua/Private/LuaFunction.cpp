@@ -17,6 +17,9 @@
 #include "UnLuaModule.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
+static constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
+static auto OverriddenSuffix = FUTF8ToTCHAR("__Overridden");
+
 DEFINE_FUNCTION(ULuaFunction::execCallLua)
 {
     const auto LuaFunction = Cast<ULuaFunction>(Stack.CurrentNativeFunction);
@@ -50,9 +53,9 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
             return true;
         }
 
-        const auto OverriddenName = FString::Printf(TEXT("%s%s"), *Function->GetName(), TEXT("__Overridden"));
-        constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
+        const auto OverriddenName = FString::Printf(TEXT("%s%s"), *Function->GetName(), OverriddenSuffix.Get());
         Function->Rename(*OverriddenName, Function->GetOuter(), RenameFlags);
+        Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
     }
     else
     {
@@ -102,6 +105,31 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
     }
 
     return true;
+}
+
+void ULuaFunction::RestoreOverrides(UClass* Class)
+{
+    auto Current = &Class->Children;
+    while (*Current)
+    {
+        auto LuaFunction = Cast<ULuaFunction>(*Current);
+        if (!LuaFunction)
+        {
+            Current = &(*Current)->Next;
+            continue;
+        }
+
+        *Current = LuaFunction->Next;
+        const auto Overridden = LuaFunction->GetOverridden();
+        if (Overridden && Overridden->GetOuter() == Class)
+        {
+            check(Overridden->GetName().EndsWith(OverriddenSuffix.Get()));
+            Class->RemoveFunctionFromFunctionMap(Overridden);
+            LuaFunction->ConditionalBeginDestroy();
+            Overridden->Rename(*Overridden->GetName().LeftChop(OverriddenSuffix.Length()), nullptr, RenameFlags);
+            Class->AddFunctionToFunctionMap(Overridden, Overridden->GetFName());
+        }
+    }
 }
 
 void ULuaFunction::GetOverridableFunctions(UClass* Class, TMap<FName, UFunction*>& Functions)
@@ -157,4 +185,5 @@ void ULuaFunction::Bind()
     }
     Super::Bind();
 }
+
 #endif

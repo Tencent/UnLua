@@ -21,6 +21,7 @@ namespace UnLua
 {
     class FLuaEnv;
 }
+
 class FFunctionDesc;
 
 UCLASS()
@@ -35,6 +36,9 @@ public:
     static bool IsOverridable(const UFunction* Function);
 
     static bool Override(UFunction* Function, UClass* Outer, FName NewName);
+
+    /** 还原指定UClass上所有覆写的UFunction */
+    static void RestoreOverrides(UClass* Class);
 
     /*
      * Get all UFUNCTION that can be overrode
