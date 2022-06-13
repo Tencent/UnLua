@@ -197,7 +197,7 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
         {
             if (Property->PropertyFlags & CPF_OutParm)
             {
-                Stack.Step(Stack.Object, nullptr);
+                Stack.Step(Stack.Object, Property->ContainerPtrToValuePtr<uint8>(InParms));
 
                 CA_SUPPRESS(6263)
                 FOutParmRec* Out = (FOutParmRec*)FMemory_Alloca(sizeof(FOutParmRec));
@@ -601,18 +601,6 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         if (Property->IsReturnParameter())
         {
             continue;
-        }
-
-        const bool bIsOutParameter = static_cast<bool>(Property->GetProperty()->PropertyFlags & CPF_OutParm);
-        if (bIsOutParameter)
-        {
-            OutParam = FindOutParmRec(OutParam, Property->GetProperty());
-            if (OutParam)
-            {
-                Property->GetValueInternal(L, OutParam->PropAddr, false);
-                OutParam = OutParam->NextOutParm;
-                continue;
-            }
         }
 
         Property->GetValue(L, InParams, false);
