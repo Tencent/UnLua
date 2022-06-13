@@ -301,7 +301,7 @@ namespace UnLua
         }
 
         const bool bIsCDO = Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject);
-        if (bIsCDO && (Object->GetFlags() & RF_NeedInitialization))
+        if ((bIsCDO && (Object->GetFlags() & RF_NeedInitialization)) || Class->GetName().Contains(TEXT("SKEL_")))
             return false;
 
         FString ModuleName;
