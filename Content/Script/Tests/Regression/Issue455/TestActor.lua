@@ -2,18 +2,15 @@ require "UnLua"
 
 local M = Class()
 
-function M:Test1(Array1)
-    print("=======Test1 Start Array1=", Array1)
-    for i=1, Array1:Num() do
-        print("Test1:", i, Array1[i])
+function M:Test(IntArray,StringArray)
+    print("=======Test ", IntArray,StringArray)
+    for i=1, IntArray:Num() do
+        print("IntArray:", i, IntArray[i])
+    end
+    for i=1, StringArray:Num() do
+        print("StringArray:", i, StringArray[i])
     end
 end
 
-function M:Test2(Array2)
-    print("=======Test2 Start Array2=", Array2)
-    for i=1, Array2:Num() do
-        print("Test2:", i, Array2[i])
-    end
-end
 
 return M
