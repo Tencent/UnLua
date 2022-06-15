@@ -20,7 +20,6 @@ public class TPSProjectServerTarget : TargetRules
     {
         Type = TargetType.Server;
         DefaultBuildSettings = BuildSettingsVersion.V2;
-        bUsePDBFiles = true;
         ExtraModuleNames.Add("TPSProject");
     }
 }
