@@ -20,6 +20,21 @@
 static constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
 static auto OverriddenSuffix = FUTF8ToTCHAR("__Overridden");
 
+TMap<UClass*, UClass*> ULuaFunction::SuspendedOverrides;
+
+static UClass* MakeOrphanedClass(const UClass* Class)
+{
+    FString OrphanedClassString = FString::Printf(TEXT("ORPHANED_DATA_ONLY_%s"), *Class->GetName());
+    FName OrphanedClassName = MakeUniqueObjectName(GetTransientPackage(), UBlueprintGeneratedClass::StaticClass(), FName(*OrphanedClassString));
+    UClass* OrphanedClass = NewObject<UBlueprintGeneratedClass>(GetTransientPackage(), OrphanedClassName, RF_Public | RF_Transient);
+    OrphanedClass->ClassAddReferencedObjects = Class->AddReferencedObjects;
+    OrphanedClass->ClassFlags |= CLASS_CompiledFromBlueprint;
+#if WITH_EDITOR
+    OrphanedClass->ClassGeneratedBy = Class->ClassGeneratedBy;
+#endif
+    return OrphanedClass;
+}
+
 DEFINE_FUNCTION(ULuaFunction::execCallLua)
 {
     const auto LuaFunction = Cast<ULuaFunction>(Stack.CurrentNativeFunction);
@@ -54,7 +69,7 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
         }
 
         const auto OverriddenName = FString::Printf(TEXT("%s%s"), *Function->GetName(), OverriddenSuffix.Get());
-        Function->Rename(*OverriddenName, Function->GetOuter(), RenameFlags);
+        Function->Rename(*OverriddenName, nullptr, RenameFlags);
         Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
     }
     else
@@ -74,7 +89,7 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
     DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
     DuplicationParams.DestName = NewName;
     DuplicationParams.DestClass = StaticClass();
-    LuaFunction = Cast<ULuaFunction>(StaticDuplicateObjectEx(DuplicationParams));
+    LuaFunction = static_cast<ULuaFunction*>(StaticDuplicateObjectEx(DuplicationParams));
     LuaFunction->FunctionFlags |= FUNC_Native;
     LuaFunction->Overridden = Function;
     LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
@@ -109,15 +124,7 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
 
 void ULuaFunction::RestoreOverrides(UClass* Class)
 {
-    FString OrphanedClassString = FString::Printf(TEXT("ORPHANED_DATA_ONLY_%s"), *Class->GetName());
-    FName OrphanedClassName = MakeUniqueObjectName(GetTransientPackage(), UBlueprintGeneratedClass::StaticClass(), FName(*OrphanedClassString));
-    UClass* OrphanedClass = NewObject<UBlueprintGeneratedClass>(GetTransientPackage(), OrphanedClassName, RF_Public | RF_Transient);
-    OrphanedClass->ClassAddReferencedObjects = Class->AddReferencedObjects;
-    OrphanedClass->ClassFlags |= CLASS_CompiledFromBlueprint;
-#if WITH_EDITOR
-    OrphanedClass->ClassGeneratedBy = Class->ClassGeneratedBy;
-#endif
-    
+    auto OrphanedClass = MakeOrphanedClass(Class);
     auto Current = &Class->Children;
     while (*Current)
     {
@@ -141,6 +148,66 @@ void ULuaFunction::RestoreOverrides(UClass* Class)
         }
     }
     Class->ClearFunctionMapsCaches();
+}
+
+void ULuaFunction::SuspendOverrides(UClass* Class)
+{
+    check(!SuspendedOverrides.Contains(Class));
+    auto OrphanedClass = MakeOrphanedClass(Class);
+    SuspendedOverrides.Add(Class, OrphanedClass);
+
+    auto Current = &Class->Children;
+    while (*Current)
+    {
+        auto LuaFunction = Cast<ULuaFunction>(*Current);
+        if (!LuaFunction)
+        {
+            Current = &(*Current)->Next;
+            continue;
+        }
+
+        *Current = LuaFunction->Next;
+        const auto Overridden = LuaFunction->GetOverridden();
+        if (!Overridden || Overridden->GetOuter() != Class)
+            continue;
+
+        LuaFunction->Rename(nullptr, OrphanedClass, RenameFlags);
+        Overridden->Rename(*Overridden->GetName().LeftChop(OverriddenSuffix.Length()), nullptr, RenameFlags);
+
+        const auto OrphanedNext = OrphanedClass->Children;
+        OrphanedClass->Children = LuaFunction;
+        LuaFunction->Next = OrphanedNext;
+    }
+}
+
+void ULuaFunction::ResumeOverrides(UClass* Class)
+{
+    auto& Origin = *Class;
+    auto& Orphaned = *SuspendedOverrides.FindAndRemoveChecked(Class);
+
+    auto Current = Orphaned.Children;
+    while (Current)
+    {
+        auto LuaFunction = Cast<ULuaFunction>(Current);
+        if (!LuaFunction)
+        {
+            Current = Current->Next;
+            continue;
+        }
+
+        const auto Next = Current->Next;
+        Current->Next = Origin.Children;
+        Origin.Children = Current;
+        Current = Next;
+
+        const auto Overridden = LuaFunction->GetOverridden();
+        if (!Overridden)
+            continue;
+
+        const auto Name = Overridden->GetName();
+        Overridden->Rename(*(Name + OverriddenSuffix.Get()), nullptr, RenameFlags);
+        LuaFunction->Rename(nullptr, Overridden->GetOuter(), RenameFlags);
+    }
 }
 
 void ULuaFunction::GetOverridableFunctions(UClass* Class, TMap<FName, UFunction*>& Functions)

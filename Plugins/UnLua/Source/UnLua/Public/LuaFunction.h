@@ -37,9 +37,25 @@ public:
 
     static bool Override(UFunction* Function, UClass* Outer, FName NewName);
 
-    /** 还原指定UClass上所有覆写的UFunction */
+    /**
+     * 还原指定UClass上所有覆写的UFunction。
+     * 在退出PIE时使用。
+     * @return 返回一个临时UClass，其中包含了所有被抽出来的ULuaFunction
+     */
     static void RestoreOverrides(UClass* Class);
 
+    /**
+     * 临时挂起指定UClass上所有覆写的ULuaFunction，用于后续恢复。
+     * 在PIE保存UPackage时使用，避免ULuaFunction随着UClass被序列化到本地。
+     */
+    static void SuspendOverrides(UClass* Class);
+
+    /**
+     * 恢复指定UClass临时挂起的ULuaFunction。
+     * 在PIE保存UPackage完成后使用。
+     */
+    static void ResumeOverrides(UClass* Class);
+    
     /*
      * Get all UFUNCTION that can be overrode
      */
@@ -61,4 +77,5 @@ public:
 private:
     TWeakObjectPtr<UFunction> Overridden;
     TSharedPtr<FFunctionDesc> Desc;
+    static TMap<UClass*, UClass*> SuspendedOverrides;
 };
