@@ -17,11 +17,10 @@
 #include "UObject/UObjectHash.h"
 
 #if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 26
-void ForEachObjectWithPackage(const class UPackage* Package, TFunctionRef<bool(UObject*)> Operation, bool bIncludeNestedObjects, EObjectFlags ExclusionFlags,
-                              EInternalObjectFlags ExclusionInternalFlags)
+void ForEachObjectWithPackage(const class UPackage* Package, TFunctionRef<bool(UObject*)> Operation, bool bIncludeNestedObjects, EObjectFlags ExclusionFlags, EInternalObjectFlags ExclusionInternalFlags)
 {
     check(Package != nullptr);
     auto WrappedOperation = [Operation](UObject* Obj) { Operation(Obj); };
-    ForEachObjectWithOuter(Package, WrappedOperation, bIncludeNestedObjects, ExclusionFlags);
+    ForEachObjectWithOuter(Package, WrappedOperation, bIncludeNestedObjects, ExclusionFlags, ExclusionInternalFlags);
 }
 #endif
