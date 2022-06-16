@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.2.2] - 2022-6-17
+
+### Added
+- 优化绑定检测流程，避免在大量对象创建时导致性能降低 [#457](https://github.com/Tencent/UnLua/pull/457)
+- 通过菜单快速在文件管理器中打开绑定的Lua文件 [#437](https://github.com/Tencent/UnLua/pull/437)
+- 防止Lua代码无限循环超时设置 [#428](https://github.com/Tencent/UnLua/pull/428)
+- 支持添加多播代理绑定相同脚本不同对象实例函数 [#439](https://github.com/Tencent/UnLua/pull/439)
+- 更准确的内存分配统计
+- `lua.gc` 控制台命令
+- UnLua 运行时/编辑器设置的子菜单
+- 编辑器设置支持中文显示
+
+### Fixed
+- 命令行 `-server` 启动时 `UnLuaModule` 没有启动 [#440](https://github.com/Tencent/UnLua/issues/440)
+- `TArray` 和 `TMap` 进行 `pairs` 遍历时使用引用而不是复制 [#442](https://github.com/Tencent/UnLua/pull/442)
+- 实现了FTickableGameObject的对象在Tick里调用自身被Lua覆写的方法会崩溃 [#446](https://github.com/Tencent/UnLua/issues/440)
+- 返回 `TSubclassOf<>` 到C++为空 [#445](https://github.com/Tencent/UnLua/issues/445)
+- UE4.27下无法通过UE.XXX访问游戏项目模块中导出的原生类型 [#448](https://github.com/Tencent/UnLua/issues/448)
+- 从Lua按传递引用到蓝图的TArray引用变成了空Array [#453](https://github.com/Tencent/UnLua/issues/453)
+- PIE过程中如果保存了覆写的蓝图，会导致蓝图资源损坏 [#465](https://github.com/Tencent/UnLua/issues/465)
+- CDO绑定时需要过滤掉 `SKEL` 类型的对象 [#460](https://github.com/Tencent/UnLua/pull/460)
+- 分配在栈上的本地变量会引起 `CacheScriptContainer` 缓存错误导致崩溃 [#455](https://github.com/Tencent/UnLua/issues/455)
+- 热重载时报 `invalid TArray/TMap` 的错误
+- PIE过程中如果保存了覆写的蓝图，会导致蓝图资源损坏 [#465](https://github.com/Tencent/UnLua/issues/465)
+
 ## [2.2.1] - 2022-5-25
 
 ### Added
