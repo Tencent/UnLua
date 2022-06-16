@@ -109,6 +109,15 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
 
 void ULuaFunction::RestoreOverrides(UClass* Class)
 {
+    FString OrphanedClassString = FString::Printf(TEXT("ORPHANED_DATA_ONLY_%s"), *Class->GetName());
+    FName OrphanedClassName = MakeUniqueObjectName(GetTransientPackage(), UBlueprintGeneratedClass::StaticClass(), FName(*OrphanedClassString));
+    UClass* OrphanedClass = NewObject<UBlueprintGeneratedClass>(GetTransientPackage(), OrphanedClassName, RF_Public | RF_Transient);
+    OrphanedClass->ClassAddReferencedObjects = Class->AddReferencedObjects;
+    OrphanedClass->ClassFlags |= CLASS_CompiledFromBlueprint;
+#if WITH_EDITOR
+    OrphanedClass->ClassGeneratedBy = Class->ClassGeneratedBy;
+#endif
+    
     auto Current = &Class->Children;
     while (*Current)
     {
@@ -125,11 +134,13 @@ void ULuaFunction::RestoreOverrides(UClass* Class)
         {
             check(Overridden->GetName().EndsWith(OverriddenSuffix.Get()));
             Class->RemoveFunctionFromFunctionMap(Overridden);
-            LuaFunction->ConditionalBeginDestroy();
+            LuaFunction->Rename(nullptr, OrphanedClass, RenameFlags);
+            FLinkerLoad::InvalidateExport(LuaFunction);
             Overridden->Rename(*Overridden->GetName().LeftChop(OverriddenSuffix.Length()), nullptr, RenameFlags);
             Class->AddFunctionToFunctionMap(Overridden, Overridden->GetFName());
         }
     }
+    Class->ClearFunctionMapsCaches();
 }
 
 void ULuaFunction::GetOverridableFunctions(UClass* Class, TMap<FName, UFunction*>& Functions)
