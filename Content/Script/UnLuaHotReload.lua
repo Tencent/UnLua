@@ -45,7 +45,7 @@ local dump = function(tbl, max_indent)
             if type(k) == "number" then
                 ret = ret .. "[" .. k .. "] = "
             elseif type(k) == "string" then
-                ret = ret  .. k ..  "= "   
+                ret = ret  .. k ..  " = "   
             else
                 ret = ret  .. tostring(k) ..  " = "   
             end
@@ -77,8 +77,22 @@ end
 
 local table = table
 local debug = debug
+local pairs = pairs
 local origin_require = require
 local error_msg = ""
+
+local function safe_pairs(t)
+    local _next, _t, _nil = pairs(t)
+    local function safe_next(_t, i)
+        local ok, result, next_i, value = pcall(_next, _t, i)
+        if ok then
+            return result, next_i, value
+        else
+            return nil
+        end
+    end
+    return safe_next, _t, _nil
+end
 
 local function error_handler(err)
     print(error_msg .. "  " .. err .. "  " .. debug.traceback())
@@ -247,21 +261,21 @@ end
 --- 枚举出module中所有函数的upvalue，Lua在不同的闭包间访问相同的外部local变量时，使用的是同样的upvalue
 ---@param moudule table
 local function collect_module_upvalues(moudule)
-    local function GetFunctionUpValue(fun, resTable)
-        assert(type(fun) == "function")
+    local function collect_function_upvalues(func, upvalues)
+        assert(type(func) == "function")
         local i = 1
         while true do
-            local name, value = debug.getupvalue(fun, i)
+            local name, value = debug.getupvalue(func, i)
             if name == nil or name == "" then
                 break
             else
                 if not name:find("^[_%w]") then
                     error("Invalid upvalue : " .. table.concat(path, "."))
                 end
-                if not resTable[name] then
-                    resTable[name] = value
+                if not upvalues[name] then
+                    upvalues[name] = value
                     if type(value) == "function" then
-                        GetFunctionUpValue(value, resTable)
+                        collect_function_upvalues(value, upvalues)
                     end
                 end
             end
@@ -270,9 +284,9 @@ local function collect_module_upvalues(moudule)
     end
 
     local ret = {}
-    for k, v in pairs(moudule) do
+    for _, v in pairs(moudule) do
         if type(v) == "function" then
-            GetFunctionUpValue(v, ret)
+            collect_function_upvalues(v, ret)
         end
     end
     return ret
@@ -412,7 +426,7 @@ local function update_global(value_map)
             local mt = getmetatable(root)
             if mt then update_table(mt) end
             local ReplaceK = {}
-            for key, value in pairs(root) do
+            for key, value in safe_pairs(root) do
                 local nv = value_map[value]
                 if nv then
                     rawset(root, key, nv)
@@ -432,14 +446,14 @@ local function update_global(value_map)
         elseif t == "userdata" then
             local mt = getmetatable(root)
             if mt then update_table(mt) end
-            local UserValue = debug.getuservalue(root)
-            if UserValue then
-                local nv = value_map[UserValue]
+            local user_value = debug.getuservalue(root)
+            if user_value then
+                local nv = value_map[user_value]
                 if nv then
-                    debug.setuservalue(root, UserValue)
+                    debug.setuservalue(root, user_value)
                     update_table(nv)
                 else
-                    update_table(UserValue)
+                    update_table(user_value)
                 end
             end
         elseif t == "function" then
@@ -451,10 +465,8 @@ local function update_global(value_map)
                 else
                     local nv = value_map[v]
                     if nv then
-                        --print("UpdateGlobalIterate nv : ", name)
                         update_table(nv)
                     else
-                        --print("UpdateGlobalIterate v : ", name)
                         update_table(v)
                     end
                 end
