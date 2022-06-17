@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 分配在栈上的本地变量会引起 `CacheScriptContainer` 缓存错误导致崩溃 [#455](https://github.com/Tencent/UnLua/issues/455)
 - 热重载时报 `invalid TArray/TMap` 的错误
 - PIE过程中如果保存了覆写的蓝图，会导致蓝图资源损坏 [#465](https://github.com/Tencent/UnLua/issues/465)
+- Linux下带Editor编译报错 [#467](https://github.com/Tencent/UnLua/pull/467)
 
 ## [2.2.1] - 2022-5-25
 
