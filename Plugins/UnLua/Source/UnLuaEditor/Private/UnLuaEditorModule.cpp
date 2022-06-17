@@ -156,7 +156,7 @@ private:
 
     void OnPackageSaving(UPackage* Package)
     {
-        if (!GIsPlayInEditorWorld)
+        if (!GEditor || !GEditor->PlayWorld)
             return;
         
         ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
@@ -174,7 +174,7 @@ private:
 
     void OnPackageSaved(const FString& String, UObject* Object)
     {
-        if (!GIsPlayInEditorWorld)
+        if (!GEditor || !GEditor->PlayWorld)
             return;
         
         const auto Class = SuspendedPackages.FindAndRemoveChecked((UPackage*)Object);
