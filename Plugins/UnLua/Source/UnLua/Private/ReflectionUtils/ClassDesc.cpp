@@ -167,7 +167,14 @@ void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
 void FClassDesc::Load()
 {
     if (Struct.IsValid())
+    {
         return;
+    }
+
+    if (GIsGarbageCollecting)
+    {
+        return;
+    }
 
     UnLoad();
 
