@@ -891,7 +891,7 @@ namespace UnLua
         Buffer += TEXT("\r\n");
 
         // fields
-        for (const auto Property : Properties)
+        for (const auto& Property : Properties)
         {
             Property->GenerateIntelliSense(Buffer);
         }
@@ -917,7 +917,7 @@ namespace UnLua
         Buffer += TEXT("local M = {}\r\n");
 
         // fields
-        for (const auto Property : Properties)
+        for (const auto& Property : Properties)
         {
             FString Field;
             TArray<FString> OutArray;
