@@ -144,7 +144,7 @@ local function make_sandbox()
         return chunk, env
     end
 
-    local function require(module_name)
+    local function require(module_name, ...)
         -- https://github.com/lua/lua/blob/v5.4.0/loadlib.c#L680
         -- https://github.com/lua/lua/blob/v5.3/loadlib.c#L617
         -- lua5.4之后会返回2个值，这里保持一样的行为
@@ -162,7 +162,7 @@ local function make_sandbox()
 
         local func, env = load(module_name)
         if func then
-            local _, new_module = xpcall(func, error_handler)
+            local _, new_module = xpcall(func, error_handler, ...)
             if new_module == nil then
                 new_module = env
             end
@@ -174,7 +174,7 @@ local function make_sandbox()
                 return new_module, nil
             end
         else
-            return origin_require(module_name)
+            return origin_require(module_name, ...)
         end
         return env, nil
     end
@@ -198,13 +198,13 @@ local function make_sandbox()
         return loaded[obj] ~= nil
     end
 
-    proxy.require = function(module_name)
+    proxy.require = function(module_name, ...)
         if reloading then
             if loaded[module_name] ~= nil then
                 return loaded[module_name]
             end
         end
-        local ret = require(module_name)
+        local ret = require(module_name, ...)
         if reloading then
             loaded[module_name] = ret
             loaded[ret] = module_name
