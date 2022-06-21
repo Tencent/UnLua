@@ -146,6 +146,10 @@ void ULuaFunction::RestoreOverrides(UClass* Class)
             Overridden->Rename(*Overridden->GetName().LeftChop(OverriddenSuffix.Length()), nullptr, RenameFlags);
             Class->AddFunctionToFunctionMap(Overridden, Overridden->GetFName());
         }
+        else
+        {
+            Class->RemoveFunctionFromFunctionMap(LuaFunction);
+        }
     }
     Class->ClearFunctionMapsCaches();
 }
