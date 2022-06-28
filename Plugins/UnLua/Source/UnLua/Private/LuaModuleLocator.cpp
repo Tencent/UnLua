@@ -39,7 +39,7 @@ FString ULuaModuleLocator::Locate(const UObject* Object)
 
 FString ULuaModuleLocator_ByPackage::Locate(const UObject* Object)
 {
-    const auto Class = Object->GetClass();
+    const auto Class = Object->IsA<UClass>() ? static_cast<const UClass*>(Object) : Object->GetClass();
     const auto Key = Class->GetFName();
     const auto Cached = Cache.Find(Key);
     if (Cached)

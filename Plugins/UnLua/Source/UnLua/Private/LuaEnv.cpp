@@ -242,7 +242,7 @@ namespace UnLua
 
     bool FLuaEnv::TryBind(UObject* Object)
     {
-        UClass* Class = Object->GetClass();
+        const auto Class = Object->IsA<UClass>() ? static_cast<const UClass*>(Object) : Object->GetClass();
         if (Class->HasAnyClassFlags(CLASS_NewerVersionExists))
         {
             // filter out recompiled objects
@@ -272,6 +272,9 @@ namespace UnLua
 
             return GetManager()->Bind(Object, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
         }
+
+        if (Class->GetName().Contains(TEXT("SKEL_")))
+            return false;
 
         const auto ModuleName = ModuleLocator->Locate(Object);
         if (ModuleName.IsEmpty())
