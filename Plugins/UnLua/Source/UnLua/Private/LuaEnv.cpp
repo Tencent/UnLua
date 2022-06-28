@@ -242,7 +242,7 @@ namespace UnLua
 
     bool FLuaEnv::TryBind(UObject* Object)
     {
-        const auto Class = Object->IsA<UClass>() ? static_cast<const UClass*>(Object) : Object->GetClass();
+        const auto Class = Object->IsA<UClass>() ? static_cast<UClass*>(Object) : Object->GetClass();
         if (Class->HasAnyClassFlags(CLASS_NewerVersionExists))
         {
             // filter out recompiled objects
