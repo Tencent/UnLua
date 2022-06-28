@@ -106,13 +106,8 @@ namespace UnLua
 
                 for (const auto Class : TObjectRange<UClass>())
                 {
-                    if (Class->ImplementsInterface(UUnLuaInterface::StaticClass()) && !Class->HasAnyClassFlags(CLASS_Abstract | CLASS_Deprecated | CLASS_NewerVersionExists))
-                    {
-                        const auto Env = EnvLocator->Locate(Class);
-                        const auto CDO = Class->GetDefaultObject(false);
-                        if (CDO)
-                            Env->TryBind(CDO);
-                    }
+                    const auto Env = EnvLocator->Locate(Class);
+                    Env->TryBind(Class);
                 }
             }
             else

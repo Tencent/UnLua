@@ -243,9 +243,9 @@ namespace UnLua
     bool FLuaEnv::TryBind(UObject* Object)
     {
         UClass* Class = Object->GetClass();
-        if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>() || Class->HasAnyClassFlags(CLASS_NewerVersionExists))
+        if (Class->HasAnyClassFlags(CLASS_NewerVersionExists))
         {
-            // filter out UPackage and UClass and recompiled objects
+            // filter out recompiled objects
             return false;
         }
 
