@@ -40,7 +40,7 @@ struct FUnLuaTest_Issue346 : FUnLuaTestBase
         
         const auto Chunk = R"(
             local FunctionLibrary = UE.UObject.Load("/UnLuaTestSuite/Tests/Regression/Issue346/BFL_Issue346.BFL_Issue346_C")
-            local Result = FunctionLibrary.Test()
+            local Result = FunctionLibrary.Test("lua")
             return Result
         )";
         UnLua::RunChunk(L, Chunk);

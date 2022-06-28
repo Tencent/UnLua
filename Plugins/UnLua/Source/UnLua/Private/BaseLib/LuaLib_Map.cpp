@@ -107,7 +107,6 @@ static int32 TMap_Pairs(lua_State* L)
 
     if (!Map)
     {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TMap!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 

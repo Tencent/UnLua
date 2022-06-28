@@ -603,7 +603,7 @@ public:
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
-        NameProperty->SetPropertyValue(ValuePtr, FName(lua_tostring(L, IndexInStack)));
+        NameProperty->SetPropertyValue(ValuePtr, FName(UTF8_TO_TCHAR(lua_tostring(L, IndexInStack))));
         return true;
     }
 
@@ -780,11 +780,7 @@ public:
             {
                 if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
-                    if (Src->ElementSize == ArrayProperty->ElementSize)
-                    {
-                        FMemory::Memcpy(ValuePtr, Src->ScriptArray, sizeof(FScriptArray)); // shallow copy
-                    }
-                    else if (Src->ElementSize < ArrayProperty->ElementSize)
+                    if (Src->ElementSize < ArrayProperty->ElementSize)
                     {
                         FScriptArrayHelper Helper(ArrayProperty, ValuePtr);
                         if (Src->Num() > 0)
@@ -796,6 +792,10 @@ public:
                                 Src->Get(ArrayIndex, Dst);
                             }
                         }
+                    }
+                    else
+                    {
+                        FMemory::Memcpy(ValuePtr, Src->ScriptArray, sizeof(FScriptArray)); // shallow copy
                     }
                     return false;
                 }

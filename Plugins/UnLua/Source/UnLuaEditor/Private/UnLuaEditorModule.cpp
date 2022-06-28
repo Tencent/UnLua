@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Compat/UObjectHash.h"
 #include "UnLuaPrivate.h"
 #include "UnLuaEditorStyle.h"
 #include "UnLuaEditorCommands.h"
@@ -71,20 +72,26 @@ public:
 
         FUnLuaEditorCommands::Register();
 
-        OnPostEngineInitHandle = FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnLuaEditorModule::OnPostEngineInit);
+        FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnLuaEditorModule::OnPostEngineInit);
 
         MainMenuToolbar = MakeShareable(new FMainMenuToolbar);
         BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
         AnimationBlueprintToolbar = MakeShareable(new FAnimationBlueprintToolbar);
 
         UUnLuaEditorFunctionLibrary::WatchScriptDirectory();
+
+        UPackage::PreSavePackageEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaving);
+        UPackage::PackageSavedEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaved);
     }
 
     virtual void ShutdownModule() override
     {
         FUnLuaEditorCommands::Unregister();
-        FCoreDelegates::OnPostEngineInit.Remove(OnPostEngineInitHandle);
+        FCoreDelegates::OnPostEngineInit.RemoveAll(this);
         UnregisterSettings();
+
+        UPackage::PreSavePackageEvent.RemoveAll(this);
+        UPackage::PackageSavedEvent.RemoveAll(this);
     }
 
 private:
@@ -147,13 +154,40 @@ private:
         return true;
     }
 
+    void OnPackageSaving(UPackage* Package)
+    {
+        if (!GEditor || !GEditor->PlayWorld)
+            return;
+        
+        ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
+        {
+            const auto Class = Cast<UClass>(Object);
+            if (!Class)
+                return true;
+            ULuaFunction::SuspendOverrides(Class);
+            SuspendedPackages.Add(Package, Class);
+            return false;
+        }, false);
+
+        UE_LOG(LogUnLua, Log, TEXT("OnPackageSaving:%s"), *Package->GetFullName());
+    }
+
+    void OnPackageSaved(const FString& String, UObject* Object)
+    {
+        if (!GEditor || !GEditor->PlayWorld)
+            return;
+        
+        const auto Class = SuspendedPackages.FindAndRemoveChecked((UPackage*)Object);
+        ULuaFunction::ResumeOverrides(Class);
+        UE_LOG(LogUnLua, Log, TEXT("OnPackageSaved:%s %s"), *String, *Object->GetFullName());
+    }
+
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
     TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
     TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
     TSharedPtr<FUnLuaIntelliSenseGenerator> IntelliSenseGenerator;
     TSharedPtr<ISlateStyle> Style;
-
-    FDelegateHandle OnPostEngineInitHandle;
+    TMap<UPackage*, UClass*> SuspendedPackages;
 };
 
 #undef LOCTEXT_NAMESPACE
