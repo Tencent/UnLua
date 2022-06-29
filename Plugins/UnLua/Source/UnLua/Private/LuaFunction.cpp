@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 
+#include "Engine/BlueprintGeneratedClass.h"
 #include "LuaFunction.h"
 #include "UnLuaModule.h"
 #include "ReflectionUtils/PropertyDesc.h"
