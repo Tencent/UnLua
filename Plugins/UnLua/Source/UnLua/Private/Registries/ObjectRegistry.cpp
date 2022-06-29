@@ -104,7 +104,8 @@ namespace UnLua
 
         // in some case may occur module or object metatable can 
         // not be found problem
-        const auto ClassBoundRef = Env->GetManager()->GetBoundRef(Object->GetClass());
+        const auto Class = Object->IsA<UClass>() ? static_cast<UClass*>(Object) : Object->GetClass();
+        const auto ClassBoundRef = Env->GetManager()->GetBoundRef(Class);
         int32 TypeModule = lua_rawgeti(L, LUA_REGISTRYINDEX, ClassBoundRef); // push the required module/table ('REQUIRED_MODULE') to the top of the stack
         int32 TypeMetatable = lua_getmetatable(L, -2); // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
         if (TypeModule != LUA_TTABLE || TypeMetatable == LUA_TNIL)

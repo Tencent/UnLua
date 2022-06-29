@@ -58,7 +58,7 @@ bool UUnLuaManager::Bind(UObject *Object, const TCHAR *InModuleName, int32 Initi
 {
     check(Object);
 
-    UClass* Class = Object->GetClass();
+    const auto Class = Object->IsA<UClass>() ? static_cast<UClass*>(Object) : Object->GetClass();
     lua_State *L = Env->GetMainState();
 
     if (!Env->GetClassRegistry()->Register(Class))
@@ -91,6 +91,7 @@ bool UUnLuaManager::Bind(UObject *Object, const TCHAR *InModuleName, int32 Initi
     }
 
     // create a Lua instance for this UObject
+    Env->GetObjectRegistry()->Bind(Class);
     Env->GetObjectRegistry()->Bind(Object);
 
     // try call user first user function handler
