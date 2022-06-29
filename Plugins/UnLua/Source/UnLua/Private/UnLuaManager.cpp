@@ -55,16 +55,8 @@ UUnLuaManager::UUnLuaManager()
  * Bind a Lua module for a UObject
  */
 bool UUnLuaManager::Bind(UObject *Object, const TCHAR *InModuleName, int32 InitializerTableRef)
-{   
-    if (!Object)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("Invalid target object!"));
-        return false;
-    }
-
-#if UNLUA_ENABLE_DEBUG != 0
-    UE_LOG(LogUnLua, Log, TEXT("UUnLuaManager::Bind : %p,%s,%s"), Object, *Object->GetName(),InModuleName);
-#endif
+{
+    check(Object);
 
     UClass* Class = Object->GetClass();
     lua_State *L = Env->GetMainState();

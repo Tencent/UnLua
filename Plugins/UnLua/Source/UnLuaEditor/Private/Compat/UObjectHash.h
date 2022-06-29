@@ -12,14 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-using UnrealBuildTool;
+#pragma once
 
-public class TPSProjectServerTarget : TargetRules
-{
-    public TPSProjectServerTarget(TargetInfo Target) : base(Target)
-    {
-        Type = TargetType.Server;
-        DefaultBuildSettings = BuildSettingsVersion.V2;
-        ExtraModuleNames.Add("TPSProject");
-    }
-}
+#include "UObject/UObjectHash.h"
+
+#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 26
+void ForEachObjectWithPackage(const class UPackage* Outer, TFunctionRef<bool(UObject*)> Operation, bool bIncludeNestedObjects = true, EObjectFlags ExclusionFlags = RF_NoFlags, EInternalObjectFlags ExclusionInternalFlags = EInternalObjectFlags::None);
+#endif

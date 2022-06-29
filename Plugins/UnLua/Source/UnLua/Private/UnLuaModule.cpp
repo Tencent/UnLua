@@ -28,6 +28,7 @@
 #include "DefaultParamCollection.h"
 #include "LuaEnvLocator.h"
 #include "UnLuaDebugBase.h"
+#include "UnLuaInterface.h"
 #include "UnLuaSettings.h"
 #include "GameFramework/PlayerController.h"
 #include "Registries/ClassRegistry.h"
@@ -101,7 +102,13 @@ namespace UnLua
                 const auto EnvLocatorClass = *Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : *Settings.EnvLocatorClass;
                 EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
                 EnvLocator->AddToRoot();
-                FDeadLoopCheck::Timeout = Settings.DeadLoopCheck; 
+                FDeadLoopCheck::Timeout = Settings.DeadLoopCheck;
+
+                for (const auto Class : TObjectRange<UClass>())
+                {
+                    const auto Env = EnvLocator->Locate(Class);
+                    Env->TryBind(Class);
+                }
             }
             else
             {
@@ -115,6 +122,12 @@ namespace UnLua
                 FClassRegistry::Cleanup();
                 FEnumRegistry::Cleanup();
                 GPropertyCreator.Cleanup();
+
+                for (const auto Class : TObjectRange<UClass>())
+                {
+                    if (Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
+                        ULuaFunction::RestoreOverrides(Class);
+                }
             }
 
             bIsActive = bActive;

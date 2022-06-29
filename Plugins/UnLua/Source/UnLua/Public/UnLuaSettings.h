@@ -16,6 +16,7 @@
 
 #include "CoreMinimal.h"
 #include "LuaEnvLocator.h"
+#include "LuaModuleLocator.h"
 #include "UnLuaSettings.generated.h"
 
 
@@ -34,4 +35,7 @@ public:
     /** Class of LuaEnvLocator, which handles lua env locating for each UObject. */
     UPROPERTY(Config, EditAnywhere, Category="Runtime", Meta=(AllowAbstract="false"))
     TSubclassOf<ULuaEnvLocator> EnvLocatorClass = ULuaEnvLocator::StaticClass();
+
+    UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(AllowAbstract="false", DisplayName="LuaModuleLocator"))
+    TSubclassOf<ULuaModuleLocator> ModuleLocatorClass = ULuaModuleLocator::StaticClass();
 };

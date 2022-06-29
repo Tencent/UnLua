@@ -14,6 +14,7 @@
     "IsBetaVersion": false,
     "Installed": false,
     "CanBeUsedWithUnrealHeaderTool": true,
+    "EnabledByDefault": false,
     "Plugins": [
         {
             "Name": "UnLua",

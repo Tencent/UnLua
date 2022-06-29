@@ -603,7 +603,7 @@ public:
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
-        NameProperty->SetPropertyValue(ValuePtr, FName(lua_tostring(L, IndexInStack)));
+        NameProperty->SetPropertyValue(ValuePtr, FName(UTF8_TO_TCHAR(lua_tostring(L, IndexInStack))));
         return true;
     }
 

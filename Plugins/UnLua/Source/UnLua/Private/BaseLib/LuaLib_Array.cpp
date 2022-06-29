@@ -91,7 +91,6 @@ static int32 TArray_Pairs(lua_State* L)
 
     if (!Array)
     {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 

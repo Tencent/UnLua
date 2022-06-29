@@ -1,4 +1,4 @@
-// Tencent is pleased to support the open source community by making UnLua available.
+﻿// Tencent is pleased to support the open source community by making UnLua available.
 // 
 // Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
 //
@@ -12,14 +12,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-using UnrealBuildTool;
+#pragma once
 
-public class TPSProjectServerTarget : TargetRules
+#include "CoreMinimal.h"
+#include "LuaModuleLocator.generated.h"
+
+UCLASS()
+class UNLUA_API ULuaModuleLocator : public UObject
 {
-    public TPSProjectServerTarget(TargetInfo Target) : base(Target)
-    {
-        Type = TargetType.Server;
-        DefaultBuildSettings = BuildSettingsVersion.V2;
-        ExtraModuleNames.Add("TPSProject");
-    }
-}
+    GENERATED_BODY()
+public:
+    virtual FString Locate(const UObject* Object);
+};
+
+UCLASS()
+class UNLUA_API ULuaModuleLocator_ByPackage : public ULuaModuleLocator
+{
+    GENERATED_BODY()
+public:
+    virtual FString Locate(const UObject* Object) override;
+
+private:
+    TMap<FName, FString> Cache;
+};
+

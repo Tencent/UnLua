@@ -29,6 +29,7 @@
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
 #include "UnLuaLegacy.h"
+#include "UnLuaSettings.h"
 
 namespace UnLua
 {
@@ -39,6 +40,9 @@ namespace UnLua
 
     FLuaEnv::FLuaEnv()
     {
+        const auto Settings = GetDefault<UUnLuaSettings>();
+        ModuleLocator = Settings->ModuleLocatorClass.GetDefaultObject();
+
         RegisterDelegates();
 
         L = lua_newstate(GetLuaAllocator(), nullptr);
@@ -238,24 +242,29 @@ namespace UnLua
 
     bool FLuaEnv::TryBind(UObject* Object)
     {
-        UClass* Class = Object->GetClass();
-        if (Class->IsChildOf<UPackage>() || Class->IsChildOf<UClass>() || Class->HasAnyClassFlags(CLASS_NewerVersionExists))
+        const auto Class = Object->IsA<UClass>() ? static_cast<UClass*>(Object) : Object->GetClass();
+        if (Class->HasAnyClassFlags(CLASS_NewerVersionExists))
         {
-            // filter out UPackage and UClass and recompiled objects
-            return false;
-        }
-
-        if (!IsInGameThread() || Object->HasAnyInternalFlags(AsyncObjectFlags))
-        {
-            // all bind operation should be in game thread, include dynamic bind
-            FScopeLock Lock(&CandidatesLock);
-            Candidates.AddUnique(Object);
+            // filter out recompiled objects
             return false;
         }
 
         static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
+        const bool bImplUnluaInterface = Class->ImplementsInterface(InterfaceClass);
+        
+        if (!IsInGameThread() || Object->HasAnyInternalFlags(AsyncObjectFlags))
+        {
+            // avoid adding too many objects, affecting performance.
+            if (bImplUnluaInterface || (!bImplUnluaInterface && GLuaDynamicBinding.IsValid(Class)))
+            {
+                // all bind operation should be in game thread, include dynamic bind
+                FScopeLock Lock(&CandidatesLock);
+                Candidates.AddUnique(Object);
+                return false;
+            }
+        }
 
-        if (!Class->ImplementsInterface(InterfaceClass))
+        if (!bImplUnluaInterface)
         {
             // dynamic binding
             if (!GLuaDynamicBinding.IsValid(Class))
@@ -264,49 +273,10 @@ namespace UnLua
             return GetManager()->Bind(Object, *GLuaDynamicBinding.ModuleName, GLuaDynamicBinding.InitializerTableRef);
         }
 
-        // filter some object in bp nest case
-        // RF_WasLoaded & RF_NeedPostLoad?
-        UObject* Outer = Object->GetOuter();
-        if (Outer
-            && Outer->GetFName().IsEqual("WidgetTree")
-            && Object->HasAllFlags(RF_NeedInitialization | RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
-        {
-            return false;
-        }
-
-        if (GWorld)
-        {
-            FString ObjectName;
-            Object->GetFullName(GWorld, ObjectName);
-            if (ObjectName.Contains(".WidgetArchetype:") || ObjectName.Contains(":WidgetTree."))
-            {
-                UE_LOG(LogUnLua, Warning, TEXT("Filter UObject of %s in WidgetArchetype"), *ObjectName);
-                return false;
-            }
-        }
-
-        UFunction* Func = Class->FindFunctionByName(FName("GetModuleName")); // find UFunction 'GetModuleName'. hard coded!!!
-        if (!Func)
+        if (Class->GetName().Contains(TEXT("SKEL_")))
             return false;
 
-        // native func may not be bind in level bp
-        if (!Func->GetNativeFunc())
-        {
-            Func->Bind();
-            if (!Func->GetNativeFunc())
-            {
-                UE_LOG(LogUnLua, Warning, TEXT("TryToBindLua: bind native function failed for GetModuleName in object %s"), *Object->GetName());
-                return false;
-            }
-        }
-
-        const bool bIsCDO = Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject);
-        if (bIsCDO && (Object->GetFlags() & RF_NeedInitialization))
-            return false;
-
-        FString ModuleName;
-        UObject* CDO = bIsCDO ? Object : Class->GetDefaultObject();
-        CDO->ProcessEvent(Func, &ModuleName);
+        const auto ModuleName = ModuleLocator->Locate(Object);
         if (ModuleName.IsEmpty())
             return false;
 
