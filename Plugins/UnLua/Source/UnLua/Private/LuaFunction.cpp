@@ -92,7 +92,7 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
     DuplicationParams.DestClass = StaticClass();
     LuaFunction = static_cast<ULuaFunction*>(StaticDuplicateObjectEx(DuplicationParams));
     LuaFunction->FunctionFlags |= FUNC_Native;
-    LuaFunction->Overridden = Function;
+    LuaFunction->Overridden = Function->IsA<ULuaFunction>() ? static_cast<ULuaFunction*>(Function)->GetOverridden() : Function;
     LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
     LuaFunction->SetNativeFunc(execCallLua);
 

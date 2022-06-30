@@ -50,7 +50,6 @@ struct FUnLuaTest_Issue346 : FUnLuaTestBase
         return true;
     }
 
-    
     virtual void TearDown() override
     {
         auto& Settings = *GetMutableDefault<UUnLuaSettings>();

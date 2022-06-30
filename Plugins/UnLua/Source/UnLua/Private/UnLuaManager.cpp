@@ -244,25 +244,31 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
         return true;
 
     const auto  L = Env->GetMainState();
+    const auto Top = lua_gettop(L);
     const auto Type = UnLua::LowLevel::GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
     if (Type != LUA_TTABLE)
     {
         Error = FString::Printf(TEXT("table needed got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+        lua_settop(L, Top);
         return false;
     }
 
-    // 一个LuaModule可能会被绑定到多种UClass，复制一个出来作为它们的实例的元表
-    lua_newtable(L);
-    lua_pushnil(L);
-    while (lua_next(L, -3) != 0)
+    if (!Class->IsChildOf<UBlueprintFunctionLibrary>())
     {
-        lua_pushvalue(L, -2);
-        lua_insert(L, -2);
-        lua_settable(L, -4);
+        // 一个LuaModule可能会被绑定到一个UClass和它的子类，复制一个出来作为它们的实例的元表
+        lua_newtable(L);
+        lua_pushnil(L);
+        while (lua_next(L, -3) != 0)
+        {
+            lua_pushvalue(L, -2);
+            lua_insert(L, -2);
+            lua_settable(L, -4);
+        }
     }
 
     lua_pushvalue(L, -1);
     const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_settop(L, Top);
 
     auto& BindInfo = Classes.Add(Class);
     BindInfo.Class = Class;
