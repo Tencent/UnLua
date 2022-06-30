@@ -12,12 +12,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Blueprint/UserWidget.h"
 #include "UnLuaTestCommon.h"
+#include "UnLuaTestHelpers.h"
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-struct FUnLuaTest_Issue288 : FUnLuaTestBase
+struct FUnLuaTest_Issue476 : FUnLuaTestBase
 {
     virtual bool InstantTest() override
     {
@@ -28,34 +30,29 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto Chunk1 = R"(
-        local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue288/UnLuaTestUMG_Issue288.UnLuaTestUMG_Issue288_C')
-        G_UMG = NewObject(UMGClass)
+        const auto Chunk = R"(
+            local Outer = NewObject(UE.UUnLuaTestStub)
+            local StubClass = UE.UClass.Load("/UnLuaTestSuite/Tests/Regression/Issue476/BP_UnLuaTestStub_Issue476.BP_UnLuaTestStub_Issue476_C")
+            G_Stub = NewObject(StubClass, Outer, "Tests.Regression.Issue476.TestStub")
+            return G_Stub
         )";
-        UnLua::RunChunk(L, Chunk1);
+        UnLua::RunChunk(L, Chunk);
 
-        auto Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
-        RUNNER_TEST_NOT_NULL(Texture2D);
-
-        const auto Chunk2 = R"(
-        G_UMG:Release()
-        G_UMG = nil
-        )";
-        UnLua::RunChunk(L, Chunk2);
-
-        lua_gc(L, LUA_GCCOLLECT, 0);
-        CollectGarbage(RF_NoFlags, true);
+        const FWeakObjectPtr Stub = UnLua::GetUObject(L, -1);
+        const FWeakObjectPtr Outer = Stub.Get()->GetOuter();
         CollectGarbage(RF_NoFlags, true);
 
-        Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
-        if (Texture2D)
-            UnLuaTestSuite::PrintReferenceChain(Texture2D);
-        RUNNER_TEST_NULL(Texture2D);
+        if (Stub.IsValid())
+            UnLuaTestSuite::PrintReferenceChain(Stub.Get());
+        if (Outer.IsValid())
+            UnLuaTestSuite::PrintReferenceChain(Outer.Get());
 
+        RUNNER_TEST_FALSE(Stub.IsValid());
+        RUNNER_TEST_FALSE(Outer.IsValid());
         return true;
     }
 };
 
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue288, TEXT("UnLua.Regression.Issue288 UMG里Image用到的Texture内存泄漏"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue476, TEXT("UnLua.Regression.Issue476 通过NewObject接口添加的UObject引用无法释放"))
 
 #endif

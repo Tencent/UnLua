@@ -247,4 +247,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(TestClass, PrettyName, (EAutomationTestFlags::C
     return true;\
     }
 
+namespace UnLuaTestSuite
+{
+    void PrintReferenceChain(UObject* Target);
+}
+
 #endif //WITH_DEV_AUTOMATION_TESTS
