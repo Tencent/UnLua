@@ -1,7 +1,5 @@
 require "UnLua"
 
-local UBPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
-
 local BP_WeaponBase_C = Class()
 
 local EFireType = {	FT_Projectile = 0, FT_InstantHit = 1 }
@@ -86,6 +84,7 @@ function BP_WeaponBase_C:InstantFire()
 end
 
 function BP_WeaponBase_C:GetFireInfo()
+	local UBPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 	local TraceStart, TraceDirection = UBPI_Interfaces.GetWeaponTraceInfo(self.Instigator)
 	local Delta = TraceDirection * self.WeaponTraceDistance
 	local TraceEnd = TraceStart + Delta

@@ -277,6 +277,9 @@ int32 UObject_Delete(lua_State *L)
         return 0;
 
     UObject* Object = (UObject*)*(void**)Userdata;
+    if (UnLua::LowLevel::IsReleasedPtr(Object))
+        return 0;
+
     UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->NotifyUObjectLuaGC(Object);
     return 0;
 }

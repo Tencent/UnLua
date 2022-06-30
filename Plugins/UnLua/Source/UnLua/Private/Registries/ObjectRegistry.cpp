@@ -73,10 +73,6 @@ namespace UnLua
             lua_pushlightuserdata(L, Object);
             lua_pushvalue(L, -2);
             lua_rawset(L, -4);
-
-            if (!Object->IsNative())
-                Env->AutoObjectReference.Add(Object);
-
             ObjectRefs.Add(Object, LUA_NOREF);
         }
         lua_remove(L, -2);
