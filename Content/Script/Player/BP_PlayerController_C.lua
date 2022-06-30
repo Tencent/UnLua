@@ -1,7 +1,5 @@
 require "UnLua"
 
-local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
-
 local BP_PlayerController_C = Class()
 
 function BP_PlayerController_C:UserConstructionScript()
@@ -76,12 +74,14 @@ end
 
 function BP_PlayerController_C:Aim_Pressed()
 	if self.Pawn then
+		local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 		BPI_Interfaces.UpdateAiming(self.Pawn, true)
 	end
 end
 
 function BP_PlayerController_C:Aim_Released()
 	if self.Pawn then
+		local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 		BPI_Interfaces.UpdateAiming(self.Pawn, false)
 	end
 end
