@@ -37,7 +37,8 @@ namespace UnLua
     struct ITypeOps
     {   
         ITypeOps() { StaticExported = false; };
-        
+
+        virtual FString GetName() const = 0;
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const = 0;
         virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const = 0;
 
@@ -62,7 +63,6 @@ namespace UnLua
         virtual void Destruct(void *Dest) const = 0;
         virtual void Copy(void *Dest, const void *Src) const = 0;
         virtual bool Identical(const void *A, const void *B) const = 0;
-        virtual FString GetName() const = 0;
         virtual FProperty* GetUProperty() const = 0;
     };
 
@@ -72,13 +72,11 @@ namespace UnLua
     struct IExportedProperty : public ITypeOps
     {   
         IExportedProperty() { StaticExported = true;}
-		virtual ~IExportedProperty() {}
-       
+        virtual ~IExportedProperty() {}
 
         virtual void Register(lua_State *L) = 0;
 
 #if WITH_EDITOR
-        virtual FString GetName() const = 0;
         virtual void GenerateIntelliSense(FString &Buffer) const = 0;
 #endif
     };

@@ -1283,6 +1283,13 @@ int32 Global_GetUProperty(lua_State *L)
         return 1;
     }
 
+    if (UnLua::LowLevel::IsReleasedPtr(Self))
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Property->GetName());
+        lua_pushnil(L);
+        return 1;
+    }
+
     Property->Read(L, Self, false);
     return 1;
 }
@@ -1296,7 +1303,13 @@ int32 Global_SetUProperty(lua_State *L)
         if (!Property.IsValid())
             return 0;
 
-        UObject* Object = UnLua::GetUObject(L, 1);
+        UObject* Object = UnLua::GetUObject(L, 1, false);
+        if (UnLua::LowLevel::IsReleasedPtr(Object))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Property->GetName());
+            return 0;
+        }
+
         Property->Write(L, Object, 3);              // set UProperty value
     }
     return 0;

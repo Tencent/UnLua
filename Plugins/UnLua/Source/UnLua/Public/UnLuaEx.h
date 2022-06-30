@@ -207,9 +207,7 @@ namespace UnLua
             lua_rawset(L, -3);
         }
 
-#if WITH_EDITOR
         virtual FString GetName() const override { return Name; }
-#endif
 
     protected:
         FExportedProperty(const FString &InName, uint32 InOffset)
