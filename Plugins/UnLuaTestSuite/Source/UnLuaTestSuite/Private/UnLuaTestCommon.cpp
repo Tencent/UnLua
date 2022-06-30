@@ -152,7 +152,7 @@ void UnLuaTestSuite::PrintReferenceChain(UObject* Target)
 #if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
     FReferenceChainSearch Search(Target, EReferenceChainSearchMode::PrintAllResults | EReferenceChainSearchMode::FullChain);
 #else
-    FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults);
+    FReferenceChainSearch Search(Target, EReferenceChainSearchMode::PrintAllResults);
 #endif
 }
 
