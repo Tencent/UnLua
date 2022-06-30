@@ -1366,6 +1366,14 @@ public:
     {
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
+        if (lua_isfunction(L, IndexInStack))
+        {
+            FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
+            lua_pop(L, 1);
+            return true;
+        }
+
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
         if (FuncIdxInTable != INDEX_NONE)
         {
@@ -1383,9 +1391,9 @@ public:
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
         {
-            if (Type != LUA_TTABLE)
+            if (Type != LUA_TTABLE && Type != LUA_TFUNCTION)
             {
-                ErrorMsg = FString::Printf(TEXT("table needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                ErrorMsg = FString::Printf(TEXT("table or function needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
                 return false;
             }
         }
@@ -1461,6 +1469,14 @@ public:
     {
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
+        if (lua_isfunction(L, IndexInStack))
+        {
+            FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
+            lua_pop(L, 1);
+            return true;
+        }
+        
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
 
         if (FuncIdxInTable != INDEX_NONE)
@@ -1481,9 +1497,9 @@ public:
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
         {
-            if (Type != LUA_TTABLE)
+            if (Type != LUA_TTABLE && Type != LUA_TFUNCTION)
             {
-                ErrorMsg = FString::Printf(TEXT("table needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                ErrorMsg = FString::Printf(TEXT("table or function needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
                 return false;
             }
         }

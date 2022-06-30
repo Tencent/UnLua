@@ -46,7 +46,6 @@ public:
 
     static ULuaDelegateHandler* CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject);
 
-    TWeakObjectPtr<UObject> Owner;
     TWeakObjectPtr<UObject> SelfObject;
     TWeakPtr<UnLua::FLuaEnv> Env;
     int32 LuaRef;

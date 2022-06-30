@@ -55,7 +55,7 @@ void ULuaDelegateHandler::BeginDestroy()
     if (Env.IsValid())
     {
         const auto PinnedEnv = Env.Pin();
-        PinnedEnv->GetObjectRegistry()->NotifyUObjectLuaGC(this);
+        PinnedEnv->GetDelegateRegistry()->NotifyHandlerBeginDestroy(this);
     }
     UObject::BeginDestroy();
 }
@@ -84,7 +84,6 @@ ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int3
     const auto Ret = NewObject<ULuaDelegateHandler>(Outer);
     Ret->Env = InEnv->AsShared();
     Ret->LuaRef = InLuaRef;
-    Ret->Owner = InOwner;
-    Ret->SelfObject = InSelfObject;
+    Ret->SelfObject = InSelfObject ? InSelfObject : InOwner;
     return Ret;
 }

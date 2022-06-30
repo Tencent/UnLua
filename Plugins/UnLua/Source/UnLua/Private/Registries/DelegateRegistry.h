@@ -95,11 +95,12 @@ namespace UnLua
             UFunction* SignatureFunction;
             TSharedPtr<FFunctionDesc> Desc;
             TWeakObjectPtr<UObject> Owner;
-            TMap<FLuaFunction2, TWeakObjectPtr<ULuaDelegateHandler>> LuaFunction2Handler;
+            TSet<TWeakObjectPtr<ULuaDelegateHandler>> Handlers;
             bool bIsMulticast;
         };
 
         TMap<void*, FDelegateInfo> Delegates;
+        TMap<FLuaFunction2, TWeakObjectPtr<ULuaDelegateHandler>> CachedHandlers;
         FLuaEnv* Env;
         FDelegateHandle PostGarbageCollectHandle;
     };
