@@ -23,10 +23,7 @@ namespace UnLua
     FDelegateRegistry::FDelegateRegistry(FLuaEnv* Env)
         : Env(Env)
     {
-        PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([this]
-        {
-            this->OnPostGarbageCollect();
-        });
+        PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddRaw(this, &FDelegateRegistry::OnPostGarbageCollect);
     }
 
     FDelegateRegistry::~FDelegateRegistry()
