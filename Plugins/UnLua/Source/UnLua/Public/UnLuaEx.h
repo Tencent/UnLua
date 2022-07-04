@@ -315,6 +315,13 @@ namespace UnLua
         virtual void AddLib(const luaL_Reg *InLib) override;
         virtual bool IsReflected() const override { return bIsReflected; }
         virtual FString GetName() const override { return Name; }
+        virtual FString GetSuperClassName() const override { return SuperClassName; }
+        virtual void GetProperties(TArray<TSharedPtr<IExportedProperty>>& InArray) const override { InArray.Append(Properties); }
+        virtual void GetFunctions(TArray<IExportedFunction*>& InArray) const override
+        {
+            InArray.Append(Functions);
+            InArray.Append(GlueFunctions);
+        }
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;

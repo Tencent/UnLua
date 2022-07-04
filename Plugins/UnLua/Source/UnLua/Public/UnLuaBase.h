@@ -108,6 +108,9 @@ namespace UnLua
         virtual void AddLib(const luaL_Reg *Lib) = 0;
         virtual bool IsReflected() const = 0;
         virtual FString GetName() const = 0;
+        virtual FString GetSuperClassName() const = 0;
+        virtual void GetProperties(TArray<TSharedPtr<IExportedProperty>>& InArray) const = 0;
+        virtual void GetFunctions(TArray<IExportedFunction*>& InArray) const = 0;
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const = 0;

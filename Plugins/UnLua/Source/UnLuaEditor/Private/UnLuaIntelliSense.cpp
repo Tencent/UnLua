@@ -13,9 +13,10 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaIntelliSense.h"
+
+#include "Binding.h"
 #include "ObjectEditorUtils.h"
 #include "UnLuaInterface.h"
-#include "UObject/MetaData.h"
 
 namespace UnLua
 {
@@ -109,7 +110,6 @@ namespace UnLua
             // declaration
             Ret += FString::Printf(TEXT("local %s = {}\r\n"), *EscapeSymbolName(TypeName));
 
-
             return Ret;
         }
 
@@ -145,6 +145,15 @@ namespace UnLua
                 Ret += Get(Function) + "\r\n";
             }
 
+            // exported functions
+            const auto Exported = GetExportedReflectedClasses().Find(TypeName);
+            if (Exported)
+            {
+                TArray<IExportedFunction*> ExportedFunctions;
+                (*Exported)->GetFunctions(ExportedFunctions);
+                for (const auto Function : ExportedFunctions)
+                    Function->GenerateIntelliSense(Ret);
+            }
             return Ret;
         }
 
