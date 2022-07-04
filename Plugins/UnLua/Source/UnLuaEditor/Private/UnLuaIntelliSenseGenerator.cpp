@@ -58,28 +58,40 @@ void FUnLuaIntelliSenseGenerator::UpdateAll()
     Filter.ClassNames.Add(UBlueprint::StaticClass()->GetFName());
     Filter.ClassNames.Add(UWidgetBlueprint::StaticClass()->GetFName());
 
-    TArray<FAssetData> BlueprintList;
+    TArray<FAssetData> BlueprintAssets;
+    TArray<const UField*> NativeTypes;
+    AssetRegistryModule.Get().GetAssets(Filter, BlueprintAssets);
+    CollectTypes(NativeTypes);
 
-    if (AssetRegistryModule.Get().GetAssets(Filter, BlueprintList))
+    auto TotalCount = BlueprintAssets.Num() + NativeTypes.Num();
+    if (TotalCount == 0)
+        return;
+
+    TotalCount++;
+
+    FScopedSlowTask SlowTask(TotalCount, LOCTEXT("GeneratingBlueprintsIntelliSense", "Generating Blueprints InstelliSense"));
+    SlowTask.MakeDialog();
+
+    for (int32 i = 0; i < BlueprintAssets.Num(); i++)
     {
-        FScopedSlowTask SlowTask(BlueprintList.Num(), LOCTEXT("GeneratingBlueprintsIntelliSense", "Generating Blueprints InstelliSense"));
-        SlowTask.MakeDialog();
-
-        for (int32 i = 0; i < BlueprintList.Num(); i++)
-        {
-            if (SlowTask.ShouldCancel())
-                break;
-            OnAssetUpdated(BlueprintList[i]);
-            SlowTask.EnterProgressFrame();
-        }
+        if (SlowTask.ShouldCancel())
+            break;
+        OnAssetUpdated(BlueprintAssets[i]);
+        SlowTask.EnterProgressFrame();
     }
 
-    TArray<const UField*> Types;
-    CollectTypes(Types);
-    for (const auto Type : Types)
+    for (const auto Type : NativeTypes)
+    {
+        if (SlowTask.ShouldCancel())
+            break;
         Export(Type);
+        SlowTask.EnterProgressFrame();
+    }
 
-    ExportUE(Types);
+    if (SlowTask.ShouldCancel())
+        return;
+    ExportUE(NativeTypes);
+    SlowTask.EnterProgressFrame();
 }
 
 bool FUnLuaIntelliSenseGenerator::IsBlueprint(const FAssetData& AssetData)
@@ -97,17 +109,16 @@ bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData)
     if (!IsBlueprint(AssetData))
         return false;
 
-	UObject* tUobj = AssetData.FastGetAsset();
-	if (tUobj)
-	{
-		if (UBlueprint* Blueprint = Cast<UBlueprint>(tUobj))
-		{
-			if (Blueprint->SkeletonGeneratedClass || Blueprint->GeneratedClass)
-			{
-				return true;
-			}
-		}
-	}
+    const auto Asset = AssetData.FastGetAsset();
+    if (!Asset)
+        return false;
+
+    const auto Blueprint = Cast<UBlueprint>(Asset);
+    if (!Blueprint)
+        return false;
+
+    if (Blueprint->SkeletonGeneratedClass || Blueprint->GeneratedClass)
+        return true;
 
     return false;
 }
@@ -202,7 +213,7 @@ void FUnLuaIntelliSenseGenerator::OnAssetAdded(const FAssetData& AssetData)
 {
     if (!ShouldExport(AssetData))
         return;
-    
+
     OnAssetUpdated(AssetData);
 
     TArray<const UField*> Types;
