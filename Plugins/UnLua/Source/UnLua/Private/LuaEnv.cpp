@@ -252,7 +252,7 @@ namespace UnLua
         static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
         const bool bImplUnluaInterface = Class->ImplementsInterface(InterfaceClass);
         
-        if (!IsInGameThread() || Object->HasAnyInternalFlags(AsyncObjectFlags))
+        if (IsInAsyncLoadingThread())
         {
             // avoid adding too many objects, affecting performance.
             if (bImplUnluaInterface || (!bImplUnluaInterface && GLuaDynamicBinding.IsValid(Class)))
