@@ -6,11 +6,11 @@
 * 蓝图模版生成与导出
 * 手动静态导出
 * 结构体访问优化
-* 可选的 `UE` 命名空间
+* 通过 `UE` 命名空间访问C++类型
 
 ## 平台支持
 * 运行平台：Windows / Android / iOS / Linux / OSX
-* 引擎版本：Unreal Engine 4.17.x - Unreal Engine 4.26.x
+* 引擎版本：Unreal Engine 4.17.x - Unreal Engine 5.x
 
 ## 支持使用Lua替换实现
 * 蓝图里所有标记了 `BlueprintImplementableEvent` 或 `BlueprintNativeEvent` 的"蓝图事件"
@@ -28,7 +28,7 @@
 * 单播委托绑定、解绑、触发
 * 多播委托绑定、解绑、清理、广播
 * 访问 `UENUM`
-* 支持自定义碰撞枚举
+* 支持[自定义碰撞枚举](CollisionEnum.md)
 * 成员变量
 * 成员函数
 * 静态成员变量
