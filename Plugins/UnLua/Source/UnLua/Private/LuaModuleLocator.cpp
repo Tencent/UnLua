@@ -34,6 +34,11 @@ FString ULuaModuleLocator::Locate(const UObject* Object)
         return "";
     }
 
+    if (!CDO->GetClass()->ImplementsInterface(UUnLuaInterface::StaticClass()))
+    {
+        return "";
+    }
+
     return IUnLuaInterface::Execute_GetModuleName(CDO);
 }
 

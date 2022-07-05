@@ -15,6 +15,7 @@
 #include "UnLuaEditorCore.h"
 #include "UnLuaInterface.h"
 #include "UnLuaPrivate.h"
+#include "UnLuaSettings.h"
 #include "Engine/Blueprint.h"
 #include "Blueprint/UserWidget.h"
 
@@ -34,13 +35,14 @@ ELuaBindingStatus GetBindingStatus(const UBlueprint* Blueprint)
     if (!Target->ImplementsInterface(UUnLuaInterface::StaticClass()))
         return ELuaBindingStatus::NotBound;
 
-    const auto Func = Target->FindFunctionByName(FName("GetModuleName"));
-    if (!IsValid(Func))
-        return ELuaBindingStatus::NotBound;
+    const auto Settings = GetDefault<UUnLuaSettings>();
+    if (!Settings || !Settings->ModuleLocatorClass)
+        return ELuaBindingStatus::Unknown;
 
-    FString ModuleName;
-    auto DefaultObject = Target->GetDefaultObject();
-    DefaultObject->UObject::ProcessEvent(Func, &ModuleName);
+    const auto ModuleLocator = Cast<ULuaModuleLocator>(Settings->ModuleLocatorClass->GetDefaultObject());
+    const auto ModuleName = ModuleLocator->Locate(Target);
+    if (ModuleName.IsEmpty())
+        return ELuaBindingStatus::Unknown;
 
     const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/")) + TEXT(".lua");
     const auto FullPath = GLuaSrcFullPath + "/" + RelativePath;
