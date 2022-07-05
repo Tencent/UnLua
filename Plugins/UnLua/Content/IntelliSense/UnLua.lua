@@ -240,4 +240,55 @@ end
 function TSet:ToTable()
 end
 
+---@type fun(ElementType:any):TSet
 UE.TSet = TSet
+
+---@class UClass
+local UClass = {}
+
+---Load a class object
+---@param Path string @path to the class
+---@return UClass
+function UClass.Load(Path)
+end
+
+---Test whether this class is a child of another class
+---@param TargetClass UClass @target class
+---@return boolean @true if this object is of the specified type.
+function UClass:IsChildOf(TargetClass)
+end
+
+---Get default object of a class.
+---@return UObject @class default obejct
+function UClass:GetDefaultObject()
+end
+
+UE.UClass = UClass
+
+---@class MulticastDelegate
+local MulticastDelegate = {}
+
+---Add a callback to the delegate
+---@param Object UObject @receiver object
+---@param Callback function @callback
+function MulticastDelegate:Add(Object, Function)
+end
+
+---Remove a callback from the delegate
+---@param Object UObject @receiver object
+---@param Callback function @callback
+function MulticastDelegate:Remove(Object, Function)
+end
+
+---Clear all callbacks for the delegate
+function MulticastDelegate:Clear()
+end
+
+---Call all callbacks bound to the delegate
+function MulticastDelegate:Broadcast()
+end
+
+---Detect if any callback bound to this delegate
+---@return boolean
+function MulticastDelegate:IsBound()
+end
