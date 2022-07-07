@@ -1346,7 +1346,7 @@ public:
         void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         FScriptDelegate* ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
         UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, ScriptDelegate->GetUObject());
-        return SetValueInternal(L, ValuePtr, IndexInStack, true);
+        return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
     }
     
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1371,7 +1371,7 @@ public:
             FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
             UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
             lua_pop(L, 1);
-            return true;
+            return bCopyValue;
         }
 
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
@@ -1382,7 +1382,7 @@ public:
             UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
             lua_pop(L, 1);
         }
-        return true;
+        return bCopyValue;
     }
 
 #if ENABLE_TYPE_CHECK == 1
@@ -1449,7 +1449,7 @@ public:
 
         void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ValuePtr, DelegateProperty, (UObject*)ContainerPtr);
-        return SetValueInternal(L, ValuePtr, IndexInStack, true);
+        return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
     }
     
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1474,7 +1474,7 @@ public:
             FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
             UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
             lua_pop(L, 1);
-            return true;
+            return bCopyValue;
         }
         
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
@@ -1488,7 +1488,7 @@ public:
             Registry->Add(L, -1, ScriptDelegate, Object);
             lua_pop(L, 1);
         }
-        return true;
+        return bCopyValue;
     }
 
 #if ENABLE_TYPE_CHECK == 1
