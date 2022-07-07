@@ -14,37 +14,12 @@
 
 #pragma once
 
-#include "LuaContext.h"
 #include "LuaCore.h"
 
 template <typename LuaContainerType>
 class TLuaContainerInterface
 {
 public:
-    virtual ~TLuaContainerInterface()
-    {
-        while (AllCachedContainer.Num() > 0)
-        {
-            AllCachedContainer.Last()->DetachInterface();
-        }
-    }
-
-    void AddContainer(LuaContainerType *Container)
-    {
-        AllCachedContainer.Add(Container);
-    }
-
-    void RemoveContainer(LuaContainerType *Container)
-    {
-        if (Container && AllCachedContainer.Remove(Container) > 0)
-        {
-            RemoveCachedScriptContainer(*GLuaCxt, Container->GetContainerPtr());
-        }
-    }
-
     virtual TSharedPtr<UnLua::ITypeInterface> GetInnerInterface() const = 0;
     virtual TSharedPtr<UnLua::ITypeInterface> GetExtraInterface() const = 0;
-
-protected:
-    TArray<LuaContainerType*> AllCachedContainer;
 };

@@ -46,9 +46,40 @@ DECLARE_STATS_GROUP(TEXT("UnLua"), STATGROUP_UnLua, STATCAT_Advanced);
 DECLARE_MEMORY_STAT_EXTERN(TEXT("Lua Memory"), STAT_UnLua_Lua_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
 DECLARE_MEMORY_STAT_EXTERN(TEXT("Persistent Parameter Buffer Memory"), STAT_UnLua_PersistentParamBuffer_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
 DECLARE_MEMORY_STAT_EXTERN(TEXT("OutParmRec Memory"), STAT_UnLua_OutParmRec_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
-#endif
+DECLARE_MEMORY_STAT_EXTERN(TEXT("Container Element Cache Memory"), STAT_UnLua_ContainerElementCache_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
 
-UNLUA_API bool HotfixLua();
+#define UNLUA_STAT_MEMORY_ALLOC(Pointer, CounterName) \
+    const auto _AllocedSize = FMemory::GetAllocSize(Pointer); \
+    INC_MEMORY_STAT_BY(STAT_UnLua_##CounterName##_Memory, _AllocedSize);
+
+#define UNLUA_STAT_MEMORY_FREE(PointerName, CounterName) \
+    const auto _FreedSize = FMemory::GetAllocSize(PointerName); \
+    DEC_MEMORY_STAT_BY(STAT_UnLua_##CounterName##_Memory, _FreedSize);
+
+#define UNLUA_STAT_MEMORY_REALLOC(Pointer, NewPointer, CounterName) \
+    struct FReallocGuard { \
+        uint32 OldSize; \
+        void* Ptr; \
+        void** NewPtr; \
+        ~FReallocGuard() { \
+            const auto NewSize = FMemory::GetAllocSize(*NewPtr); \
+            if (NewSize > OldSize) \
+                INC_MEMORY_STAT_BY(STAT_UnLua_##CounterName##_Memory, NewSize - OldSize) \
+            else \
+                DEC_MEMORY_STAT_BY(STAT_UnLua_##CounterName##_Memory, OldSize - NewSize) \
+        } \
+    } _ReallocGuard; \
+    _ReallocGuard.OldSize = FMemory::GetAllocSize(Pointer); \
+    _ReallocGuard.Ptr = Pointer; \
+    _ReallocGuard.NewPtr = &NewPointer; \
+
+#else
+
+#define UNLUA_STAT_MEMORY_ALLOC(Pointer, CounterName)
+#define UNLUA_STAT_MEMORY_FREE(PointerName, CounterName)
+#define UNLUA_STAT_MEMORY_REALLOC(Pointer, NewPointer, CounterName)
+
+#endif
 
 UNLUA_API extern FString GLuaSrcRelativePath;
 UNLUA_API extern FString GLuaSrcFullPath;

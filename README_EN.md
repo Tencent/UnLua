@@ -1,4 +1,4 @@
-![LOGO](./Images/UnLua.png)
+![LOGO](./Docs/Images/UnLua.png)
 
 # Overview
 **UnLua** is a **feature-rich**, **easy-learning** and **highly optimized** scripting solution for UE. UnLua follows the programming pattern of UE. UE programmers can use it at zero learning cost.
@@ -40,32 +40,32 @@ Unreal Engine 4.17.x - Unreal Engine 5.x
 # Quick start
 * Create a new Blueprint.
 
-![CREATE_BLUEPRINT](./Images/create_blueprint.png)
+![CREATE_BLUEPRINT](Docs/Images/create_blueprint.png)
 
 * Implement **'UnLuaInterface'**.
 
-![IMPLEMENT_UnLuaInterface](./Images/implement_UnLuaInterface.png)
+![IMPLEMENT_UnLuaInterface](Docs/Images/implement_UnLuaInterface.png)
 
 * Return a Lua file path (**relative** to **'Content/Script'**) in **'GetModuleName'**.
 
-![IMPLEMENT_GetModuleName](./Images/implement_GetModuleName.png)
+![IMPLEMENT_GetModuleName](Docs/Images/implement_GetModuleName.png)
 
 * Create Lua template.
 
-![CREATE_LUA_TEMPLATE](./Images/lua_template.png)
+![CREATE_LUA_TEMPLATE](Docs/Images/lua_template.png)
 
 * Generated Lua template.
 
-![GENERATED_LUA_TEMPLATE](./Images/generated_lua_template.png)
+![GENERATED_LUA_TEMPLATE](Docs/Images/generated_lua_template.png)
 
 * Add Lua codes to Lua template.
 
-![FINAL_LUA_FILE](./Images/final_lua_file.png)
+![FINAL_LUA_FILE](Docs/Images/final_lua_file.png)
 
 
 # Documentation
-* [Programming Guide](Docs/UnLua_Programming_Guide_EN.md)
-* [How to Implement Overriding](Docs/How_To_Implement_Overriding.md)
+* [Programming Guide](Docs/EN/UnLua_Programming_Guide.md)
+* [How to Implement Overriding](Docs/EN/How_To_Implement_Overriding.md)
 
 
 # License

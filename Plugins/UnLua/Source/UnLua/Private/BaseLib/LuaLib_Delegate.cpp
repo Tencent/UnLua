@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
 
 /**
  * Bind a callback for the delegate. Parameters must be a UObject and a Lua function
@@ -42,32 +41,22 @@ static int32 FScriptDelegate_Bind(lua_State *L)
         return 0;
     }
 
-    const void *CallbackFunction = lua_topointer(L, 3);
-    if (!CallbackFunction)
+    if (lua_type(L, 3) != LUA_TFUNCTION)
     {
         UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("%s: Invalid function!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
-    FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
-    if (FuncName == NAME_None)
-    {
-        lua_pushvalue(L, 3);
-        int32 CallbackRef = luaL_ref(L, LUA_REGISTRYINDEX);
-        FDelegateHelper::Bind(Delegate, Object, Callback, CallbackRef);
-    }
-    else
-    {
-        Delegate->BindUFunction(Object, FuncName);
-    }
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+    Registry->Bind(L, 3, Delegate, Object);
+
     return 0;
 }
 
 /**
  * Unbind the callback for the delegate
  */
-static int32 FScriptDelegate_Unbind(lua_State *L)
+static int32 FScriptDelegate_Unbind(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
@@ -76,21 +65,15 @@ static int32 FScriptDelegate_Unbind(lua_State *L)
         return 0;
     }
 
-    FScriptDelegate *Delegate = (FScriptDelegate*)GetCppInstanceFast(L, 1);
-    if (Delegate)
+    FScriptDelegate* Delegate = (FScriptDelegate*)GetCppInstanceFast(L, 1);
+    if (Delegate == nullptr)
     {
-        FDelegateHelper::Unbind(Delegate);
+        UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("%s: Invalid parameter!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
     }
-    else
-    {
-        UObject *Object = nullptr;
-        const void *CallbackFunction = nullptr;
-        int32 FuncIdx = GetDelegateInfo(L, 1, Object, CallbackFunction);     // get target UObject and Lua function
-        if (FuncIdx != INDEX_NONE)
-        {
-            FDelegateHelper::Unbind(FCallbackDesc(Object->GetClass(), CallbackFunction, Object));
-        }
-    }
+
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+    Registry->Unbind(Delegate);
 
     return 0;
 }
@@ -114,8 +97,8 @@ static int32 FScriptDelegate_Execute(lua_State *L)
         return 0;
     }
 
-    int32 NumReturnValues = FDelegateHelper::Execute(L, Delegate, NumParams - 1, 2);
-    return NumReturnValues;
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+    return Registry->Execute(L, Delegate, NumParams + 2, 2);
 }
 
 static const luaL_Reg FScriptDelegateLib[] =

@@ -15,11 +15,12 @@
 #pragma once
 
 #include "CoreUObject.h"
+#include "lauxlib.h"
 
 struct FLuaDynamicBinding
 {
     FLuaDynamicBinding()
-        : Class(nullptr), InitializerTableRef(INDEX_NONE)
+        : Class(nullptr), InitializerTableRef(LUA_NOREF)
     {}
 
     bool IsValid(UClass *InClass) const;

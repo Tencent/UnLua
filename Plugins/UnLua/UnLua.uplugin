@@ -1,7 +1,7 @@
 {
     "FileVersion": 3,
     "Version": 2,
-    "VersionName": "2.1",
+    "VersionName": "2.2.2",
     "FriendlyName": "UnLua",
     "Description": "Lua scripting plugin",
     "Category": "Scripting",
@@ -14,11 +14,17 @@
     "IsBetaVersion": false,
     "Installed": false,
     "CanBeUsedWithUnrealHeaderTool": true,
+    "LocalizationTargets": [
+        {
+            "Name": "UnLua",
+            "LoadingPolicy": "Editor"
+        }
+    ],
     "Modules": [
         {
             "Name": "UnLua",
             "Type": "Runtime",
-            "LoadingPhase": "PostConfigInit",
+            "LoadingPhase": "PreDefault",
             "WhitelistPlatforms": [ "Win64", "Mac", "IOS", "Android", "Linux" ]
         },
         {
@@ -31,26 +37,6 @@
             "Name": "UnLuaDefaultParamCollector",
             "Type": "Program",
             "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaIntelliSense",
-            "Type": "Program",
-            "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaIntelliSenseBP",
-            "Type": "Editor",
-            "LoadingPhase": "Default"
-        },
-        {
-            "Name": "UnLuaFrameWork",
-            "Type": "Runtime",
-            "LoadingPhase": "PostConfigInit"
-        },
-        {
-            "Name": "UnLuaTestSuite",
-            "Type": "Runtime",
-            "LoadingPhase": "Default"
         }
     ]
 }

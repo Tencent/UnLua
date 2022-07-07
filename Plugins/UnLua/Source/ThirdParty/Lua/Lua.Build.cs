@@ -8,6 +8,8 @@ public class Lua : ModuleRules
     public Lua(ReadOnlyTargetRules Target) : base(Target)
     {
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        bEnforceIWYU = false;
+        bEnableExceptions = true;
 
         PublicDependencyModuleNames.AddRange(new string[] { "Core" });
 

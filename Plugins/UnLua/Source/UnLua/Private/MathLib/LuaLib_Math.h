@@ -15,6 +15,7 @@
 #pragma once
 
 #include "LuaCore.h"
+#include "UnLuaCompatibility.h"
 
 static uint64 GetTypeHash(lua_State *L, int32 Index)
 {
@@ -229,8 +230,8 @@ namespace UnLua
     template <typename T>
     struct TMathTypeTraits
     {
-        typedef float FieldType;
-        typedef float ScalarType;
+        typedef unluaReal FieldType;
+        typedef unluaReal ScalarType;
         enum { NUM_FIELDS = 3 };
     };
 
@@ -257,29 +258,29 @@ namespace UnLua
 
     template<> struct TMathTypeTraits<FVector2D>
     {
-        typedef float FieldType;
-        typedef float ScalarType;
+        typedef unluaReal FieldType;
+        typedef unluaReal ScalarType;
         enum { NUM_FIELDS = 2 };
     };
 
     template<> struct TMathTypeTraits<FVector4>
     {
-        typedef float FieldType;
-        typedef float ScalarType;
+        typedef unluaReal FieldType;
+        typedef unluaReal ScalarType;
         enum { NUM_FIELDS = 4 };
     };
 
     template<> struct TMathTypeTraits<FQuat>
     {
         typedef FQuat FieldType;
-        typedef float ScalarType;
+        typedef unluaReal ScalarType;
         enum { NUM_FIELDS = 1 };
     };
 
     template<> struct TMathTypeTraits<FTransform>
     {
         typedef FTransform FieldType;
-        typedef float ScalarType;
+        typedef unluaReal ScalarType;
         enum { NUM_FIELDS = 1 };
     };
 

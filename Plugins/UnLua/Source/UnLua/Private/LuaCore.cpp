@@ -12,20 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "CollisionHelper.h"
 #include "LuaCore.h"
+
+#include "Binding.h"
 #include "LuaDynamicBinding.h"
-#include "LuaContext.h"
 #include "UnLua.h"
 #include "UnLuaDelegates.h"
-#include "UEObjectReferencer.h"
-#include "CollisionHelper.h"
-#include "DelegateHelper.h"
+#include "ObjectReferencer.h"
+#include "LowLevel.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 #include "ReflectionUtils/FieldDesc.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "ReflectionUtils/PropertyDesc.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 extern "C"
@@ -38,31 +38,6 @@ extern "C"
 const FScriptContainerDesc FScriptContainerDesc::Array(sizeof(FLuaArray), "TArray");
 const FScriptContainerDesc FScriptContainerDesc::Set(sizeof(FLuaSet), "TSet");
 const FScriptContainerDesc FScriptContainerDesc::Map(sizeof(FLuaMap), "TMap");
-
-/**
- * Global __index meta method
- */
-static int32 UE4_Index(lua_State *L)
-{
-    //!!!Fix!!!
-    // tvalue opt
-    int32 Type = lua_type(L, 2);
-    if (Type == LUA_TSTRING)
-    {
-        const char *Name = lua_tostring(L, 2);
-        const char Prefix = Name[0];
-        if (Prefix == 'U' || Prefix == 'A' || Prefix == 'F')
-        {
-            RegisterClass(L, Name);
-        }
-        else if (Prefix == 'E')
-        {
-            RegisterEnum(L, Name);
-        }
-    }
-    lua_rawget(L, 1);
-    return 1;
-}
 
 /**
  * Get lua file full path from relative path
@@ -93,42 +68,15 @@ FString GetFullPathFromRelativePath(const FString& RelativePath)
 }
 
 /**
- * Create 'UE' namespace (a Lua table)
- */
-void CreateNamespaceForUE(lua_State *L)
-{
-#if WITH_UE4_NAMESPACE
-    lua_newtable(L);
-    lua_pushstring(L, "__index");
-    lua_pushcfunction(L, UE4_Index);
-    lua_rawset(L, -3);
-    lua_pushvalue(L, -1);
-    lua_setmetatable(L, -2);
-    lua_pushvalue(L, -1);
-    lua_setglobal(L, "UE4");    // for legacy support only, will be removed in future release
-    lua_setglobal(L, "UE");
-
-    lua_pushboolean(L, true);
-#else
-    lua_pushboolean(L, false);
-#endif
-    lua_setglobal(L, "WITH_UE4_NAMESPACE");
-}
-
-/**
  * Set the name for a Lua table which on the top of the stack
  */
 void SetTableForClass(lua_State *L, const char *Name)
 {
-#if WITH_UE4_NAMESPACE
     lua_getglobal(L, "UE");
     lua_pushstring(L, Name);
     lua_pushvalue(L, -3);
     lua_rawset(L, -3);
     lua_pop(L, 2);
-#else
-    lua_setglobal(L, Name);
-#endif
 }
 
 #define USERDATA_MAGIC  0x1688
@@ -253,7 +201,7 @@ static uint8 GetUdataHeaderSize()
     static uint8 HeaderSize = 0;
     if (0 == HeaderSize)
     {
-        lua_State* L = UnLua::GetState();
+        lua_State* L = luaL_newstate();
 #if 504 == LUA_VERSION_NUM
         uint8* Userdata = (uint8*)lua_newuserdatauv(L, 0, 0);
 #else
@@ -262,9 +210,8 @@ static uint8 GetUdataHeaderSize()
         TValue* Value = GetTValue(L, -1);
         Udata* U = GetUdata(Value);
         HeaderSize = Userdata - (uint8*)U;
-
-        lua_pop(L, 1);
-}
+        lua_close(L);
+    }
 
     return HeaderSize;
 }
@@ -447,87 +394,12 @@ void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr)
  */
 bool TryToSetMetatable(lua_State* L, const char* MetatableName, UObject* Object)
 {
-    int32 Type = LUA_TNIL;
+    const auto Registry = UnLua::FClassRegistry::Find(L);
+    if (!Registry)
+        return false;
 
-    // exported non reflected class only need check metatable
-    const UnLua::IExportedClass* ExportedClass = GLuaCxt->FindExportedNonReflectedClass(MetatableName);
-    if (ExportedClass)
-    {
-        Type = luaL_getmetatable(L, MetatableName);
-        if (LUA_TTABLE != Type)
-        {
-            lua_pop(L, 1);
-        }
-        else
-        {
-            lua_setmetatable(L, -2);                                    // set the metatable directly
-        }
-        return Type == LUA_TTABLE;
-    }
-    else
-    {   
-        // other class,check classdesc
-        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(MetatableName);
-        if (!ClassDesc)
-        {
-            UnLua::FAutoStack AutoStack;
-            ClassDesc = RegisterClass(L, MetatableName);
-        }
-        Type = luaL_getmetatable(L, MetatableName);
-        if (Type != LUA_TTABLE)
-        {
-            lua_pop(L, 1);
-        }
-        else
-        {
-            lua_setmetatable(L, -2);                                    // set the metatable directly
-            ClassDesc->AddRef();
-        }
-        return Type == LUA_TTABLE;
-    }
+    return Registry->TrySetMetatable(L, MetatableName);
 }
-
-
-FString GetMetatableName(const UObjectBaseUtility* Object)
-{   
-    static TMap<FString, FString> Class2Metatable;
-
-	if (!GLuaCxt->IsUObjectValid((UObjectBase*)Object))
-	{
-		return "";
-	}
-
-    const TCHAR* PrefixCPP;
-    FString ClassName;
-    if (Object->IsA<UEnum>()) 
-    {
-        PrefixCPP = TEXT("E");
-        ClassName = Object->GetName();
-    }
-    else if (Object->IsA<UStruct>())
-    {
-        PrefixCPP = ((UStruct*)Object)->GetPrefixCPP();
-        ClassName = Object->GetName();
-    }
-    else 
-    {
-        PrefixCPP = Object->GetClass()->GetPrefixCPP();
-        ClassName = Object->GetClass()->GetName();
-    }
-
-    FString MetatableName;
-    if (FString* MetatableNamePtr = Class2Metatable.Find(ClassName))
-    {
-        MetatableName = *MetatableNamePtr;
-    }
-    else
-    {
-        MetatableName = Class2Metatable.Add(ClassName, FString::Printf(TEXT("%s%s"), PrefixCPP, *ClassName));
-    }
-
-	return MetatableName;
-}
-
 
 /**
  * Create a new userdata with padding size
@@ -553,7 +425,7 @@ void* NewUserdataWithPadding(lua_State *L, int32 Size, const char *MetatableName
         bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
         if (!bSuccess)
         {
-            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
             return nullptr;
         }
     }
@@ -684,7 +556,7 @@ void RemoveCachedScriptContainer(lua_State *L, void *Key)
  */
 void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
 {
-    FString MetatableName = GetMetatableName(Object);
+    FString MetatableName = UnLua::LowLevel::GetMetatableName((UObject*)Object);
     if (MetatableName.IsEmpty())
     {
 		lua_pushnil(L);
@@ -699,8 +571,8 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object)
     bool bSuccess = TryToSetMetatable(L, TCHAR_TO_UTF8(*MetatableName), (UObject*)Object);
 	if (!bSuccess)
 	{
-		UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable,Name %s, Object %s,%p!"), ANSI_TO_TCHAR(__FUNCTION__), *MetatableName, *Object->GetName(), Object);
-	}
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable,Name %s, Object %s,%p!"), ANSI_TO_TCHAR(__FUNCTION__), *MetatableName, *Object->GetName(), Object);
+    }
 }
 
 
@@ -758,7 +630,6 @@ static void PushFTextElement(lua_State *L, FTextProperty *Property, void *Value)
 static void PushObjectElement(lua_State *L, FObjectPropertyBase *Property, void *Value)
 {
     UObject *Object = Property->GetObjectPropertyValue(Value);
-    GObjectReferencer.AddObjectRef(Object);
     PushObjectCore(L, Object);
 }
 
@@ -769,7 +640,6 @@ static void PushInterfaceElement(lua_State *L, FInterfaceProperty *Property, voi
 {
     const FScriptInterface &Interface = Property->GetPropertyValue(Value);
     UObject *Object = Interface.GetObject();
-    GObjectReferencer.AddObjectRef(Object);
     PushObjectCore(L, Object);
 }
 
@@ -787,8 +657,7 @@ static void PushStructElement(lua_State *L, FProperty *Property, void *Value)
 static void PushDelegateElement(lua_State *L, FDelegateProperty *Property, void *Value)
 {
     FScriptDelegate *ScriptDelegate = Property->GetPropertyValuePtr(Value);
-    FDelegateHelper::PreBind(ScriptDelegate, Property);
-
+    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property, (UObject*)Value);
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), ScriptDelegate);
 }
 
@@ -802,8 +671,8 @@ static void PushMCDelegateElement(lua_State *L, FMulticastDelegateProperty *Prop
 #else
     void *ScriptDelegate = Value;
 #endif
-    FDelegateHelper::PreAdd(ScriptDelegate, Property);
 
+    UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, Property, (UObject*)Value);
     NewUserdataWithTwoLvPtrTag(L, sizeof(void*), ScriptDelegate);
 }
 
@@ -937,120 +806,6 @@ void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char 
 }
 
 /**
- * Create a Lua instance (table) for a UObject
- */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName)
-{
-    check(Object);
-
-	int OldTop = lua_gettop(L);
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-    lua_pushlightuserdata(L, Object);
-    lua_newtable(L);                                            // create a Lua table ('INSTANCE')
-    PushObjectCore(L, Object);                                  // push UObject ('RAW_UOBJECT')
-    lua_pushstring(L, "Object");
-    lua_pushvalue(L, -2);
-    lua_rawset(L, -4);                                          // INSTANCET.Object = RAW_UOBJECT
-
-	// in some case may occur module or object metatable can 
-	// not be found problem
-	int32 TypeModule = GetLoadedModule(L, ModuleName);          // push the required module/table ('REQUIRED_MODULE') to the top of the stack
-	int32 TypeMetatable = lua_getmetatable(L, -2);              // get the metatable ('METATABLE_UOBJECT') of 'RAW_UOBJECT' 
-	if ((TypeModule != LUA_TTABLE)
-		||(0 == TypeMetatable))
-	{
-		lua_pop(L, lua_gettop(L) - OldTop);		
-		return LUA_REFNIL;
-	}
-
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    lua_pushstring(L, "Overridden");
-    lua_pushvalue(L, -2);
-    lua_rawset(L, -4);
-#endif
-    lua_setmetatable(L, -2);                                    // REQUIRED_MODULE.metatable = METATABLE_UOBJECT
-    lua_setmetatable(L, -3);                                    // INSTANCE.metatable = REQUIRED_MODULE
-    lua_pop(L, 1);
-    lua_pushvalue(L, -1);
-    int32 ObjectRef = luaL_ref(L, LUA_REGISTRYINDEX);           // keep a reference for 'INSTANCE'
-
-    FUnLuaDelegates::OnObjectBinded.Broadcast(Object);          // 'INSTANCE' is on the top of stack now
-
-    lua_rawset(L, -3);
-    lua_pop(L, 1);
-    return ObjectRef;
-}
-
-/**
- * Delete the Lua instance (table) for a UObject
- */
-void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object)
-{
-    if (!Object)
-    {
-        return;
-    }
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");            // get the object instance from 'ObjectMap'
-    lua_pushlightuserdata(L, Object);
-    int32 Type = lua_rawget(L, -2);
-    if (Type == LUA_TTABLE || Type == LUA_TUSERDATA)
-    {
-        FUnLuaDelegates::OnObjectUnbinded.Broadcast(Object);    // object instance ('INSTANCE') is on the top of stack now
-
-        // todo: add comments here...
-        if (Type == LUA_TTABLE)
-        {
-            lua_pushstring(L, "Object");
-            Type = lua_rawget(L, -2);
-            check(Type == LUA_TUSERDATA);
-            void *Userdata = lua_touserdata(L, -1);
-            *((void**)Userdata) = nullptr;
-            lua_pop(L, 2);
-        }
-        else
-        {
-            void *Userdata = lua_touserdata(L, -1);
-            *((void**)Userdata) = nullptr;
-            lua_pop(L, 1);
-        }
-
-        // INSTANCE.Object = nil
-        lua_pushlightuserdata(L, Object);
-        lua_pushnil(L);
-        lua_rawset(L, -3);
-        lua_pop(L, 1);
-    }
-    else
-    {
-        check(Type == LUA_TNIL);
-        lua_pop(L, 2);
-    }
-}
-
-/**
- * Delete the ref of uobject instance
- */
-void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object)
-{
-    if (GLuaCxt->IsUObjectValid(Object))
-    {   
-#if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogUnLua, Log, TEXT("UObject_Delete : %s,%p!"), *Object->GetName(), Object);
-#endif
-        // unlua ref
-        GObjectReferencer.RemoveObjectRef((UObject*)Object);
-
-        // delegate ref, delegate must be clear before object is gced
-        if (GLuaCxt->IsEnable())
-        {
-            FDelegateHelper::Remove((UObject*)Object);
-        }
-    }
-}
-
-/**
  * Get target UObject and Lua function pointer for a delegate
  */
 int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &Function)
@@ -1082,89 +837,17 @@ int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &
 }
 
 /**
- * Callback function to get function name 
- */
-static bool GetFunctionName(lua_State *L, void *Userdata)
-{
-    int32 ValueType = lua_type(L, -1);
-    if (ValueType == LUA_TFUNCTION)
-    {
-        TSet<FName> *FunctionNames = (TSet<FName>*)Userdata;
-#if SUPPORTS_RPC_CALL
-        FString FuncName(lua_tostring(L, -2));
-        if (FuncName.EndsWith(TEXT("_RPC")))
-        {
-            FuncName = FuncName.Left(FuncName.Len() - 4);
-        }
-        FunctionNames->Add(FName(*FuncName));
-#else
-        FunctionNames->Add(FName(lua_tostring(L, -2)));
-#endif
-    }
-    return true;
-}
-
-/**
- * Get all Lua function names defined in a required module/table
- */
-bool GetFunctionList(lua_State *L, const char *InModuleName, TSet<FName> &FunctionNames)
-{
-    int32 Type = GetLoadedModule(L, InModuleName);
-    if (Type == LUA_TNIL)
-    {
-        return false;
-    }
-
-    int32 N = 1;
-    bool bNext = false;
-    do 
-    {
-        bNext = TraverseTable(L, -1, &FunctionNames, GetFunctionName) > INDEX_NONE;
-        if (bNext)
-        {
-            lua_pushstring(L, "Super");
-            lua_rawget(L, -2);
-            ++N;
-            bNext = lua_istable(L, -1);
-        }
-    } while (bNext);
-    lua_pop(L, N);
-    return true;
-}
-
-/**
- * Get Lua instance for a UObject
- */
-bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object)
-{
-    if (!Object)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return false;
-    }
-
-    lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-    lua_pushlightuserdata(L, Object);
-    int32 Type = lua_rawget(L, -2);
-    if (Type != LUA_TNIL)
-    {
-        lua_remove(L, -2);
-        return true;
-    }
-    lua_pop(L, 2);
-    return false;
-}
-
-/**
  * Push a Lua function (by a function name) and push a UObject instance as its first parameter
  */
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName)
 {
     int32 N = lua_gettop(L);
     lua_pushcfunction(L, UnLua::ReportLuaCallError);
-    bool bSuccess = GetObjectMapping(L, Object);
-    if (bSuccess)
+    const auto& Env = UnLua::FLuaEnv::FindEnv(L);
+    const auto Ref = Env->GetObjectRegistry()->GetBoundRef((UObject*)Object);
+    if (Ref != LUA_NOREF)
     {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, Ref);
         int32 Type = lua_type(L, -1);
         if (Type == LUA_TTABLE /*|| Type == LUA_TUSERDATA*/)
         {
@@ -1197,7 +880,7 @@ int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *Functio
     {
         lua_pop(L, NumToPop);
     }
-    return INDEX_NONE;
+    return LUA_NOREF;
 }
 
 /**
@@ -1240,18 +923,19 @@ bool CallFunction(lua_State *L, int32 NumArgs, int32 NumResults)
 /**
  * Push a field (property or function)
  */
-static void PushField(lua_State *L, FFieldDesc *Field)
+static void PushField(lua_State *L, TSharedPtr<FFieldDesc> Field)
 {
+    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     check(Field && Field->IsValid());
     if (Field->IsProperty())
     {
-        FPropertyDesc *Property = Field->AsProperty();
-        lua_pushlightuserdata(L, Property);                     // Property
+        TSharedPtr<FPropertyDesc> Property = Field->AsProperty();
+        Env.GetObjectRegistry()->Push(L, Property);
     }
     else
     {
-        FFunctionDesc *Function = Field->AsFunction();
-        lua_pushlightuserdata(L, Function);                     // Function
+        TSharedPtr<FFunctionDesc> Function = Field->AsFunction();
+        Env.GetObjectRegistry()->Push(L, Function);
         if (Function->IsLatentFunction())
         {
             lua_pushcclosure(L, Class_CallLatentFunction, 1);   // closure
@@ -1284,64 +968,58 @@ static int32 GetField(lua_State* L)
 
         const char* ClassName = lua_tostring(L, -1);
         const char* FieldName = lua_tostring(L, 2);
+
         lua_pop(L, 1);
 
-        // desc maybe released on c++ side,but lua side may still hold it
-        FClassDesc* ClassDesc = GReflectionRegistry.FindClass(ClassName);
-        if (!ClassDesc)
+        // TODO: refactor
+        const auto Registry = UnLua::FClassRegistry::Find(L);
+        FClassDesc* ClassDesc = Registry->Register(ClassName);
+        TSharedPtr<FFieldDesc> Field = ClassDesc->RegisterField(FieldName, ClassDesc);
+        if (Field && Field->IsValid())
         {
-            lua_pushnil(L);
+            bool bCached = false;
+            bool bInherited = Field->IsInherited();
+            if (bInherited)
+            {
+                FString SuperStructName = Field->GetOuterName();
+                const auto Pushed = Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName));
+                check(Pushed);
+                lua_pushvalue(L, 2);
+                Type = lua_rawget(L, -2);
+                bCached = Type != LUA_TNIL;
+                if (!bCached)
+                {
+                    lua_pop(L, 1);
+                }
+            }
+
+            if (!bCached)
+            {
+                PushField(L, Field);                // Property / closure
+                lua_pushvalue(L, 2);                // key
+                lua_pushvalue(L, -2);               // Property / closure
+                lua_rawset(L, -4);
+            }
+            if (bInherited)
+            {
+                lua_remove(L, -2);
+                lua_pushvalue(L, 2);                // key
+                lua_pushvalue(L, -2);               // Property / closure
+                lua_rawset(L, -4);
+            }
         }
         else
         {
-            FScopedSafeClass SafeClass(ClassDesc);
-            FFieldDesc* Field = ClassDesc->RegisterField(FieldName, ClassDesc);
-            if (Field && Field->IsValid())
+            if (ClassDesc->IsClass())
             {
-                bool bCached = false;
-                bool bInherited = Field->IsInherited();
-                if (bInherited)
-                {
-                    FString SuperStructName = Field->GetOuterName();
-                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperStructName));
-                    check(Type == LUA_TTABLE);
-                    lua_pushvalue(L, 2);
-                    Type = lua_rawget(L, -2);
-                    bCached = Type != LUA_TNIL;
-                    if (!bCached)
-                    {
-                        lua_pop(L, 1);
-                    }
-                }
-
-                if (!bCached)
-                {
-                    PushField(L, Field);                // Property / closure
-                    lua_pushvalue(L, 2);                // key
-                    lua_pushvalue(L, -2);               // Property / closure
-                    lua_rawset(L, -4);
-                }
-                if (bInherited)
-                {
-                    lua_remove(L, -2);
-                    lua_pushvalue(L, 2);                // key
-                    lua_pushvalue(L, -2);               // Property / closure
-                    lua_rawset(L, -4);
-                }
+                luaL_getmetatable(L, "UClass");
+                lua_pushvalue(L, 2);                // push key
+                lua_rawget(L, -2);
+                lua_remove(L, -2);
             }
             else
             {
-                if (ClassDesc->IsClass())
-                {
-                    luaL_getmetatable(L, "UClass");
-                    lua_pushvalue(L, 2);                // push key
-                    lua_rawget(L, -2);
-                    lua_remove(L, -2);
-                }
-                else
-                {
-                    lua_pushnil(L);
-                }
+                lua_pushnil(L);
             }
         }
     }
@@ -1370,46 +1048,6 @@ void AddPackagePath(lua_State *L, const char *Path)
 }
 
 /**
- * package.loaded[ModuleName] = nil
- */
-void ClearLoadedModule(lua_State *L, const char *ModuleName)
-{   
-    if (L)
-    {
-        if (!ModuleName)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s, Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return;
-        }
-
-        lua_getglobal(L, "package");
-        lua_getfield(L, -1, "loaded");
-        lua_pushnil(L);
-        lua_setfield(L, -2, ModuleName);
-        lua_pop(L, 2);
-    }
-}
-
-/**
- * Get package.loaded[ModuleName]
- */
-int32 GetLoadedModule(lua_State *L, const char *ModuleName)
-{
-    if (!ModuleName)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s, Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return LUA_TNIL;
-    }
-
-    lua_getglobal(L, "package");
-    lua_getfield(L, -1, "loaded");
-    int32 Type = lua_getfield(L, -1, ModuleName);
-    lua_remove(L, -2);
-    lua_remove(L, -2);
-    return Type;
-}
-
-/**
  * Get collision related enums
  */
 static bool RegisterCollisionEnum(lua_State *L, const char *Name, lua_CFunction IndexFunc)
@@ -1421,7 +1059,7 @@ static bool RegisterCollisionEnum(lua_State *L, const char *Name, lua_CFunction 
         return true;
     }
 
-    GReflectionRegistry.RegisterEnum(Name);
+    UnLua::FEnumRegistry::StaticRegister(Name);
 
     lua_pop(L, 1);
     luaL_newmetatable(L, Name);
@@ -1496,46 +1134,6 @@ bool RegisterEObjectTypeQuery(lua_State *L)
 bool RegisterETraceTypeQuery(lua_State *L)
 {
     return RegisterCollisionEnum(L, "ETraceTypeQuery", ETraceTypeQuery_Index);
-}
-
-/**
- * Clear metatable references
- */
-void ClearLibrary(lua_State *L, const char *LibrayName)
-{
-    if (L)
-    {
-        lua_pushnil(L);
-        SetTableForClass(L, LibrayName);
-        lua_pushnil(L);
-        lua_setfield(L, LUA_REGISTRYINDEX, LibrayName);
-    }
-}
-
-/**
- * Create weak key table
- */
-void CreateWeakKeyTable(lua_State *L)
-{
-    lua_newtable(L);
-    lua_newtable(L);
-    lua_pushstring(L, "__mode");
-    lua_pushstring(L, "k");
-    lua_rawset(L, -3);
-    lua_setmetatable(L, -2);
-}
-
-/**
- * Create weak value table
- */
-void CreateWeakValueTable(lua_State *L)
-{
-    lua_newtable(L);
-    lua_newtable(L);
-    lua_pushstring(L, "__mode");
-    lua_pushstring(L, "v");
-    lua_rawset(L, -3);
-    lua_setmetatable(L, -2);
 }
 
 /**
@@ -1659,433 +1257,60 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool(*TraverseWor
     return INDEX_NONE;
 }
 
-int32 Global_RegisterEnum(lua_State *L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    RegisterEnum(L, lua_tostring(L, 1));
-    return 0;
-}
-
-/**
- * Register an enum (by FEnumDesc)
- */
-static bool RegisterEnumInternal(lua_State *L, FEnumDesc *EnumDesc)
-{
-    if (EnumDesc)
-    {
-        TStringConversion<TStringConvert<TCHAR, ANSICHAR>> EnumName(*EnumDesc->GetName());
-        int32 Type = luaL_getmetatable(L, EnumName.Get());
-        if (Type != LUA_TTABLE)
-        {
-            luaL_newmetatable(L, EnumName.Get());
-
-            lua_pushstring(L, "__index");
-            lua_pushcfunction(L, Enum_Index);
-            lua_rawset(L, -3);
-
-            lua_pushstring(L, "__gc");
-            lua_pushcfunction(L, Enum_Delete);
-            lua_rawset(L, -3);
-
-            // add other members here
-            lua_pushstring(L, "GetMaxValue");
-			lua_pushvalue(L, -2);                               // EnumTable
-			lua_pushcclosure(L, Enum_GetMaxValue, 1);          // closure
-			lua_rawset(L, -3);
-
-			lua_pushstring(L, "GetNameByValue");
-			lua_pushvalue(L, -2);                     
-			lua_pushcclosure(L, Enum_GetNameByValue, 1);       
-			lua_rawset(L, -3);
-
-            lua_pushvalue(L, -1);               // set metatable to self
-            lua_setmetatable(L, -2);
-
-            SetTableForClass(L, EnumName.Get());
-
-            GLuaCxt->AddLibraryName(*EnumDesc->GetName());
-        }
-        lua_pop(L, 1);
-        return true;
-    }
-    return false;
-}
-
-/**
- * Register an enum (by name)
- */
-bool RegisterEnum(lua_State *L, const char *EnumName)
-{
-    if (!EnumName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid enum name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return false;
-    }
-
-    FEnumDesc *EnumDesc = GReflectionRegistry.RegisterEnum(EnumName);
-    bool bSuccess = RegisterEnumInternal(L, EnumDesc);
-    if (!bSuccess)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to register enum %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(EnumName));
-    }
-    return bSuccess;
-}
-
-/**
- * Register an enum (by UEnum)
- */
-bool RegisterEnum(lua_State *L, UEnum *Enum)
-{
-    if (!Enum)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid UEnum!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return false;
-    }
-
-    FEnumDesc *EnumDesc = GReflectionRegistry.RegisterEnum(Enum);
-    bool bSuccess = RegisterEnumInternal(L, EnumDesc);
-    if (!bSuccess)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Failed to register UEnum!"), ANSI_TO_TCHAR(__FUNCTION__));
-    }
-    return bSuccess;
-}
-
-int32 Global_UnRegisterClass(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, -1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    FClassDesc* ClassDesc = GReflectionRegistry.FindClass(ClassName);
-    if (ClassDesc)
-    {
-        GReflectionRegistry.TryUnRegisterClass(ClassDesc);
-    }
-
-    return 0;
-}
-
-int32 Global_RegisterClass(lua_State *L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    RegisterClass(L, lua_tostring(L, 1));
-    return 0;
-}
-
 extern int32 UObject_Identical(lua_State *L);
 extern int32 UObject_Delete(lua_State *L);
 
-/**
- * Register a class
- */
-
-static bool RegisterClassCore(lua_State *L, FClassDesc *InClass, const FClassDesc *InSuperClass, UnLua::IExportedClass **ExportedClasses, int32 NumExportedClasses)
-{
-    if (!GReflectionRegistry.IsDescValid(InClass, DESC_CLASS))
-    {
-        return false;
-    }
-
-    FString StrClassName = InClass->GetName();
-    FTCHARToUTF8 ClassName(*StrClassName);
-
-    int32 Type = luaL_getmetatable(L, ClassName.Get());
-    if (Type == LUA_TTABLE)
-    {
-        lua_pop(L, 1);
-        return true;
-    }
-    
-    lua_pop(L, 1);
-    luaL_newmetatable(L, ClassName.Get());                  // 1, will be used as meta table later (lua_setmetatable)
-
-    if (InSuperClass)
-    {
-        FTCHARToUTF8 InSuperClassName(*InSuperClass->GetName());
-        lua_pushstring(L, "ParentClass");                   // 2
-        Type = luaL_getmetatable(L, InSuperClassName.Get());
-        if (Type != LUA_TTABLE)
-        {
-            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid super class %s!"), ANSI_TO_TCHAR(__FUNCTION__), *InSuperClass->GetName());
-        }
-        lua_rawset(L, -3);
-    }
-
-
-    lua_pushstring(L, "__index");                           // 2
-    lua_pushcfunction(L, Class_Index);                      // 3
-    lua_rawset(L, -3);
-
-    lua_pushstring(L, "__newindex");                        // 2
-    lua_pushcfunction(L, Class_NewIndex);                   // 3
-    lua_rawset(L, -3);
-    uint64 TypeHash = (uint64)InClass->AsStruct();
-    lua_pushstring(L, "TypeHash");
-    lua_pushnumber(L, TypeHash);
-    lua_rawset(L, -3);
-
-    UScriptStruct *ScriptStruct = InClass->AsScriptStruct();
-    if (ScriptStruct)
-    {
-        lua_pushlightuserdata(L, InClass);                  // FClassDesc
-
-        lua_pushstring(L, "Copy");                          // Key
-        lua_pushvalue(L, -2);                               // FClassDesc
-        lua_pushcclosure(L, ScriptStruct_Copy, 1);          // closure
-        lua_rawset(L, -4);
-
-		lua_pushstring(L, "CopyFrom");                          // Key
-		lua_pushvalue(L, -2);                               // FClassDesc
-		lua_pushcclosure(L, ScriptStruct_CopyFrom, 1);          // closure
-		lua_rawset(L, -4);
-
-        lua_pushstring(L, "__eq");                          // Key
-        lua_pushvalue(L, -2);                               // FClassDesc
-        lua_pushcclosure(L, ScriptStruct_Compare, 1);       // closure
-        lua_rawset(L, -4);
-
-        //if (!(ScriptStruct->StructFlags & (STRUCT_IsPlainOldData | STRUCT_NoDestructor)))
-        {
-            lua_pushstring(L, "__gc");                      // Key
-            lua_pushvalue(L, -2);                           // FClassDesc
-            lua_pushcclosure(L, ScriptStruct_Delete, 1);    // closure
-            lua_rawset(L, -4);
-        }
-
-        lua_pushstring(L, "__call");                        // Key
-        lua_pushvalue(L, -2);                               // FClassDesc
-        lua_pushcclosure(L, ScriptStruct_New, 1);           // closure
-        lua_rawset(L, -4);
-
-        lua_pop(L, 1);
-    }
-    else
-    {
-        UClass *Class = InClass->AsClass();
-        if (Class != UObject::StaticClass() && Class != UClass::StaticClass())
-        {
-            lua_pushstring(L, "ClassDesc");                 // Key
-            lua_pushlightuserdata(L, InClass);              // FClassDesc
-            lua_rawset(L, -3);
-
-            lua_pushstring(L, "StaticClass");               // Key
-            lua_pushlightuserdata(L, InClass);              // FClassDesc
-            lua_pushcclosure(L, Class_StaticClass, 1);      // closure
-            lua_rawset(L, -3);
-
-            lua_pushstring(L, "Cast");                      // Key
-            lua_pushcfunction(L, Class_Cast);               // C function
-            lua_rawset(L, -3);
-
-            lua_pushstring(L, "__eq");                      // Key
-            lua_pushcfunction(L, UObject_Identical);        // C function
-            lua_rawset(L, -3);
-
-            lua_pushstring(L, "__gc");                      // Key
-            lua_pushcfunction(L, UObject_Delete);           // C function
-            lua_rawset(L, -3);
-        }
-    }
-
-    lua_pushvalue(L, -1);                                   // set metatable to self
-    lua_setmetatable(L, -2);
-
-    if (ExportedClasses)
-    {
-        for (int32 i = 0; i < NumExportedClasses; ++i)
-        {
-            ExportedClasses[i]->Register(L);
-        }
-    }
-
-    SetTableForClass(L, ClassName.Get());
-
-    if (!InClass->IsNative())
-    {
-        GLuaCxt->AddLibraryName(*StrClassName);
-    }
-
-    return true;
-}
-
-static bool RegisterClassInternal(lua_State *L, FClassDesc *ClassDesc)
-{
-    if (GReflectionRegistry.IsDescValid((void*)ClassDesc,DESC_CLASS))
-    {
-        FScopedSafeClass SafeClasses((FClassDesc*)ClassDesc);
-
-        const FString &Name = ClassDesc->GetName();
-
-        int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*Name));
-        bool bSuccess = Type == LUA_TTABLE;
-        lua_pop(L, 1);
-        if (bSuccess)
-        {
-            return true;
-        }
-
-        TArray<FClassDesc*> ClassDescChain;
-        ClassDesc->GetInheritanceChain(ClassDescChain);
-
-        // add self
-        ClassDescChain.Insert((FClassDesc*)ClassDesc, 0);
-
-        TArray<UnLua::IExportedClass*> ExportedClasses;
-        UnLua::IExportedClass *ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain.Last()->GetName());   // find statically exported stuff...
-        if (ExportedClass)
-        {
-            ExportedClasses.Add(ExportedClass);
-        }
-        RegisterClassCore(L, ClassDescChain.Last(), nullptr, ExportedClasses.GetData(), ExportedClasses.Num());
-
-        for (int32 i = ClassDescChain.Num() - 2; i > -1; --i)
-        {
-            ExportedClass = GLuaCxt->FindExportedReflectedClass(*ClassDescChain[i]->GetName());                          // find statically exported stuff...
-            if (ExportedClass)
-            {
-                ExportedClasses.Add(ExportedClass);
-            }
-            RegisterClassCore(L, ClassDescChain[i], ClassDescChain[i + 1], ExportedClasses.GetData(), ExportedClasses.Num());
-        }
-
-        return true;
-    }
-    return false;
-}
-
-FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName)
-{
-    if (!ClassName)
-    {
-        return nullptr;
-    }
-
-    FClassDesc *ClassDesc = nullptr;
-    if (SuperClassName)
-    {
-        ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
-        GReflectionRegistry.RegisterClass(SuperClassName);
-    }
-    else
-    {
-        ClassDesc = GReflectionRegistry.RegisterClass(ClassName);
-    }
-
-    if (!RegisterClassInternal(L, ClassDesc))
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to register class %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(ClassName));
-    }
-    return ClassDesc;
-}
-
-FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct)
-{
-    if (!Struct)
-    {
-        return nullptr;
-    }
-
-    FClassDesc *ClassDesc = nullptr;
-    if (SuperStruct)
-    {
-        ClassDesc = GReflectionRegistry.RegisterClass(Struct);
-        GReflectionRegistry.RegisterClass(SuperStruct);
-    }
-    else
-    {
-        ClassDesc = GReflectionRegistry.RegisterClass(Struct);
-    }
-
-
-    if (!RegisterClassInternal(L, ClassDesc))
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to register UStruct!"), ANSI_TO_TCHAR(__FUNCTION__));
-    }
-    return ClassDesc;
-}
-
 int32 Global_GetUProperty(lua_State *L)
 {
-    if (lua_islightuserdata(L, 2))
-    {   
-        bool bValid = false;
-        UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
-        if (Property)
-        {
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
-
-			if ((!bValid)
-				&& (Property->StaticExported))
-			{
-				bValid = true;
-			}
-
-            UObject* Object = UnLua::GetUObject(L, 1);
-            if ((bValid)
-                && (GLuaCxt->IsUObjectValid(Object)))
-            {
-                Property->Read(L, Object, false);           // get UProperty value
-                return 1;
-            }
-        }
+    if (lua_type(L, 2) != LUA_TUSERDATA)
+    {
+        lua_pushnil(L);
+        return 1;
     }
 
-    lua_pushnil(L);
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+    if (!Property.IsValid())
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    void* Self = GetCppInstance(L, 1);
+    if (!Self)
+    {
+        lua_pushnil(L);
+        return 1;
+    }
+
+    if (UnLua::LowLevel::IsReleasedPtr(Self))
+    {
+        UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Property->GetName());
+        lua_pushnil(L);
+        return 1;
+    }
+
+    Property->Read(L, Self, false);
     return 1;
 }
 
 int32 Global_SetUProperty(lua_State *L)
 {
-    if (lua_islightuserdata(L, 2))
+    if (lua_type(L, 2) == LUA_TUSERDATA)
     {
-        bool bValid = false;
-        UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, 2);
-        if (Property)
-        {   
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+        const auto Property = Registry->Get<UnLua::ITypeOps>(L, 2);
+        if (!Property.IsValid())
+            return 0;
 
-            if ((!bValid)
-                && (Property->StaticExported))
-            {
-                bValid = true;
-            }
-
-            UObject* Object = UnLua::GetUObject(L, 1);
-            if ((bValid)
-                && (GLuaCxt->IsUObjectValid(Object)))
-            {
-                Property->Write(L, Object, 3);              // set UProperty value
-            }
+        UObject* Object = UnLua::GetUObject(L, 1, false);
+        if (UnLua::LowLevel::IsReleasedPtr(Object))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Property->GetName());
+            return 0;
         }
+
+        Property->Write(L, Object, 3);              // set UProperty value
     }
     return 0;
 }
@@ -2140,7 +1365,7 @@ int32 Global_NewObject(lua_State *L)
 
     {
         const char *ModuleName = NumParams > 3 ? lua_tostring(L, 4) : nullptr;
-        int32 TableRef = INDEX_NONE;
+        int32 TableRef = LUA_NOREF;
         if (NumParams > 4 && lua_type(L, 5) == LUA_TTABLE)
         {
             lua_pushvalue(L, 5);
@@ -2192,100 +1417,6 @@ int32 Global_Print(lua_State *L)
     return 0;
 }
 
-int LoadFromBuiltinLibs(lua_State *L)
-{
-    TCHAR* Name = UTF8_TO_TCHAR(lua_tostring(L, 1));
-    const auto Ctx = FLuaContext::Create();
-    const auto BuiltinLoaders = Ctx->GetBuiltinLoaders();
-    const auto Loader = BuiltinLoaders.Find(Name);
-    if(!Loader)
-        return 0;
-    lua_pushcfunction(L, *Loader);
-    return 1;
-}
-
-int LoadFromCustomLoader(lua_State *L)
-{
-    if(!FUnLuaDelegates::CustomLoadLuaFile.IsBound())
-        return 0;
-
-    const FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
-    
-    TArray<uint8> Data;
-    FString FullFilePath;
-    if(!FUnLuaDelegates::CustomLoadLuaFile.Execute(FileName, Data, FullFilePath))
-        return 0;
-
-    const auto Chunk = (const char*)Data.GetData();
-    const auto ChunkName = TCHAR_TO_UTF8(*FileName);
-    if(!UnLua::LoadChunk(L, Chunk, Data.Num(), ChunkName))
-        return luaL_error(L, "file loading from custom loader error");
-
-    return 1;
-}
-
-int LoadFromFileSystem(lua_State *L)
-{
-    FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
-    FileName.ReplaceInline(TEXT("."), TEXT("/"));
-    const auto RelativePath = FString::Printf(TEXT("%s.lua"), *FileName);
-    const auto FullPath = GetFullPathFromRelativePath(RelativePath);
-    TArray<uint8> Data;
-    if(!FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
-        return 0;
-
-    const auto SkipLen = 3 < Data.Num() && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
-    const auto ChunkName = TCHAR_TO_UTF8(*RelativePath);
-    const auto Chunk = (const char*)(Data.GetData() + SkipLen);
-    const auto ChunkSize = Data.Num() - SkipLen;
-    if(!UnLua::LoadChunk(L, Chunk, ChunkSize, ChunkName))
-        return luaL_error(L, "file loading from file system error");
-
-    return 1;
-}
-
-int32 Global_AddToClassWhiteSet(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, 1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    GReflectionRegistry.AddToClassWhiteSet(UTF8_TO_TCHAR(ClassName));
-
-    return 0;
-}
-
-int32 Global_RemoveFromClassWhiteSet(lua_State* L)
-{
-    int32 NumParams = lua_gettop(L);
-    if (NumParams < 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    const char* ClassName = lua_tostring(L, 1);
-    if (!ClassName)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    GReflectionRegistry.RemoveFromClassWhiteSet(UTF8_TO_TCHAR(ClassName));
-
-    return 0;
-}
-
 /**
  * __index meta methods for enum
  */
@@ -2298,7 +1429,7 @@ int32 Enum_Index(lua_State *L)
     lua_rawget(L, 1);                   // 3
     check(lua_isstring(L, -1));
     
-    const FEnumDesc *Enum = GReflectionRegistry.FindEnum(lua_tostring(L, -1));
+    const FEnumDesc *Enum = UnLua::FEnumRegistry::Find(lua_tostring(L, -1));
 	if ((!Enum) 
         || (!Enum->IsValid()))
 	{
@@ -2318,18 +1449,6 @@ int32 Enum_Index(lua_State *L)
 
 int32 Enum_Delete(lua_State *L)
 {
-    lua_pushstring(L, "__name");
-    int32 Type = lua_rawget(L, 1);
-    if (Type == LUA_TSTRING)
-    {   
-        const char* EnumName = lua_tostring(L, -1);
-        const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
-        if (EnumDesc)
-        {
-            GReflectionRegistry.UnRegisterEnum(EnumDesc);
-        }
-    }
-    lua_pop(L, 1);
     return 0;
 }
 
@@ -2345,7 +1464,7 @@ int32 Enum_GetMaxValue(lua_State* L)
 		if (Type == LUA_TSTRING)
 		{
 			const char* EnumName = lua_tostring(L, -1);
-			const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
+			const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
 			if (EnumDesc)
 			{
 				UEnum* Enum = EnumDesc->GetEnum();
@@ -2363,7 +1482,46 @@ int32 Enum_GetMaxValue(lua_State* L)
     return 1;
 }
 
-int32 Enum_GetNameByValue(lua_State* L)
+int32 Enum_GetNameStringByValue(lua_State* L)
+{
+    if (lua_gettop(L) < 1)
+    {
+        return 0;
+    }
+
+    FString ValueName;
+
+    lua_pushvalue(L, lua_upvalueindex(1));
+    if (lua_type(L, -1) == LUA_TTABLE)
+    {
+        // enum value
+        int64 Value = lua_tointegerx(L, -2, nullptr);
+
+        lua_pushstring(L, "__name");
+        int32 Type = lua_rawget(L, -2);
+        if (Type == LUA_TSTRING)
+        {
+            const char* EnumName = lua_tostring(L, -1);
+            const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
+            if (EnumDesc)
+            {
+                UEnum* Enum = EnumDesc->GetEnum();
+                if (Enum)
+                {   
+                    ValueName = Enum->GetNameStringByValue(Value);
+                }
+            }
+        }
+        lua_pop(L, 1);
+    }
+    lua_pop(L, 1);
+
+    UnLua::Push(L, ValueName);
+
+    return 1;
+}
+
+int32 Enum_GetDisplayNameTextByValue(lua_State* L)
 {
     if (lua_gettop(L) < 1)
     {
@@ -2375,25 +1533,25 @@ int32 Enum_GetNameByValue(lua_State* L)
     lua_pushvalue(L, lua_upvalueindex(1));
     if (lua_type(L, -1) == LUA_TTABLE)
     {
-		// enum value
-		int64 Value = lua_tointegerx(L, -2, nullptr);
+        // enum value
+        int64 Value = lua_tointegerx(L, -2, nullptr);
 
-		lua_pushstring(L, "__name");
-		int32 Type = lua_rawget(L, -2);
-		if (Type == LUA_TSTRING)
-		{
-			const char* EnumName = lua_tostring(L, -1);
-			const FEnumDesc* EnumDesc = GReflectionRegistry.FindEnum(EnumName);
-			if (EnumDesc)
-			{
-				UEnum* Enum = EnumDesc->GetEnum();
-				if (Enum)
-				{   
-					ValueName = Enum->GetDisplayNameTextByValue(Value);
-				}
-			}
-		}
-		lua_pop(L, 1);
+        lua_pushstring(L, "__name");
+        int32 Type = lua_rawget(L, -2);
+        if (Type == LUA_TSTRING)
+        {
+            const char* EnumName = lua_tostring(L, -1);
+            const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
+            if (EnumDesc)
+            {
+                UEnum* Enum = EnumDesc->GetEnum();
+                if (Enum)
+                {   
+                    ValueName = Enum->GetDisplayNameTextByValue(Value);
+                }
+            }
+        }
+        lua_pop(L, 1);
     }
     lua_pop(L, 1);
 
@@ -2408,39 +1566,43 @@ int32 Enum_GetNameByValue(lua_State* L)
 int32 Class_Index(lua_State *L)
 {
     GetField(L);
-    if (lua_islightuserdata(L, -1))
-    {   
-        bool bValid = false;
-		UnLua::ITypeOps *Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
-        if (Property)
-        {
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
+    if (lua_type(L, -1) != LUA_TUSERDATA)
+        return 1;
 
-			if ((!bValid)
-				&& (Property->StaticExported))
-			{
-				bValid = true;
-			}
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+    if (!Property.IsValid())
+        return 0;
 
-			void* ContainerPtr = GetCppInstance(L, 1);
+    void* Self = GetCppInstance(L, 1);
+    if (!Self)
+        return 1;
 
-			if ((bValid)
-				&& (ContainerPtr))
-			{
-				Property->Read(L, ContainerPtr, false);
-				lua_remove(L, -2);
-			}
-        }
-        else
-        {
-            lua_pushnil(L);
-            lua_remove(L, -2);
-        }
-    }
+    Property->Read(L, Self, false);
+    lua_remove(L, -2);
     return 1;
+}
+
+bool IsPropertyOwnerTypeValid(UnLua::ITypeOps* InProperty, void* InContainerPtr)
+{
+    if (InProperty->StaticExported)
+        return true;
+
+    UnLua::ITypeInterface* TypeInterface = (UnLua::ITypeInterface*)InProperty;
+    FProperty* Property = TypeInterface->GetUProperty();
+    if (!Property)
+        return true;
+
+    UObject* Object = (UObject*)InContainerPtr;
+    UClass* OwnerClass = Property->GetOwnerClass();
+    if (!OwnerClass)
+        return true;
+
+    if (Object->IsA(OwnerClass))
+        return true;
+
+    UE_LOG(LogUnLua, Error, TEXT("Writing property to invalid owner. %s should be a %s."), *Object->GetName(), *OwnerClass->GetName());
+    return false;
 }
 
 /**
@@ -2449,30 +1611,23 @@ int32 Class_Index(lua_State *L)
 int32 Class_NewIndex(lua_State *L)
 {
     GetField(L);
-    if (lua_islightuserdata(L, -1))
+
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    if (lua_type(L, -1) == LUA_TUSERDATA)
     {
-        bool bValid = false;
-        UnLua::ITypeOps* Property = (UnLua::ITypeOps*)lua_touserdata(L, -1);
-        if (Property)
+        const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+        if (Property.IsValid())
         {
-			if (GReflectionRegistry.IsDescValidWithObjectCheck(Property, DESC_PROPERTY))
-			{
-				bValid = true;
-			}
-
-			if ((!bValid)
-				&& (Property->StaticExported))
-			{
-				bValid = true;
-			}
-
-			void* ContainerPtr = GetCppInstance(L, 1);
-
-			if ((bValid)
-				&& (ContainerPtr))
-			{
-				Property->Write(L, ContainerPtr, 3);
-			}
+            void* Self = GetCppInstance(L, 1);
+            if (Self)
+            {
+#if ENABLE_TYPE_CHECK == 1
+                if (IsPropertyOwnerTypeValid(Property.Get(), Self))
+                    Property->Write(L, Self, 3);
+#else
+                Property->Write(L, Self, 3);
+#endif
+            }
         }
     }
     else
@@ -2498,10 +1653,11 @@ int32 Class_CallUFunction(lua_State *L)
 {
     //!!!Fix!!!
     //delete desc when is not valid
-    FFunctionDesc *Function = (FFunctionDesc*)lua_touserdata(L, lua_upvalueindex(1));
-    if (!GReflectionRegistry.IsDescValidWithObjectCheck(Function,DESC_FUNCTION))
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto Function = Env.GetObjectRegistry()->Get<FFunctionDesc>(L, lua_upvalueindex(1));
+    if (!Function->IsValid())
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid function descriptor! %p"), ANSI_TO_TCHAR(__FUNCTION__), Function);
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid function descriptor!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
     int32 NumParams = lua_gettop(L);
@@ -2514,26 +1670,19 @@ int32 Class_CallUFunction(lua_State *L)
  */
 int32 Class_CallLatentFunction(lua_State *L)
 {
-    FFunctionDesc *Function = (FFunctionDesc*)lua_touserdata(L, lua_upvalueindex(1));
-	if (!GReflectionRegistry.IsDescValidWithObjectCheck(Function, DESC_FUNCTION))
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto Function = Env.GetObjectRegistry()->Get<FFunctionDesc>(L, lua_upvalueindex(1));
+	if (!Function->IsValid())
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid function descriptor!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    int32 ThreadRef = GLuaCxt->FindThread(L);
+    auto ThreadRef = Env.FindOrAddThread(L);
     if (ThreadRef == LUA_REFNIL)
     {
-        int32 Value = lua_pushthread(L);
-        if (Value == 1)
-        {
-            lua_pop(L, 1);
-            UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Can't call latent action in main lua thread!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
-        }
-
-        ThreadRef = luaL_ref(L, LUA_REGISTRYINDEX);
-        GLuaCxt->AddThread(L, ThreadRef);
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s: Can't call latent action in main lua thread!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
     }
 
     int32 NumParams = lua_gettop(L);
@@ -2544,17 +1693,9 @@ int32 Class_CallLatentFunction(lua_State *L)
 FClassDesc* Class_CheckParam(lua_State *L)
 {
     FClassDesc *ClassDesc = (FClassDesc*)lua_touserdata(L, lua_upvalueindex(1));
-    if ((!ClassDesc)
-        || (!GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)))
+    if (!ClassDesc)
     {
         UE_LOG(LogUnLua, Log, TEXT("Class : Invalid FClassDesc!"));
-        return NULL;
-    }
-
-    if (!ClassDesc->IsValid())
-    {
-        //UE_LOG(LogUnLua, Log, TEXT("Class : Try to release empty FClassDesc(Name : %s, Address : %p)!"),*ClassDesc->GetName(),ClassDesc);
-        //GReflectionRegistry.UnRegisterClass(ClassDesc);
         return NULL;
     }
 
@@ -2618,23 +1759,16 @@ int32 Class_Cast(lua_State* L)
 FClassDesc* ScriptStruct_CheckParam(lua_State *L)
 {
     FClassDesc *ClassDesc = (FClassDesc*)lua_touserdata(L, lua_upvalueindex(1));
-    if ((!ClassDesc)
-        || (!GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)))
+    if (!ClassDesc)
     {
         UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : Invalid FClassDesc!"));
-        return NULL;
-    }
-    if (!ClassDesc->IsValid())
-    {
-        //UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : Try to release empty FClassDesc(Name : %s, Address : %p)!"),*ClassDesc->GetName(),ClassDesc);
-        //GReflectionRegistry.UnRegisterClass(ClassDesc);
         return NULL;
     }
 
     UScriptStruct *ScriptStruct = ClassDesc->AsScriptStruct();
     if (!ScriptStruct)
     {
-        UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : ClassDesc type is not script struct(Name : %s, Address : %p)"), *ClassDesc->GetName(),ClassDesc);
+        // UE_LOG(LogUnLua, Log, TEXT("ScriptStruct : ClassDesc type is not script struct(Name : %s, Address : %p)"), *ClassDesc->GetName(),ClassDesc);
         return NULL;
     }
 
@@ -2663,7 +1797,7 @@ int32 ScriptStruct_New(lua_State *L)
  * Generic GC function for UScriptStruct
  */
 int32 ScriptStruct_Delete(lua_State *L)
-{   
+{
     FClassDesc *ClassDesc = ScriptStruct_CheckParam(L);
     if (!ClassDesc)
     {
@@ -2684,22 +1818,6 @@ int32 ScriptStruct_Delete(lua_State *L)
                 ScriptStruct->DestroyStruct(Userdata);
             }
         }
-            
-        ClassDesc->SubRef();
-
-#if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogTemp, Log, TEXT("ScriptStruct_Delete : %s"), *ClassDesc->GetName());
-#endif
-        GReflectionRegistry.TryUnRegisterClass(ClassDesc);
-    }
-    else
-    {
-        if (!ScriptStruct->IsNative())
-        {
-            GObjectReferencer.RemoveObjectRef(ScriptStruct);
-        }
-
-        GReflectionRegistry.UnRegisterClass(ClassDesc);
     }
     return 0;
 }
@@ -2814,7 +1932,7 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
             if (Type == LUA_TSTRING)
             {   
                 const char* Name = lua_tostring(L, -1);
-                FClassDesc *ClassDesc = GReflectionRegistry.FindClass(Name);
+                FClassDesc *ClassDesc = UnLua::FClassRegistry::Find(Name);
                 if (ClassDesc)
                 {
                     if (ClassDesc->IsClass())
@@ -2830,14 +1948,14 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
                 }
                 else
                 {
-                    FEnumDesc *EnumDesc = GReflectionRegistry.FindEnum(Name);
+                    FEnumDesc *EnumDesc = UnLua::FEnumRegistry::Find(Name);
                     if (EnumDesc)
                     {
                         TypeInterface = GPropertyCreator.CreateEnumProperty(EnumDesc->GetEnum());
                     }
                     else
                     {
-                        TypeInterface = GLuaCxt->FindTypeInterface(lua_tostring(L, -1));
+                        TypeInterface = UnLua::FindTypeInterface(lua_tostring(L, -1));
                     }
                 }
             }
@@ -2846,11 +1964,40 @@ TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
         break;
     case LUA_TUSERDATA:
         {
-            UClass *Class = Cast<UClass>(UnLua::GetUObject(L, Index));
-            if (Class)
+            // mt/nil
+            lua_getmetatable(L, Index);
+
+            if (lua_istable(L, -1))
             {
-                TypeInterface = GPropertyCreator.CreateClassProperty(Class);
+                // mt,mt.__name/nil
+                lua_getfield(L, -1, "__name");
+
+                if (lua_isstring(L, -1))
+                {
+                    const char* Name = lua_tostring(L, -1);
+
+                    FClassDesc* ClassDesc = UnLua::FClassRegistry::Find(Name);
+
+                    if (ClassDesc)
+                    {
+                        if (ClassDesc->IsClass())
+                        {
+                            UClass* Class = ClassDesc->AsClass();
+                            TypeInterface = GPropertyCreator.CreateObjectProperty(Class);
+                        }
+                        else
+                        {
+                            UScriptStruct* ScriptStruct = ClassDesc->AsScriptStruct();
+                            TypeInterface = GPropertyCreator.CreateStructProperty(ScriptStruct);
+                        }
+                    }
+                }
+
+                // mt
+                lua_pop(L, 1);
             }
+
+            lua_pop(L, 1);
         }
         break;
     }

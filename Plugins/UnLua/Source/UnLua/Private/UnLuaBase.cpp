@@ -12,135 +12,52 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "LuaCore.h"
-#include "LuaContext.h"
 #include "UnLuaDelegates.h"
-#include "UEObjectReferencer.h"
+#include "ObjectReferencer.h"
+#include "UnLuaModule.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
 
 DEFINE_LOG_CATEGORY(LogUnLua);
 DEFINE_LOG_CATEGORY(UnLuaDelegate);
 
 namespace UnLua
 {
-
-    bool AddTypeInterface(FName Name, TSharedPtr<ITypeInterface> TypeInterface)
+    bool IsUObjectValid(UObjectBase* ObjPtr)
     {
-        FLuaContext::Create();
-        return GLuaCxt->AddTypeInterface(Name, TypeInterface);
-    }
-
-    IExportedClass* FindExportedClass(FName Name)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->FindExportedClass(Name);
-    }
-
-    bool ExportClass(IExportedClass *Class)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportClass(Class);
-    }
-
-    bool ExportFunction(IExportedFunction *Function)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportFunction(Function);
-    }
-
-    bool ExportEnum(IExportedEnum *Enum)
-    {
-        FLuaContext::Create();
-        return GLuaCxt->ExportEnum(Enum);
+        if (!ObjPtr || ObjPtr == LowLevel::ReleasedPtr)
+            return false;
+        return (ObjPtr->GetFlags() & (RF_BeginDestroyed | RF_FinishDestroyed)) == 0 && ObjPtr->IsValidLowLevelFast();
     }
 
     lua_State* CreateState()
     {
-        if (GLuaCxt)
-        {
-            GLuaCxt->CreateState();
-            return *GLuaCxt;
-        }
-        return nullptr;
+        IUnLuaModule::Get().SetActive(true);
+        return GetState();
     }
 
     lua_State* GetState()
     {
-        return GLuaCxt ? (lua_State*)(*GLuaCxt) : nullptr;
+        const auto Env = IUnLuaModule::Get().GetEnv();
+        return Env ? Env->GetMainState() : nullptr;
     }
 
     bool Startup()
     {
-        if (GLuaCxt)
-        {
-            GLuaCxt->SetEnable(true);
-            return true;
-        }
-        return false;
+        IUnLuaModule::Get().SetActive(true);
+        return true;
     }
 
     void Shutdown()
     {
-        if (GLuaCxt)
-        {
-            GLuaCxt->SetEnable(false);
-        }
+        IUnLuaModule::Get().SetActive(false);
     }
 
-    /**
-     * Load a Lua file without running it
-     */
-    bool LoadFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
+    bool IsEnabled()
     {
-        FString FullFilePath = GetFullPathFromRelativePath(RelativeFilePath);
-        if (FullFilePath.IsEmpty())
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("the lua file try to load does not exist! : %s"), *RelativeFilePath);
-            return false;
-        }
-
-        if (FullFilePath != GLuaSrcFullPath + RelativeFilePath)
-        {
-            UE_LOG(LogUnLua, Log, TEXT("Load lua file from DownloadDir : %s"), *FullFilePath);
-        }
-
-        TArray<uint8> Data;
-        // developers can provide a delegate to load the file
-        bool bSuccess = FUnLuaDelegates::LoadLuaFile.IsBound() ? FUnLuaDelegates::LoadLuaFile.Execute(FullFilePath, Data) : FFileHelper::LoadFileToArray(Data, *FullFilePath, 0);
-        if (!bSuccess)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        int32 SkipLen = (3 < Data.Num()) && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0;        // skip UTF-8 BOM mark
-        return LoadChunk(L, (const char*)(Data.GetData() + SkipLen), Data.Num() - SkipLen, TCHAR_TO_UTF8(*RelativeFilePath), Mode, Env);    // loads the buffer as a Lua chunk
-    }
-
-    /**
-     * Run a Lua file
-     */
-    bool RunFile(lua_State *L, const FString &RelativeFilePath, const char *Mode, int32 Env)
-    {
-        bool bSuccess = LoadFile(L, RelativeFilePath, Mode, Env);       // load the file content as a Lua chunk
-        if (!bSuccess)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("%s: Failed to load lua file!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return false;
-        }
-
-        int32 Code = lua_pcall(L, 0, LUA_MULTRET, 0);       // pcall
-        if (Code != LUA_OK)
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("Failed to call lua_pcall, error code: %d"), Code);
-            ReportLuaCallError(L);                          // report pcall error
-        }
-
-        return Code == LUA_OK;
+        return IUnLuaModule::Get().IsActive();
     }
 
     /**
@@ -288,7 +205,7 @@ namespace UnLua
                     bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
                     if (!bSuccess)
                     {
-                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"),  UTF8_TO_TCHAR(MetatableName));
+                        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"),  UTF8_TO_TCHAR(MetatableName));
                         return 1;
                     }
                 }
@@ -309,7 +226,8 @@ namespace UnLua
                 bool bSuccess = TryToSetMetatable(L, MetatableName);        // set metatable
                 if (!bSuccess)
                 {
-                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: !"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+                    UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid metatable, metatable name: %s!"), ANSI_TO_TCHAR(__FUNCTION__), UTF8_TO_TCHAR(MetatableName));
+                    lua_pop(L, 1);
                     return 1;
                 }
             }
@@ -350,54 +268,17 @@ namespace UnLua
      */
     int32 PushUObject(lua_State *L, UObjectBaseUtility *Object, bool bAddRef)
     {
-        if (!GLuaCxt->IsUObjectValid(Object))
-        {
-            lua_pushnil(L);
-            return 1;
-        }
-
-        lua_getfield(L, LUA_REGISTRYINDEX, "ObjectMap");
-        lua_pushlightuserdata(L, Object);
-        int32 Type = lua_rawget(L, -2);     // find the object from 'ObjectMap' first
-        if (Type == LUA_TNIL)
-        {
-            // 1. create a new userdata for the object if it's not found; 2. cache it in 'ObjectMap'
-            lua_pop(L, 1);
-            PushObjectCore(L, Object);
-            lua_pushlightuserdata(L, Object);
-            lua_pushvalue(L, -2);
-            lua_rawset(L, -4);
-
-            if (bAddRef && !Object->IsNative())
-            {
-                GObjectReferencer.AddObjectRef((UObject*)Object);       // add a reference for the object if it's a non-native object
-            }
-        }
-        lua_remove(L, -2);
-
+        FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->Push(L, (UObject*)Object);
         return 1;
     }
 
     /**
      * Get a UObject at the given stack index
      */
-    UObject* GetUObject(lua_State *L, int32 Index)
+    UObject* GetUObject(lua_State *L, int32 Index, bool bReturnNullIfInvalid)
     {
-/*#if UE_BUILD_DEBUG
-        if (lua_getmetatable(L, Index) == 0)
-        {
-            return nullptr;
-        }
-        // todo: stricter check?
-        lua_pushstring(L, "__name");
-        lua_gettable(L, -2);
-        const char *ClassName = lua_tostring(L, -1);
-        FClassDesc *ClassDesc = GReflectionRegistry.FindClass(ClassName);
-        lua_pop(L, 2);
-        return ClassDesc && ClassDesc->IsClass() ? (UObject*)GetCppInstance(L, Index) : nullptr;
-#else*/
         UObject* Object = (UObject*)GetCppInstance(L, Index);
-        if (!GLuaCxt->IsUObjectValid(Object))
+        if (bReturnNullIfInvalid && !IsUObjectValid(Object))
         {
             return nullptr;
         }
@@ -405,7 +286,6 @@ namespace UnLua
         {
             return Object;
         }
-//#endif
     }
 
     /**
@@ -449,11 +329,14 @@ namespace UnLua
             return 0;
         }
 
+        const auto Registry = FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
         if (bCreateCopy)
         {
             int32 Num = ScriptArray->Num();
             int32 ElementSize = TypeInterface->GetSize();
-            FScriptArray *DestScriptArray = new FScriptArray;       // create a new FScriptArray
+
+            const auto LuaArray = Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
+            FScriptArray *DestScriptArray = LuaArray->GetContainerPtr();       // create a new FScriptArray
             DestScriptArray->Empty(Num, ElementSize);
             DestScriptArray->Add(Num, ElementSize);
             if (Num)
@@ -468,18 +351,11 @@ namespace UnLua
                     DestData += ElementSize;
                 }
             }
-
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);                // create a new userdata for the new created FScriptArray
-            new(Userdata) FLuaArray(DestScriptArray, TypeInterface, FLuaArray::OwnedBySelf);    // placement new
         }
         else
         {
             // get the cached array or create a new one if not found
-            void *Userdata = CacheScriptContainer(L, (FScriptArray*)ScriptArray, FScriptContainerDesc::Array);
-            if (Userdata)
-            {
-                FLuaArray *LuaArray = new(Userdata) FLuaArray(ScriptArray, TypeInterface, FLuaArray::OwnedByOther);     // placement new
-            }
+            Registry->FindOrAdd(L, (FScriptArray*)ScriptArray, TypeInterface);
         }
         return 1;
     }
@@ -494,12 +370,12 @@ namespace UnLua
             return 0;
         }
 
+        const auto Registry = FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
         if (bCreateCopy)
         {
             int32 Num = ScriptSet->Num();
             FLuaSet SrcSet(ScriptSet, TypeInterface, FLuaSet::OwnedByOther);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Set);
-            FLuaSet *DestSet = new(Userdata) FLuaSet(new FScriptSet, TypeInterface, FLuaSet::OwnedBySelf);
+            FLuaSet* DestSet = Registry->NewSet(L, TypeInterface, FLuaSet::OwnedBySelf);
             DestSet->Clear(Num);
             for (int32 SrcIndex = 0; Num; ++SrcIndex)
             {
@@ -516,11 +392,7 @@ namespace UnLua
         }
         else
         {
-            void *Userdata = CacheScriptContainer(L, (FScriptSet*)ScriptSet, FScriptContainerDesc::Set);
-            if (Userdata)
-            {
-                FLuaSet *LuaSet = new(Userdata) FLuaSet(ScriptSet, TypeInterface, FLuaSet::OwnedByOther);
-            }
+            Registry->FindOrAdd(L, (FScriptSet*)ScriptSet, TypeInterface);
         }
         return 1;
     }
@@ -535,12 +407,12 @@ namespace UnLua
             return 0;
         }
 
+        const auto Registry = FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
         if (bCreateCopy)
         {
             int32 Num = ScriptMap->Num();
             FLuaMap SrcMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedByOther);
-            void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-            FLuaMap *DestMap = new(Userdata) FLuaMap(new FScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+            FLuaMap *DestMap = Registry->NewMap(L, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
             DestMap->Clear(Num);
             for (int32 SrcIndex = 0; Num; ++SrcIndex)
             {
@@ -558,11 +430,7 @@ namespace UnLua
         }
         else
         {
-            void *Userdata = CacheScriptContainer(L, (FScriptMap*)ScriptMap, FScriptContainerDesc::Map);
-            if (Userdata)
-            {
-                FLuaMap *LuaMap = new(Userdata) FLuaMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedByOther);
-            }
+            Registry->FindOrAdd(L, (FScriptMap*)ScriptMap, KeyInterface, ValueInterface);
         }
         return 1;
     }
@@ -597,10 +465,9 @@ namespace UnLua
     /**
      * Helper to recover Lua stack automatically
      */
-    FAutoStack::FAutoStack()
+    FAutoStack::FAutoStack(lua_State* L): L(L)
     {
         OldTop = -1;
-        lua_State* L = UnLua::GetState();
         if (L)
         {
             OldTop = lua_gettop(L);
@@ -609,7 +476,6 @@ namespace UnLua
 
     FAutoStack::~FAutoStack()
     {
-        lua_State* L = UnLua::GetState();
         if ((L)
             && (-1 != OldTop))
         {

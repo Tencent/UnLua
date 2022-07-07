@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "UnLuaEx.h"
 #include "LuaLib_Math.h"
 
@@ -29,15 +30,15 @@ static int32 FVector_New(lua_State* L)
         }
     case 2:
         {
-            const float& XYZ = lua_tonumber(L, 2);
+            const unluaReal& XYZ = lua_tonumber(L, 2);
             new(Userdata) FVector(XYZ);
             break;
         }
     case 4:
         {
-            const float& X = lua_tonumber(L, 2);
-            const float& Y = lua_tonumber(L, 3);
-            const float& Z = lua_tonumber(L, 4);
+            const unluaReal& X = lua_tonumber(L, 2);
+            const unluaReal& Y = lua_tonumber(L, 3);
+            const unluaReal& Z = lua_tonumber(L, 4);
             new(Userdata) FVector(X, Y, Z);
             break;
         }
@@ -66,7 +67,7 @@ static int32 FVector_Set(lua_State* L)
         return 0;
     }
 
-    UnLua::TFieldSetter3<float>::Set(L, NumParams, &V->X);
+    UnLua::TFieldSetter3<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
 }
 
@@ -123,14 +124,14 @@ static const luaL_Reg FVectorLib[] =
 {
     {"Set", FVector_Set},
     {"Normalize", FVector_Normalize},
-    {"Add", UnLua::TMathCalculation<FVector, UnLua::TAdd<float>, true>::Calculate},
-    {"Sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>, true>::Calculate},
-    {"Mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>, true>::Calculate},
-    {"Div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>, true>::Calculate},
-    {"__add", UnLua::TMathCalculation<FVector, UnLua::TAdd<float>>::Calculate},
-    {"__sub", UnLua::TMathCalculation<FVector, UnLua::TSub<float>>::Calculate},
-    {"__mul", UnLua::TMathCalculation<FVector, UnLua::TMul<float>>::Calculate},
-    {"__div", UnLua::TMathCalculation<FVector, UnLua::TDiv<float>>::Calculate},
+    {"Add", UnLua::TMathCalculation<FVector, UnLua::TAdd<unluaReal>, true>::Calculate},
+    {"Sub", UnLua::TMathCalculation<FVector, UnLua::TSub<unluaReal>, true>::Calculate},
+    {"Mul", UnLua::TMathCalculation<FVector, UnLua::TMul<unluaReal>, true>::Calculate},
+    {"Div", UnLua::TMathCalculation<FVector, UnLua::TDiv<unluaReal>, true>::Calculate},
+    {"__add", UnLua::TMathCalculation<FVector, UnLua::TAdd<unluaReal>>::Calculate},
+    {"__sub", UnLua::TMathCalculation<FVector, UnLua::TSub<unluaReal>>::Calculate},
+    {"__mul", UnLua::TMathCalculation<FVector, UnLua::TMul<unluaReal>>::Calculate},
+    {"__div", UnLua::TMathCalculation<FVector, UnLua::TDiv<unluaReal>>::Calculate},
     {"__tostring", UnLua::TMathUtils<FVector>::ToString},
     {"__unm", FVector_UNM},
     {"__call", FVector_New},
@@ -138,7 +139,7 @@ static const luaL_Reg FVectorLib[] =
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(FVector)
-    ADD_CONST_FUNCTION_EX("Dot", float, operator|, const FVector&)
+    ADD_CONST_FUNCTION_EX("Dot", unluaReal, operator|, const FVector&)
     ADD_CONST_FUNCTION_EX("Cross", FVector, operator^, const FVector&)
     ADD_FUNCTION(Size)
     ADD_FUNCTION(Size2D)

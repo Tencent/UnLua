@@ -26,13 +26,21 @@ function BP_CharacterBase_C:SpawnWeapon()
 	return nil
 end
 
-function BP_CharacterBase_C:StartFire()
+function BP_CharacterBase_C:StartFire_Server_RPC()
+	self:StartFire_Multicast()
+end
+
+function BP_CharacterBase_C:StartFire_Multicast_RPC()
 	if self.Weapon then
 		self.Weapon:StartFire()
 	end
 end
 
-function BP_CharacterBase_C:StopFire()
+function BP_CharacterBase_C:StopFire_Server_RPC()
+	self:StopFire_Multicast()
+end
+
+function BP_CharacterBase_C:StopFire_Multicast_RPC()
 	if self.Weapon then
 		self.Weapon:StopFire()
 	end
@@ -43,23 +51,29 @@ function BP_CharacterBase_C:ReceiveAnyDamage(Damage, DamageType, InstigatedBy, D
 		local Health = self.Health - Damage
 		self.Health = math.max(Health, 0)
 		if Health <= 0.0 then
-			self:Died(DamageType)
+			self:Died_Multicast(DamageType)
 			local co = coroutine.create(BP_CharacterBase_C.Destroy)
 			coroutine.resume(co, self, self.BodyDuration)
 		end
 	end
 end
 
-function BP_CharacterBase_C:Died(DamageType)
+function BP_CharacterBase_C:Died_Multicast_RPC(DamageType)
 	self.IsDead = true
 	self.CapsuleComponent:SetCollisionEnabled(UE.ECollisionEnabled.NoCollision)
 	self:StopFire()
 	local Controller = self:GetController()
-	Controller:UnPossess()
+	if Controller then
+		Controller:UnPossess()
+	end
 end
 
 function BP_CharacterBase_C:Destroy(Duration)
 	UE.UKismetSystemLibrary.Delay(self, Duration)
+	if not self:IsValid() then
+		return false
+	end
+
 	if self.Weapon then
 		self.Weapon:K2_DestroyActor()
 	end

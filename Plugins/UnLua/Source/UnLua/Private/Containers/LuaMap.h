@@ -21,6 +21,29 @@
 class FLuaMap
 {
 public:
+    struct FLuaMapEnumerator
+    {
+        FLuaMapEnumerator(FLuaMap* InLuaMap, const int32 InIndex): LuaMap(InLuaMap), Index(InIndex)
+        {
+        }
+
+        static int gc(lua_State* L)
+        {
+            if (FLuaMapEnumerator** Enumerator = (FLuaMapEnumerator**)lua_touserdata(L, 1))
+            {
+                (*Enumerator)->LuaMap = nullptr;
+
+                delete *Enumerator;
+            }
+
+            return 0;
+        }
+
+        FLuaMap* LuaMap;
+
+        int32 Index = 0;
+    };
+    
     enum FScriptMapFlag
     {
         OwnedByOther,   // 'Map' is owned by others
@@ -36,6 +59,7 @@ public:
         StructBuilder.AddMember(InValueInterface->GetSize(), InValueInterface->GetAlignment());
         // allocate cache for a key-value pair with alignment
         ElementCache = FMemory::Malloc(StructBuilder.GetSize(), StructBuilder.GetAlignment());
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
     FLuaMap(const FScriptMap *InScriptMap, TLuaContainerInterface<FLuaMap> *InMapInterface, FScriptMapFlag Flag = OwnedByOther)
@@ -52,31 +76,22 @@ public:
             StructBuilder.AddMember(ValueInterface->GetSize(), ValueInterface->GetAlignment());
             // allocate cache for a key-value pair with alignment
             ElementCache = FMemory::Malloc(StructBuilder.GetSize(), StructBuilder.GetAlignment());
+            UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
         }
     }
 
     ~FLuaMap()
     {
-        DetachInterface();
-
         if (ScriptMapFlag == OwnedBySelf)
         {
             Clear();
             delete Map;
         }
+        UNLUA_STAT_MEMORY_FREE(ElementCache, ContainerElementCache);
         FMemory::Free(ElementCache);
     }
 
-    void DetachInterface()
-    {
-        if (Interface)
-        {
-            Interface->RemoveContainer(this);
-            Interface = nullptr;
-        }
-    }
-
-    FORCEINLINE void* GetContainerPtr() const { return Map; }
+    FORCEINLINE FScriptMap* GetContainerPtr() const { return Map; }
 
     /**
      * Get the length of the map
@@ -87,6 +102,17 @@ public:
     {
         //return MapHelper.Num();
         return Map->Num();
+    }
+
+    /**
+     * Get the max index of the map
+     *
+     * @return - the max index of the array
+     */
+    FORCEINLINE int32 GetMaxIndex() const
+    {
+        //return MapHelper.GetMaxIndex();
+        return Map->GetMaxIndex();
     }
 
     /**
@@ -328,6 +354,11 @@ public:
         return nullptr;
     }
 
+    FORCEINLINE bool IsValidIndex(int32 Index) const
+    {
+        return Map->IsValidIndex(Index);
+    }
+
     FScriptMap *Map;
     FScriptMapLayout MapLayout;
     TSharedPtr<UnLua::ITypeInterface> KeyInterface;
@@ -403,10 +434,5 @@ private:
         void *ValueDest = Dest + MapLayout.ValueOffset;
         KeyInterface->Initialize(Dest);
         ValueInterface->Initialize(ValueDest);
-    }
-
-    FORCEINLINE bool IsValidIndex(int32 Index) const
-    {
-        return Map->IsValidIndex(Index);
     }
 };

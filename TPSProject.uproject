@@ -25,6 +25,10 @@
 		{
 			"Name": "FunctionalTestingEditor",
 			"Enabled": true
+		},
+		{
+			"Name": "UnLuaTestSuite",
+			"Enabled": true
 		}
 	]
 }

@@ -37,21 +37,20 @@ private:
 };
 
 FString GetFullPathFromRelativePath(const FString& RelativePath);
-void CreateNamespaceForUE(lua_State *L);
 void SetTableForClass(lua_State *L, const char *Name);
 
 /**
  * Set metatable for the userdata/table on the top of the stack
  */
 bool TryToSetMetatable(lua_State *L, const char *MetatableName, UObject* Object = nullptr);
-FString GetMetatableName(const UObjectBaseUtility* Object);
 
 /**
  * Functions to handle Lua userdata
  */
 void* NewUserdataWithTwoLvPtrTag(lua_State* L, int Size, void* Object);
+void* NewUserdataWithContainerTag(lua_State* L, int Size);
 void MarkUserdataTwoLvPtrTag(void* Userdata);
-uint8 CalcUserdataPadding(int32 Alignment);
+UNLUA_API uint8 CalcUserdataPadding(int32 Alignment);
 template <typename T> uint8 CalcUserdataPadding() { return CalcUserdataPadding(alignof(T)); }
 UNLUA_API void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
 UNLUA_API void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr);
@@ -89,29 +88,13 @@ void PushStructArray(lua_State *L, FProperty *Property, void *Value, const char 
 void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
 
 /**
- * Functions to New/Delete Lua instance for UObjectBaseUtility
- */
-int32 NewLuaObject(lua_State *L, UObjectBaseUtility *Object, UClass *Class, const char *ModuleName);
-void DeleteLuaObject(lua_State *L, UObjectBaseUtility *Object);
-void DeleteUObjectRefs(lua_State* L, UObjectBaseUtility* Object);
-
-/**
  * Get UObject and Lua function address for delegate
  */
 int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &Function);
 
-/**
- * Functions to handle Lua functions
- */
-bool GetFunctionList(lua_State *L, const char *InModuleName, TSet<FName> &FunctionNames);
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName);
 bool PushFunction(lua_State *L, UObjectBaseUtility *Object, int32 FunctionRef);
 bool CallFunction(lua_State *L, int32 NumArgs, int32 NumResults);
-
-/**
- * Get corresponding Lua instance for a UObjectBaseUtility
- */
-UNLUA_API bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object);
 
 /**
  * Add Lua package path
@@ -122,19 +105,11 @@ int LoadFromCustomLoader(lua_State *L);
 int LoadFromFileSystem(lua_State *L);
 
 /**
- * Functions to handle loaded Lua module
- */
-void ClearLoadedModule(lua_State *L, const char *ModuleName);
-int32 GetLoadedModule(lua_State *L, const char *ModuleName);
-
-/**
  * Functions to register collision enums
  */
 bool RegisterECollisionChannel(lua_State *L);
 bool RegisterEObjectTypeQuery(lua_State *L);
 bool RegisterETraceTypeQuery(lua_State *L);
-
-void ClearLibrary(lua_State *L, const char *LibrayName);
 
 /**
  * Functions to create weak table
@@ -146,21 +121,6 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool (*TraverseWo
 bool PeekTableElement(lua_State *L, void *Userdata);
 
 /**
- * Functions to register UEnum
- */
-int32 Global_RegisterEnum(lua_State *L);
-bool RegisterEnum(lua_State *L, const char *EnumName);
-bool RegisterEnum(lua_State *L, UEnum *Enum);
-
-/**
- * Functions to register UClass
- */
-int32 Global_UnRegisterClass(lua_State* L);
-int32 Global_RegisterClass(lua_State *L);
-class FClassDesc* RegisterClass(lua_State *L, const char *ClassName, const char *SuperClassName = nullptr);
-class FClassDesc* RegisterClass(lua_State *L, UStruct *Struct, UStruct *SuperStruct = nullptr);
-
-/**
  * Lua global functions
  */
 int32 Global_GetUProperty(lua_State *L);
@@ -169,7 +129,6 @@ int32 Global_LoadObject(lua_State *L);
 int32 Global_LoadClass(lua_State *L);
 int32 Global_NewObject(lua_State *L);
 UNLUA_API int32 Global_Print(lua_State *L);
-UNLUA_API int32 Global_Require(lua_State *L);
 int32 Global_AddToClassWhiteSet(lua_State* L);
 int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 
@@ -179,7 +138,8 @@ int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 int32 Enum_Index(lua_State *L);
 int32 Enum_Delete(lua_State *L);
 int32 Enum_GetMaxValue(lua_State* L);
-int32 Enum_GetNameByValue(lua_State* L);
+int32 Enum_GetNameStringByValue(lua_State* L);
+int32 Enum_GetDisplayNameTextByValue(lua_State* L);
 
 /**
  * Functions to handle UClass

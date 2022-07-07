@@ -16,6 +16,33 @@
 #include "LuaCore.h"
 #include "ReflectionUtils/ClassDesc.h"
 
+#if UNLUA_LEGACY_BLUEPRINT_PATH
+    static void LeagcyAppendSuffix(FString& ClassPath)
+    {
+        const TCHAR* Suffix = TEXT("_C");
+        int32 Index = INDEX_NONE;
+        ClassPath.FindChar(TCHAR('.'), Index);
+        if (Index == INDEX_NONE)
+        {
+            ClassPath.FindLastChar(TCHAR('/'), Index);
+            if (Index != INDEX_NONE)
+            {
+                const FString Name = ClassPath.Mid(Index + 1);
+                ClassPath += TCHAR('.');
+                ClassPath += Name;
+                ClassPath.AppendChars(Suffix, 2);
+            }
+        }
+        else
+        {
+            if (ClassPath.Right(2) != TEXT("_C"))
+            {
+                ClassPath.AppendChars(TEXT("_C"), 2);
+            }
+        }
+    }
+#endif
+
 /**
  * Load a class. for example: UClass.Load("/Game/Core/Blueprints/AICharacter.AICharacter_C")
  */
@@ -28,46 +55,27 @@ int32 UClass_Load(lua_State* L)
         return 0;
     }
 
-    const char* ClassName = lua_tostring(L, 1);
-    if (!ClassName)
+    const char* ClassPath = lua_tostring(L, 1);
+    if (!ClassPath)
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid class name!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
-    const TCHAR* Suffix = TEXT("_C");
-    FString ClassPath(ClassName);
-    int32 Index = INDEX_NONE;
-    ClassPath.FindChar(TCHAR('.'), Index);
-    if (Index == INDEX_NONE)
-    {
-        ClassPath.FindLastChar(TCHAR('/'), Index);
-        if (Index != INDEX_NONE)
-        {
-            const FString Name = ClassPath.Mid(Index + 1);
-            ClassPath += TCHAR('.');
-            ClassPath += Name;
-            ClassPath.AppendChars(Suffix, 2);
-        }
-    }
-    else
-    {
-        if (ClassPath.Right(2) != TEXT("_C"))
-        {
-            ClassPath.AppendChars(TEXT("_C"), 2);
-        }
-    }
+    FString Name = UTF8_TO_TCHAR(ClassPath);
 
-    FClassDesc* ClassDesc = RegisterClass(L, TCHAR_TO_UTF8(*ClassPath));
-    if (ClassDesc && ClassDesc->AsClass())
-    {
-        UnLua::PushUObject(L, ClassDesc->AsClass());
-    }
-    else
-    {
-        lua_pushnil(L);
-    }
+#if UNLUA_LEGACY_BLUEPRINT_PATH
+    LeagcyAppendSuffix(Name);
+#endif
+    
+    UClass* Class = LoadObject<UClass>(nullptr, *Name);
+    if (!Class)
+        return 0;
 
+    if (!UnLua::FClassRegistry::Find(L)->Register(Class))
+        return 0;
+
+    UnLua::PushUObject(L, Class);
     return 1;
 }
 
