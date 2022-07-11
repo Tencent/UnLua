@@ -214,7 +214,7 @@ void FUnLuaIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FStr
 void FUnLuaIntelliSenseGenerator::DeleteFile(const FString& ModuleName, const FString& FileName)
 {
     IFileManager& FileManager = IFileManager::Get();
-    const FString Directory = FString::Printf(TEXT("%sIntelliSense/%s"), *OutputDir, *ModuleName);
+    const FString Directory = OutputDir / ModuleName;
     if (!FileManager.DirectoryExists(*Directory))
         FileManager.MakeDirectory(*Directory);
 
