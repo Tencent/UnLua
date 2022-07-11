@@ -6,6 +6,10 @@ local UnLua = {}
 function UnLua.Class(SuperClass)
 end
 
+---Reload all modified modules
+function UnLua.HotReload()
+end
+
 _G.UnLua = UnLua
 
 ---@class TArray<TElement>
