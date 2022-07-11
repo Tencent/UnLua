@@ -35,30 +35,6 @@
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
-// copy dependency file to plugin's content dir
-static bool CopyDependencyFile(const TCHAR* FileName)
-{
-    static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
-    FString SrcFilePath = ContentDir / FileName;
-    FString DestFilePath = GLuaSrcFullPath / FileName;
-    bool bSuccess = IFileManager::Get().FileExists(*DestFilePath);
-    if (!bSuccess)
-    {
-        bSuccess = IFileManager::Get().FileExists(*SrcFilePath);
-        if (!bSuccess)
-        {
-            return false;
-        }
-
-        uint32 CopyResult = IFileManager::Get().Copy(*DestFilePath, *SrcFilePath, 1, true);
-        if (CopyResult != COPY_OK)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 class FUnLuaEditorModule : public IModuleInterface
 {
 public:
@@ -119,10 +95,6 @@ private:
         // register default key input to 'HotReload' Lua
         FPlayWorldCommands::GlobalPlayWorldActions->MapAction(
             FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
-
-        // copy dependency files
-        CopyDependencyFile(TEXT("UnLua.lua"));
-        CopyDependencyFile(TEXT("UnLuaHotReload.lua"));
     }
 
     void RegisterSettings() const

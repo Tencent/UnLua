@@ -29,6 +29,7 @@
 #include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
 #include "UnLuaLegacy.h"
+#include "UnLuaLib.h"
 #include "UnLuaSettings.h"
 
 namespace UnLua
@@ -55,6 +56,7 @@ namespace UnLua
         AddSearcher(LoadFromBuiltinLibs, 4);
 
         UELib::Open(L);
+
         ObjectRegistry = MakeShared<FObjectRegistry>(this);
         ClassRegistry = MakeShared<FClassRegistry>(this);
         ClassRegistry->Register("UObject");
@@ -77,14 +79,6 @@ namespace UnLua
         LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
-        // register global Lua functions
-        lua_register(L, "GetUProperty", Global_GetUProperty);
-        lua_register(L, "SetUProperty", Global_SetUProperty);
-        lua_register(L, "LoadObject", Global_LoadObject);
-        lua_register(L, "LoadClass", Global_LoadClass);
-        lua_register(L, "NewObject", Global_NewObject);
-        lua_register(L, "UEPrint", Global_Print);
-
         if (FUnLuaDelegates::ConfigureLuaGC.IsBound())
         {
             FUnLuaDelegates::ConfigureLuaGC.Execute(L);
@@ -99,8 +93,6 @@ namespace UnLua
             lua_gc(L, LUA_GCSETSTEPMUL, 5000);
 #endif
         }
-
-        lua_register(L, "print", Global_Print);
 
         // add new package path
         const FString LuaSrcPath = GLuaSrcFullPath + TEXT("?.lua");
@@ -123,14 +115,7 @@ namespace UnLua
         for (const auto& Enum : ExportedEnums)
             Enum->Register(L);
 
-        DoString(R"(
-            local ok, m = pcall(require, "UnLuaHotReload")
-            if not ok then
-                return
-            end
-            require = m.require
-            UnLuaHotReload = m.reload
-        )");
+        UnLuaLib::Open(L);
 
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
@@ -154,6 +139,11 @@ namespace UnLua
 
         CandidateInputComponents.Empty();
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+    }
+
+    TMap<lua_State*, FLuaEnv*>& FLuaEnv::GetAll()
+    {
+        return AllEnvs;
     }
 
     FLuaEnv* FLuaEnv::FindEnv(const lua_State* L)
@@ -251,7 +241,7 @@ namespace UnLua
 
         static UClass* InterfaceClass = UUnLuaInterface::StaticClass();
         const bool bImplUnluaInterface = Class->ImplementsInterface(InterfaceClass);
-        
+
         if (IsInAsyncLoadingThread())
         {
             // avoid adding too many objects, affecting performance.
@@ -329,7 +319,7 @@ namespace UnLua
 
     void FLuaEnv::HotReload()
     {
-        Call(L, "UnLuaHotReload");
+        DoString("UnLua.HotReload()");
     }
 
     int32 FLuaEnv::FindThread(const lua_State* Thread)
@@ -375,7 +365,7 @@ namespace UnLua
         }
         return Manager;
     }
-    
+
     void FLuaEnv::AddThread(lua_State* Thread, int32 ThreadRef)
     {
         ThreadToRef.Add(Thread, ThreadRef);
@@ -520,7 +510,7 @@ namespace UnLua
         {
             {
                 FScopeLock Lock(&CandidatesLock);
-                CandidatesTemp.Append(Candidates);    
+                CandidatesTemp.Append(Candidates);
             }
 
 
@@ -550,7 +540,7 @@ namespace UnLua
 
         {
             FScopeLock Lock(&CandidatesLock);
-            for(int32 j = 0; j < CandidatesRemovedIndexes.Num();++j)
+            for (int32 j = 0; j < CandidatesRemovedIndexes.Num(); ++j)
             {
                 Candidates.RemoveAt(CandidatesRemovedIndexes[j]);
             }

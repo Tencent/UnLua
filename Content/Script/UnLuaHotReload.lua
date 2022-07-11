@@ -71,7 +71,7 @@ end
 
 local print = function(...)
     if config.debug then
-        UEPrint("HotReload ", ...)
+        UnLua.Log("HotReload ", ...)
     end
 end
 
@@ -79,7 +79,6 @@ local table = table
 local debug = debug
 local pairs = pairs
 local origin_require = require
-local error_msg = ""
 
 local function safe_pairs(t)
     local _next, _t, _nil = pairs(t)
@@ -94,8 +93,9 @@ local function safe_pairs(t)
     return safe_next, _t, _nil
 end
 
-local function error_handler(err)
-    print(error_msg .. "  " .. err .. "  " .. debug.traceback())
+local function load_error_handler(err)
+    local msg = err .. "\n" .. debug.traceback()
+    UnLua.LogError(msg)
 end
 
 local function call_hook(name, ...)
@@ -162,7 +162,7 @@ local function make_sandbox()
 
         local func, env = load(module_name)
         if func then
-            local _, new_module = xpcall(func, error_handler, ...)
+            local _, new_module = xpcall(func, load_error_handler, ...)
             if new_module == nil then
                 new_module = env
             end
@@ -577,8 +577,7 @@ local function reload_modules(module_names)
         else
             local func, env = sandbox.load(module_name)
             if func ~= nil then
-                error_msg = module_name
-                local ok, new_module = xpcall(func, error_handler)
+                local ok, new_module = xpcall(func, load_error_handler)
                 if not ok then
                     sandbox.exit()
                     return
