@@ -17,6 +17,7 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "ToolMenus.h"
 #include "UnLuaSettings.h"
+#include "UnLuaIntelliSense.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -305,7 +306,8 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
 
     FString Content;
     FFileHelper::LoadFileToString(Content, *TemplateName);
-    Content = Content.Replace(TEXT("TemplateName"), *ClassName);
+    Content = Content.Replace(TEXT("TemplateName"), *ClassName)
+                     .Replace(TEXT("ClassName"), *UnLua::IntelliSense::GetTypeName(Class));
 
     FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
