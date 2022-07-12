@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.2.3] - 2022-7-15
+
+### Added
+- 支持蓝图的`BlueprintFunctionLibrary`绑定到Lua与覆写
+- 支持CDO绑定
+- 支持自定义[Lua模块定位](./Docs/CN/Settings.md#Lua模块定位器)设置
+- 生成Lua模版文件时增加`@class`注解
+- UnLua内置API的智能提示
+- 生成智能提示时显示更详细的进度条
+
+### Fixed
+- 打包DS服务端后，预先放在地图里的绑定过Lua的Actor会导致崩溃 [#479](https://github.com/Tencent/UnLua/issues/479)
+- 退出PIE时一些被覆写的Lua函数不会被执行 [#472](https://github.com/Tencent/UnLua/issues/472)
+- 切换场景时访问已释放对象上的属性时会引起崩溃 [#482](https://github.com/Tencent/UnLua/issues/482)
+- 同一个委托对象传递给不同函数来绑定和解绑，会出现无法解绑的问题 [#471](https://github.com/Tencent/UnLua/issues/471)
+- Lua传递给蓝图的FName属性中文会乱码 [#474](https://github.com/Tencent/UnLua/pull/474)
+- 传递给Lua模块的`...`参数没有生效
+- 退出PIE时父类被覆写的UFunction没有还原
+- UE4命名空间的兼容开关没生效
+- Editor下PIE判断不准确 [#468](https://github.com/Tencent/UnLua/pull/468)
+- 真机上UnLuaExtensions模块启动比UnLuaModule晚，导致luasocket没有加载 [#484](https://github.com/Tencent/UnLua/issues/484)
+
+### Changed
+- 移除`UnLua.lua`，`UnLua`可作为全局对象访问，不需要`require "UnLua"`了
+
 ## [2.2.2] - 2022-6-17
 
 ### Added
