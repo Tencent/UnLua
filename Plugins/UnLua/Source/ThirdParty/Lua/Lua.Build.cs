@@ -48,7 +48,6 @@ public class Lua : ModuleRules
             File.Copy(buildLibPath, m_LibraryPath);
         }
 
-        PublicDefinitions.Add("LUA_COMPILE_AS_CPP=" + (m_CompileAsCpp ? "1" : "0"));
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, m_LuaDirName, "src"));
         PublicAdditionalLibraries.Add(m_LibraryPath);
     }
@@ -56,8 +55,9 @@ public class Lua : ModuleRules
     private void GenerateLibrary()
     {
         Console.WriteLine("generating {0} library with cmake...", m_LuaDirName);
-       
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+
+        var osPlatform = Environment.OSVersion.Platform;
+        if (osPlatform == PlatformID.Win32NT)
         {
             var startInfo = new ProcessStartInfo
             {
@@ -87,12 +87,12 @@ public class Lua : ModuleRules
             return;
         }
 
-        if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        if (osPlatform == PlatformID.MacOSX)
         {
             throw new NotImplementedException();
         }
 
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if (osPlatform == PlatformID.Unix)
         {
             throw new NotImplementedException();
         }
@@ -122,7 +122,7 @@ public class Lua : ModuleRules
         if (!Directory.Exists(dirName))
             Directory.CreateDirectory(dirName);
     }
-    
+
     private readonly string m_LuaVersion;
     private readonly string m_Config;
     private readonly string m_LibName;
