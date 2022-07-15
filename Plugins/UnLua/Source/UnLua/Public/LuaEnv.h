@@ -22,7 +22,7 @@
 #include "Registries/ContainerRegistry.h"
 #include "Registries/EnumRegistry.h"
 #include "UnLuaManager.h"
-#include "lua.h"
+#include "lua.hpp"
 #include "ObjectReferencer.h"
 #include "HAL/Platform.h"
 #include "LuaDeadLoopCheck.h"

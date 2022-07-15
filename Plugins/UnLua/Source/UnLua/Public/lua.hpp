@@ -1,4 +1,4 @@
-﻿// Tencent is pleased to support the open source community by making UnLua available.
+// Tencent is pleased to support the open source community by making UnLua available.
 // 
 // Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
 //
@@ -13,14 +13,19 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
-#include "lua.hpp"
 
-namespace UnLua
-{
-    namespace UELib
-    {
-        int Open(lua_State* L);
+#ifdef __cplusplus
+#if !LUA_COMPILE_AS_CPP
+extern "C" {
+#endif
+#endif
 
-        void SetTableForClass(lua_State* L, const char* Name);
-    }
+#include "lua.h"
+#include "lualib.h"
+#include "lauxlib.h"
+
+#ifdef __cplusplus
+#if !LUA_COMPILE_AS_CPP
 }
+#endif
+#endif

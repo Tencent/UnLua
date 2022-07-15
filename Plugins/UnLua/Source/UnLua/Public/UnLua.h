@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "lua.hpp"
 #include "UnLuaLegacy.h"
 #include "LuaEnv.h"
 #include "LuaCore.h"

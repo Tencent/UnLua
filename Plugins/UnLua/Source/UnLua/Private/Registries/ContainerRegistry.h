@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lua.h"
+#include "lua.hpp"
 #include "LuaCore.h"
 #include "Containers/LuaArray.h"
 #include "Containers/LuaSet.h"

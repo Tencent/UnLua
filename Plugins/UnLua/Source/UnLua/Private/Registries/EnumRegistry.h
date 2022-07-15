@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lua.h"
+#include "lua.hpp"
 #include "ReflectionUtils/EnumDesc.h"
 
 namespace UnLua

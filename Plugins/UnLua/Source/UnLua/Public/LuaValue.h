@@ -14,8 +14,7 @@
 
 #pragma once
 
-#include "lauxlib.h"
-#include "lua.h"
+#include "lua.hpp"
 
 namespace UnLua
 {
