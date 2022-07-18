@@ -33,9 +33,10 @@ public class Lua : ModuleRules
         ShadowVariableWarningLevel = WarningLevel.Off;
 
         m_LuaVersion = "5.4.3";
-        m_Config = "Release";
-        m_LibName = "Lua.lib";
+        m_Config = GetConfigName();
+        m_LibName = GetLibraryName();
         m_CompileAsCpp = ShouldCompileAsCpp();
+        m_CompileAsDynamicLib = ShouldCompileAsDynamicLib();
         m_LibDirName = string.Format("lib-{0}", m_CompileAsCpp ? "cpp" : "c");
         m_LuaDirName = string.Format("lua-{0}", m_LuaVersion);
         m_LibraryPath = Path.Combine(ModuleDirectory, m_LuaDirName, m_LibDirName, Target.Platform.ToString(), m_Config, m_LibName);
@@ -46,10 +47,28 @@ public class Lua : ModuleRules
             var buildLibPath = Path.Combine(ModuleDirectory, m_LuaDirName, "build", m_Config, m_LibName);
             EnsureDirectoryExists(m_LibraryPath);
             File.Copy(buildLibPath, m_LibraryPath);
+
+            var buildPdbPath = Path.ChangeExtension(buildLibPath, ".pdb");
+            if (File.Exists(buildPdbPath))
+            {
+                var pdbPath = Path.ChangeExtension(m_LibraryPath, ".pdb");
+                File.Copy(buildPdbPath, pdbPath, true);
+            }
         }
 
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, m_LuaDirName, "src"));
-        PublicAdditionalLibraries.Add(m_LibraryPath);
+
+        if (m_CompileAsDynamicLib)
+        {
+            PublicDelayLoadDLLs.Add(m_LibName);
+            SetupForRuntimeDependency(m_LibraryPath);
+            SetupForRuntimeDependency(Path.ChangeExtension(m_LibraryPath, ".pdb"));
+            PublicAdditionalLibraries.Add(Path.ChangeExtension(m_LibraryPath, ".lib"));
+        }
+        else
+        {
+            PublicAdditionalLibraries.Add(m_LibraryPath);
+        }
     }
 
     private void GenerateLibrary()
@@ -116,6 +135,14 @@ public class Lua : ModuleRules
         return true;
     }
 
+    private bool ShouldCompileAsDynamicLib()
+    {
+        return Target.Platform == UnrealTargetPlatform.Win64
+               || Target.Platform == UnrealTargetPlatform.Mac
+               || Target.Platform == UnrealTargetPlatform.Android
+               || Target.Platform == UnrealTargetPlatform.Linux;
+    }
+
     private void EnsureDirectoryExists(string fileName)
     {
         var dirName = Path.GetDirectoryName(fileName);
@@ -123,6 +150,33 @@ public class Lua : ModuleRules
             Directory.CreateDirectory(dirName);
     }
 
+    private string GetLibraryName()
+    {
+        if (Target.Platform == UnrealTargetPlatform.Win64)
+            return "Lua.dll";
+        if (Target.Platform == UnrealTargetPlatform.Mac)
+            return "Lua.dylib";
+        if (Target.Platform == UnrealTargetPlatform.IOS)
+            return "Lua.a";
+        return "Lua.so";
+    }
+
+    private string GetConfigName()
+    {
+        if (Target.Configuration == UnrealTargetConfiguration.Debug
+            || Target.Configuration == UnrealTargetConfiguration.DebugGame)
+            return "Debug";
+        return "Release";
+    }
+
+    private void SetupForRuntimeDependency(string fullPath)
+    {
+        if (!File.Exists(fullPath))
+            return;
+        var fileName = Path.GetFileName(fullPath);
+        RuntimeDependencies.Add("$(BinaryOutputDir)/" + fileName, fullPath);
+    }
+    
     private readonly string m_LuaVersion;
     private readonly string m_Config;
     private readonly string m_LibName;
@@ -130,4 +184,5 @@ public class Lua : ModuleRules
     private readonly string m_LuaDirName;
     private readonly string m_LibraryPath;
     private readonly bool m_CompileAsCpp;
+    private readonly bool m_CompileAsDynamicLib;
 }

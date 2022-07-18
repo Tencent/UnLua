@@ -31,7 +31,7 @@ if(LUA_COMPILE_AS_CPP)
     set_source_files_properties(${LUA_CORE} PROPERTIES LANGUAGE CXX)
 endif()
 
-add_library(Lua STATIC
+add_library(Lua SHARED
     ${LUA_CORE}
 )
 
