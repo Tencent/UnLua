@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - UE4命名空间的兼容开关没生效
 - Editor下PIE判断不准确 [#468](https://github.com/Tencent/UnLua/pull/468)
 - 真机上UnLuaExtensions模块启动比UnLuaModule晚，导致luasocket没有加载 [#484](https://github.com/Tencent/UnLua/issues/484)
+- 调用静态导出函数的`TCHAR*`类型参数传递为空 [#486](https://github.com/Tencent/UnLua/pull/486)
 
 ### Changed
 - 移除`UnLua.lua`，`UnLua`可作为全局对象访问，不需要`require "UnLua"`了
