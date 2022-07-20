@@ -48,11 +48,17 @@ public class Lua : ModuleRules
             EnsureDirectoryExists(m_LibraryPath);
             File.Copy(buildLibPath, m_LibraryPath);
 
-            var buildPdbPath = Path.ChangeExtension(buildLibPath, ".pdb");
-            if (File.Exists(buildPdbPath))
+            if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
             {
-                var pdbPath = Path.ChangeExtension(m_LibraryPath, ".pdb");
-                File.Copy(buildPdbPath, pdbPath, true);
+                // windows下dll需要额外的lib文件
+                File.Copy(Path.ChangeExtension(buildLibPath, ".lib"), Path.ChangeExtension(m_LibraryPath, ".lib"), true);
+
+                var buildPdbPath = Path.ChangeExtension(buildLibPath, ".pdb");
+                if (File.Exists(buildPdbPath))
+                {
+                    var pdbPath = Path.ChangeExtension(m_LibraryPath, ".pdb");
+                    File.Copy(buildPdbPath, pdbPath, true);
+                }
             }
         }
 
@@ -60,9 +66,10 @@ public class Lua : ModuleRules
 
         if (m_CompileAsDynamicLib)
         {
-            PublicDelayLoadDLLs.Add(m_LibName);
             SetupForRuntimeDependency(m_LibraryPath);
             SetupForRuntimeDependency(Path.ChangeExtension(m_LibraryPath, ".pdb"));
+            PublicDelayLoadDLLs.Add(m_LibName);
+            PublicDefinitions.Add("LUA_BUILD_AS_DLL");
             PublicAdditionalLibraries.Add(Path.ChangeExtension(m_LibraryPath, ".lib"));
         }
         else
