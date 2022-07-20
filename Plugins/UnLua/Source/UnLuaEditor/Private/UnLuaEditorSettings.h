@@ -52,7 +52,7 @@ public:
 
     /** Whether or not startup UnLua module on game start. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
-    bool bAutoStart = true;
+    bool bAutoStartup = true;
 
     /** Enable UnLua debug routine codes. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
