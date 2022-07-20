@@ -76,7 +76,7 @@ public:
 
     /** Whether or not compile lua module as c++ code. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
-    bool bCompileLuaAsCpp = true;
+    bool bLuaCompileAsCpp = true;
 
     /** Create UE4 global table on lua env. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Legacy")
