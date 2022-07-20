@@ -43,14 +43,7 @@ public class UnLua : ModuleRules
             }
         );
 
-        PublicIncludePathModuleNames.AddRange(
-            new[]
-            {
-                "ApplicationCore",
-            }
-        );
-
-        PrivateDependencyModuleNames.AddRange(
+        PublicDependencyModuleNames.AddRange(
             new[]
             {
                 "Core",
@@ -58,7 +51,6 @@ public class UnLua : ModuleRules
                 "Engine",
                 "Slate",
                 "InputCore",
-                "Projects",
                 "Lua"
             }
         );

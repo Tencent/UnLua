@@ -119,6 +119,8 @@ namespace UnLua
 
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
+
+        DoString("pcall(require,'Main')", "Main.lua");
     }
 
     FLuaEnv::~FLuaEnv()
