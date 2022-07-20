@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "UnLuaBase.h"
 #include "CoreUObject.h"
 #include "Engine/UserDefinedEnum.h"
 #include "HAL/Platform.h"
@@ -26,7 +27,7 @@ class FEnumDesc
 public:
     explicit FEnumDesc(UEnum* InEnum);
 
-    FORCEINLINE bool IsValid() const { return true; }
+    FORCEINLINE bool IsValid() const { return Enum.IsValid(); }
 
     FORCEINLINE const FString& GetName() const { return EnumName; }
 
@@ -38,39 +39,42 @@ public:
         return GetEnumValue(Enum, FName(EntryName));
     }
 
-    FORCEINLINE UEnum* GetEnum() const { return Enum; }
+    FORCEINLINE UEnum* GetEnum() const { return Enum.IsValid() ? Enum.Get() : nullptr; }
 
     void Load();
 
     void UnLoad();
 
-    static int64 GetEnumValue(const UEnum* Enum, FName EntryName)
+    static int64 GetEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
     {
-        check(Enum);
+        check(Enum.IsValid());
         return Enum->GetValueByName(EntryName);
     }
 
-    static int64 GetUserDefinedEnumValue(const UEnum* Enum, FName EntryName)
+    static int64 GetUserDefinedEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
     {
-        check(Enum);
-        int32 NumEntries = Enum->NumEnums();
-        for (int32 i = 0; i < NumEntries; ++i)
+        if (Enum.IsValid())
         {
-            FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
-            if (DisplayName == EntryName)
-            {
-                return Enum->GetValueByIndex(i);
-            }
+			int32 NumEntries = Enum->NumEnums();
+			for (int32 i = 0; i < NumEntries; ++i)
+			{
+				FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
+				if (DisplayName == EntryName)
+				{
+					return Enum->GetValueByIndex(i);
+				}
+			}
         }
+        else
+        {
+			UE_LOG(LogUnLua, Warning, TEXT("%s:Invalid enum[%s] descriptor"), ANSI_TO_TCHAR(__FUNCTION__), *EntryName.ToString());
+        }
+
         return INDEX_NONE;
     }
 
 private:
-    union
-    {
-        UEnum* Enum;
-        UUserDefinedEnum* UserDefinedEnum;
-    };
+	TWeakObjectPtr<UEnum> Enum;
 
     FString EnumName;
     bool bUserDefined;
