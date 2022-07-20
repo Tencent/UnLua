@@ -17,27 +17,28 @@
 FEnumDesc::FEnumDesc(UEnum* InEnum)
     : Enum(InEnum)
 {
-    check(Enum);
+    check(Enum.IsValid());
     EnumName = Enum->GetName();
     bUserDefined = InEnum->IsA<UUserDefinedEnum>();
 }
 
 void FEnumDesc::Load()
 {
-    if (Enum)
+    if (Enum.IsValid())
         return;
 
     Enum = FindObject<UEnum>(ANY_PACKAGE, *EnumName);
-    if (!Enum)
+    if (!Enum.IsValid())
         Enum = LoadObject<UEnum>(nullptr, *EnumName);
 
-    check(Enum);
+    check(Enum.IsValid());
 }
 
 void FEnumDesc::UnLoad()
 {
-    if (!Enum)
+    if (!Enum.IsValid())
         return;
 
+    Enum.Reset();
     Enum = nullptr;
 }

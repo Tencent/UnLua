@@ -26,7 +26,7 @@ class FEnumDesc
 public:
     explicit FEnumDesc(UEnum* InEnum);
 
-    FORCEINLINE bool IsValid() const { return true; }
+    FORCEINLINE bool IsValid() const { return Enum.IsValid(); }
 
     FORCEINLINE const FString& GetName() const { return EnumName; }
 
@@ -38,21 +38,21 @@ public:
         return GetEnumValue(Enum, FName(EntryName));
     }
 
-    FORCEINLINE UEnum* GetEnum() const { return Enum; }
+    FORCEINLINE UEnum* GetEnum() const { return Enum.IsValid() ? Enum.Get() : nullptr; }
 
     void Load();
 
     void UnLoad();
 
-    static int64 GetEnumValue(const UEnum* Enum, FName EntryName)
+    static int64 GetEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
     {
-        check(Enum);
+        check(Enum.IsValid());
         return Enum->GetValueByName(EntryName);
     }
 
-    static int64 GetUserDefinedEnumValue(const UEnum* Enum, FName EntryName)
+    static int64 GetUserDefinedEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
     {
-        check(Enum);
+        check(Enum.IsValid());
         int32 NumEntries = Enum->NumEnums();
         for (int32 i = 0; i < NumEntries; ++i)
         {
@@ -66,11 +66,7 @@ public:
     }
 
 private:
-    union
-    {
-        UEnum* Enum;
-        UUserDefinedEnum* UserDefinedEnum;
-    };
+	TWeakObjectPtr<UEnum> Enum;
 
     FString EnumName;
     bool bUserDefined;
