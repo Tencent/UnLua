@@ -16,6 +16,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 #if UE_5_0_OR_LATER
 using EpicGames.Core;
@@ -35,51 +37,94 @@ public class Lua : ModuleRules
         m_LuaVersion = "5.4.3";
         m_Config = GetConfigName();
         m_LibName = GetLibraryName();
+        m_BuildSystem = GetBuildSystem();
         m_CompileAsCpp = ShouldCompileAsCpp();
         m_CompileAsDynamicLib = ShouldCompileAsDynamicLib();
         m_LibDirName = string.Format("lib-{0}", m_CompileAsCpp ? "cpp" : "c");
         m_LuaDirName = string.Format("lua-{0}", m_LuaVersion);
-        m_LibraryPath = Path.Combine(ModuleDirectory, m_LuaDirName, m_LibDirName, Target.Platform.ToString(), m_Config, m_LibName);
-
-        if (!File.Exists(m_LibraryPath))
-        {
-            GenerateLibrary();
-            var buildLibPath = Path.Combine(ModuleDirectory, m_LuaDirName, "build", m_Config, m_LibName);
-            EnsureDirectoryExists(m_LibraryPath);
-            File.Copy(buildLibPath, m_LibraryPath);
-
-            if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
-            {
-                // windows下dll需要额外的lib文件
-                File.Copy(Path.ChangeExtension(buildLibPath, ".lib"), Path.ChangeExtension(m_LibraryPath, ".lib"), true);
-
-                var buildPdbPath = Path.ChangeExtension(buildLibPath, ".pdb");
-                if (File.Exists(buildPdbPath))
-                {
-                    var pdbPath = Path.ChangeExtension(m_LibraryPath, ".pdb");
-                    File.Copy(buildPdbPath, pdbPath, true);
-                }
-            }
-        }
 
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, m_LuaDirName, "src"));
 
-        if (m_CompileAsDynamicLib)
+        var buildMethodName = "BuildFor" + Target.Platform;
+
+        var buildMethod = GetType().GetMethod(buildMethodName,  BindingFlags.Instance | BindingFlags.NonPublic);
+        if (buildMethod == null)
+            throw new NotSupportedException(buildMethodName);
+
+        buildMethod.Invoke(this, Array.Empty<object>());
+    }
+
+    #region Build for Platforms
+
+    private void BuildForWin64()
+    {
+        var dllPath = GetLibraryPath();
+        var libPath = Path.ChangeExtension(dllPath, ".lib");
+        var pdbPath = Path.ChangeExtension(dllPath, ".pdb");
+        var dirPath = Path.GetDirectoryName(dllPath);
+
+        var isDebug = m_Config == "Debug";
+        var dstFiles = new List<string> { dllPath, libPath };
+        if (isDebug)
+            dstFiles.Add(pdbPath);
+
+        if (!dstFiles.All(File.Exists))
         {
-            SetupForRuntimeDependency(m_LibraryPath);
-            SetupForRuntimeDependency(Path.ChangeExtension(m_LibraryPath, ".pdb"));
-            PublicDelayLoadDLLs.Add(m_LibName);
-            PublicDefinitions.Add("LUA_BUILD_AS_DLL");
-            PublicAdditionalLibraries.Add(Path.ChangeExtension(m_LibraryPath, ".lib"));
+            var buildDir = CMake();
+            CopyDirectory(Path.Combine(buildDir, m_Config), dirPath);
         }
-        else
+
+        PublicDefinitions.Add("LUA_BUILD_AS_DLL");
+        PublicDelayLoadDLLs.Add(m_LibName);
+        PublicAdditionalLibraries.Add(libPath);
+
+        SetupForRuntimeDependency(dllPath);
+        if (isDebug)
+            SetupForRuntimeDependency(pdbPath);
+    }
+
+    private void BuildForAndroid()
+    {
+        var abiNames = new[] { "armeabi-v7a", "arm64-v8a" };
+        foreach (var abiName in abiNames)
         {
-            PublicAdditionalLibraries.Add(m_LibraryPath);
+            var libFile = GetLibraryPath(abiName);
+            PublicAdditionalLibraries.Add(libFile);
+            if (File.Exists(libFile))
+                continue;
+
+            EnsureDirectoryExists(libFile);
+            var args = new Dictionary<string, string>
+            {
+                { "CMAKE_TOOLCHAIN_FILE", "C:/Users/xuyanghuang/AppData/Local/Android/Sdk/ndk/21.1.6352462/build/cmake/android.toolchain.cmake" },
+                { "ANDROID_ABI", abiName },
+                { "ANDROID_PLATFORM", "android-29" }
+            };
+            var buildDir = CMake(args);
+            var buildFile = Path.Combine(buildDir, m_LibName);
+            File.Copy(buildFile, libFile, true);
         }
     }
 
-    private void GenerateLibrary()
+    private void BuildForLinux()
     {
+    }
+
+    private void BuildForOSX()
+    {
+    }
+
+    private void BuildForIOS()
+    {
+    }
+
+    #endregion
+
+    private string CMake(Dictionary<string, string> extraArgs = null)
+    {
+        if (extraArgs == null)
+            extraArgs = new Dictionary<string, string>();
+
         Console.WriteLine("generating {0} library with cmake...", m_LuaDirName);
 
         var osPlatform = Environment.OSVersion.Platform;
@@ -95,13 +140,96 @@ public class Lua : ModuleRules
             var process = Process.Start(startInfo);
             using (var writer = process.StandardInput)
             {
-                writer.WriteLine("mkdir \"{0}/build\" & pushd \"{0}/build\"", m_LuaDirName);
-                writer.Write("cmake -G \"{0}\" ../.. ", "Visual Studio 16 2019");
+                var buildDir = string.Format("\"{0}/build\"", m_LuaDirName);
+                writer.WriteLine("rmdir /s /q {0} &mkdir {0} &pushd {0}", buildDir);
+                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem); 
                 var args = new Dictionary<string, string>
                 {
                     { "LUA_VERSION", m_LuaVersion },
                     { "LUA_COMPILE_AS_CPP", m_CompileAsCpp ? "1" : "0" },
                 };
+                foreach (var arg in args)
+                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
+                foreach (var arg in extraArgs)
+                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
+                writer.WriteLine();
+                writer.WriteLine("popd");
+                writer.WriteLine("cmake --build {0}/build --config {1}", m_LuaDirName, m_Config);
+            }
+
+            process.WaitForExit();
+
+            return Path.Combine(ModuleDirectory, m_LuaDirName, "build");
+        }
+
+        if (osPlatform == PlatformID.MacOSX)
+        {
+            throw new NotImplementedException();
+        }
+
+        if (osPlatform == PlatformID.Unix)
+        {
+            throw new NotImplementedException();
+        }
+
+        throw new NotSupportedException();
+    }
+
+    private static void CopyDirectory(string srcDir, string dstDir)
+    {
+        var dir = new DirectoryInfo(srcDir);
+        if (!dir.Exists)
+            throw new DirectoryNotFoundException(dir.FullName);
+
+        var dirs = dir.GetDirectories();
+        Directory.CreateDirectory(dstDir);
+
+        foreach (var file in dir.GetFiles())
+        {
+            var targetFilePath = Path.Combine(dstDir, file.Name);
+            file.CopyTo(targetFilePath, true);
+        }
+
+        foreach (var subDir in dirs)
+        {
+            var newDstDir = Path.Combine(dstDir, subDir.Name);
+            CopyDirectory(subDir.FullName, newDstDir);
+        }
+    }
+
+    private void GenerateLibrary()
+    {
+        Console.WriteLine("generating {0} library with cmake...", m_LuaDirName);
+        EnsureDirectoryExists(m_LibraryPath);
+
+        var osPlatform = Environment.OSVersion.Platform;
+        if (osPlatform == PlatformID.Win32NT)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                WorkingDirectory = ModuleDirectory,
+                RedirectStandardInput = true,
+                UseShellExecute = false
+            };
+            var process = Process.Start(startInfo);
+            using (var writer = process.StandardInput)
+            {
+                writer.WriteLine("mkdir \"{0}/build\" & pushd \"{0}/build\"", m_LuaDirName);
+                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
+                var args = new Dictionary<string, string>
+                {
+                    { "LUA_VERSION", m_LuaVersion },
+                    { "LUA_COMPILE_AS_CPP", m_CompileAsCpp ? "1" : "0" },
+                };
+
+                if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
+                {
+                    args.Add("CMAKE_TOOLCHAIN_FILE", "C:/Users/xuyanghuang/AppData/Local/Android/Sdk/ndk/21.1.6352462/build/cmake/android.toolchain.cmake");
+                    args.Add("ANDROID_ABI", "armeabi-v7a");
+                    args.Add("ANDROID_PLATFORM", "android-29");
+                }
+
                 foreach (var arg in args)
                     writer.Write(" -D{0}={1}", arg.Key, arg.Value);
                 writer.WriteLine();
@@ -145,9 +273,7 @@ public class Lua : ModuleRules
     private bool ShouldCompileAsDynamicLib()
     {
         return Target.Platform == UnrealTargetPlatform.Win64
-               || Target.Platform == UnrealTargetPlatform.Mac
-               || Target.Platform == UnrealTargetPlatform.Android
-               || Target.Platform == UnrealTargetPlatform.Linux;
+               || Target.Platform == UnrealTargetPlatform.Mac;
     }
 
     private void EnsureDirectoryExists(string fileName)
@@ -163,9 +289,14 @@ public class Lua : ModuleRules
             return "Lua.dll";
         if (Target.Platform == UnrealTargetPlatform.Mac)
             return "Lua.dylib";
-        if (Target.Platform == UnrealTargetPlatform.IOS)
-            return "Lua.a";
-        return "Lua.so";
+        return "libLua.a";
+    }
+
+    private string GetLibraryPath(string architecture = null)
+    {
+        if (architecture == null)
+            architecture = string.Empty;
+        return Path.Combine(ModuleDirectory, m_LuaDirName, m_LibDirName, Target.Platform.ToString(), architecture, m_Config, m_LibName);
     }
 
     private string GetConfigName()
@@ -176,6 +307,17 @@ public class Lua : ModuleRules
         return "Release";
     }
 
+    private string GetBuildSystem()
+    {
+        if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
+            return "Visual Studio 16 2019";
+
+        if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
+            return "Ninja";
+
+        throw new NotImplementedException();
+    }
+
     private void SetupForRuntimeDependency(string fullPath)
     {
         if (!File.Exists(fullPath))
@@ -183,13 +325,14 @@ public class Lua : ModuleRules
         var fileName = Path.GetFileName(fullPath);
         RuntimeDependencies.Add("$(BinaryOutputDir)/" + fileName, fullPath);
     }
-    
+
     private readonly string m_LuaVersion;
     private readonly string m_Config;
     private readonly string m_LibName;
     private readonly string m_LibDirName;
     private readonly string m_LuaDirName;
     private readonly string m_LibraryPath;
+    private readonly string m_BuildSystem;
     private readonly bool m_CompileAsCpp;
     private readonly bool m_CompileAsDynamicLib;
 }

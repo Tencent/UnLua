@@ -23,6 +23,7 @@ if(NOT LUA_VERSION)
     set(LUA_VERSION "5.4.3")
 endif()
 
+set(LUA_IDSIZE 120 CACHE STRING "gives the maximum size for the description of the source of a function in debug information.")
 set(LUA_SRC_PATH lua-${LUA_VERSION}/src)
 aux_source_directory(${LUA_SRC_PATH} LUA_CORE)
 list(REMOVE_ITEM LUA_CORE "${LUA_SRC_PATH}/onelua.c")
@@ -31,9 +32,15 @@ if(LUA_COMPILE_AS_CPP)
     set_source_files_properties(${LUA_CORE} PROPERTIES LANGUAGE CXX)
 endif()
 
-add_library(Lua SHARED
-    ${LUA_CORE}
-)
+if(WIN32 AND NOT CYGWIN)
+    add_library(Lua SHARED
+        ${LUA_CORE}
+    )
+else()
+    add_library(Lua STATIC
+        ${LUA_CORE}
+    )
+endif()
 
 if(WIN32 AND NOT CYGWIN)
     target_compile_definitions(Lua PRIVATE LUA_BUILD_AS_DLL)
