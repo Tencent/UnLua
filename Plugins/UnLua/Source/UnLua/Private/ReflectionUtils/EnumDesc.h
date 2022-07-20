@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "UnLuaBase.h"
 #include "CoreUObject.h"
 #include "Engine/UserDefinedEnum.h"
 #include "HAL/Platform.h"
@@ -52,16 +53,23 @@ public:
 
     static int64 GetUserDefinedEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
     {
-        check(Enum.IsValid());
-        int32 NumEntries = Enum->NumEnums();
-        for (int32 i = 0; i < NumEntries; ++i)
+        if (Enum.IsValid())
         {
-            FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
-            if (DisplayName == EntryName)
-            {
-                return Enum->GetValueByIndex(i);
-            }
+			int32 NumEntries = Enum->NumEnums();
+			for (int32 i = 0; i < NumEntries; ++i)
+			{
+				FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
+				if (DisplayName == EntryName)
+				{
+					return Enum->GetValueByIndex(i);
+				}
+			}
         }
+        else
+        {
+			UE_LOG(LogUnLua, Warning, TEXT("%s:Invalid enum[%s] descriptor"), ANSI_TO_TCHAR(__FUNCTION__), *EntryName.ToString());
+        }
+
         return INDEX_NONE;
     }
 
