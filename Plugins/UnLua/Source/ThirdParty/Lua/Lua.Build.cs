@@ -47,7 +47,7 @@ public class Lua : ModuleRules
 
         var buildMethodName = "BuildFor" + Target.Platform;
 
-        var buildMethod = GetType().GetMethod(buildMethodName,  BindingFlags.Instance | BindingFlags.NonPublic);
+        var buildMethod = GetType().GetMethod(buildMethodName, BindingFlags.Instance | BindingFlags.NonPublic);
         if (buildMethod == null)
             throw new NotSupportedException(buildMethodName);
 
@@ -85,6 +85,13 @@ public class Lua : ModuleRules
 
     private void BuildForAndroid()
     {
+        var NDKRoot = Environment.GetEnvironmentVariable("NDKROOT");
+        if (NDKRoot == null)
+            throw new BuildException("can't find NDKROOT");
+
+        var toolchain = AndroidExports.CreateToolChain(Target.ProjectFile);
+        var NdkApiLevel = toolchain.GetNdkApiLevelInt(21);
+
         var abiNames = new[] { "armeabi-v7a", "arm64-v8a" };
         foreach (var abiName in abiNames)
         {
@@ -96,9 +103,9 @@ public class Lua : ModuleRules
             EnsureDirectoryExists(libFile);
             var args = new Dictionary<string, string>
             {
-                { "CMAKE_TOOLCHAIN_FILE", "C:/Users/xuyanghuang/AppData/Local/Android/Sdk/ndk/21.1.6352462/build/cmake/android.toolchain.cmake" },
+                { "CMAKE_TOOLCHAIN_FILE", Path.Combine(NDKRoot, "build/cmake/android.toolchain.cmake") },
                 { "ANDROID_ABI", abiName },
-                { "ANDROID_PLATFORM", "android-29" }
+                { "ANDROID_PLATFORM", "android-" + NdkApiLevel }
             };
             var buildDir = CMake(args);
             var buildFile = Path.Combine(buildDir, m_LibName);
@@ -142,7 +149,7 @@ public class Lua : ModuleRules
             {
                 var buildDir = string.Format("\"{0}/build\"", m_LuaDirName);
                 writer.WriteLine("rmdir /s /q {0} &mkdir {0} &pushd {0}", buildDir);
-                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem); 
+                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
                 var args = new Dictionary<string, string>
                 {
                     { "LUA_VERSION", m_LuaVersion },
