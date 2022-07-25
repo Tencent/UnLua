@@ -141,6 +141,10 @@
 
 static int os_execute (lua_State *L) {
   const char *cmd = luaL_optstring(L, 1, NULL);
+#if defined(LUA_NO_OS_EXECUTE)
+  lua_pushboolean(L, 0);
+  return 1;
+#else
   int stat;
   errno = 0;
   stat = system(cmd);
@@ -150,6 +154,7 @@ static int os_execute (lua_State *L) {
     lua_pushboolean(L, stat);  /* true if there is a shell */
     return 1;
   }
+#endif
 }
 
 

@@ -179,6 +179,21 @@ public class Lua : ModuleRules
 
     private void BuildForIOS()
     {
+        var libFile = GetLibraryPath("arm64");
+        if (!File.Exists(libFile))
+        {
+            var args = new Dictionary<string, string>
+            {
+                { "CMAKE_TOOLCHAIN_FILE", Path.Combine(ModuleDirectory, "toolchain/ios.toolchain.cmake") },
+                { "PLATFORM", "OS64" }
+            };
+            var buildDir = CMake(args);
+            var buildFile = Path.Combine(buildDir, m_Config + "-iphoneos", m_LibName);
+            EnsureDirectoryExists(libFile);
+            File.Copy(buildFile, libFile, true);
+        }
+
+        PublicAdditionalLibraries.Add(libFile);
     }
 
     #endregion
@@ -328,7 +343,6 @@ public class Lua : ModuleRules
 
     private string GetConfigName()
     {
-        return "Debug";
         if (Target.Configuration == UnrealTargetConfiguration.Debug
             || Target.Configuration == UnrealTargetConfiguration.DebugGame)
             return "Debug";
@@ -349,6 +363,8 @@ public class Lua : ModuleRules
 
         if (osPlatform == PlatformID.Unix)
         {
+            if (Target.Platform.IsInGroup(UnrealPlatformGroup.IOS))
+                return "Xcode";
             return "Unix Makefiles";
         }
         return null;
@@ -369,4 +385,5 @@ public class Lua : ModuleRules
     private readonly string m_LuaDirName;
     private readonly string m_BuildSystem;
     private readonly bool m_CompileAsCpp;
+    
 }

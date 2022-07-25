@@ -37,11 +37,18 @@ if(WIN32 AND NOT CYGWIN)
         ${LUA_CORE}
     )
 elseif (APPLE)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
-    ADD_DEFINITIONS(-DLUA_USE_MACOSX)
-    add_library(Lua SHARED
-        ${LUA_CORE}
-    )
+    if (IOS)
+        add_definitions(-DLUA_NO_OS_EXECUTE)
+        add_library(Lua STATIC
+            ${LUA_CORE}
+        )
+    else()
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
+        add_definitions(-DLUA_USE_MACOSX)
+        add_library(Lua SHARED
+            ${LUA_CORE}
+        )
+    endif()
 else()
     add_library(Lua STATIC
         ${LUA_CORE}
