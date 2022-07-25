@@ -162,8 +162,19 @@ public class Lua : ModuleRules
         File.Copy(buildFile, libFile, true);
     }
     
-    private void BuildForOSX()
+    private void BuildForMac()
     {
+        var libFile = GetLibraryPath();
+        if (!File.Exists(libFile))
+        {
+            var buildDir = CMake();
+            var buildFile = Path.Combine(buildDir, m_LibName);
+            EnsureDirectoryExists(libFile);
+            File.Copy(buildFile, libFile, true);
+        }
+
+        PublicDefinitions.Add("LUA_USE_MACOSX");
+        PublicAdditionalLibraries.Add(libFile);
     }
 
     private void BuildForIOS()
@@ -217,14 +228,38 @@ public class Lua : ModuleRules
             return Path.Combine(ModuleDirectory, m_LuaDirName, "build");
         }
 
-        if (osPlatform == PlatformID.MacOSX)
+        if (osPlatform == PlatformID.Unix || osPlatform == PlatformID.MacOSX)
         {
-            throw new NotImplementedException();
-        }
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "/bin/bash",
+                WorkingDirectory = ModuleDirectory,
+                RedirectStandardInput = true,
+                UseShellExecute = false
+            };
+            var process = Process.Start(startInfo);
+            using (var writer = process.StandardInput)
+            {
+                var buildDir = string.Format("\"{0}/build\"", m_LuaDirName);
+                writer.WriteLine("rm -rf {0} &&mkdir {0} &&cd {0}", buildDir);
+                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
+                var args = new Dictionary<string, string>
+                {
+                    { "LUA_VERSION", m_LuaVersion },
+                    { "LUA_COMPILE_AS_CPP", m_CompileAsCpp ? "1" : "0" },
+                };
+                foreach (var arg in args)
+                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
+                foreach (var arg in extraArgs)
+                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
+                writer.WriteLine();
+                writer.WriteLine("cd ../.."); 
+                writer.WriteLine("cmake --build {0}/build --config {1}", m_LuaDirName, m_Config);
+            }
 
-        if (osPlatform == PlatformID.Unix)
-        {
-            throw new NotImplementedException();
+            process.WaitForExit();
+
+            return Path.Combine(ModuleDirectory, m_LuaDirName, "build");
         }
 
         throw new NotSupportedException();
@@ -268,12 +303,6 @@ public class Lua : ModuleRules
         return true;
     }
 
-    private bool ShouldCompileAsDynamicLib()
-    {
-        return Target.Platform == UnrealTargetPlatform.Win64
-               || Target.Platform == UnrealTargetPlatform.Mac;
-    }
-
     private void EnsureDirectoryExists(string fileName)
     {
         var dirName = Path.GetDirectoryName(fileName);
@@ -286,7 +315,7 @@ public class Lua : ModuleRules
         if (Target.Platform == UnrealTargetPlatform.Win64)
             return "Lua.dll";
         if (Target.Platform == UnrealTargetPlatform.Mac)
-            return "Lua.dylib";
+            return "libLua.dylib";
         return "libLua.a";
     }
 
@@ -299,6 +328,7 @@ public class Lua : ModuleRules
 
     private string GetConfigName()
     {
+        return "Debug";
         if (Target.Configuration == UnrealTargetConfiguration.Debug
             || Target.Configuration == UnrealTargetConfiguration.DebugGame)
             return "Debug";
@@ -317,7 +347,11 @@ public class Lua : ModuleRules
             return "Visual Studio 16 2019";
         }
 
-        throw new NotImplementedException();
+        if (osPlatform == PlatformID.Unix)
+        {
+            return "Unix Makefiles";
+        }
+        return null;
     }
 
     private void SetupForRuntimeDependency(string fullPath)
