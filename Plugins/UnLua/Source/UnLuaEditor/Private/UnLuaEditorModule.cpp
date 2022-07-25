@@ -131,15 +131,15 @@ private:
         if (!GEditor || !GEditor->PlayWorld)
             return;
         
-        ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
-        {
-            const auto Class = Cast<UClass>(Object);
-            if (!Class)
-                return true;
-            ULuaFunction::SuspendOverrides(Class);
-            SuspendedPackages.Add(Package, Class);
-            return false;
-        }, false);
+		ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
+		{
+			const auto Class = Cast<UClass>(Object);
+			if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
+				return true;
+			ULuaFunction::SuspendOverrides(Class);
+			SuspendedPackages.Add(Package, Class);
+			return false;
+		}, false);
 
         UE_LOG(LogUnLua, Log, TEXT("OnPackageSaving:%s"), *Package->GetFullName());
     }
@@ -149,8 +149,12 @@ private:
         if (!GEditor || !GEditor->PlayWorld)
             return;
         
-        const auto Class = SuspendedPackages.FindAndRemoveChecked((UPackage*)Object);
-        ULuaFunction::ResumeOverrides(Class);
+		UPackage* Package = (UPackage*)Object;
+		if (SuspendedPackages.Contains(Package))
+		{
+			ULuaFunction::ResumeOverrides(SuspendedPackages[Package]);
+			SuspendedPackages.Remove(Package);
+		}
         UE_LOG(LogUnLua, Log, TEXT("OnPackageSaved:%s %s"), *String, *Object->GetFullName());
     }
 
