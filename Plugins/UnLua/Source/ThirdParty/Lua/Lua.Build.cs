@@ -39,7 +39,6 @@ public class Lua : ModuleRules
         m_LibName = GetLibraryName();
         m_BuildSystem = GetBuildSystem();
         m_CompileAsCpp = ShouldCompileAsCpp();
-        m_CompileAsDynamicLib = ShouldCompileAsDynamicLib();
         m_LibDirName = string.Format("lib-{0}", m_CompileAsCpp ? "cpp" : "c");
         m_LuaDirName = string.Format("lua-{0}", m_LuaVersion);
 
@@ -115,8 +114,54 @@ public class Lua : ModuleRules
 
     private void BuildForLinux()
     {
+        var libFile = GetLibraryPath();
+        PublicAdditionalLibraries.Add(libFile);
+        if (File.Exists(libFile))
+            return;
+
+        var env = Environment.GetEnvironmentVariable("LINUX_MULTIARCH_ROOT");
+        if (string.IsNullOrEmpty(env))
+            throw new BuildException("LINUX_MULTIARCH_ROOT environment variable needed.");
+
+        EnsureDirectoryExists(libFile);
+        var clangPath = Path.Combine(env, @"x86_64-unknown-linux-gnu\bin\clang.exe");
+        var clangPlusPlusPath = Path.Combine(env, @"x86_64-unknown-linux-gnu\bin\clang++.exe");
+        var args = new Dictionary<string, string>
+        {
+            { "CMAKE_SYSTEM_NAME", "Linux" },
+            { "CMAKE_C_COMPILER:PATH", clangPath },
+            { "CMAKE_CXX_COMPILER:PATH", clangPlusPlusPath },
+        };
+        var buildDir = CMake(args);
+        var buildFile = Path.Combine(buildDir, m_LibName);
+        File.Copy(buildFile, libFile, true);
     }
 
+    private void BuildForLinuxAArch64()
+    {
+        var libFile = GetLibraryPath();
+        PublicAdditionalLibraries.Add(libFile);
+        if (File.Exists(libFile))
+            return;
+
+        var env = Environment.GetEnvironmentVariable("LINUX_MULTIARCH_ROOT");
+        if (string.IsNullOrEmpty(env))
+            throw new BuildException("LINUX_MULTIARCH_ROOT environment variable needed.");
+
+        EnsureDirectoryExists(libFile);
+        var clangPath = Path.Combine(env, @"aarch64-unknown-linux-gnueabi\bin\clang.exe");
+        var clangPlusPlusPath = Path.Combine(env, @"aarch64-unknown-linux-gnueabi\bin\clang++.exe");
+        var args = new Dictionary<string, string>
+        {
+            { "CMAKE_SYSTEM_NAME", "Linux" },
+            { "CMAKE_C_COMPILER:PATH", clangPath },
+            { "CMAKE_CXX_COMPILER:PATH", clangPlusPlusPath },
+        };
+        var buildDir = CMake(args);
+        var buildFile = Path.Combine(buildDir, m_LibName);
+        File.Copy(buildFile, libFile, true);
+    }
+    
     private void BuildForOSX()
     {
     }
@@ -149,16 +194,19 @@ public class Lua : ModuleRules
             {
                 var buildDir = string.Format("\"{0}/build\"", m_LuaDirName);
                 writer.WriteLine("rmdir /s /q {0} &mkdir {0} &pushd {0}", buildDir);
-                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
+                if (string.IsNullOrEmpty(m_BuildSystem))
+                    writer.Write("cmake ../.. ");
+                else
+                    writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
                 var args = new Dictionary<string, string>
                 {
                     { "LUA_VERSION", m_LuaVersion },
                     { "LUA_COMPILE_AS_CPP", m_CompileAsCpp ? "1" : "0" },
                 };
                 foreach (var arg in args)
-                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
+                    writer.Write(" -D{0}=\"{1}\"", arg.Key, arg.Value);
                 foreach (var arg in extraArgs)
-                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
+                    writer.Write(" -D{0}=\"{1}\"", arg.Key, arg.Value);
                 writer.WriteLine();
                 writer.WriteLine("popd");
                 writer.WriteLine("cmake --build {0}/build --config {1}", m_LuaDirName, m_Config);
@@ -202,63 +250,6 @@ public class Lua : ModuleRules
             var newDstDir = Path.Combine(dstDir, subDir.Name);
             CopyDirectory(subDir.FullName, newDstDir);
         }
-    }
-
-    private void GenerateLibrary()
-    {
-        Console.WriteLine("generating {0} library with cmake...", m_LuaDirName);
-        EnsureDirectoryExists(m_LibraryPath);
-
-        var osPlatform = Environment.OSVersion.Platform;
-        if (osPlatform == PlatformID.Win32NT)
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = "cmd.exe",
-                WorkingDirectory = ModuleDirectory,
-                RedirectStandardInput = true,
-                UseShellExecute = false
-            };
-            var process = Process.Start(startInfo);
-            using (var writer = process.StandardInput)
-            {
-                writer.WriteLine("mkdir \"{0}/build\" & pushd \"{0}/build\"", m_LuaDirName);
-                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
-                var args = new Dictionary<string, string>
-                {
-                    { "LUA_VERSION", m_LuaVersion },
-                    { "LUA_COMPILE_AS_CPP", m_CompileAsCpp ? "1" : "0" },
-                };
-
-                if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
-                {
-                    args.Add("CMAKE_TOOLCHAIN_FILE", "C:/Users/xuyanghuang/AppData/Local/Android/Sdk/ndk/21.1.6352462/build/cmake/android.toolchain.cmake");
-                    args.Add("ANDROID_ABI", "armeabi-v7a");
-                    args.Add("ANDROID_PLATFORM", "android-29");
-                }
-
-                foreach (var arg in args)
-                    writer.Write(" -D{0}={1}", arg.Key, arg.Value);
-                writer.WriteLine();
-                writer.WriteLine("popd");
-                writer.WriteLine("cmake --build {0}/build --config {1}", m_LuaDirName, m_Config);
-            }
-
-            process.WaitForExit();
-            return;
-        }
-
-        if (osPlatform == PlatformID.MacOSX)
-        {
-            throw new NotImplementedException();
-        }
-
-        if (osPlatform == PlatformID.Unix)
-        {
-            throw new NotImplementedException();
-        }
-
-        throw new NotSupportedException();
     }
 
     private bool ShouldCompileAsCpp()
@@ -316,11 +307,15 @@ public class Lua : ModuleRules
 
     private string GetBuildSystem()
     {
-        if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
+        var osPlatform = Environment.OSVersion.Platform;
+        if (osPlatform == PlatformID.Win32NT)
+        {
+            if (Target.Platform.IsInGroup(UnrealPlatformGroup.Linux))
+                return "Ninja";
+            if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
+                return "Ninja";
             return "Visual Studio 16 2019";
-
-        if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
-            return "Ninja";
+        }
 
         throw new NotImplementedException();
     }
@@ -338,8 +333,6 @@ public class Lua : ModuleRules
     private readonly string m_LibName;
     private readonly string m_LibDirName;
     private readonly string m_LuaDirName;
-    private readonly string m_LibraryPath;
     private readonly string m_BuildSystem;
     private readonly bool m_CompileAsCpp;
-    private readonly bool m_CompileAsDynamicLib;
 }
