@@ -81,7 +81,7 @@ public class UnLua : ModuleRules
         loadBoolConfig("bEnableTypeChecking", "ENABLE_TYPE_CHECK", true);
         loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
         loadBoolConfig("bEnableCallOverriddenFunction", "ENABLE_CALL_OVERRIDDEN_FUNCTION", true);
-        loadBoolConfig("bLuaCompileAsCpp", "LUA_COMPILE_AS_CPP", true);
+        loadBoolConfig("bLuaCompileAsCpp", "LUA_COMPILE_AS_CPP", false);
         loadBoolConfig("bWithUE4Namespace", "WITH_UE4_NAMESPACE", true);
         loadBoolConfig("bLegacyReturnOrder", "UNLUA_LEGACY_RETURN_ORDER", false);
         loadBoolConfig("bLegacyBlueprintPath", "UNLUA_LEGACY_BLUEPRINT_PATH", false);
