@@ -70,8 +70,6 @@ public:
 
     FORCEINLINE TSharedPtr<FFunctionDesc> GetFunction(int32 Index) { return Index > INDEX_NONE && Index < Functions.Num() ? Functions[Index] : nullptr; }
 
-    TSharedPtr<FFieldDesc> FindField(const char* FieldName);
-
     TSharedPtr<FFieldDesc> RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
 
     void GetInheritanceChain(TArray<FClassDesc*>& Chain);
@@ -94,7 +92,6 @@ private:
     int32 UserdataPadding : 8;            // only used for UScriptStruct
     int32 Size : 24;
 
-    TArray<FClassDesc*> Interfaces;
     TMap<FName, TSharedPtr<FFieldDesc>> Fields;
     TArray<TSharedPtr<FPropertyDesc>> Properties;
     TArray<TSharedPtr<FFunctionDesc>> Functions;

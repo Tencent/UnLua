@@ -65,14 +65,6 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
     }
 }
 
-TSharedPtr<FFieldDesc> FClassDesc::FindField(const char* FieldName)
-{
-    Load();
-
-    TSharedPtr<FFieldDesc>* FieldDescPtr = Fields.Find(FieldName);
-    return FieldDescPtr ? *FieldDescPtr : nullptr;
-}
-
 /**
  * Register a field of this class
  */
