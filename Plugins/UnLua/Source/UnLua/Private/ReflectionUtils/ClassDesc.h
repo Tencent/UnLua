@@ -36,7 +36,7 @@ public:
 
     FORCEINLINE bool IsInterface() const { return bIsInterface; }
 
-    FORCEINLINE bool IsNative() const { return bIsInterface; }
+    FORCEINLINE bool IsNative() const { return bIsNative; }
 
     FORCEINLINE UStruct* AsStruct()
     {
