@@ -315,7 +315,7 @@ public class Lua : ModuleRules
         bool flag;
         if (config.GetBool(section, "bLuaCompileAsCpp", out flag))
             return flag;
-        return true;
+        return false;
     }
 
     private void EnsureDirectoryExists(string fileName)
