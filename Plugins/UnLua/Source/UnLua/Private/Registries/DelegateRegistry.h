@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lua.h"
+#include "lua.hpp"
 #include "LuaDelegateHandler.h"
 #include "ReflectionUtils/FunctionDesc.h"
 

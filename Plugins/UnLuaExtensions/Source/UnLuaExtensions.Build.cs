@@ -44,7 +44,8 @@ public class UnLuaExtensions : ModuleRules
             new[]
             {
                 "EXTENSION_NAMESPACE_BEGIN=namespace UnLuaExtensions { namespace LuaSocket {",
-                "EXTENSION_NAMESPACE_END=}}"
+                "EXTENSION_NAMESPACE_END=}}",
+                "LUA_LIB"
             }
         );
 
