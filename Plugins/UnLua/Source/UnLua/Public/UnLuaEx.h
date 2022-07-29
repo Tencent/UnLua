@@ -207,9 +207,7 @@ namespace UnLua
             lua_rawset(L, -3);
         }
 
-#if WITH_EDITOR
         virtual FString GetName() const override { return Name; }
-#endif
 
     protected:
         FExportedProperty(const FString &InName, uint32 InOffset)
@@ -317,6 +315,13 @@ namespace UnLua
         virtual void AddLib(const luaL_Reg *InLib) override;
         virtual bool IsReflected() const override { return bIsReflected; }
         virtual FString GetName() const override { return Name; }
+        virtual FString GetSuperClassName() const override { return SuperClassName; }
+        virtual void GetProperties(TArray<TSharedPtr<IExportedProperty>>& InArray) const override { InArray.Append(Properties); }
+        virtual void GetFunctions(TArray<IExportedFunction*>& InArray) const override
+        {
+            InArray.Append(Functions);
+            InArray.Append(GlueFunctions);
+        }
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;

@@ -28,19 +28,19 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const char* Chunk1 = "\
-		local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue288/UnLuaTestUMG_Issue288.UnLuaTestUMG_Issue288_C')\
-		G_UMG = NewObject(UMGClass)\
-		";
+        const auto Chunk1 = R"(
+        local UMGClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue288/UnLuaTestUMG_Issue288.UnLuaTestUMG_Issue288_C')
+        G_UMG = NewObject(UMGClass)
+        )";
         UnLua::RunChunk(L, Chunk1);
 
         auto Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
         RUNNER_TEST_NOT_NULL(Texture2D);
 
-        const char* Chunk2 = "\
-		G_UMG:Release()\
-		G_UMG = nil\
-		";
+        const auto Chunk2 = R"(
+        G_UMG:Release()
+        G_UMG = nil
+        )";
         UnLua::RunChunk(L, Chunk2);
 
         lua_gc(L, LUA_GCCOLLECT, 0);
@@ -49,13 +49,7 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 
         Texture2D = FindObject<UTexture2D>(nullptr, TEXT("/Game/FPWeapon/Textures/UE4_LOGO_CARD.UE4_LOGO_CARD"));
         if (Texture2D)
-        {
-#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
-            FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults | EReferenceChainSearchMode::FullChain);
-#else
-			FReferenceChainSearch Search(Texture2D, EReferenceChainSearchMode::PrintAllResults);
-#endif
-        }
+            UnLuaTestSuite::PrintReferenceChain(Texture2D);
         RUNNER_TEST_NULL(Texture2D);
 
         return true;
@@ -64,4 +58,4 @@ struct FUnLuaTest_Issue288 : FUnLuaTestBase
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue288, TEXT("UnLua.Regression.Issue288 UMG里Image用到的Texture内存泄漏"))
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif

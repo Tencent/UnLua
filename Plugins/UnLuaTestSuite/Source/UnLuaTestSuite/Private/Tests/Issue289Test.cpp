@@ -19,39 +19,37 @@
 
 struct FUnLuaTest_Issue289 : FUnLuaTestBase
 {
-	virtual bool InstantTest() override
-	{
-		return true;
-	}
+    virtual bool InstantTest() override
+    {
+        return true;
+    }
 
-	virtual bool SetUp() override
-	{
-		FUnLuaTestBase::SetUp();
+    virtual bool SetUp() override
+    {
+        FUnLuaTestBase::SetUp();
 
-		const auto World = GetWorld();
+        const auto World = GetWorld();
 
-		const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/UnLuaTestSuite/Tests/Regression/Issue289/BP_UnLuaTestActor_Issue289.BP_UnLuaTestActor_Issue289_C"));
-		const auto Actor = World->SpawnActor(ActorClass);
+        const auto ActorClass = LoadClass<AActor>(nullptr, TEXT("/UnLuaTestSuite/Tests/Regression/Issue289/BP_UnLuaTestActor_Issue289.BP_UnLuaTestActor_Issue289_C"));
+        const auto Actor = World->SpawnActor(ActorClass);
 
-		const char* Chunk = "\
-			return package.loaded['Tests.Regression.Issue289.TestActor']\
-            ";
-		UnLua::RunChunk(L, Chunk);
-		RUNNER_TEST_EQUAL(luaL_typename(L, -1), "table"); // ensure test actor bound to lua
+        auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+        const auto RefBefore = Env.GetManager()->GetBoundRef(ActorClass);
+        RUNNER_TEST_TRUE(RefBefore != LUA_NOREF);
 
-		World->Tick(LEVELTICK_All, SMALL_NUMBER);
-		Actor->Destroy();
+        World->Tick(LEVELTICK_All, SMALL_NUMBER);
+        Actor->Destroy();
 
-		CollectGarbage(RF_NoFlags, true);
-		CollectGarbage(RF_NoFlags, true);
+        CollectGarbage(RF_NoFlags, true);
+        CollectGarbage(RF_NoFlags, true);
 
-		UnLua::RunChunk(L, Chunk);
-		RUNNER_TEST_EQUAL(luaL_typename(L, -1), "nil");
+        const auto RefAfter = Env.GetManager()->GetBoundRef(ActorClass);
+        RUNNER_TEST_TRUE(RefAfter == LUA_NOREF);
 
-		return true;
-	}
+        return true;
+    }
 };
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue289, TEXT("UnLua.Regression.Issue289 UClass在被UEGC后没有释放相应的绑定"))
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif

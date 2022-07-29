@@ -23,21 +23,13 @@ namespace UnLua
     FDelegateRegistry::FDelegateRegistry(FLuaEnv* Env)
         : Env(Env)
     {
-        PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddLambda([this]
-        {
-            this->OnPostGarbageCollect();
-        });
+        PostGarbageCollectHandle = FCoreUObjectDelegates::GetPostGarbageCollect().AddRaw(this, &FDelegateRegistry::OnPostGarbageCollect);
     }
 
     FDelegateRegistry::~FDelegateRegistry()
     {
-        for (auto& Pair : Delegates)
-        {
-            for (auto& HandlerPair : Pair.Value.LuaFunction2Handler)
-            {
-                Env->AutoObjectReference.Remove(HandlerPair.Value.Get());
-            }
-        }
+        for (auto& Pair : CachedHandlers)
+            Env->AutoObjectReference.Remove(Pair.Value.Get());
         Delegates.Empty();
         FCoreUObjectDelegates::GetPostGarbageCollect().Remove(PostGarbageCollectHandle);
     }
@@ -60,6 +52,19 @@ namespace UnLua
                 Unbind(Pair.Key);
             Delegates.Remove(Pair.Key);
         }
+
+        TArray<FLuaFunction2> ToRemove;
+        for (auto& Pair : CachedHandlers)
+        {
+            if (Pair.Key.SelfObject.IsStale())
+            {
+                ToRemove.Add(Pair.Key);
+                Env->AutoObjectReference.Remove(Pair.Value.Get());
+            }
+        }
+
+        for (auto& Key : ToRemove)
+            CachedHandlers.Remove(Key);
     }
 
     void FDelegateRegistry::NotifyHandlerBeginDestroy(const ULuaDelegateHandler* Handler)
@@ -112,16 +117,21 @@ namespace UnLua
             Info.Owner = SelfObject;
 
         const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        const auto Exists = Info.LuaFunction2Handler.Find(LuaFunction2);
-        if (Exists && Exists->IsValid())
+        const auto Cached = CachedHandlers.Find(LuaFunction2);
+        if (Cached && Cached->IsValid())
+        {
+            (*Cached)->BindTo(Delegate);
+            Info.Handlers.Add(*Cached);
             return;
+        }
 
         lua_pushvalue(L, Index);
         const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Handler->BindTo(Delegate);
         Env->AutoObjectReference.Add(Handler);
-        Info.LuaFunction2Handler.Add(LuaFunction2, Handler);
+        CachedHandlers.Add(LuaFunction2, Handler);
+        Info.Handlers.Add(Handler);
     }
 
     void FDelegateRegistry::Unbind(void* Delegate)
@@ -130,16 +140,14 @@ namespace UnLua
         if (!Info)
             return;
 
-        for (const auto Pair : Info->LuaFunction2Handler)
+        for (const auto& Handler : Info->Handlers)
         {
-            const auto Handler = Pair.Value;
             if (!Handler.IsValid())
                 continue;
-            Env->AutoObjectReference.Remove(Handler.Get());
-            if (Info->Owner.IsValid())
+            if (!Info->Owner.IsStale())
                 ((FScriptDelegate*)Delegate)->Unbind();
         }
-        Info->LuaFunction2Handler.Empty();
+        Info->Handlers.Empty();
     }
 
     void FDelegateRegistry::Execute(const ULuaDelegateHandler* Handler, void* Params)
@@ -172,22 +180,27 @@ namespace UnLua
     void FDelegateRegistry::Add(lua_State* L, int32 Index, void* Delegate, UObject* SelfObject)
     {
         check(lua_type(L, Index) == LUA_TFUNCTION);
-        const auto LuaFunction = lua_topointer(L, Index);
         auto& Info = Delegates.FindChecked(Delegate);
         if (!Info.Owner.IsValid())
             Info.Owner = SelfObject;
 
+        const auto LuaFunction = lua_topointer(L, Index);
         const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        const auto Exists = Info.LuaFunction2Handler.Find(LuaFunction2);
-        if (Exists && Exists->IsValid())
+        const auto Cached = CachedHandlers.Find(LuaFunction2);
+        if (Cached && Cached->IsValid())
+        {
+            (*Cached)->AddTo(Info.MulticastProperty, Delegate);
+            Info.Handlers.Add(*Cached);
             return;
+        }
 
         lua_pushvalue(L, Index);
         const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->AddTo(Info.MulticastProperty, Delegate);
-        Info.LuaFunction2Handler.Add(LuaFunction2, Handler);
+        CachedHandlers.Add(LuaFunction2, Handler);
+        Info.Handlers.Add(Handler);
     }
 
     void FDelegateRegistry::Remove(lua_State* L, UObject* SelfObject, void* Delegate, int Index)
@@ -197,13 +210,12 @@ namespace UnLua
         auto& Info = Delegates.FindChecked(Delegate);
 
         const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        TWeakObjectPtr<ULuaDelegateHandler> Handler;
-        if (!Info.LuaFunction2Handler.RemoveAndCopyValue(LuaFunction2, Handler))
+        const auto Cached = CachedHandlers.Find(LuaFunction2);
+        if (!Cached || !Cached->IsValid())
             return;
-        if (!Handler.IsValid())
-            return;
-        Handler->RemoveFrom(Info.MulticastProperty, Delegate);
-        Env->AutoObjectReference.Remove(Handler.Get());
+
+        (*Cached)->RemoveFrom(Info.MulticastProperty, Delegate);
+        Info.Handlers.Remove(*Cached);
     }
 
     void FDelegateRegistry::Broadcast(lua_State* L, void* Delegate, int32 NumParams, int32 FirstParamIndex)
@@ -223,16 +235,15 @@ namespace UnLua
         if (!Info)
             return;
 
-        for (const auto Pair : Info->LuaFunction2Handler)
+        for (const auto& Handler : Info->Handlers)
         {
-            const auto Handler = Pair.Value;
             if (!Handler.IsValid())
                 continue;
             if (Info->Owner.IsValid())
                 Handler->RemoveFrom(Info->MulticastProperty, Delegate);
-            Env->AutoObjectReference.Remove(Handler.Get());
         }
-        Info->LuaFunction2Handler.Empty();
+
+        Info->Handlers.Empty();
     }
 
 #pragma endregion

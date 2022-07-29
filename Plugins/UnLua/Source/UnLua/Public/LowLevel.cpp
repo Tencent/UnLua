@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LowLevel.h"
+#include "LuaCore.h"
 
 namespace UnLua
 {
@@ -75,6 +76,63 @@ namespace UnLua
             if (Struct->IsNative())
                 return FString::Printf(TEXT("%s%s"), Struct->GetPrefixCPP(), *Struct->GetName());
             return Struct->GetPathName();
+        }
+
+        void GetFunctionNames(lua_State* L, const int TableRef, TSet<FName>& FunctionNames)
+        {
+            const auto Type = lua_rawgeti(L, LUA_REGISTRYINDEX, TableRef);
+            if (Type == LUA_TNIL)
+                return;
+
+            static auto GetFunctionName = [](lua_State* L, void* Userdata)
+            {
+                const auto ValueType = lua_type(L, -1);
+                if (ValueType != LUA_TFUNCTION)
+                    return true;
+
+                auto Names = (TSet<FName>*)Userdata;
+#if SUPPORTS_RPC_CALL
+                FString FuncName(lua_tostring(L, -2));
+                if (FuncName.EndsWith(TEXT("_RPC")))
+                    FuncName = FuncName.Left(FuncName.Len() - 4);
+                Names->Add(FName(*FuncName));
+#else
+                Names->Add(FName(lua_tostring(L, -2)));
+#endif
+                
+                return true;
+            }; 
+            
+            auto N = 1;
+            bool bNext;
+            do 
+            {
+                bNext = TraverseTable(L, -1, &FunctionNames, GetFunctionName) > INDEX_NONE;
+                if (bNext)
+                {
+                    lua_pushstring(L, "Super");
+                    lua_rawget(L, -2);
+                    ++N;
+                    bNext = lua_istable(L, -1);
+                }
+            } while (bNext);
+            lua_pop(L, N);
+        }
+
+        int GetLoadedModule(lua_State* L, const char* ModuleName)
+        {
+            if (!ModuleName)
+            {
+                UE_LOG(LogUnLua, Warning, TEXT("%s, Invalid module name!"), ANSI_TO_TCHAR(__FUNCTION__));
+                return LUA_TNIL;
+            }
+
+            lua_getglobal(L, "package");
+            lua_getfield(L, -1, "loaded");
+            int32 Type = lua_getfield(L, -1, ModuleName);
+            lua_remove(L, -2);
+            lua_remove(L, -2);
+            return Type;
         }
     }
 }

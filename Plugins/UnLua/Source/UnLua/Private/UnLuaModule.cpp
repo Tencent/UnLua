@@ -26,6 +26,7 @@
 #include "Engine/World.h"
 #include "UnLuaModule.h"
 #include "DefaultParamCollection.h"
+#include "GameDelegates.h"
 #include "LuaEnvLocator.h"
 #include "UnLuaDebugBase.h"
 #include "UnLuaInterface.h"
@@ -64,6 +65,7 @@ namespace UnLua
                 FEditorDelegates::PreBeginPIE.AddRaw(this, &FUnLuaModule::OnPreBeginPIE);
                 FEditorDelegates::PostPIEStarted.AddRaw(this, &FUnLuaModule::OnPostPIEStarted);
                 FEditorDelegates::EndPIE.AddRaw(this, &FUnLuaModule::OnEndPIE);
+                FGameDelegates::Get().GetEndPlayMapDelegate().AddRaw(this, &FUnLuaModule::OnEndPlayMap);
             }
 #endif
 
@@ -102,7 +104,13 @@ namespace UnLua
                 const auto EnvLocatorClass = *Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : *Settings.EnvLocatorClass;
                 EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
                 EnvLocator->AddToRoot();
-                FDeadLoopCheck::Timeout = Settings.DeadLoopCheck; 
+                FDeadLoopCheck::Timeout = Settings.DeadLoopCheck;
+
+                for (const auto Class : TObjectRange<UClass>())
+                {
+                    const auto Env = EnvLocator->Locate(Class);
+                    Env->TryBind(Class);
+                }
             }
             else
             {
@@ -198,6 +206,11 @@ namespace UnLua
         }
 
         void OnEndPIE(bool bIsSimulating)
+        {
+            // SetActive(false);
+        }
+
+        void OnEndPlayMap()
         {
             SetActive(false);
         }

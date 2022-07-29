@@ -136,7 +136,6 @@ public:
     uint8 NumCalls;                 // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
     uint8 bStaticFunc : 1;
     uint8 bInterfaceFunc : 1;
-    uint8 bHasDelegateParams : 1;
     int32 ParmsSize;
     TUniquePtr<FTCHARToUTF8> LuaFunctionName;
 };

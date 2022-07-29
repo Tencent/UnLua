@@ -97,7 +97,7 @@ public class UnLua : ModuleRules
 
     private void SetupScripts()
     {
-        const string UnLuaSourceFileName = "UnLua.lua";
+        const string UnLuaSourceFileName = "UnLuaHotReload.lua";
         var PluginContentDirectory = Path.Combine(PluginDirectory, "Content");
         var DefaultScriptDirectory = Path.Combine(Target.ProjectFile.Directory.ToString(), "Content/Script");
         if (!Directory.Exists(DefaultScriptDirectory))

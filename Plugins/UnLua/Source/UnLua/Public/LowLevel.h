@@ -37,5 +37,11 @@ namespace UnLua
         FString GetMetatableName(const UObject* Object);
 
         FString GetMetatableName(const UStruct* Struct);
+
+        /* 从指定的LuaTable及其Super中找到所有Lua方法名 */
+        void GetFunctionNames(lua_State* L, int TableRef, TSet<FName>& FunctionNames);
+
+        /* Get package.loaded[ModuleName] */
+        int GetLoadedModule(lua_State* L, const char *ModuleName);
     }
 }

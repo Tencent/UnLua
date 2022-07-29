@@ -43,7 +43,7 @@ namespace UnLua
          * 将一个UObject绑定到Lua环境，作为lua table访问。
          * @return lua引用ID
          */
-        int Bind(UObject* Object, const char* ModuleName);
+        int Bind(UObject* Object);
 
         /**
          * 获取一个值，表示UObject是否绑定到了Lua环境。

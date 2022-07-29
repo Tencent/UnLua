@@ -3,7 +3,7 @@ require "UnLua"
 local M = Class()
 
 function M:Test()
-    Result = true
+    Issue446_Result = true
 end
 
 return M

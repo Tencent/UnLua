@@ -36,9 +36,9 @@ void FUnLuaLibClassSpec::Define()
     {
         It(TEXT("正确加载蓝图类"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const UClass* Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"));
+            const auto Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"));
             UnLua::RunChunk(L, "return UE.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')");
-            const UClass* Actual = static_cast<UClass*>(UnLua::GetPointer(L, -1));
+            const auto Actual = (UClass*)UnLua::GetUObject(L, -1);
             TEST_EQUAL(Actual, Expected);
         });
     });

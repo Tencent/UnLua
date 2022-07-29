@@ -8,6 +8,7 @@
 
 require "UnLua"
 
+---@class ClassName
 local TemplateName = Class()
 
 --function TemplateName:Initialize(Initializer)

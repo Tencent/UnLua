@@ -13,13 +13,15 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaExtensionsModule.h"
-
 #include "LuaEnv.h"
 #include "luasocket.h"
 
 void FUnLuaExtensionsModule::StartupModule()
 {
     Handle = UnLua::FLuaEnv::OnCreated.AddStatic(&FUnLuaExtensionsModule::OnLuaEnvCreated);
+
+    for (const auto& Pair : UnLua::FLuaEnv::GetAll())
+        OnLuaEnvCreated(*Pair.Value);
 }
 
 void FUnLuaExtensionsModule::ShutdownModule()

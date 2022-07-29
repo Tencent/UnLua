@@ -92,10 +92,6 @@ void PushObjectCore(lua_State *L, UObjectBaseUtility *Object);
  */
 int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &Function);
 
-/**
- * Functions to handle Lua functions
- */
-bool GetFunctionList(lua_State *L, const char *InModuleName, TSet<FName> &FunctionNames);
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName);
 bool PushFunction(lua_State *L, UObjectBaseUtility *Object, int32 FunctionRef);
 bool CallFunction(lua_State *L, int32 NumArgs, int32 NumResults);
@@ -107,12 +103,6 @@ UNLUA_API void AddPackagePath(lua_State *L, const char *Path);
 int LoadFromBuiltinLibs(lua_State *L);
 int LoadFromCustomLoader(lua_State *L);
 int LoadFromFileSystem(lua_State *L);
-
-/**
- * Functions to handle loaded Lua module
- */
-void ClearLoadedModule(lua_State *L, const char *ModuleName);
-int32 GetLoadedModule(lua_State *L, const char *ModuleName);
 
 /**
  * Functions to register collision enums
@@ -129,18 +119,6 @@ void CreateWeakValueTable(lua_State *L);
 
 int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool (*TraverseWorker)(lua_State*, void*));
 bool PeekTableElement(lua_State *L, void *Userdata);
-
-/**
- * Lua global functions
- */
-int32 Global_GetUProperty(lua_State *L);
-int32 Global_SetUProperty(lua_State *L);
-int32 Global_LoadObject(lua_State *L);
-int32 Global_LoadClass(lua_State *L);
-int32 Global_NewObject(lua_State *L);
-UNLUA_API int32 Global_Print(lua_State *L);
-int32 Global_AddToClassWhiteSet(lua_State* L);
-int32 Global_RemoveFromClassWhiteSet(lua_State* L);
 
 /**
  * Functions to handle UEnum

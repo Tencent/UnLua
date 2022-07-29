@@ -64,7 +64,7 @@ enum class EUnLuaTestEnum : uint8
     Value2 = 2 UMETA(DisplayName = "数值2"),
 };
 
-UCLASS()
+UCLASS(Blueprintable)
 class UNLUATESTSUITE_API UUnLuaTestStub : public UObject
 {
     GENERATED_BODY()

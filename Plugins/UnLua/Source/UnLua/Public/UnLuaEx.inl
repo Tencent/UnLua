@@ -592,8 +592,6 @@ namespace UnLua
     template <typename ClassType, typename RetType, typename... ArgType>
     void TExportedMemberFunction<ClassType, RetType, ArgType...>::GenerateIntelliSense(FString &Buffer) const
     {
-        Buffer += FString::Printf(TEXT("\r\n\r\n"));
-
         // arguments
         FString ArgList;
         GenerateArgsIntelliSense<RetType, ArgType...>(Buffer, ArgList);

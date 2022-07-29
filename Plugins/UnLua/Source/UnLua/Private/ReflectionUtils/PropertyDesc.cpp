@@ -1346,7 +1346,7 @@ public:
         void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         FScriptDelegate* ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
         UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, ScriptDelegate->GetUObject());
-        return SetValueInternal(L, ValuePtr, IndexInStack, true);
+        return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
     }
     
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1366,6 +1366,14 @@ public:
     {
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
+        if (lua_isfunction(L, IndexInStack))
+        {
+            FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
+            lua_pop(L, 1);
+            return bCopyValue;
+        }
+
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
         if (FuncIdxInTable != INDEX_NONE)
         {
@@ -1374,7 +1382,7 @@ public:
             UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
             lua_pop(L, 1);
         }
-        return true;
+        return bCopyValue;
     }
 
 #if ENABLE_TYPE_CHECK == 1
@@ -1383,9 +1391,9 @@ public:
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
         {
-            if (Type != LUA_TTABLE)
+            if (Type != LUA_TTABLE && Type != LUA_TFUNCTION)
             {
-                ErrorMsg = FString::Printf(TEXT("table needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                ErrorMsg = FString::Printf(TEXT("table or function needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
                 return false;
             }
         }
@@ -1441,7 +1449,7 @@ public:
 
         void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ValuePtr, DelegateProperty, (UObject*)ContainerPtr);
-        return SetValueInternal(L, ValuePtr, IndexInStack, true);
+        return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
     }
     
     virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
@@ -1461,6 +1469,14 @@ public:
     {
         UObject *Object = nullptr;
         const void *CallbackFunction = nullptr;
+        if (lua_isfunction(L, IndexInStack))
+        {
+            FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
+            lua_pop(L, 1);
+            return bCopyValue;
+        }
+        
         int32 FuncIdxInTable = GetDelegateInfo(L, IndexInStack, Object, CallbackFunction);      // get target UObject and Lua function
 
         if (FuncIdxInTable != INDEX_NONE)
@@ -1472,7 +1488,7 @@ public:
             Registry->Add(L, -1, ScriptDelegate, Object);
             lua_pop(L, 1);
         }
-        return true;
+        return bCopyValue;
     }
 
 #if ENABLE_TYPE_CHECK == 1
@@ -1481,9 +1497,9 @@ public:
         int32 Type = lua_type(L, IndexInStack);
         if (Type != LUA_TNIL)
         {
-            if (Type != LUA_TTABLE)
+            if (Type != LUA_TTABLE && Type != LUA_TFUNCTION)
             {
-                ErrorMsg = FString::Printf(TEXT("table needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+                ErrorMsg = FString::Printf(TEXT("table or function needed but got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
                 return false;
             }
         }

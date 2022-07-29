@@ -1,8 +1,5 @@
 require "UnLua"
 
-local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
-local BP_PlayerCharacter = UE.UClass.Load("/Game/Core/Blueprints/Player/BP_PlayerCharacter.BP_PlayerCharacter_C")
-
 local BP_AICharacter_C = Class("BP_CharacterBase_C")
 
 function BP_AICharacter_C:Initialize(Initializer)
@@ -28,12 +25,14 @@ function BP_AICharacter_C:Died_Multicast_RPC(DamageType)
 	self.Mesh:SetAllBodiesBelowSimulatePhysics(self.BoneName, true, true)
 	local GameMode = UE.UGameplayStatics.GetGameMode(self)
 	if GameMode then
+		local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 		BPI_Interfaces.NotifyEnemyDied(GameMode)
 	end
 	--self.Sphere.OnComponentBeginOverlap:Remove(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
 end
 
 function BP_AICharacter_C:OnComponentBeginOverlap_Sphere(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
+	local BP_PlayerCharacter = UE.UClass.Load("/Game/Core/Blueprints/Player/BP_PlayerCharacter.BP_PlayerCharacter_C")
 	local PlayerCharacter = OtherActor:Cast(BP_PlayerCharacter)
 	if PlayerCharacter then
 		local Controller = self:GetController()
