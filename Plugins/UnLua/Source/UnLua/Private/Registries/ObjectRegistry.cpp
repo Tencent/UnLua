@@ -20,7 +20,7 @@
 
 namespace UnLua
 {
-    static const char* ObjectMap = "ObjectMap";
+    static const char* REGISTRY_KEY = "UnLua_ObjectMap";
 
     static int ReleaseSharedPtr(lua_State* L)
     {
@@ -34,7 +34,7 @@ namespace UnLua
     {
         const auto L = Env->GetMainState();
 
-        lua_pushstring(L, ObjectMap); // create weak table 'ObjectMap'
+        lua_pushstring(L, REGISTRY_KEY);
         LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
@@ -63,7 +63,7 @@ namespace UnLua
             return;
         }
 
-        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         const auto Type = lua_rawget(L, -2);
         if (Type == LUA_TNIL)
@@ -90,7 +90,7 @@ namespace UnLua
 
         int OldTop = lua_gettop(L);
 
-        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         lua_newtable(L); // create a Lua table ('INSTANCE')
         PushObjectCore(L, Object); // push UObject ('RAW_UOBJECT')
@@ -188,7 +188,7 @@ namespace UnLua
     void FObjectRegistry::RemoveFromObjectMapAndPushToStack(UObject* Object)
     {
         const auto L = Env->GetMainState();
-        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         lua_rawget(L, -2);
         lua_pushlightuserdata(L, Object);
