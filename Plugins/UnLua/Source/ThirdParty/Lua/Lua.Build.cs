@@ -124,13 +124,18 @@ public class Lua : ModuleRules
             throw new BuildException("LINUX_MULTIARCH_ROOT environment variable needed.");
 
         EnsureDirectoryExists(libFile);
-        var clangPath = Path.Combine(env, @"x86_64-unknown-linux-gnu\bin\clang.exe");
-        var clangPlusPlusPath = Path.Combine(env, @"x86_64-unknown-linux-gnu\bin\clang++.exe");
+        var sysName = "x86_64-unknown-linux-gnu";
+        var sysRoot = Path.Combine(env, sysName);
+        var clangPath = Path.Combine(env, sysName, @"bin\clang.exe");
+        var clangPlusPlusPath = Path.Combine(env, sysName, @"bin\clang++.exe");
         var args = new Dictionary<string, string>
         {
+            { "CMAKE_SYSROOT", sysRoot },
             { "CMAKE_SYSTEM_NAME", "Linux" },
+            { "CMAKE_C_COMPILER_TARGET", sysName },
             { "CMAKE_C_COMPILER:PATH", clangPath },
             { "CMAKE_CXX_COMPILER:PATH", clangPlusPlusPath },
+            { "CMAKE_CXX_COMPILER_TARGET", sysName },
         };
         var buildDir = CMake(args);
         var buildFile = Path.Combine(buildDir, m_LibName);
@@ -149,13 +154,18 @@ public class Lua : ModuleRules
             throw new BuildException("LINUX_MULTIARCH_ROOT environment variable needed.");
 
         EnsureDirectoryExists(libFile);
-        var clangPath = Path.Combine(env, @"aarch64-unknown-linux-gnueabi\bin\clang.exe");
-        var clangPlusPlusPath = Path.Combine(env, @"aarch64-unknown-linux-gnueabi\bin\clang++.exe");
+        var sysName = "aarch64-unknown-linux-gnueabi";
+        var sysRoot = Path.Combine(env, sysName);
+        var clangPath = Path.Combine(env, sysName, @"bin\clang.exe");
+        var clangPlusPlusPath = Path.Combine(env, sysName, @"bin\clang++.exe");
         var args = new Dictionary<string, string>
         {
+            { "CMAKE_SYSROOT", sysRoot },
             { "CMAKE_SYSTEM_NAME", "Linux" },
+            { "CMAKE_C_COMPILER_TARGET", sysName },
             { "CMAKE_C_COMPILER:PATH", clangPath },
             { "CMAKE_CXX_COMPILER:PATH", clangPlusPlusPath },
+            { "CMAKE_CXX_COMPILER_TARGET", sysName },
         };
         var buildDir = CMake(args);
         var buildFile = Path.Combine(buildDir, m_LibName);
