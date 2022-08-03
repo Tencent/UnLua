@@ -58,6 +58,7 @@ public class UnLua : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
+                "SlateCore",
                 "InputCore",
                 "Projects",
                 "Lua"
