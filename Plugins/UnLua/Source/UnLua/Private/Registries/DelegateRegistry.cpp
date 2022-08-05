@@ -53,7 +53,7 @@ namespace UnLua
             Delegates.Remove(Pair.Key);
         }
 
-        TArray<FLuaFunction2> ToRemove;
+        TArray<FLuaDelegatePair> ToRemove;
         for (auto& Pair : CachedHandlers)
         {
             if (Pair.Key.SelfObject.IsStale())
@@ -116,8 +116,8 @@ namespace UnLua
         if (!Info.Owner.IsValid())
             Info.Owner = SelfObject;
 
-        const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        const auto Cached = CachedHandlers.Find(LuaFunction2);
+        const auto DelegatePair = FLuaDelegatePair(SelfObject, LuaFunction);
+        const auto Cached = CachedHandlers.Find(DelegatePair);
         if (Cached && Cached->IsValid())
         {
             (*Cached)->BindTo(Delegate);
@@ -130,7 +130,7 @@ namespace UnLua
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Handler->BindTo(Delegate);
         Env->AutoObjectReference.Add(Handler);
-        CachedHandlers.Add(LuaFunction2, Handler);
+        CachedHandlers.Add(DelegatePair, Handler);
         Info.Handlers.Add(Handler);
     }
 
@@ -185,8 +185,8 @@ namespace UnLua
             Info.Owner = SelfObject;
 
         const auto LuaFunction = lua_topointer(L, Index);
-        const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        const auto Cached = CachedHandlers.Find(LuaFunction2);
+        const auto DelegatePair = FLuaDelegatePair(SelfObject, LuaFunction);
+        const auto Cached = CachedHandlers.Find(DelegatePair);
         if (Cached && Cached->IsValid())
         {
             (*Cached)->AddTo(Info.MulticastProperty, Delegate);
@@ -199,7 +199,7 @@ namespace UnLua
         const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->AddTo(Info.MulticastProperty, Delegate);
-        CachedHandlers.Add(LuaFunction2, Handler);
+        CachedHandlers.Add(DelegatePair, Handler);
         Info.Handlers.Add(Handler);
     }
 
@@ -209,8 +209,8 @@ namespace UnLua
         const auto LuaFunction = lua_topointer(L, Index);
         auto& Info = Delegates.FindChecked(Delegate);
 
-        const auto LuaFunction2 = FLuaFunction2(SelfObject, LuaFunction);
-        const auto Cached = CachedHandlers.Find(LuaFunction2);
+        const auto DelegatePair = FLuaDelegatePair(SelfObject, LuaFunction);
+        const auto Cached = CachedHandlers.Find(DelegatePair);
         if (!Cached || !Cached->IsValid())
             return;
 

@@ -18,33 +18,32 @@
 #include "LuaDelegateHandler.h"
 #include "ReflectionUtils/FunctionDesc.h"
 
-struct FLuaFunction2
+struct FLuaDelegatePair
 {
-	FLuaFunction2(TWeakObjectPtr<UObject> InSelfObject, const void* InLuaFunction)
-		: SelfObject(InSelfObject)
-		, LuaFunction(InLuaFunction)
-	{
+    FLuaDelegatePair(TWeakObjectPtr<UObject> InSelfObject, const void* InLuaFunction)
+        : SelfObject(InSelfObject)
+          , LuaFunction(InLuaFunction)
+    {
+    }
 
-	}
+    TWeakObjectPtr<UObject> SelfObject;
 
-	TWeakObjectPtr<UObject> SelfObject;
+    const void* LuaFunction;
 
-	const void* LuaFunction;
+    friend inline bool operator==(const FLuaDelegatePair& A, const FLuaDelegatePair& B)
+    {
+        return A.LuaFunction == B.LuaFunction && A.SelfObject == B.SelfObject;
+    }
 
-	friend inline bool operator==(const FLuaFunction2& A, const FLuaFunction2& B)
-	{
-		return A.LuaFunction == B.LuaFunction && A.SelfObject == B.SelfObject;
-	}
+    friend inline uint32 GetTypeHash(const FLuaDelegatePair& Key)
+    {
+        uint32 Hash = 0;
 
-	friend inline uint32 GetTypeHash(const FLuaFunction2& Key)
-	{
-		uint32 Hash = 0;
+        Hash = HashCombine(Hash, GetTypeHash(Key.SelfObject));
+        Hash = HashCombine(Hash, GetTypeHash(Key.LuaFunction));
 
-		Hash = HashCombine(Hash, GetTypeHash(Key.SelfObject));
-		Hash = HashCombine(Hash, GetTypeHash(Key.LuaFunction));
-
-		return Hash;
-	}
+        return Hash;
+    }
 };
 
 namespace UnLua
@@ -100,7 +99,7 @@ namespace UnLua
         };
 
         TMap<void*, FDelegateInfo> Delegates;
-        TMap<FLuaFunction2, TWeakObjectPtr<ULuaDelegateHandler>> CachedHandlers;
+        TMap<FLuaDelegatePair, TWeakObjectPtr<ULuaDelegateHandler>> CachedHandlers;
         FLuaEnv* Env;
         FDelegateHandle PostGarbageCollectHandle;
     };
