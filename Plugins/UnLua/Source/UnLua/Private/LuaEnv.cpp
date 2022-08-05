@@ -120,7 +120,11 @@ namespace UnLua
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
 
-        DoString("pcall(require,'Main')", "Main.lua");
+        if (!Settings->StartupModuleName.IsEmpty())
+        {
+            const auto Chunk = FString::Printf(TEXT("require '%s'"), *Settings->StartupModuleName);
+            DoString(Chunk);
+        }
     }
 
     FLuaEnv::~FLuaEnv()
@@ -284,13 +288,24 @@ namespace UnLua
 
     bool FLuaEnv::DoString(const FString& Chunk, const FString& ChunkName)
     {
-        // TODO: env support
-        // TODO: return value support
+        const FTCHARToUTF8 ChunkUTF8(*Chunk);
+        const FTCHARToUTF8 ChunkNameUTF8(*ChunkName);
         const auto Guard = GetDeadLoopCheck()->MakeGuard();
-        bool bOk = !luaL_dostring(L, TCHAR_TO_UTF8(*Chunk));
-        if (bOk)
-            return bOk;
-        ReportLuaCallError(L);
+        lua_pushcfunction(L, ReportLuaCallError);
+        const auto MsgHandlerIdx = lua_gettop(L);
+        if (!LoadBuffer(ChunkUTF8.Get(), ChunkUTF8.Length(), ChunkNameUTF8.Get()))
+        {
+            lua_pop(L, 1);
+            return false;
+        }
+
+        const auto Result = lua_pcall(L, 0, LUA_MULTRET, MsgHandlerIdx);
+        if (Result == LUA_OK)
+        {
+            lua_remove(L, MsgHandlerIdx);
+            return true;
+        }
+        lua_pop(L, lua_gettop(L) - MsgHandlerIdx + 1);
         return false;
     }
 
