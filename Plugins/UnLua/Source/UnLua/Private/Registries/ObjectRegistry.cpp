@@ -150,8 +150,10 @@ namespace UnLua
         if (!ObjectRefs.RemoveAndCopyValue(Object, Ref))
             return;
 
-        RemoveFromObjectMapAndPushToStack(Object);
         const auto L = Env->GetMainState();
+        const auto Top = lua_gettop(L);
+        RemoveFromObjectMapAndPushToStack(Object);
+
         if (Ref == LUA_NOREF)
         {
             if (lua_isnil(L, -1))
@@ -164,7 +166,7 @@ namespace UnLua
             void* Userdata = GetUserdataFast(L, -1, &bTwoLvlPtr);
             check(bTwoLvlPtr)
             *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
-            lua_pop(L, 1);
+            lua_settop(L, Top);
             return;
         }
 
@@ -176,13 +178,8 @@ namespace UnLua
         lua_rawget(L, -2);
         void* Userdata = lua_touserdata(L, -1);
         *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
-        lua_pop(L, 1);
 
-        // INSTANCE.Object = nil
-        lua_pushlightuserdata(L, Object);
-        lua_pushnil(L);
-        lua_rawset(L, -3);
-        lua_pop(L, 1);
+        lua_settop(L, Top);
     }
 
     void FObjectRegistry::RemoveFromObjectMapAndPushToStack(UObject* Object)
