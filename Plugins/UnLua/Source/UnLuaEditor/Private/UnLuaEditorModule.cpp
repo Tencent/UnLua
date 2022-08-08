@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "Compat/UObjectHash.h"
-#include "UnLuaPrivate.h"
 #include "UnLuaEditorStyle.h"
 #include "UnLuaEditorCommands.h"
 #include "Misc/CoreDelegates.h"
@@ -29,6 +28,7 @@
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
+#include "Settings/ProjectPackagingSettings.h"
 #include "Toolbars/AnimationBlueprintToolbar.h"
 #include "Toolbars/BlueprintToolbar.h"
 #include "Toolbars/MainMenuToolbar.h"
@@ -58,6 +58,8 @@ public:
 
         UPackage::PreSavePackageEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaving);
         UPackage::PackageSavedEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaved);
+
+        SetupPackagingSettings();
     }
 
     virtual void ShutdownModule() override
@@ -130,16 +132,16 @@ private:
     {
         if (!GEditor || !GEditor->PlayWorld)
             return;
-        
-		ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
-		{
-			const auto Class = Cast<UClass>(Object);
-			if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
-				return true;
-			ULuaFunction::SuspendOverrides(Class);
-			SuspendedPackages.Add(Package, Class);
-			return false;
-		}, false);
+
+        ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
+        {
+            const auto Class = Cast<UClass>(Object);
+            if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
+                return true;
+            ULuaFunction::SuspendOverrides(Class);
+            SuspendedPackages.Add(Package, Class);
+            return false;
+        }, false);
 
         UE_LOG(LogUnLua, Log, TEXT("OnPackageSaving:%s"), *Package->GetFullName());
     }
@@ -148,14 +150,28 @@ private:
     {
         if (!GEditor || !GEditor->PlayWorld)
             return;
-        
-		UPackage* Package = (UPackage*)Object;
-		if (SuspendedPackages.Contains(Package))
-		{
-			ULuaFunction::ResumeOverrides(SuspendedPackages[Package]);
-			SuspendedPackages.Remove(Package);
-		}
+
+        UPackage* Package = (UPackage*)Object;
+        if (SuspendedPackages.Contains(Package))
+        {
+            ULuaFunction::ResumeOverrides(SuspendedPackages[Package]);
+            SuspendedPackages.Remove(Package);
+        }
         UE_LOG(LogUnLua, Log, TEXT("OnPackageSaved:%s %s"), *String, *Object->GetFullName());
+    }
+
+    void SetupPackagingSettings()
+    {
+        const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
+        FDirectoryPath ScriptPath;
+        ScriptPath.Path = TEXT("Script");
+        for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
+        {
+            if (DirPath.Path == ScriptPath.Path)
+                return;
+        }
+        PackagingSettings->DirectoriesToAlwaysStageAsUFS.Add(ScriptPath);
+        PackagingSettings->SaveConfig();
     }
 
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
