@@ -258,7 +258,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
         return;
 
     FString ModuleName;
-    Class->ProcessEvent(Func, &ModuleName);
+    Class->GetDefaultObject()->ProcessEvent(Func, &ModuleName);
 
     if (ModuleName.IsEmpty())
     {
