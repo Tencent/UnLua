@@ -59,6 +59,9 @@ public class UnLuaEditor : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "UnrealEd",
+#if UE_5_0_OR_LATER
+                "DeveloperToolSettings",
+#endif
                 "EditorStyle",
                 "ApplicationCore",
                 "Projects",
