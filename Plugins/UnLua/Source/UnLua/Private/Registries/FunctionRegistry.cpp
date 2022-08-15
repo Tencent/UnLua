@@ -1,6 +1,5 @@
 ﻿#include "FunctionRegistry.h"
-
-#include "lauxlib.h"
+#include "lua.hpp"
 #include "LuaEnv.h"
 
 namespace UnLua

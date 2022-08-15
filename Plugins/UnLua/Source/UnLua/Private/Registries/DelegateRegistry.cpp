@@ -14,7 +14,6 @@
 
 #include "Registries/DelegateRegistry.h"
 #include "LuaDelegateHandler.h"
-#include "lauxlib.h"
 #include "ObjectReferencer.h"
 #include "LuaEnv.h"
 

@@ -14,26 +14,31 @@
 
 #include "CollisionHelper.h"
 #include "LuaCore.h"
-
 #include "Binding.h"
 #include "LuaDynamicBinding.h"
 #include "UnLua.h"
-#include "UnLuaDelegates.h"
-#include "ObjectReferencer.h"
 #include "LowLevel.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 #include "ReflectionUtils/FieldDesc.h"
 #include "ReflectionUtils/PropertyCreator.h"
 #include "ReflectionUtils/PropertyDesc.h"
-#include "Kismet/KismetSystemLibrary.h"
 
-extern "C"
-{
+#ifdef __cplusplus
+#if !LUA_COMPILE_AS_CPP
+extern "C" {
+#endif
+#endif
+
 #include "lfunc.h"
 #include "lstate.h"
 #include "lobject.h"
+
+#ifdef __cplusplus
+#if !LUA_COMPILE_AS_CPP
 }
+#endif
+#endif
 
 const FScriptContainerDesc FScriptContainerDesc::Array(sizeof(FLuaArray), "TArray");
 const FScriptContainerDesc FScriptContainerDesc::Set(sizeof(FLuaSet), "TSet");

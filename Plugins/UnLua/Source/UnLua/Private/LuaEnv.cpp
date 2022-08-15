@@ -20,10 +20,8 @@
 #include "LowLevel.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
-#include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
-#include "lualib.h"
 #include "UELib.h"
 #include "ObjectReferencer.h"
 #include "UnLuaDelegates.h"
@@ -31,6 +29,7 @@
 #include "UnLuaLegacy.h"
 #include "UnLuaLib.h"
 #include "UnLuaSettings.h"
+#include "lstate.h"
 
 namespace UnLua
 {
@@ -43,6 +42,7 @@ namespace UnLua
     {
         const auto Settings = GetDefault<UUnLuaSettings>();
         ModuleLocator = Settings->ModuleLocatorClass.GetDefaultObject();
+        ensureMsgf(ModuleLocator, TEXT("Invalid lua module locator, lua binding will not work properly. please check unlua runtime settings."));
 
         RegisterDelegates();
 
@@ -225,8 +225,16 @@ namespace UnLua
 
         for (UInputComponent* InputComponent : CandidateInputComponents)
         {
-            if (!InputComponent->IsRegistered() || InputComponent->IsPendingKill())
+            if (!InputComponent->IsRegistered())
                 continue;
+
+#if ENGINE_MAJOR_VERSION >=5
+            if (!IsValid(InputComponent))
+                continue;
+#else
+            if (InputComponent->IsPendingKill())
+                continue;
+#endif
 
             AActor* Actor = Cast<AActor>(InputComponent->GetOuter());
             Manager->ReplaceInputs(Actor, InputComponent); // try to replace/override input events
@@ -270,6 +278,9 @@ namespace UnLua
         }
 
         if (Class->GetName().Contains(TEXT("SKEL_")))
+            return false;
+
+        if (!ensureMsgf(ModuleLocator, TEXT("Invalid lua module locator, lua binding will not work properly. please check unlua runtime settings.")))
             return false;
 
         const auto ModuleName = ModuleLocator->Locate(Object);

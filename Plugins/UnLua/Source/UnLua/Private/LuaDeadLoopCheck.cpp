@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaDeadLoopCheck.h"
-#include "lauxlib.h"
 #include "HAL/RunnableThread.h"
 #include "UnLuaModule.h"
 

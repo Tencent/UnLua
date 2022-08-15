@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "lauxlib.h"
+#include "lua.hpp"
 #include "UnLuaBase.h"
 #include "UnLuaCompatibility.h"
 #include "UObject/WeakFieldPtr.h"
