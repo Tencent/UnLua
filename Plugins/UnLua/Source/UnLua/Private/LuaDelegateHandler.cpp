@@ -72,9 +72,9 @@ ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int3
     UObject* Outer;
 
     if (InSelfObject)
-        Outer = InSelfObject->GetWorld();
+        Outer = InSelfObject->GetOuter();
     else if (InOwner)
-        Outer = InOwner->GetWorld();
+        Outer = InOwner->GetOuter();
     else
         Outer = nullptr;
 
