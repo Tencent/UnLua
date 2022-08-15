@@ -6,10 +6,8 @@
 -- @DATE ${date} ${time}
 --
 
-require "UnLua"
-
----@class ClassName
-local M = Class()
+---@type ClassName
+local M = UnLua.Class()
 
 -- function M:Received_NotifyBegin(MeshComp, Animation, TotalDuration)
 -- end

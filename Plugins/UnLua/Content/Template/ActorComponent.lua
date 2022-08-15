@@ -6,21 +6,19 @@
 -- @DATE ${date} ${time}
 --
 
-require "UnLua"
+---@type ClassName
+local M = UnLua.Class()
 
----@class ClassName
-local TemplateName = Class()
-
---function TemplateName:Initialize(Initializer)
---end
-
---function TemplateName:ReceiveBeginPlay()
---end
-
---function TemplateName:ReceiveEndPlay()
---end
-
--- function TemplateName:ReceiveTick(DeltaSeconds)
+-- function M:Initialize(Initializer)
 -- end
 
-return TemplateName
+-- function M:ReceiveBeginPlay()
+-- end
+
+-- function M:ReceiveEndPlay()
+-- end
+
+-- function M:ReceiveTick(DeltaSeconds)
+-- end
+
+return M

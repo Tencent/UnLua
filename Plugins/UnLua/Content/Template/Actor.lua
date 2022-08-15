@@ -6,33 +6,31 @@
 -- @DATE ${date} ${time}
 --
 
-require "UnLua"
+---@type ClassName
+local M = UnLua.Class()
 
----@class ClassName
-local TemplateName = Class()
-
---function TemplateName:Initialize(Initializer)
---end
-
---function TemplateName:UserConstructionScript()
---end
-
---function TemplateName:ReceiveBeginPlay()
---end
-
---function TemplateName:ReceiveEndPlay()
---end
-
--- function TemplateName:ReceiveTick(DeltaSeconds)
+-- function M:Initialize(Initializer)
 -- end
 
---function TemplateName:ReceiveAnyDamage(Damage, DamageType, InstigatedBy, DamageCauser)
---end
+-- function M:UserConstructionScript()
+-- end
 
---function TemplateName:ReceiveActorBeginOverlap(OtherActor)
---end
+-- function M:ReceiveBeginPlay()
+-- end
 
---function TemplateName:ReceiveActorEndOverlap(OtherActor)
---end
+-- function M:ReceiveEndPlay()
+-- end
 
-return TemplateName
+-- function M:ReceiveTick(DeltaSeconds)
+-- end
+
+-- function M:ReceiveAnyDamage(Damage, DamageType, InstigatedBy, DamageCauser)
+-- end
+
+-- function M:ReceiveActorBeginOverlap(OtherActor)
+-- end
+
+-- function M:ReceiveActorEndOverlap(OtherActor)
+-- end
+
+return M
