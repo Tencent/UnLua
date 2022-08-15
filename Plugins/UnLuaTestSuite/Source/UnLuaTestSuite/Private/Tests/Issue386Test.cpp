@@ -18,6 +18,8 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
+#if LUA_COMPILE_AS_CPP
+
 static bool bTestClassDestructorCalled = false;
 
 class FTestClass
@@ -63,5 +65,7 @@ struct FUnLuaTest_Issue386 : FUnLuaTestBase
 };
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue386, TEXT("UnLua.Regression.Issue386 C++类的析构会在luaerror后被跳过"))
+
+#endif
 
 #endif //WITH_DEV_AUTOMATION_TESTS
