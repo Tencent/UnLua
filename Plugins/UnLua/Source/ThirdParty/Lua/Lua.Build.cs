@@ -395,5 +395,4 @@ public class Lua : ModuleRules
     private readonly string m_LuaDirName;
     private readonly string m_BuildSystem;
     private readonly bool m_CompileAsCpp;
-    
 }
