@@ -43,7 +43,7 @@ namespace UnLua
     FEnumDesc* FEnumRegistry::StaticRegister(const char* MetatableName)
     {
         FEnumDesc* Ret = Find(MetatableName);
-        if (Ret)
+        if (Ret && Ret->IsValid())
             return Ret;
 
         const FString EnumName = UTF8_TO_TCHAR(MetatableName);
@@ -53,7 +53,14 @@ namespace UnLua
             Enum = LoadObject<UEnum>(nullptr, *EnumName);
             if (!Enum)
                 return nullptr;
-        }
+		}
+
+		if (Ret && !Ret->IsValid())
+		{
+            Name2Enums.Remove(MetatableName);
+
+            delete Ret;
+		}
 
         Ret = new FEnumDesc(Enum);
         Enums.Add(Enum, Ret);
