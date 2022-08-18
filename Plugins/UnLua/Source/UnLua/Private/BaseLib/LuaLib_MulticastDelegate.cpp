@@ -14,7 +14,6 @@
 
 #include "UnLuaEx.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
 
 /**
  * Helper function to get delegate, target UObject and Lua function
@@ -74,22 +73,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FCallbackDesc Callback(Object->GetClass(), CallbackFunction, Object);
-        FName FuncName = FDelegateHelper::GetBindedFunctionName(Callback);
-        if (FuncName == NAME_None)
-        {
-            lua_pushvalue(L, 3);
-            int32 CallbackRef = luaL_ref(L, LUA_REGISTRYINDEX);
-            FDelegateHelper::Add(Delegate, Object, Callback, CallbackRef);
-        }
-        else
-        {
-			UE_LOG(UnLuaDelegate, Verbose, TEXT("++ %d %s %p %s"), FDelegateHelper::GetNumBindings(Callback), *Object->GetName(), Object, *FuncName.ToString());
-
-            FScriptDelegate DynamicDelegate;
-            DynamicDelegate.BindUFunction(Object, FuncName);
-            FDelegateHelper::AddDelegate(Delegate, Object, Callback, DynamicDelegate);
-        }
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Add(L, 3, Delegate, Object);
         return 0;
     }
 
@@ -107,7 +92,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Remove(Delegate, Object, FCallbackDesc(Object->GetClass(), CallbackFunction, Object));;
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Remove(L, Object, (FMulticastScriptDelegate*)Delegate, 3);
         return 0;
     }
 
@@ -130,7 +116,8 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Clear(Delegate);
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Clear((FMulticastScriptDelegate*)Delegate);
         return 0;
     }
 
@@ -153,8 +140,30 @@ struct TMulticastDelegateLib
             return 0;
         }
 
-        FDelegateHelper::Broadcast(L, Delegate, NumParams - 1, 2);
+        const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
+        Registry->Broadcast(L, Delegate, NumParams - 1, 2);
         return 0;
+    }
+
+    static int32 IsBound(lua_State *L)
+    {
+        int32 NumParams = lua_gettop(L);
+        if (NumParams < 1)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+
+        T *Delegate = (T*)GetCppInstanceFast(L, 1);
+        if (!Delegate)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("%s: Invalid multicast delegate!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+
+        auto Bound = Delegate->IsBound();
+        lua_pushboolean(L, Bound);
+        return 1;
     }
 };
 
@@ -164,6 +173,7 @@ static const luaL_Reg FMulticastScriptDelegateLib[] =
     { "Remove", TMulticastDelegateLib<FMulticastScriptDelegate>::Remove },
     { "Clear", TMulticastDelegateLib<FMulticastScriptDelegate>::Clear },
     { "Broadcast", TMulticastDelegateLib<FMulticastScriptDelegate>::Broadcast },
+    { "IsBound", TMulticastDelegateLib<FMulticastScriptDelegate>::IsBound },
     { nullptr, nullptr }
 };
 
@@ -177,6 +187,7 @@ static const luaL_Reg FMulticastSparseDelegateLib[] =
     { "Remove", TMulticastDelegateLib<FSparseDelegate>::Remove },
     { "Clear", TMulticastDelegateLib<FSparseDelegate>::Clear },
     { "Broadcast", TMulticastDelegateLib<FSparseDelegate>::Broadcast },
+    { "IsBound", TMulticastDelegateLib<FSparseDelegate>::IsBound },
     { nullptr, nullptr }
 };
 

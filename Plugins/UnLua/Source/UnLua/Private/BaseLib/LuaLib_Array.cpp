@@ -32,10 +32,93 @@ static int32 TArray_New(lua_State *L)
         return 0;
     }
 
-    FScriptArray *ScriptArray = new FScriptArray;
-    void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Array);
-    new(Userdata) FLuaArray(ScriptArray, TypeInterface, FLuaArray::OwnedBySelf);
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
     return 1;
+}
+
+static int TArray_Enumerable(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+
+    if (NumParams != 2)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)(lua_touserdata(L, 1));
+
+    if (!Enumerator || !*Enumerator)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid enumerator!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    const auto Array = (*Enumerator)->LuaArray;
+
+    if (!Array)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    if (Array->IsValidIndex((*Enumerator)->Index))
+    {
+        UnLua::Push(L, (*Enumerator)->Index + 1);
+
+        Array->Inner->Read(L, Array->GetData((*Enumerator)->Index), false);
+
+        (*Enumerator)->Index += 1;
+
+        return 2;
+    }
+
+    return 0;
+}
+
+static int32 TArray_Pairs(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+
+    if (NumParams != 1)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+
+    if (!Array)
+    {
+        return 0;
+    }
+
+    // Enumerable
+    lua_pushcfunction(L, TArray_Enumerable);
+
+    // Enumerable userdata
+    FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)lua_newuserdata(
+        L, sizeof(FLuaArray::FLuaArrayEnumerator*));
+
+    *Enumerator = new FLuaArray::FLuaArrayEnumerator(Array, 0);
+
+    // Enumerable userdata mt
+    lua_newtable(L);
+
+    // Enumerable userdata mt gc
+    lua_pushcfunction(L, FLuaArray::FLuaArrayEnumerator::gc);
+
+    // Enumerable userdata mt
+    lua_setfield(L, -2, "__gc");
+
+    // Enumerable userdata
+    lua_setmetatable(L, -2);
+
+    // Enumerable userdata nil
+    lua_pushnil(L);
+
+    return 3;
 }
 
 /**
@@ -602,6 +685,9 @@ static int32 TArray_Delete(lua_State *L)
         return 0;
     }
 
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->Remove(Array);
+
     Array->~FLuaArray();
     return 0;
 }
@@ -638,9 +724,34 @@ static int32 TArray_ToTable(lua_State *L)
     return 1;
 }
 
+static int32 TArray_Index(lua_State* L)
+{
+    if (lua_isinteger(L, 2))
+    {
+        return TArray_Get(L);
+    }
+
+    // mt
+    lua_getmetatable(L, 1);
+
+    // mt,mt.key/nil
+    lua_getfield(L, -1, lua_tostring(L, 2));
+
+    // mt.key/nil
+    lua_remove(L, -2);
+
+    return 1;
+}
+
+static int32 TArray_NewIndex(lua_State* L)
+{
+    return TArray_Set(L);
+}
+
 static const luaL_Reg TArrayLib[] =
 {
     { "Length", TArray_Length },
+    { "Num", TArray_Length },
     { "Add", TArray_Add },
     { "AddUnique", TArray_AddUnique },
     { "Find", TArray_Find },
@@ -663,6 +774,9 @@ static const luaL_Reg TArrayLib[] =
     { "ToTable", TArray_ToTable },
     { "__gc", TArray_Delete },
     { "__call", TArray_New },
+    { "__pairs", TArray_Pairs },
+    { "__index", TArray_Index },
+    { "__newindex", TArray_NewIndex },
     { nullptr, nullptr }
 };
 

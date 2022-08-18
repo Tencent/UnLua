@@ -22,7 +22,13 @@ void FUnLuaEditorCommands::RegisterCommands()
     UI_COMMAND(CopyAsRelativePath, "Copy as Relative Path", "Copy module name as relative path.", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(BindToLua, "Bind", "Implement UnLuaInterface", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(UnbindFromLua, "Unbind", "Remove the implementation of UnLuaInterface", EUserInterfaceActionType::Button, FInputChord());
-    UI_COMMAND(HotfixLua, "Lua Hotfix", "Hotfix lua", EUserInterfaceActionType::Button, FInputChord(TEXT("L"), false, true, false, false));
+    UI_COMMAND(HotReload, "Hot Reload", "Hot reload all lua states", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Alt, EKeys::L));
+    UI_COMMAND(OpenRuntimeSettings, "Open Runtime Settings", "Open UnLua Runtime settings", EUserInterfaceActionType::Button, FInputChord());
+    UI_COMMAND(OpenEditorSettings, "Open Editor Settings", "Open UnLua Editor settings", EUserInterfaceActionType::Button, FInputChord());
+    UI_COMMAND(ReportIssue, "Report issue", "Create an issue on github", EUserInterfaceActionType::Button, FInputChord());
+    UI_COMMAND(About, "About", "About this version", EUserInterfaceActionType::Button, FInputChord());
+    UI_COMMAND(GenerateIntelliSense, "Generate IntelliSense", "Generate intelliSense files", EUserInterfaceActionType::Button, FInputChord());
+    UI_COMMAND(RevealInExplorer, "Reveal in Explorer", "Reveal lua file in explorer", EUserInterfaceActionType::Button, FInputChord());
 }
 
 #undef LOCTEXT_NAMESPACE

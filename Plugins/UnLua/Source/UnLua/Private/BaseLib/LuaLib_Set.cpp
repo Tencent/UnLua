@@ -32,9 +32,9 @@ static int32 TSet_New(lua_State *L)
         return 0;
     }
 
-    FScriptSet *ScriptSet = new FScriptSet;
-    void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Set);
-    new(Userdata) FLuaSet(ScriptSet, TypeInterface, FLuaSet::OwnedBySelf);
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->NewSet(L, TypeInterface, FLuaSet::OwnedBySelf);
+    
     return 1;
 }
 
@@ -207,6 +207,9 @@ static int32 TSet_Delete(lua_State *L)
         return 0;
     }
 
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->Remove(Set);
+    
     Set->~FLuaSet();
     return 0;
 }
@@ -249,6 +252,7 @@ static int32 TSet_ToTable(lua_State *L)
 static const luaL_Reg TSetLib[] =
 {
     { "Length", TSet_Length },
+    { "Num", TSet_Length },
     { "Add", TSet_Add },
     { "Remove", TSet_Remove },
     { "Contains", TSet_Contains },

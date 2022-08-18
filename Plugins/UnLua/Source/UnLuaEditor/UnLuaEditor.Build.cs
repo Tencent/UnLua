@@ -59,13 +59,24 @@ public class UnLuaEditor : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "UnrealEd",
+#if UE_5_0_OR_LATER
+                "DeveloperToolSettings",
+#endif
+                "EditorStyle",
                 "ApplicationCore",
                 "Projects",
                 "InputCore",
                 "UMG",
+                "UMGEditor",
+                "BlueprintGraph",
                 "Slate",
                 "SlateCore",
-                "UnLua"
+                "DirectoryWatcher",
+                "Networking",
+                "Sockets",
+                "UnLua",
+                "Lua",
+                "ToolMenus"
             }
         );
 

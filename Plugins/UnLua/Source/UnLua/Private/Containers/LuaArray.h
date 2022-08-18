@@ -16,57 +16,64 @@
 
 #include "LuaContainerInterface.h"
 
+#if ENGINE_MAJOR_VERSION >=5
+#define ALIGNMENT_PLACEHOLDER ,__STDCPP_DEFAULT_NEW_ALIGNMENT__ 
+#else
+#define ALIGNMENT_PLACEHOLDER
+#endif
+
 class FLuaArray
 {
 public:
+    struct FLuaArrayEnumerator
+    {
+        FLuaArrayEnumerator(FLuaArray* InLuaArray, const int32 InIndex) : LuaArray(InLuaArray), Index(InIndex)
+        {
+        }
+
+        static int gc(lua_State* L)
+        {
+            if (FLuaArrayEnumerator** Enumerator = (FLuaArrayEnumerator**)lua_touserdata(L, 1))
+            {
+                (*Enumerator)->LuaArray = nullptr;
+
+                delete* Enumerator;
+            }
+
+            return 0;
+        }
+
+        FLuaArray* LuaArray = nullptr;
+
+        int32 Index = 0;
+    };
+
     enum EScriptArrayFlag
     {
         OwnedByOther,   // 'ScriptArray' is owned by others
         OwnedBySelf,    // 'ScriptArray' is owned by self, it'll be freed in destructor
     };
 
-    FLuaArray(const FScriptArray *InScriptArray, TSharedPtr<UnLua::ITypeInterface> InInnerInterface, EScriptArrayFlag Flag = OwnedByOther)
-        : ScriptArray((FScriptArray*)InScriptArray), Inner(InInnerInterface), Interface(nullptr), ElementCache(nullptr), ElementSize(Inner->GetSize()), ScriptArrayFlag(Flag)
+    FLuaArray(const FScriptArray* InScriptArray, TSharedPtr<UnLua::ITypeInterface> InInnerInterface, EScriptArrayFlag Flag = OwnedByOther)
+        : ScriptArray((FScriptArray*)InScriptArray), Inner(InInnerInterface), ElementCache(nullptr), ElementSize(Inner->GetSize()), ScriptArrayFlag(Flag)
     {
         // allocate cache for a single element
         ElementCache = FMemory::Malloc(ElementSize, Inner->GetAlignment());
-    }
-
-    FLuaArray(const FScriptArray *InScriptArray, TLuaContainerInterface<FLuaArray> *InArrayInterface, EScriptArrayFlag Flag = OwnedByOther)
-        : ScriptArray((FScriptArray*)InScriptArray), Interface(InArrayInterface), ElementCache(nullptr), ElementSize(0), ScriptArrayFlag(Flag)
-    {
-        if (Interface)
-        {
-            Inner = Interface->GetInnerInterface();
-            ElementSize = Inner->GetSize();
-
-            // allocate cache for a single element
-            ElementCache = FMemory::Malloc(ElementSize, Inner->GetAlignment());
-        }
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
     ~FLuaArray()
     {
-        DetachInterface();
-
         if (ScriptArrayFlag == OwnedBySelf)
         {
             Clear();
             delete ScriptArray;
         }
+        UNLUA_STAT_MEMORY_FREE(ElementCache, ContainerElementCache);
         FMemory::Free(ElementCache);
     }
 
-    void DetachInterface()
-    {
-        if (Interface)
-        {
-            Interface->RemoveContainer(this);
-            Interface = nullptr;
-        }
-    }
-
-    FORCEINLINE void* GetContainerPtr() const { return ScriptArray; }
+    FORCEINLINE FScriptArray* GetContainerPtr() const { return ScriptArray; }
 
     /**
      * Check the validity of an index
@@ -95,10 +102,10 @@ public:
      * @param Item - the element
      * @return - the index of the added element
      */
-    FORCEINLINE int32 Add(const void *Item)
+    FORCEINLINE int32 Add(const void* Item)
     {
         const int32 Index = AddDefaulted();
-        uint8 *Dest = GetData(Index);
+        uint8* Dest = GetData(Index);
         Inner->Copy(Dest, Item);
         return Index;
     }
@@ -109,7 +116,7 @@ public:
      * @param Item - the element
      * @return - the index of the added element
      */
-    FORCEINLINE int32 AddUnique(const void *Item)
+    FORCEINLINE int32 AddUnique(const void* Item)
     {
         int32 Index = Find(Item);
         if (Index == INDEX_NONE)
@@ -127,7 +134,7 @@ public:
      */
     FORCEINLINE int32 AddDefaulted(int32 Count = 1)
     {
-        int32 Index = ScriptArray->Add(Count, ElementSize);
+        int32 Index = ScriptArray->Add(Count, ElementSize ALIGNMENT_PLACEHOLDER);
         Construct(Index, Count);
         return Index;
     }
@@ -140,7 +147,7 @@ public:
      */
     FORCEINLINE int32 AddUninitialized(int32 Count = 1)
     {
-        return ScriptArray->Add(Count, ElementSize);
+        return ScriptArray->Add(Count, ElementSize ALIGNMENT_PLACEHOLDER);
     }
 
     /**
@@ -149,12 +156,12 @@ public:
      * @param Item - the element
      * @return - the index of the element
      */
-    FORCEINLINE int32 Find(const void *Item) const
+    FORCEINLINE int32 Find(const void* Item) const
     {
         int32 Index = INDEX_NONE;
         for (int32 i = 0; i < Num(); ++i)
         {
-            const uint8 *CurrentItem = GetData(i);
+            const uint8* CurrentItem = GetData(i);
             if (Inner->Identical(Item, CurrentItem))
             {
                 Index = i;
@@ -170,13 +177,13 @@ public:
      * @param Item - the element
      * @param Index - the index
      */
-    FORCEINLINE void Insert(const void *Item, int32 Index)
+    FORCEINLINE void Insert(const void* Item, int32 Index)
     {
         if (Index >= 0 && Index <= Num())
         {
-            ScriptArray->Insert(Index, 1, ElementSize);
+            ScriptArray->Insert(Index, 1, ElementSize ALIGNMENT_PLACEHOLDER);
             Construct(Index, 1);
-            uint8 *Dest = GetData(Index);
+            uint8* Dest = GetData(Index);
             Inner->Copy(Dest, Item);
         }
     }
@@ -191,7 +198,7 @@ public:
         if (IsValidIndex(Index))
         {
             Destruct(Index);
-            ScriptArray->Remove(Index, 1, ElementSize);
+            ScriptArray->Remove(Index, 1, ElementSize ALIGNMENT_PLACEHOLDER);
         }
     }
 
@@ -201,7 +208,7 @@ public:
      * @param Item - the element
      * @return - number of elements that be removed
      */
-    FORCEINLINE int32 RemoveItem(const void *Item)
+    FORCEINLINE int32 RemoveItem(const void* Item)
     {
         int32 NumRemoved = 0;
         int32 Index = Find(Item);
@@ -222,7 +229,7 @@ public:
         if (Num())
         {
             Destruct(0, Num());
-            ScriptArray->Empty(0, ElementSize);
+            ScriptArray->Empty(0, ElementSize ALIGNMENT_PLACEHOLDER);
         }
     }
 
@@ -238,7 +245,7 @@ public:
         {
             return false;
         }
-        ScriptArray->Empty(Size, ElementSize);
+        ScriptArray->Empty(Size, ElementSize ALIGNMENT_PLACEHOLDER);
         return true;
     }
 
@@ -259,7 +266,7 @@ public:
             else if (Count < 0)
             {
                 Destruct(NewSize, -Count);
-                ScriptArray->Remove(NewSize, -Count, ElementSize);
+                ScriptArray->Remove(NewSize, -Count, ElementSize ALIGNMENT_PLACEHOLDER);
             }
         }
     }
@@ -270,7 +277,7 @@ public:
      * @param Index - the index
      * @param OutItem - the element in the 'Index'
      */
-    FORCEINLINE void Get(int32 Index, void *OutItem) const
+    FORCEINLINE void Get(int32 Index, void* OutItem) const
     {
         if (IsValidIndex(Index))
         {
@@ -284,7 +291,7 @@ public:
      * @param Index - the index
      * @param Item - the element to be set
      */
-    FORCEINLINE void Set(int32 Index, const void *Item)
+    FORCEINLINE void Set(int32 Index, const void* Item)
     {
         if (IsValidIndex(Index))
         {
@@ -330,15 +337,15 @@ public:
      *
      * @param SourceArray - the array to be appended
      */
-    FORCEINLINE void Append(const FLuaArray &SourceArray)
+    FORCEINLINE void Append(const FLuaArray& SourceArray)
     {
         if (SourceArray.Num() > 0)
         {
             int32 Index = AddDefaulted(SourceArray.Num());
             for (int32 i = 0; i < SourceArray.Num(); ++i)
             {
-                uint8 *Dest = GetData(Index++);
-                const uint8 *Src = SourceArray.GetData(i);
+                uint8* Dest = GetData(Index++);
+                const uint8* Src = SourceArray.GetData(i);
                 Inner->Copy(Dest, Src);
             }
         }
@@ -375,10 +382,9 @@ public:
         return ScriptArray->GetData();
     }
 
-    FScriptArray *ScriptArray;
+    FScriptArray* ScriptArray;
     TSharedPtr<UnLua::ITypeInterface> Inner;
-    TLuaContainerInterface<FLuaArray> *Interface;
-    void *ElementCache;            // can only hold one element...
+    void* ElementCache;            // can only hold one element...
     int32 ElementSize;
     EScriptArrayFlag ScriptArrayFlag;
 
@@ -388,7 +394,7 @@ private:
      */
     FORCEINLINE void Construct(int32 Index, int32 Count = 1)
     {
-        uint8 *Dest = GetData(Index);
+        uint8* Dest = GetData(Index);
         for (int32 i = 0; i < Count; ++i)
         {
             Inner->Initialize(Dest);
@@ -401,7 +407,7 @@ private:
      */
     FORCEINLINE void Destruct(int32 Index, int32 Count = 1)
     {
-        uint8 *Dest = GetData(Index);
+        uint8* Dest = GetData(Index);
         for (int32 i = 0; i < Count; ++i)
         {
             Inner->Destruct(Dest);
@@ -409,3 +415,5 @@ private:
         }
     }
 };
+
+#undef ALIGNMENT_PLACEHOLDER

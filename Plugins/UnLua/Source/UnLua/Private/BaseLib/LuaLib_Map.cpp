@@ -38,10 +38,103 @@ static int32 TMap_New(lua_State *L)
         return 0;
     }
 
-    FScriptMap *ScriptMap = new FScriptMap;
-    void *Userdata = NewScriptContainer(L, FScriptContainerDesc::Map);
-    new(Userdata) FLuaMap(ScriptMap, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->NewMap(L, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+
     return 1;
+}
+
+static int TMap_Enumerable(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+
+    if (NumParams != 2)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaMap::FLuaMapEnumerator** Enumerator = (FLuaMap::FLuaMapEnumerator**)(lua_touserdata(L, 1));
+
+    if (!Enumerator || !*Enumerator)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid enumerator!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    const auto Map = (*Enumerator)->LuaMap;
+
+    if (!Map)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TMap!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    while ((*Enumerator)->Index < Map->GetMaxIndex())
+    {
+        if (!Map->IsValidIndex((*Enumerator)->Index))
+        {
+            ++(*Enumerator)->Index;
+        }
+        else
+        {
+            Map->KeyInterface->Read(L, Map->GetData((*Enumerator)->Index), false);
+
+            Map->ValueInterface->Read(
+                L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset - Map->ValueInterface->GetOffset(),
+                false);
+
+            ++(*Enumerator)->Index;
+
+            return 2;
+        }
+    }
+
+    return 0;
+}
+
+static int32 TMap_Pairs(lua_State* L)
+{
+    int32 NumParams = lua_gettop(L);
+
+    if (NumParams != 1)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
+
+    if (!Map)
+    {
+        return 0;
+    }
+
+    // Enumerable
+    lua_pushcfunction(L, TMap_Enumerable);
+
+    // Enumerable userdata
+    FLuaMap::FLuaMapEnumerator** Enumerator = (FLuaMap::FLuaMapEnumerator**)lua_newuserdata(
+        L, sizeof(FLuaMap::FLuaMapEnumerator*));
+
+    *Enumerator = new FLuaMap::FLuaMapEnumerator(Map, 0);
+
+    // Enumerable userdata mt
+    lua_newtable(L);
+
+    // Enumerable userdata mt gc
+    lua_pushcfunction(L, FLuaMap::FLuaMapEnumerator::gc);
+
+    // Enumerable userdata mt
+    lua_setfield(L, -2, "__gc");
+
+    // Enumerable userdata
+    lua_setmetatable(L, -2);
+
+    // Enumerable userdata nil
+    lua_pushnil(L);
+
+    return 3;
 }
 
 /**
@@ -286,6 +379,9 @@ static int32 TMap_Delete(lua_State *L)
         return 0;
     }
 
+    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
+    Registry->Remove(Map);
+
     Map->~FLuaMap();
     return 0;
 }
@@ -342,6 +438,7 @@ static int32 TMap_ToTable(lua_State *L)
 static const luaL_Reg TMapLib[] =
 {
     { "Length", TMap_Length },
+    { "Num", TMap_Length },
     { "Add", TMap_Add },
     { "Remove", TMap_Remove },
     { "Find", TMap_Find },
@@ -352,6 +449,7 @@ static const luaL_Reg TMapLib[] =
     { "ToTable", TMap_ToTable },
     { "__gc", TMap_Delete },
     { "__call", TMap_New },
+    { "__pairs", TMap_Pairs },
     { nullptr, nullptr }
 };
 

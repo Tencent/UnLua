@@ -12,13 +12,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "UnLuaEx.h"
-#include "UnLuaManager.h"
-#include "LuaContext.h"
 #include "LuaCore.h"
-#include "DelegateHelper.h"
-#include "UEObjectReferencer.h"
-#include "ReflectionUtils/ReflectionRegistry.h"
+#include "ObjectReferencer.h"
 
 /**
  * Load an object. for example: UObject.Load("/Game/Core/Blueprints/AI/BehaviorTree_Enemy.BehaviorTree_Enemy")
@@ -60,8 +57,8 @@ int32 UObject_Load(lua_State *L)
         UEnum *Enum = Cast<UEnum>(Object);
         if (Enum)
         {
-            RegisterEnum(L, Enum);
-            int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*Enum->GetName()));
+            UnLua::FLuaEnv::FindEnvChecked(L).GetEnumRegistry()->Register(Enum);
+            int32 Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*UnLua::LowLevel::GetMetatableName(Enum)));
             check(Type == LUA_TTABLE);
         }
         else
@@ -91,7 +88,7 @@ static int32 UObject_IsValid(lua_State *L)
     }
     
     UObject* Object = UnLua::GetUObject(L, 1);
-    const bool bValid = GLuaCxt->IsUObjectValid(Object) && IsValid(Object);
+    const bool bValid = UnLua::IsUObjectValid(Object) && IsValid(Object);
     lua_pushboolean(L, bValid);
     return 1;
 }
@@ -206,14 +203,14 @@ static int32 UObject_IsA(lua_State *L)
     }
 
     UObject *Object = UnLua::GetUObject(L, 1);
-    if (!GLuaCxt->IsUObjectValid(Object))
+    if (!UnLua::IsUObjectValid(Object))
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
     }
 
     UObject* ClassObject = UnLua::GetUObject(L, 2);
-    if (!GLuaCxt->IsUObjectValid(ClassObject))
+    if (!UnLua::IsUObjectValid(ClassObject))
     {
         UE_LOG(LogUnLua, Log, TEXT("%s: Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
         return 0;
@@ -233,22 +230,6 @@ static int32 UObject_IsA(lua_State *L)
 
 static int32 UObject_Release(lua_State *L)
 {
-    int32 NumParams = lua_gettop(L);
-    if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
-    if (LUA_TTABLE == lua_type(L, -1))
-    {
-        UObject* Object = UnLua::GetUObject(L, -1);
-        if (GLuaCxt->IsUObjectValid(Object))
-        {
-            GLuaCxt->GetManager()->ReleaseAttachedObjectLuaRef(Object);
-        }
-    }
-
     return 0;
 }
 
@@ -283,48 +264,23 @@ int32 UObject_Delete(lua_State *L)
         return 0;
     }
 
-    UObject *Object = nullptr;
     bool bTwoLvlPtr = false;
     bool bClassMetatable = false;
     void *Userdata = GetUserdata(L, 1, &bTwoLvlPtr, &bClassMetatable);
     if (!Userdata)
-    {
         return 0;
-    }
 
     if (bClassMetatable)
-    {
-        FClassDesc* ClassDesc = (FClassDesc*)Userdata;
+        return 0;
 
-        lua_pushstring(L, "__name");
-        int32 Type = lua_rawget(L, 1);
-        FString MetaTableName = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        lua_pop(L, 1);
+    if (!bTwoLvlPtr)
+        return 0;
 
-        if (GReflectionRegistry.IsDescValid(ClassDesc, DESC_CLASS)
-            && ClassDesc->GetName().Equals(MetaTableName))
-        {
-            // remove class ref 
-            if ((ClassDesc->IsValid())
-                &&(!ClassDesc->IsNative()))
-            {
-                GObjectReferencer.RemoveObjectRef(ClassDesc->AsStruct());
-            }
-            
-            // class,ignore ref count
-            GReflectionRegistry.UnRegisterClass(ClassDesc);
-        }
-    }
-    else
-    {
-        Object = bTwoLvlPtr ? (UObject*)(*((void**)Userdata)) : (UObject*)Userdata;
-        if (Object)
-        {
-            GReflectionRegistry.AddToGCSet(Object);
-            DeleteUObjectRefs(L,Object);
-        }
-    }
-       
+    UObject* Object = (UObject*)*(void**)Userdata;
+    if (UnLua::LowLevel::IsReleasedPtr(Object))
+        return 0;
+
+    UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->NotifyUObjectLuaGC(Object);
     return 0;
 }
 
@@ -392,11 +348,14 @@ static const luaL_Reg FSoftObjectPtrLib[] =
 
 BEGIN_EXPORT_CLASS(FSoftObjectPtr, const UObject*)
     ADD_CONST_FUNCTION_EX("IsValid", bool, IsValid)
+    ADD_CONST_FUNCTION_EX("IsNull", bool, IsNull)
+    ADD_CONST_FUNCTION_EX("IsPending", bool, IsPending)
     ADD_FUNCTION_EX("Reset", void, Reset)
     ADD_FUNCTION_EX("Set", void, operator=, const UObject*)
     ADD_FUNCTION_EX("GetAssetName", FString, GetAssetName)
     ADD_FUNCTION_EX("GetLongPackageName", FString, GetLongPackageName)
     ADD_CONST_FUNCTION_EX("Get", UObject*, Get)
+    ADD_CONST_FUNCTION_EX("LoadSynchronous", UObject*, LoadSynchronous)
     ADD_LIB(FSoftObjectPtrLib)
 END_EXPORT_CLASS()
 IMPLEMENT_EXPORTED_CLASS(FSoftObjectPtr)

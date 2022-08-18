@@ -1,0 +1,31 @@
+{
+    "FileVersion": 3,
+    "Version": 1,
+    "VersionName": "1.0.0",
+    "FriendlyName": "UnLuaTestSuite",
+    "Description": "Test suite for UnLua",
+    "Category": "Testing",
+    "CreatedBy": "Tencent",
+    "CreatedByURL": "https://www.tencent.com/",
+    "DocsURL": "",
+    "MarketplaceURL": "",
+    "SupportURL": "",
+    "CanContainContent": true,
+    "IsBetaVersion": false,
+    "Installed": false,
+    "CanBeUsedWithUnrealHeaderTool": true,
+    "EnabledByDefault": false,
+    "Plugins": [
+        {
+            "Name": "UnLua",
+            "Enabled": true
+        }
+    ],
+    "Modules": [
+        {
+            "Name": "UnLuaTestSuite",
+            "Type": "Runtime",
+            "LoadingPhase": "Default"
+        }
+    ]
+}

@@ -12,6 +12,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaDebugBase.h"
+
 namespace UnLua
 {
 
@@ -160,7 +162,9 @@ namespace UnLua
     template <typename T1, typename... T2>
     FORCEINLINE int32 PushNonConstRefParam(lua_State *L, T1 &&V1, T2&&... V2)
     {
-        return PushNonConstRefParam(L, Forward<T1>(V1)) + PushNonConstRefParam(L, Forward<T2>(V2)...);
+        const auto Ret1 = PushNonConstRefParam(L, Forward<T1>(V1));
+        const auto Ret2 = PushNonConstRefParam(L, Forward<T2>(V2)...); 
+        return Ret1 + Ret2;
     }
 
     template <typename... ArgType, uint32... N>
@@ -186,8 +190,13 @@ namespace UnLua
         static int32 Invoke(lua_State *L, const TFunction<RetType(ArgType...)> &Func, TTuple<typename TArgTypeTraits<ArgType>::Type...> &Args, TIndices<N...> ParamIndices)
         {
             RetType RetVal = UnLua::Invoke(Func, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
+#if UNLUA_LEGACY_RETURN_ORDER
             int32 Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
+#endif
             UnLua::Push(L, Forward<RetType>(RetVal), true);
+#if !UNLUA_LEGACY_RETURN_ORDER
+            int32 Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
+#endif
             return Num + 1;
         }
     };
@@ -209,8 +218,13 @@ namespace UnLua
             else
             {
                 RetType RetVal = UnLua::Invoke(Func, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
+#if UNLUA_LEGACY_RETURN_ORDER
                 Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
+#endif
                 UnLua::Push(L, Forward<typename std::add_lvalue_reference<RetType>::type>(RetVal), true);
+#if !UNLUA_LEGACY_RETURN_ORDER
+                Num = PushNonConstRefParam<ArgType...>(L, Args, ParamIndices);
+#endif
             }
             return Num + 1;
         }
@@ -289,9 +303,9 @@ namespace UnLua
         {
             Type = GetFieldFromSuperClass(L, lua_upvalueindex(1), 2);
         }
-        if (Type == LUA_TLIGHTUSERDATA)
+        if (Type == LUA_TUSERDATA)
         {
-            IExportedProperty *Property = (IExportedProperty*)lua_touserdata(L, -1);
+            TSharedPtr<IExportedProperty> Property = *(TSharedPtr<IExportedProperty>*)lua_touserdata(L, -1);
             void *ContainerPtr = UnLua::GetPointer(L, 1);
             if (ContainerPtr)
             {
@@ -310,9 +324,9 @@ namespace UnLua
         {
             Type = GetFieldFromSuperClass(L, lua_upvalueindex(1), 2);
         }
-        if (Type == LUA_TLIGHTUSERDATA)
+        if (Type == LUA_TUSERDATA)
         {
-            IExportedProperty *Property = (IExportedProperty*)lua_touserdata(L, -1);
+            TSharedPtr<IExportedProperty> Property = *(TSharedPtr<IExportedProperty>*)lua_touserdata(L, -1);
             void *ContainerPtr = UnLua::GetPointer(L, 1);
             if (ContainerPtr)
             {
@@ -345,15 +359,16 @@ namespace UnLua
     template <typename ClassType, typename... ArgType>
     int32 TConstructor<ClassType, ArgType...>::Invoke(lua_State *L)
     {
-        int32 N = lua_gettop(L) - 1;
-        if (N < sizeof...(ArgType))
+        constexpr int Expected = sizeof...(ArgType);
+        const int Actual = lua_gettop(L) - 1;
+        if (Actual < Expected)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("!!! Invalid arguments! %d arguments expected!"), sizeof...(ArgType));
+            UE_LOG(LogUnLua, Warning, TEXT("Attempted to call constructor of %s with invalid arguments. %d expected but got %d."), *ClassName, Expected, Actual);
             return 0;
         }
 
-        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<sizeof...(ArgType)>::Type(), 1);
-        Construct(L, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
+        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type(), 1);
+        Construct(L, Args, typename TZeroBasedIndices<Expected>::Type());
         return 1;
     }
 
@@ -421,15 +436,16 @@ namespace UnLua
     template <typename SmartPtrType, typename ClassType, typename... ArgType>
     int32 TSmartPtrConstructor<SmartPtrType, ClassType, ArgType...>::Invoke(lua_State *L)
     {
-        int32 N = lua_gettop(L);
-        if (N < sizeof...(ArgType))
+        constexpr int Expected = sizeof...(ArgType);
+        const int Actual = lua_gettop(L); 
+        if (Actual < Expected)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("!!! Invalid arguments! %d arguments expected!"), sizeof...(ArgType));
+            UE_LOG(LogUnLua, Warning, TEXT("Attempted to call constructor of %s with invalid arguments. %d expected but got %d."), *TType<ClassType>::GetName(), Expected, Actual);
             return 0;
         }
 
-        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<sizeof...(ArgType)>::Type());
-        Construct(L, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
+        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
+        Construct(L, Args, typename TZeroBasedIndices<Expected>::Type());
         return 1;
     }
 
@@ -504,13 +520,15 @@ namespace UnLua
     template <typename RetType, typename... ArgType>
     int32 TExportedFunction<RetType, ArgType...>::Invoke(lua_State *L)
     {
-        if (lua_gettop(L) < sizeof...(ArgType))
+        constexpr int Expected = sizeof...(ArgType);
+        const int Actual = lua_gettop(L); 
+        if (Actual < Expected)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("!!! Invalid arguments! %d arguments expected!"), sizeof...(ArgType));
+            UE_LOG(LogUnLua, Warning, TEXT("Attempted to call %s with invalid arguments. %d expected but got %d."), *Name, Expected, Actual);
             return 0;
         }
-        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<sizeof...(ArgType)>::Type());
-        return TInvokingHelper<RetType>::Invoke(L, Func, Args, typename TZeroBasedIndices<sizeof...(ArgType)>::Type());
+        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
+        return TInvokingHelper<RetType>::Invoke(L, Func, Args, typename TZeroBasedIndices<Expected>::Type());
     }
 
 #if WITH_EDITOR
@@ -532,17 +550,13 @@ namespace UnLua
     template <typename ClassType, typename RetType, typename... ArgType>
     TExportedMemberFunction<ClassType, RetType, ArgType...>::TExportedMemberFunction(const FString &InName, RetType(ClassType::*InFunc)(ArgType...), const FString &InClassName)
         : Name(InName), Func([InFunc](ClassType *Obj, ArgType&&... Args) -> RetType { return (Obj->*InFunc)(Forward<ArgType>(Args)...); })
-#if WITH_EDITOR
         , ClassName(InClassName)
-#endif
     {}
 
     template <typename ClassType, typename RetType, typename... ArgType>
     TExportedMemberFunction<ClassType, RetType, ArgType...>::TExportedMemberFunction(const FString &InName, RetType(ClassType::*InFunc)(ArgType...) const, const FString &InClassName)
         : Name(InName), Func([InFunc](ClassType *Obj, ArgType&&... Args) -> RetType { return (Obj->*InFunc)(Forward<ArgType>(Args)...); })
-#if WITH_EDITOR
         , ClassName(InClassName)
-#endif
     {}
 
     template <typename ClassType, typename RetType, typename... ArgType>
@@ -558,16 +572,17 @@ namespace UnLua
     template <typename ClassType, typename RetType, typename... ArgType>
     int32 TExportedMemberFunction<ClassType, RetType, ArgType...>::Invoke(lua_State *L)
     {
-        const uint32 N = sizeof...(ArgType)+1;
-        if (lua_gettop(L) < N)
+        constexpr int Expected = sizeof...(ArgType) + 1;
+        const int Actual = lua_gettop(L); 
+        if (Actual < Expected)
         {
-            UE_LOG(LogUnLua, Warning, TEXT("!!! Invalid arguments! %d arguments expected!"), N);
+            UE_LOG(LogUnLua, Warning, TEXT("Attempted to call %s::%s with invalid arguments. %d expected but got %d."), *ClassName, *Name, Expected, Actual);
             return 0;
         }
-        TTuple<ClassType*, typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<ClassType*, typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<N>::Type());
+        TTuple<ClassType*, typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<ClassType*, typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
         if (Args.template Get<0>() == nullptr)
         {
-            UE_LOG(LogUnLua, Error, TEXT("!!! Func(%s) this == nullptr!"), *Name);
+            UE_LOG(LogUnLua, Error, TEXT("Attempted to call %s::%s with nullptr of 'this'."), *ClassName, *Name);
             return 0;
         }
         return TInvokingHelper<RetType>::Invoke(L, Func, Args, typename TOneBasedIndices<sizeof...(ArgType)>::Type());
@@ -577,8 +592,6 @@ namespace UnLua
     template <typename ClassType, typename RetType, typename... ArgType>
     void TExportedMemberFunction<ClassType, RetType, ArgType...>::GenerateIntelliSense(FString &Buffer) const
     {
-        Buffer += FString::Printf(TEXT("\r\n\r\n"));
-
         // arguments
         FString ArgList;
         GenerateArgsIntelliSense<RetType, ArgType...>(Buffer, ArgList);
@@ -594,9 +607,7 @@ namespace UnLua
     template <typename RetType, typename... ArgType>
     TExportedStaticMemberFunction<RetType, ArgType...>::TExportedStaticMemberFunction(const FString &InName, RetType(*InFunc)(ArgType...), const FString &InClassName)
         : Super(InName, InFunc)
-#if WITH_EDITOR
         , ClassName(InClassName)
-#endif
     {}
 
     template <typename RetType, typename... ArgType>
@@ -766,35 +777,18 @@ namespace UnLua
      */
     template <bool bIsReflected>
     TExportedClassBase<bIsReflected>::TExportedClassBase(const char *InName, const char *InSuperClassName)
-        : Name(InName), ClassFName(InName), SuperClassName(InSuperClassName)
+        : Name(InName), SuperClassName(InSuperClassName)
     {}
-
-    template <bool bIsReflected>
-    TExportedClassBase<bIsReflected>::~TExportedClassBase()
-    {
-        for (IExportedProperty *Property : Properties)
-        {
-            delete Property;
-        }
-        for (IExportedFunction *MemberFunc : Functions)
-        {
-            delete MemberFunc;
-        }
-        for (IExportedFunction *Func : GlueFunctions)
-        {
-            delete Func;
-        }
-    }
 
     template <bool bIsReflected>
     void TExportedClassBase<bIsReflected>::Register(lua_State *L)
     {
         // make sure the meta table is on the top of the stack if 'bIsReflected' is true
 
-        TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ClassName(*Name);
+        const auto ClassName = TCHAR_TO_UTF8(*Name);
         if (!bIsReflected)
         {
-            int32 Type = luaL_getmetatable(L, ClassName.Get());
+            int32 Type = luaL_getmetatable(L, ClassName);
             lua_pop(L, 1);
             if (Type == LUA_TTABLE)
             {
@@ -802,7 +796,7 @@ namespace UnLua
             }
             else
             {
-                if (SuperClassName != NAME_None)
+                if (!SuperClassName.IsEmpty())
                 {
                     IExportedClass *SuperClass = UnLua::FindExportedClass(SuperClassName);
                     if (SuperClass)
@@ -811,23 +805,23 @@ namespace UnLua
                     }
                     else
                     {
-                        SuperClassName = NAME_None;
+                        SuperClassName = "";
                     }
                 }
 
-                luaL_newmetatable(L, ClassName.Get());
+                luaL_newmetatable(L, ClassName);
 
-                if (SuperClassName != NAME_None)
+                if (!SuperClassName.IsEmpty())
                 {
                     lua_pushstring(L, "Super");
-                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperClassName.ToString()));
+                    Type = luaL_getmetatable(L, TCHAR_TO_UTF8(*SuperClassName));
                     check(Type == LUA_TTABLE);
                     lua_rawset(L, -3);
                 }
 
                 lua_pushstring(L, "__index");
                 lua_pushvalue(L, -2);
-                if (Properties.Num() > 0 || SuperClassName != NAME_None)
+                if (Properties.Num() > 0 || !SuperClassName.IsEmpty())
                 {
                     lua_pushcclosure(L, UnLua::Index, 1);
                 }
@@ -835,7 +829,7 @@ namespace UnLua
 
                 lua_pushstring(L, "__newindex");
                 lua_pushvalue(L, -2);
-                if (Properties.Num() > 0 || SuperClassName != NAME_None)
+                if (Properties.Num() > 0 || !SuperClassName.IsEmpty())
                 {
                     lua_pushcclosure(L, UnLua::NewIndex, 1);
                 }
@@ -846,32 +840,22 @@ namespace UnLua
             }
         }
 
-        for (IExportedProperty *Property : Properties)
-        {
+        for (const auto& Property : Properties)
             Property->Register(L);
-        }
 
-        for (IExportedFunction *MemberFunc : Functions)
-        {
+        for (const auto& MemberFunc : Functions)
             MemberFunc->Register(L);
-        }
 
-        for (IExportedFunction *Func : GlueFunctions)
-        {
+        for (const auto& Func : GlueFunctions)
             Func->Register(L);
-        }
 
         if (!bIsReflected)
         {
-#if WITH_UE4_NAMESPACE
             lua_getglobal(L, "UE");
-            lua_pushstring(L, ClassName.Get());
+            lua_pushstring(L, ClassName);
             lua_pushvalue(L, -3);
             lua_rawset(L, -3);
             lua_pop(L, 2);
-#else
-            lua_setglobal(L, ClassName.Get());
-#endif
         }
     }
 
@@ -899,16 +883,19 @@ namespace UnLua
     void TExportedClassBase<bIsReflected>::GenerateIntelliSenseInternal(FString &Buffer, FFalse NotReflected) const
     {
         // class name
-        Buffer = FString::Printf(TEXT("---@class %s\r\n"), *Name);
+        Buffer = FString::Printf(TEXT("---@class %s"), *Name);
+        if (!SuperClassName.IsEmpty())
+            Buffer += TEXT(": ") + SuperClassName;
+        Buffer += TEXT("\r\n");
 
         // fields
-        for (IExportedProperty *Property : Properties)
+        for (const auto& Property : Properties)
         {
             Property->GenerateIntelliSense(Buffer);
         }
 
         // definition
-        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *Name);
+        Buffer += TEXT("local M = {}\r\n");
 
         // functions
         for (IExportedFunction *Function : Functions)
@@ -917,7 +904,7 @@ namespace UnLua
         }
 
         // return
-        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *Name);
+        Buffer += TEXT("\r\n\r\nreturn M\r\n");
     }
 
     template <bool bIsReflected>
@@ -925,10 +912,10 @@ namespace UnLua
     {
         // class name
         Buffer = FString::Printf(TEXT("---@type %s\r\n"), *Name);
-        Buffer += FString::Printf(TEXT("local %s = {}\r\n"), *Name);
+        Buffer += TEXT("local M = {}\r\n");
 
         // fields
-        for (IExportedProperty *Property : Properties)
+        for (const auto& Property : Properties)
         {
             FString Field;
             TArray<FString> OutArray;
@@ -948,7 +935,7 @@ namespace UnLua
         }
 
         // return
-        Buffer += FString::Printf(TEXT("\r\n\r\nreturn %s\r\n"), *Name);
+        Buffer += TEXT("\r\n\r\nreturn M\r\n");
     }
 #endif
 
@@ -970,7 +957,7 @@ namespace UnLua
         {
             if (uint8 Mask = Buffer[Offset])
             {
-                FExportedClassBase::Properties.Add(new FExportedBitFieldBoolProperty(InName, Offset, Mask));
+                FExportedClassBase::Properties.Add(MakeShared<FExportedBitFieldBoolProperty>(InName, Offset, Mask));
                 return true;
             }
         }
@@ -981,20 +968,20 @@ namespace UnLua
     template <typename T> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddProperty(const FString &InName, T ClassType::*Property)
     {
         TPropertyOffset<ClassType, T> PropertyOffset(Property);
-        FExportedClassBase::Properties.Add(new TExportedProperty<T>(InName, PropertyOffset.Offset));
+        FExportedClassBase::Properties.Add(MakeShared<TExportedProperty<T>>(InName, PropertyOffset.Offset));
     }
 
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     template <typename T, int32 N> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddProperty(const FString &InName, T (ClassType::*Property)[N])
     {
         TArrayPropertyOffset<ClassType, T, N> PropertyOffset(Property);
-        FExportedClassBase::Properties.Add(new TExportedArrayProperty<T>(InName, PropertyOffset.Offset, N));
+        FExportedClassBase::Properties.Add(MakeShared<TExportedArrayProperty<T>>(InName, PropertyOffset.Offset, N));
     }
 
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     template <typename T> void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddStaticProperty(const FString &InName, T *Property)
     {
-        FExportedClassBase::Properties.Add(new TExportedStaticProperty<T>(InName, Property));
+        FExportedClassBase::Properties.Add(MakeShared<TExportedStaticProperty<T>>(InName, Property));
     }
     
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>

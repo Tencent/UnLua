@@ -27,47 +27,36 @@ public:
 
     FLuaSet(const FScriptSet *InScriptSet, TSharedPtr<UnLua::ITypeInterface> InElementInterface, FScriptSetFlag Flag = OwnedByOther)
         : Set((FScriptSet*)InScriptSet), SetLayout(FScriptSet::GetScriptLayout(InElementInterface->GetSize(), InElementInterface->GetAlignment()))
-        , ElementInterface(InElementInterface), Interface(nullptr), ElementCache(nullptr), ScriptSetFlag(Flag)
+        , ElementInterface(InElementInterface), ElementCache(nullptr), ScriptSetFlag(Flag)
     {
         // allocate cache for a single element
         ElementCache = FMemory::Malloc(ElementInterface->GetSize(), ElementInterface->GetAlignment());
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
-    FLuaSet(const FScriptSet *InScriptSet, TLuaContainerInterface<FLuaSet> *InSetInterface, FScriptSetFlag Flag = OwnedByOther)
-        : Set((FScriptSet*)InScriptSet), Interface(InSetInterface), ElementCache(nullptr), ScriptSetFlag(Flag)
+    FLuaSet(const FScriptSet *InScriptSet, TLuaContainerInterface<FLuaSet> *Interface, FScriptSetFlag Flag = OwnedByOther)
+        : Set((FScriptSet*)InScriptSet), ElementCache(nullptr), ScriptSetFlag(Flag)
     {
-        if (Interface)
-        {
-            ElementInterface = Interface->GetInnerInterface();
-            SetLayout = FScriptSet::GetScriptLayout(ElementInterface->GetSize(), ElementInterface->GetAlignment());
+        ElementInterface = Interface->GetInnerInterface();
+        SetLayout = FScriptSet::GetScriptLayout(ElementInterface->GetSize(), ElementInterface->GetAlignment());
 
-            // allocate cache for a single element
-            ElementCache = FMemory::Malloc(ElementInterface->GetSize(), ElementInterface->GetAlignment());
-        }
+        // allocate cache for a single element
+        ElementCache = FMemory::Malloc(ElementInterface->GetSize(), ElementInterface->GetAlignment());
+        UNLUA_STAT_MEMORY_ALLOC(ElementCache, ContainerElementCache);
     }
 
     ~FLuaSet()
     {
-        DetachInterface();
-
         if (ScriptSetFlag == OwnedBySelf)
         {
             Clear();
             delete Set;
         }
+        UNLUA_STAT_MEMORY_FREE(ElementCache, ContainerElementCache);
         FMemory::Free(ElementCache);
     }
 
-    void DetachInterface()
-    {
-        if (Interface)
-        {
-            Interface->RemoveContainer(this);
-            Interface = nullptr;
-        }
-    }
-
-    FORCEINLINE void* GetContainerPtr() const { return Set; }
+    FORCEINLINE FScriptSet* GetContainerPtr() const { return Set; }
 
     /**
      * Get the length of the set

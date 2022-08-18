@@ -5,7 +5,7 @@ local BP_DefaultWeapon_C = Class("Weapon.BP_WeaponBase_C")
 function BP_DefaultWeapon_C:UserConstructionScript()
 	self.Super.UserConstructionScript(self)
 	self.InfiniteAmmo = true
-	self.ProjectileClass = UE.UClass.Load("/Game/Core/Blueprints/Weapon/BP_DefaultProjectile")
+	self.ProjectileClass = UE.UClass.Load("/Game/Core/Blueprints/Weapon/BP_DefaultProjectile.BP_DefaultProjectile_C")
 	self.MuzzleSocketName = "Muzzle"
 	self.World = self:GetWorld()
 end

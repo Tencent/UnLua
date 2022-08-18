@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "LuaDynamicBinding.h"
-#include "lua.hpp"
 
 FLuaDynamicBinding GLuaDynamicBinding;
 
@@ -68,7 +67,7 @@ FScopedLuaDynamicBinding::~FScopedLuaDynamicBinding()
     if (bValid)
     {
         int32 InitializerTableRef = GLuaDynamicBinding.Pop();
-        if (InitializerTableRef != INDEX_NONE)
+        if (InitializerTableRef != LUA_NOREF)
         {
             check(L);
             luaL_unref(L, LUA_REGISTRYINDEX, InitializerTableRef);

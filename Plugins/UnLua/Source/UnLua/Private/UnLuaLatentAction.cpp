@@ -12,25 +12,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Engine/World.h"
+#include "Engine/LatentActionManager.h"
 #include "UnLuaLatentAction.h"
-
-#include "LuaContext.h"
+#include "LuaCore.h"
+#include "UnLuaEx.h"
 
 void UUnLuaLatentAction::OnCompleted(int32 InLinkage) const
 {
     if (Callback.IsBound())
         Callback.Execute(InLinkage);
-}
-
-FLatentActionInfo UUnLuaLatentAction::CreateInfo(const int32 Linkage)
-{
-    return FLatentActionInfo(Linkage, GetTypeHash(FGuid::NewGuid()), TEXT("OnCompleted"), this);
-}
-
-FLatentActionInfo UUnLuaLatentAction::CreateInfoForLegacy()
-{
-    Callback.BindDynamic(this, &UUnLuaLatentAction::OnLegacyCallback);
-    return CreateInfo(MAGIC_LEGACY_LINKAGE);
 }
 
 bool UUnLuaLatentAction::GetTickableWhenPaused()
@@ -67,5 +58,62 @@ TStatId UUnLuaLatentAction::GetStatId() const
 void UUnLuaLatentAction::OnLegacyCallback(int32 InLinkage)
 {
     Callback.Unbind();
-    GLuaCxt->ResumeThread(InLinkage);
+    Env->ResumeThread(InLinkage);
 }
+
+static int32 UUnLuaLatentAction_CreateInfo(lua_State* L)
+{
+    const int32 NumParams = lua_gettop(L);
+
+    if (NumParams <= 0)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    UUnLuaLatentAction* Self = Cast<UUnLuaLatentAction>(UnLua::GetUObject(L, 1));
+    if (!Self)
+    {
+        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid source class!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return 0;
+    }
+
+    int32 Linkage;
+    if (NumParams <= 1)
+    {
+        const auto Env = UnLua::FLuaEnv::FindEnv(L);
+        if (!Env)
+        {
+            UE_LOG(LogUnLua, Log, TEXT("%s: invalid L!"), ANSI_TO_TCHAR(__FUNCTION__));
+            return 0;
+        }
+        Linkage = Env->FindOrAddThread(L);
+        if (Linkage == LUA_REFNIL)
+        {
+            luaL_error(L, "coroutine thread required");
+            return 0;
+        }
+        Self->Env = Env;
+        Self->Callback.BindDynamic(Self, &UUnLuaLatentAction::OnLegacyCallback);
+    }
+    else
+    {
+        Linkage = lua_tointeger(L, 2);
+    }
+
+    const auto UserData = NewUserdataWithPadding(L, sizeof(FLatentActionInfo), "FLatentActionInfo");
+    new(UserData) FLatentActionInfo(Linkage, GetTypeHash(FGuid::NewGuid()), TEXT("OnCompleted"), Self);
+    return 1;
+}
+
+static const luaL_Reg Lib[] =
+{
+    {"CreateInfo", UUnLuaLatentAction_CreateInfo},
+    {nullptr, nullptr}
+};
+
+BEGIN_EXPORT_REFLECTED_CLASS(UUnLuaLatentAction)
+    ADD_LIB(Lib)
+END_EXPORT_CLASS()
+
+IMPLEMENT_EXPORTED_CLASS(UUnLuaLatentAction)

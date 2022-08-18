@@ -12,18 +12,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "UnLuaManager.h"
-#include "UnLua.h"
-#include "UnLuaInterface.h"
-#include "LuaCore.h"
-#include "LuaContext.h"
-#include "LuaFunctionInjection.h"
-#include "DelegateHelper.h"
-#include "UEObjectReferencer.h"
+#include "Kismet/BlueprintFunctionLibrary.h"
 #include "GameFramework/InputSettings.h"
 #include "Components/InputComponent.h"
 #include "Animation/AnimInstance.h"
 #include "Engine/LevelScriptActor.h"
+#include "UnLuaManager.h"
+#include "LowLevel.h"
+#include "LuaEnv.h"
+#include "UnLuaLegacy.h"
+#include "UnLuaInterface.h"
+#include "LuaCore.h"
+#include "LuaFunction.h"
+#include "ObjectReferencer.h"
+
 
 static const TCHAR* SReadableInputEvent[] = { TEXT("Pressed"), TEXT("Released"), TEXT("Repeat"), TEXT("DoubleClick"), TEXT("Axis"), TEXT("Max") };
 
@@ -46,56 +48,29 @@ UUnLuaManager::UUnLuaManager()
     InputVectorAxisFunc = Class->FindFunctionByName(FName("InputVectorAxis"));
     InputGestureFunc = Class->FindFunctionByName(FName("InputGesture"));
     AnimNotifyFunc = Class->FindFunctionByName(FName("TriggerAnimNotify"));
+
+    FWorldDelegates::OnWorldCleanup.AddUObject(this, &UUnLuaManager::OnWorldCleanup);
 }
-
-//UUnLuaManager::~UUnLuaManager()
-//{
-//    if (HasAnyFlags(RF_ClassDefaultObject))
-//    {
-//        return;
-//    }
-//    CleanupDefaultInputs();
-//}
-
 
 /**
  * Bind a Lua module for a UObject
  */
-bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR *InModuleName, int32 InitializerTableRef)
-{   
-    if (!Object || !Class)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("Invalid target object!"));
+bool UUnLuaManager::Bind(UObject *Object, const TCHAR *InModuleName, int32 InitializerTableRef)
+{
+    check(Object);
+
+    const auto Class = Object->IsA<UClass>() ? static_cast<UClass*>(Object) : Object->GetClass();
+    lua_State *L = Env->GetMainState();
+
+    if (!Env->GetClassRegistry()->Register(Class))
         return false;
-    }
-
-#if UNLUA_ENABLE_DEBUG != 0
-    UE_LOG(LogUnLua, Log, TEXT("UUnLuaManager::Bind : %p,%s,%s"), Object, *Object->GetName(),InModuleName);
-#endif
-    
-    bool bSuccess = true;
-    lua_State *L = *GLuaCxt;
-
-    bool bMultipleLuaBind = false;
-    UClass** BindedClass = Classes.Find(InModuleName);
-    if ((BindedClass)
-        &&(*BindedClass != Object->GetClass()))
-    {
-        bMultipleLuaBind = true;
-    }
-
-    if (!RegisterClass(L, Class))              // register class first
-    {
-        return false;
-    }
 
     // try bind lua if not bind or use a copyed table
-    UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_UTF8(InModuleName));    // require Lua module
+    UnLua::FLuaRetValues RetValues = UnLua::Call(L, "require", TCHAR_TO_UTF8(InModuleName));
     FString Error;
     if (!RetValues.IsValid() || RetValues.Num() == 0)
     {
         Error = "invalid return value of require()";
-        bSuccess = false;
     }
     else if (RetValues[0].GetType() != LUA_TTABLE)
     {
@@ -104,317 +79,78 @@ bool UUnLuaManager::Bind(UObjectBaseUtility *Object, UClass *Class, const TCHAR 
             Error += UTF8_TO_TCHAR(RetValues[0].Value<const char*>());
         else
             Error += UTF8_TO_TCHAR(lua_typename(L, RetValues[0].GetType()));
-        bSuccess = false;
     }
     else
     {
-        bSuccess = BindInternal(Object, Class, InModuleName, true, bMultipleLuaBind, Error);                             // bind!!!
+        BindClass(Class, InModuleName, Error);
     }
 
-    if (bSuccess)
-    {   
-        bool bDerivedClassBinded = false;
-        if (Object->GetClass() != Class)
-        {
-            bDerivedClassBinded = true;
-            OnDerivedClassBinded(Object->GetClass(), Class);
-        }
-
-        FString RealModuleName = *ModuleNames.Find(Class);
-
-        GLuaCxt->AddModuleName(*RealModuleName);                                       // record this required module
-
-        // create a Lua instance for this UObject
-        int32 ObjectRef = NewLuaObject(L, Object, bDerivedClassBinded ? Class : nullptr, TCHAR_TO_UTF8(*RealModuleName));
-
-        AddAttachedObject(Object, ObjectRef);                                       // record this binded UObject
-
-        // try call user first user function handler
-        bool bResult = false;
-        int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
-        if (FunctionRef != INDEX_NONE)
-        {
-            if (InitializerTableRef != INDEX_NONE)
-            {
-                lua_rawgeti(L, LUA_REGISTRYINDEX, InitializerTableRef);             // push a initializer table if necessary
-            }
-            else
-            {
-                lua_pushnil(L);
-            }
-            bResult = ::CallFunction(L, 2, 0);                                 // call 'Initialize'
-            if (!bResult)
-            {
-                UE_LOG(LogUnLua, Warning, TEXT("Failed to call 'Initialize' function!"));
-            }
-            luaL_unref(L, LUA_REGISTRYINDEX, FunctionRef);
-        }
-    }
-    else
+    if (!Error.IsEmpty())
     {
         UE_LOG(LogUnLua, Warning, TEXT("Failed to attach %s module for object %s,%p!\n%s"), InModuleName, *Object->GetName(), Object, *Error);
+        return false;
     }
 
-    return bSuccess;
-}
+    // create a Lua instance for this UObject
+    Env->GetObjectRegistry()->Bind(Class);
+    Env->GetObjectRegistry()->Bind(Object);
 
-/**
- * Callback for 'Hotfix'
- */
-bool UUnLuaManager::OnModuleHotfixed(const TCHAR *InModuleName)
-{
-    TArray<FString> _ModuleNames;
-    _ModuleNames.Add(InModuleName);
-    int16* NameIdx = RealModuleNames.Find(InModuleName);
-    for (int16 i = 1; i < *NameIdx; ++i)
+    // try call user first user function handler
+    int32 FunctionRef = PushFunction(L, Object, "Initialize");                  // push hard coded Lua function 'Initialize'
+    if (FunctionRef != LUA_NOREF)
     {
-        _ModuleNames.Add(FString::Printf(TEXT("%s_#%d"),InModuleName,i));
-    }
-
-    for (int i = 0; i < _ModuleNames.Num(); ++i)
-    {
-        UClass** ClassPtr = Classes.Find(_ModuleNames[i]);
-        if (ClassPtr)
+        if (InitializerTableRef != LUA_NOREF)
         {
-            lua_State* L = *GLuaCxt;
-            TStringConversion<TStringConvert<TCHAR, ANSICHAR>> ModuleName(InModuleName);
-
-            TSet<FName> LuaFunctions;
-            bool bSuccess = GetFunctionList(L, ModuleName.Get(), LuaFunctions);                 // get all functions in this Lua module/table
-            if (!bSuccess)
-            {
-                continue;
-            }
-
-            TSet<FName>* LuaFunctionsPtr = ModuleFunctions.Find(InModuleName);
-            check(LuaFunctionsPtr);
-            TSet<FName> NewFunctions = LuaFunctions.Difference(*LuaFunctionsPtr);               // get new added Lua functions
-            if (NewFunctions.Num() > 0)
-            {
-                UClass* Class = *ClassPtr;
-                TMap<FName, UFunction*>* UEFunctionsPtr = OverridableFunctions.Find(Class);     // get all overridable UFunctions
-                check(UEFunctionsPtr);
-                for (const FName& LuaFuncName : NewFunctions)
-                {
-                    UFunction** Func = UEFunctionsPtr->Find(LuaFuncName);
-                    if (Func)
-                    {
-                        OverrideFunction(*Func, Class, LuaFuncName);                            // override the UFunction
-                    }
-                }
-
-                bSuccess = ConditionalUpdateClass(Class, NewFunctions, *UEFunctionsPtr);        // update class conditionally
-            }
+            lua_rawgeti(L, LUA_REGISTRYINDEX, InitializerTableRef);             // push a initializer table if necessary
         }
+        else
+        {
+            lua_pushnil(L);
+        }
+        bool bResult = ::CallFunction(L, 2, 0);                                 // call 'Initialize'
+        if (!bResult)
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("Failed to call 'Initialize' function!"));
+        }
+        luaL_unref(L, LUA_REGISTRYINDEX, FunctionRef);
     }
-        
+
     return true;
 }
 
-/**
- * Remove binded UObjects
- */
-void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase *Object, bool bClass)
+void UUnLuaManager::OnWorldCleanup(UWorld* World, bool bArg, bool bCond)
 {
-    if (bClass)
-    {
-        //OnClassCleanup((UClass*)Object);
-    }
-    else
-    {
-        DeleteLuaObject(*GLuaCxt, (UObjectBaseUtility*)Object);        // delete the Lua instance (table)
-    }
+    if (Env)
+        Env->GC();
+}
+
+void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase* Object)
+{
+    const UClass* Class = (UClass*)Object;
+    const auto BindInfo = Classes.Find(Class);
+    if (!BindInfo)
+        return;
+
+    const auto L = Env->GetMainState();
+    luaL_unref(L, LUA_REGISTRYINDEX, BindInfo->TableRef);
+    Classes.Remove(Class);
 }
 
 /**
  * Clean up...
  */
-void UUnLuaManager::Cleanup(UWorld *InWorld, bool bFullCleanup)
+void UUnLuaManager::Cleanup()
 {
-    AttachedObjects.Empty();
-    AttachedActors.Empty();
-
-    ModuleNames.Empty();
+    Env = nullptr;
     Classes.Empty();
-    OverridableFunctions.Empty();
-    ModuleFunctions.Empty();
-
-    CleanupDuplicatedFunctions();       // clean up duplicated UFunctions
-    CleanupCachedNatives();             // restore cached thunk functions
-    CleanupCachedScripts();             // restore cached scripts
-
-#if !ENABLE_CALL_OVERRIDDEN_FUNCTION
-    New2TemplateFunctions.Empty();
-#endif
 }
 
-/**
- * Clean up everything linked to the target UClass
- */
-void UUnLuaManager::CleanUpByClass(UClass *Class)
+int UUnLuaManager::GetBoundRef(const UClass* Class)
 {
-    if (!Class)
-    {
-        return;
-    }
-
-    const FString *ModuleNamePtr = ModuleNames.Find(Class);
-    if (ModuleNamePtr)
-    {
-        FString ModuleName = *ModuleNamePtr;
-
-        Classes.Remove(ModuleName);
-        ModuleFunctions.Remove(ModuleName);
-
-        TMap<FName, UFunction*> FunctionMap;
-        OverridableFunctions.RemoveAndCopyValue(Class, FunctionMap);
-        for (TMap<FName, UFunction*>::TIterator It(FunctionMap); It; ++It)
-        {
-            UFunction *Function = It.Value();
-            FNativeFuncPtr NativeFuncPtr = nullptr;
-            if (CachedNatives.RemoveAndCopyValue(Function, NativeFuncPtr))
-            {
-                ResetUFunction(Function, NativeFuncPtr);
-            }
-        }
-
-        TArray<UFunction*> Functions;
-        if (DuplicatedFunctions.RemoveAndCopyValue(Class, Functions))
-        {
-            RemoveDuplicatedFunctions(Class, Functions);
-        }
-
-        OnClassCleanup(Class);
-
-        FDelegateHelper::CleanUpByClass(Class);
-
-        ClearLoadedModule(*GLuaCxt, TCHAR_TO_UTF8(*ModuleName));
-
-        ModuleNames.Remove(Class);
-    }
-}
-
-/**
- * Clean duplicated UFunctions
- */
-void UUnLuaManager::CleanupDuplicatedFunctions()
-{
-    for (TMap<UClass*, TArray<UFunction*>>::TIterator It(DuplicatedFunctions); It; ++It)
-    {
-        OnClassCleanup(It.Key());
-        RemoveDuplicatedFunctions(It.Key(), It.Value());
-    }
-    DuplicatedFunctions.Empty();
-    Base2DerivedClasses.Empty();
-    Derived2BaseClasses.Empty();
-}
-
-/**
- * Restore cached thunk functions
- */
-void UUnLuaManager::CleanupCachedNatives()
-{
-    for (TMap<UFunction*, FNativeFuncPtr>::TIterator It(CachedNatives); It; ++It)
-    {   
-        if (GLuaCxt->IsUObjectValid(It.Key()))
-        {
-            ResetUFunction(It.Key(), It.Value());
-        }
-    }
-    CachedNatives.Empty();
-}
-
-/**
- * Restore cached scripts
- */
-void UUnLuaManager::CleanupCachedScripts()
-{
-    for (TMap<UFunction*, TArray<uint8>>::TIterator It(CachedScripts); It; ++It)
-    {
-        UFunction *Func = It.Key();
-        Func->Script = It.Value();
-    }
-    CachedScripts.Empty();
-}
-
-/**
- * Cleanup intermediate data linked to a UClass
- */
-void UUnLuaManager::OnClassCleanup(UClass *Class)
-{
-    UClass *BaseClass = nullptr;
-    if (Derived2BaseClasses.RemoveAndCopyValue(Class, BaseClass))
-    {
-        TArray<UClass*> *DerivedClasses = Base2DerivedClasses.Find(BaseClass);
-        if (DerivedClasses)
-        {
-            DerivedClasses->Remove(Class);
-        }
-    }
-
-    TArray<UClass*> DerivedClasses;
-    if (Base2DerivedClasses.RemoveAndCopyValue(Class, DerivedClasses))
-    {
-        for (UClass *DerivedClass : DerivedClasses)
-        {
-            DerivedClass->ClearFunctionMapsCaches();            // clean up cached UFunctions of super class
-        }
-    }
-}
-
-/**
- * Reset a UFunction
- */
-void UUnLuaManager::ResetUFunction(UFunction *Function, FNativeFuncPtr NativeFuncPtr)
-{
-    if (GLuaCxt->IsUObjectValid(Function))
-    {
-        Function->SetNativeFunc(NativeFuncPtr);
-
-        if (Function->Script.Num() > 0 && Function->Script[0] == EX_CallLua)
-        {
-            Function->Script.Empty();
-        }
-
-        TArray<uint8> Script;
-        if (CachedScripts.RemoveAndCopyValue(Function, Script))
-        {
-            Function->Script = Script;
-        }
-    }
-    else
-    {
-        CachedScripts.Remove(Function);
-    }
-
-    GReflectionRegistry.UnRegisterFunction(Function);
-
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-    UFunction *OverriddenFunc = GReflectionRegistry.RemoveOverriddenFunction(Function);
-    RemoveUFunction(OverriddenFunc, OverriddenFunc->GetOuterUClass());
-#endif
-}
-
-/**
- * Remove duplicated UFunctions
- */
-void UUnLuaManager::RemoveDuplicatedFunctions(UClass *Class, TArray<UFunction*> &Functions)
-{
-    for (UFunction *Function : Functions)
-    {
-        RemoveUFunction(Function, Class);                       // clean up duplicated UFunction
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        GReflectionRegistry.RemoveOverriddenFunction(Function);
-#endif
-    }
-}
-
-/**
- * Post process for cleaning up
- */
-void UUnLuaManager::PostCleanup()
-{
-
+    const auto Info = Classes.Find(Class);
+    if (!Info)
+        return LUA_NOREF;
+    return Info->TableRef;
 }
 
 /**
@@ -450,33 +186,22 @@ void UUnLuaManager::CleanupDefaultInputs()
  */
 bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent)
 {
-    if (!Actor || !InputComponent || !AttachedObjects.Find(Actor))
-    {
+    if (!Actor || !InputComponent)
         return false;
-    }
 
-    UClass *Class = Actor->GetClass();
-    FString *ModuleNamePtr = ModuleNames.Find(Class);
-    if (!ModuleNamePtr)
-    {
-        UClass **SuperClassPtr = Derived2BaseClasses.Find(Class);
-        if (!SuperClassPtr || !(*SuperClassPtr))
-        {
-            return false;
-        }
-        ModuleNamePtr = ModuleNames.Find(*SuperClassPtr);
-    }
-    check(ModuleNamePtr);
-    TSet<FName> *LuaFunctionsPtr = ModuleFunctions.Find(*ModuleNamePtr);
-    check(LuaFunctionsPtr);
+    const auto Class = Actor->GetClass();
+    const auto BindInfo = Classes.Find(Class);
+    if (!BindInfo)
+        return false;
 
-    ReplaceActionInputs(Actor, InputComponent, *LuaFunctionsPtr);       // replace action inputs
-    ReplaceKeyInputs(Actor, InputComponent, *LuaFunctionsPtr);          // replace key inputs
-    ReplaceAxisInputs(Actor, InputComponent, *LuaFunctionsPtr);         // replace axis inputs
-    ReplaceTouchInputs(Actor, InputComponent, *LuaFunctionsPtr);        // replace touch inputs
-    ReplaceAxisKeyInputs(Actor, InputComponent, *LuaFunctionsPtr);      // replace AxisKey inputs
-    ReplaceVectorAxisInputs(Actor, InputComponent, *LuaFunctionsPtr);   // replace VectorAxis inputs
-    ReplaceGestureInputs(Actor, InputComponent, *LuaFunctionsPtr);      // replace gesture inputs
+    auto& LuaFunctions = BindInfo->LuaFunctions;
+    ReplaceActionInputs(Actor, InputComponent, LuaFunctions);       // replace action inputs
+    ReplaceKeyInputs(Actor, InputComponent, LuaFunctions);          // replace key inputs
+    ReplaceAxisInputs(Actor, InputComponent, LuaFunctions);         // replace axis inputs
+    ReplaceTouchInputs(Actor, InputComponent, LuaFunctions);        // replace touch inputs
+    ReplaceAxisKeyInputs(Actor, InputComponent, LuaFunctions);      // replace AxisKey inputs
+    ReplaceVectorAxisInputs(Actor, InputComponent, LuaFunctions);   // replace VectorAxis inputs
+    ReplaceGestureInputs(Actor, InputComponent, LuaFunctions);      // replace gesture inputs
 
     return true;
 }
@@ -486,17 +211,6 @@ bool UUnLuaManager::ReplaceInputs(AActor *Actor, UInputComponent *InputComponent
  */
 void UUnLuaManager::OnMapLoaded(UWorld *World)
 {
-    /*for (AActor *Actor : AttachedActors)
-    {	
-		if (GLuaCxt->IsUObjectValid(Actor))
-		{
-			if (!Actor->OnDestroyed.IsAlreadyBound(this, &UUnLuaManager::OnActorDestroyed))
-			{
-				Actor->OnDestroyed.AddDynamic(this, &UUnLuaManager::OnActorDestroyed);      // bind a callback for destroying actor
-			}
-		}
-    }*/
-
     ENetMode NetMode = World->GetNetMode();
     if (NetMode == NM_DedicatedServer)
     {
@@ -516,121 +230,33 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
 }
 
 /**
- * Callback for spawning an actor
- */
-void UUnLuaManager::OnActorSpawned(AActor *Actor)
-{
-    if (!GLuaCxt->IsEnable())
-    {
-        return;
-    }
-
-    Actor->OnDestroyed.AddDynamic(this, &UUnLuaManager::OnActorDestroyed);      // bind a callback for destroying actor
-}
-
-/**
- * Callback for destroying an actor
- */
-void UUnLuaManager::OnActorDestroyed(AActor *Actor)
-{
-    if (!GLuaCxt->IsEnable())
-    {
-        return;
-    }
-
-    int32 Num = AttachedActors.Remove(Actor);
-    if (Num > 0)
-    {   
-        DeleteUObjectRefs(UnLua::GetState(),Actor);   // remove record of this actor
-    }
-}
-
-/**
  * Callback for completing a latent function
  */
 void UUnLuaManager::OnLatentActionCompleted(int32 LinkID)
 {
-    GLuaCxt->ResumeThread(LinkID);              // resume a coroutine
+    Env->ResumeThread(LinkID); // resume a coroutine
 }
 
-/**
- * Notify that a derived class is binded to its base class
- */
-void UUnLuaManager::OnDerivedClassBinded(UClass *DerivedClass, UClass *BaseClass)
+bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FString& Error)
 {
-    TArray<UClass*> &DerivedClasses = Base2DerivedClasses.FindOrAdd(BaseClass);
-    do
-    {
-        if (DerivedClasses.Find(DerivedClass) != INDEX_NONE)
-        {
-            break;
-        }
-        Derived2BaseClasses.Add(DerivedClass, BaseClass);
-        DerivedClasses.Add(DerivedClass);
-        DerivedClass = DerivedClass->GetSuperClass();
-    } while (DerivedClass != BaseClass);
-}
+    check(Class);
 
-/**
- * Get target UCLASS for Lua binding
- */
-UClass* UUnLuaManager::GetTargetClass(UClass *Class, UFunction **GetModuleNameFunc)
-{
-    static UClass *InterfaceClass = UUnLuaInterface::StaticClass();
-    if (!Class || !Class->ImplementsInterface(InterfaceClass))
-    {
-        return nullptr;
-    }
-    UFunction *Func = Class->FindFunctionByName(FName("GetModuleName"));
-    if (Func && Func->GetNativeFunc())
-    {
-        if (GetModuleNameFunc)
-        {
-            *GetModuleNameFunc = Func;
-        }
+    if (Classes.Contains(Class))
+        return true;
 
-        UClass *OuterClass = Func->GetOuterUClass();
-        return OuterClass == InterfaceClass ? Class : OuterClass;
-    }
-    return nullptr;
-}
-
-/**
- * Bind a Lua module for a UObject
- */
-bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, const FString& InModuleName, bool bNewCreated, bool bMultipleLuaBind, FString& Error)
-{
-    if (!Object || !Class)
+    const auto  L = Env->GetMainState();
+    const auto Top = lua_gettop(L);
+    const auto Type = UnLua::LowLevel::GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
+    if (Type != LUA_TTABLE)
     {
+        Error = FString::Printf(TEXT("table needed got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
+        lua_settop(L, Top);
         return false;
     }
 
-    // module may be already loaded for other class,etc muti bp bind to same lua
-    FString RealModuleName = InModuleName;
-    if (bMultipleLuaBind)
+    if (!Class->IsChildOf<UBlueprintFunctionLibrary>())
     {
-        lua_State* L = UnLua::GetState();
-        const int32 Type = GetLoadedModule(L, TCHAR_TO_UTF8(*InModuleName));
-        if (Type != LUA_TTABLE) 
-        {
-            Error = FString::Printf(TEXT("table needed got %s"), UTF8_TO_TCHAR(lua_typename(L, Type)));
-            return false;
-        }
-
-        // generate new module for this module
-        int16* NameIdx = RealModuleNames.Find(InModuleName);
-        if (!NameIdx)
-        {
-            RealModuleNames.Add(InModuleName, 1);
-            RealModuleName = FString::Printf(TEXT("%s_#%d"), *InModuleName, 1);
-        }
-        else
-        {
-            *NameIdx = *NameIdx + 1;
-            RealModuleName = FString::Printf(TEXT("%s_#%d"), *InModuleName, *NameIdx);
-        }
-
-        // make a copy of lua module
+        // 一个LuaModule可能会被绑定到一个UClass和它的子类，复制一个出来作为它们的实例的元表
         lua_newtable(L);
         lua_pushnil(L);
         while (lua_next(L, -3) != 0)
@@ -639,155 +265,45 @@ bool UUnLuaManager::BindInternal(UObjectBaseUtility* Object, UClass* Class, cons
             lua_insert(L, -2);
             lua_settable(L, -4);
         }
-
-        lua_getglobal(L, "package");
-        lua_getfield(L, -1, "loaded");
-        lua_pushvalue(L, -3);
-        lua_setfield(L, -2, TCHAR_TO_UTF8(*RealModuleName));
-        lua_pop(L, 3);
     }
 
+    lua_pushvalue(L, -1);
+    const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
+    lua_settop(L, Top);
 
-    ModuleNames.Add(Class, RealModuleName);
-    Classes.Add(RealModuleName, Class);
+    auto& BindInfo = Classes.Add(Class);
+    BindInfo.Class = Class;
+    BindInfo.ModuleName = InModuleName;
+    BindInfo.TableRef = Ref;
 
-    TSet<FName> &LuaFunctions = ModuleFunctions.Add(RealModuleName);
-    GetFunctionList(UnLua::GetState(), TCHAR_TO_UTF8(*RealModuleName), LuaFunctions);                         // get all functions defined in the Lua module
-    TMap<FName, UFunction*> &UEFunctions = OverridableFunctions.Add(Class);
-    GetOverridableFunctions(Class, UEFunctions);                                // get all overridable UFunctions
+    UnLua::LowLevel::GetFunctionNames(Env->GetMainState(), Ref, BindInfo.LuaFunctions);
+    ULuaFunction::GetOverridableFunctions(Class, BindInfo.UEFunctions);
 
-    OverrideFunctions(LuaFunctions, UEFunctions, Class, bNewCreated);           // try to override UFunctions
-
-    return ConditionalUpdateClass(Class, LuaFunctions, UEFunctions);
-}
-
-
-/**
- * Override special UFunctions
- */
-bool UUnLuaManager::ConditionalUpdateClass(UClass *Class, const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions)
-{
-    check(Class);
-
-    if (LuaFunctions.Num() < 1 || UEFunctions.Num() < 1)
+    // 用LuaTable里所有的函数来替换Class上对应的UFunction
+    for (const auto& LuaFuncName : BindInfo.LuaFunctions)
     {
-        return true;
+        UFunction** Func = BindInfo.UEFunctions.Find(LuaFuncName);
+        if (Func)
+        {
+            UFunction* Function = *Func;
+            ULuaFunction::Override(Function, Class, LuaFuncName);
+        }
     }
 
+    if (BindInfo.LuaFunctions.Num() == 0 || BindInfo.UEFunctions.Num() == 0)
+        return true;
+
+    // 继续对特殊类型进行替换
     if (Class->IsChildOf<UAnimInstance>())
     {
-        for (const FName &FunctionName : LuaFunctions)
+        for (const auto& LuaFuncName : BindInfo.LuaFunctions)
         {
-            if (!UEFunctions.Find(FunctionName) && FunctionName.ToString().StartsWith(TEXT("AnimNotify_")))
-            {
-                AddFunction(AnimNotifyFunc, Class, FunctionName);           // override AnimNotify
-            }
+            if (!BindInfo.UEFunctions.Find(LuaFuncName) && LuaFuncName.ToString().StartsWith(TEXT("AnimNotify_")))
+                ULuaFunction::Override(AnimNotifyFunc, Class, LuaFuncName);
         }
     }
 
     return true;
-}
-
-/**
- * Override candidate UFunctions
- */
-void UUnLuaManager::OverrideFunctions(const TSet<FName> &LuaFunctions, TMap<FName, UFunction*> &UEFunctions, UClass *OuterClass, bool bCheckFuncNetMode)
-{
-    for (const FName &LuaFuncName : LuaFunctions)
-    {
-        UFunction **Func = UEFunctions.Find(LuaFuncName);
-        if (Func)
-        {
-            UFunction *Function = *Func;
-            OverrideFunction(Function, OuterClass, LuaFuncName);
-        }
-    }
-}
-
-/**
- * Override a UFunction
- */
-void UUnLuaManager::OverrideFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
-{
-    if (TemplateFunction->GetOuter() != OuterClass)
-    {
-//#if UE_BUILD_SHIPPING || UE_BUILD_TEST
-        if (TemplateFunction->Script.Num() > 0 && TemplateFunction->Script[0] == EX_CallLua)
-        {
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-            TemplateFunction = GReflectionRegistry.FindOverriddenFunction(TemplateFunction);
-#else
-            TemplateFunction = New2TemplateFunctions.FindChecked(TemplateFunction);
-#endif
-        }
-//#endif
-        AddFunction(TemplateFunction, OuterClass, NewFuncName);     // add a duplicated UFunction to child UClass
-    }
-    else
-    {
-        ReplaceFunction(TemplateFunction, OuterClass);              // replace thunk function and insert opcodes
-    }
-}
-
-/**
- * Add a duplicated UFunction to UClass
- */
-void UUnLuaManager::AddFunction(UFunction *TemplateFunction, UClass *OuterClass, FName NewFuncName)
-{
-    UFunction *Func = OuterClass->FindFunctionByName(NewFuncName, EIncludeSuperFlag::ExcludeSuper);
-    if (!Func)
-    {
-        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
-        {
-            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
-            OuterClass->AddNativeFunction(*NewFuncName.ToString(), (FNativeFuncPtr)&FLuaInvoker::execCallLua);
-        }
-
-        UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName); // duplicate a UFunction
-        if (!NewFunc->HasAnyFunctionFlags(FUNC_Native) && NewFunc->Script.Num() > 0)
-        {
-            NewFunc->Script.Empty(3);                               // insert opcodes for non-native UFunction only
-        }
-        OverrideUFunction(NewFunc, (FNativeFuncPtr)&FLuaInvoker::execCallLua, GReflectionRegistry.RegisterFunction(NewFunc));   // replace thunk function and insert opcodes
-        TArray<UFunction*> &DuplicatedFuncs = DuplicatedFunctions.FindOrAdd(OuterClass);
-        DuplicatedFuncs.AddUnique(NewFunc);
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        GReflectionRegistry.AddOverriddenFunction(NewFunc, TemplateFunction);
-#else
-        New2TemplateFunctions.Add(NewFunc, TemplateFunction);
-#endif
-    }
-}
-
-/**
- * Replace thunk function and insert opcodes
- */
-void UUnLuaManager::ReplaceFunction(UFunction *TemplateFunction, UClass *OuterClass)
-{
-    if (TemplateFunction->GetNativeFunc() == FLuaInvoker::execCallLua)
-        return;
-
-    FNativeFuncPtr *NativePtr = CachedNatives.Find(TemplateFunction);
-    if (!NativePtr)
-    {
-#if ENABLE_CALL_OVERRIDDEN_FUNCTION
-        FName NewFuncName(*FString::Printf(TEXT("%s%s"), *TemplateFunction->GetName(), TEXT("Copy")));
-        if (TemplateFunction->HasAnyFunctionFlags(FUNC_Native))
-        {
-            // call this before duplicate UFunction that has FUNC_Native to eliminate "Failed to bind native function" warnings.
-            OuterClass->AddNativeFunction(*NewFuncName.ToString(), TemplateFunction->GetNativeFunc());
-        }
-        UFunction *NewFunc = DuplicateUFunction(TemplateFunction, OuterClass, NewFuncName);
-        GReflectionRegistry.AddOverriddenFunction(TemplateFunction, NewFunc);
-#endif
-        CachedNatives.Add(TemplateFunction, TemplateFunction->GetNativeFunc());
-        if (!TemplateFunction->HasAnyFunctionFlags(FUNC_Native) && TemplateFunction->Script.Num() > 0)
-        {
-            CachedScripts.Add(TemplateFunction, TemplateFunction->Script);
-            TemplateFunction->Script.Empty(3);
-        }
-        OverrideUFunction(TemplateFunction, (FNativeFuncPtr)&FLuaInvoker::execCallLua, GReflectionRegistry.RegisterFunction(TemplateFunction));
-    }
 }
 
 /**
@@ -809,7 +325,7 @@ void UUnLuaManager::ReplaceActionInputs(AActor *Actor, UInputComponent *InputCom
         FName FuncName = FName(*FString::Printf(TEXT("%s_%s"), *ActionName, SReadableInputEvent[IAB.KeyEvent]));
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputActionFunc, Class, FuncName);
+            ULuaFunction::Override(InputActionFunc, Class, FuncName);
             IAB.ActionDelegate.BindDelegate(Actor, FuncName);
         }
 
@@ -819,7 +335,7 @@ void UUnLuaManager::ReplaceActionInputs(AActor *Actor, UInputComponent *InputCom
             FuncName = FName(*FString::Printf(TEXT("%s_%s"), *ActionName, SReadableInputEvent[IE]));
             if (LuaFunctions.Find(FuncName))
             {
-                AddFunction(InputActionFunc, Class, FuncName);
+                ULuaFunction::Override(InputActionFunc, Class, FuncName);
                 FInputActionBinding AB(Name, IE);
                 AB.ActionDelegate.BindDelegate(Actor, FuncName);
                 InputComponent->AddActionBinding(AB);
@@ -837,7 +353,7 @@ void UUnLuaManager::ReplaceActionInputs(AActor *Actor, UInputComponent *InputCom
             FName FuncName = FName(*FString::Printf(TEXT("%s_%s"), *ActionName.ToString(), SReadableInputEvent[IEs[i]]));
             if (LuaFunctions.Find(FuncName))
             {
-                AddFunction(InputActionFunc, Class, FuncName);
+                ULuaFunction::Override(InputActionFunc, Class, FuncName);
                 FInputActionBinding AB(ActionName, IEs[i]);
                 AB.ActionDelegate.BindDelegate(Actor, FuncName);
                 InputComponent->AddActionBinding(AB);
@@ -873,7 +389,7 @@ void UUnLuaManager::ReplaceKeyInputs(AActor *Actor, UInputComponent *InputCompon
         FName FuncName = FName(*FString::Printf(TEXT("%s_%s"), *IKB.Chord.Key.ToString(), SReadableInputEvent[IKB.KeyEvent]));
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputActionFunc, Class, FuncName);
+            ULuaFunction::Override(InputActionFunc, Class, FuncName);
             IKB.KeyDelegate.BindDelegate(Actor, FuncName);
         }
     }
@@ -886,7 +402,7 @@ void UUnLuaManager::ReplaceKeyInputs(AActor *Actor, UInputComponent *InputCompon
             FName FuncName = FName(*FString::Printf(TEXT("%s_%s"), *Keys[i].ToString(), SReadableInputEvent[IE]));
             if (LuaFunctions.Find(FuncName))
             {
-                AddFunction(InputActionFunc, Class, FuncName);
+                ULuaFunction::Override(InputActionFunc, Class, FuncName);
                 FInputKeyBinding IKB(FInputChord(Keys[i]), IE);
                 IKB.KeyDelegate.BindDelegate(Actor, FuncName);
                 InputComponent->KeyBindings.Add(IKB);
@@ -906,7 +422,7 @@ void UUnLuaManager::ReplaceKeyInputs(AActor *Actor, UInputComponent *InputCompon
             FName FuncName = FName(*FString::Printf(TEXT("%s_%s"), *Key.ToString(), SReadableInputEvent[IEs[i]]));
             if (LuaFunctions.Find(FuncName))
             {
-                AddFunction(InputActionFunc, Class, FuncName);
+                ULuaFunction::Override(InputActionFunc, Class, FuncName);
                 FInputKeyBinding IKB(FInputChord(Key), IEs[i]);
                 IKB.KeyDelegate.BindDelegate(Actor, FuncName);
                 InputComponent->KeyBindings.Add(IKB);
@@ -928,7 +444,7 @@ void UUnLuaManager::ReplaceAxisInputs(AActor *Actor, UInputComponent *InputCompo
         AxisNames.Add(IAB.AxisName);
         if (LuaFunctions.Find(IAB.AxisName))
         {
-            AddFunction(InputAxisFunc, Class, IAB.AxisName);
+            ULuaFunction::Override(InputAxisFunc, Class, IAB.AxisName);
             IAB.AxisDelegate.BindDelegate(Actor, IAB.AxisName);
         }
     }
@@ -938,7 +454,7 @@ void UUnLuaManager::ReplaceAxisInputs(AActor *Actor, UInputComponent *InputCompo
     {
         if (LuaFunctions.Find(*It))
         {
-            AddFunction(InputAxisFunc, Class, *It);
+            ULuaFunction::Override(InputAxisFunc, Class, *It);
             FInputAxisBinding &IAB = InputComponent->BindAxis(*It);
             IAB.AxisDelegate.BindDelegate(Actor, *It);
         }
@@ -959,7 +475,7 @@ void UUnLuaManager::ReplaceTouchInputs(AActor *Actor, UInputComponent *InputComp
         FName FuncName = FName(*FString::Printf(TEXT("Touch_%s"), SReadableInputEvent[ITB.KeyEvent]));
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputTouchFunc, Class, FuncName);
+            ULuaFunction::Override(InputTouchFunc, Class, FuncName);
             ITB.TouchDelegate.BindDelegate(Actor, FuncName);
         }
     }
@@ -969,7 +485,7 @@ void UUnLuaManager::ReplaceTouchInputs(AActor *Actor, UInputComponent *InputComp
         FName FuncName = FName(*FString::Printf(TEXT("Touch_%s"), SReadableInputEvent[IE]));
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputTouchFunc, Class, FuncName);
+            ULuaFunction::Override(InputTouchFunc, Class, FuncName);
             FInputTouchBinding ITB(IE);
             ITB.TouchDelegate.BindDelegate(Actor, FuncName);
             InputComponent->TouchBindings.Add(ITB);
@@ -988,7 +504,7 @@ void UUnLuaManager::ReplaceAxisKeyInputs(AActor *Actor, UInputComponent *InputCo
         FName FuncName = IAKB.AxisKey.GetFName();
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputAxisFunc, Class, FuncName);
+            ULuaFunction::Override(InputAxisFunc, Class, FuncName);
             IAKB.AxisDelegate.BindDelegate(Actor, FuncName);
         }
     }
@@ -1005,7 +521,7 @@ void UUnLuaManager::ReplaceVectorAxisInputs(AActor *Actor, UInputComponent *Inpu
         FName FuncName = IVAB.AxisKey.GetFName();
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputVectorAxisFunc, Class, FuncName);
+            ULuaFunction::Override(InputVectorAxisFunc, Class, FuncName);
             IVAB.AxisDelegate.BindDelegate(Actor, FuncName);
         }
     }
@@ -1022,42 +538,8 @@ void UUnLuaManager::ReplaceGestureInputs(AActor *Actor, UInputComponent *InputCo
         FName FuncName = IGB.GestureKey.GetFName();
         if (LuaFunctions.Find(FuncName))
         {
-            AddFunction(InputGestureFunc, Class, FuncName);
+            ULuaFunction::Override(InputGestureFunc, Class, FuncName);
             IGB.GestureDelegate.BindDelegate(Actor, FuncName);
         }
-    }
-}
-
-/**
- * Record a binded UObject
- */
-void UUnLuaManager::AddAttachedObject(UObjectBaseUtility *Object, int32 ObjectRef)
-{
-    check(Object);
-
-    GObjectReferencer.AddObjectRef((UObject*)Object);
-
-    AttachedObjects.Add(Object, ObjectRef);
-
-    if (Object->IsA<AActor>())
-    {
-        AttachedActors.Add((AActor*)Object);
-    }
-}
-
-/**
- * Get lua ref of a recorded binded UObject
- */
-void UUnLuaManager::ReleaseAttachedObjectLuaRef(UObjectBaseUtility* Object)
-{   
-    int32* ObjectLuaRef = AttachedObjects.Find(Object);
-    if ((ObjectLuaRef)
-        &&(*ObjectLuaRef != LUA_REFNIL))
-    {   
-#if UNLUA_ENABLE_DEBUG != 0
-        UE_LOG(LogUnLua, Log, TEXT("ReleaseAttachedObjectLuaRef : %s,%p,%d"), *Object->GetName(), Object, *ObjectLuaRef);
-#endif
-        luaL_unref(UnLua::GetState(), LUA_REGISTRYINDEX, *ObjectLuaRef);
-        AttachedObjects.Remove(Object);
     }
 }

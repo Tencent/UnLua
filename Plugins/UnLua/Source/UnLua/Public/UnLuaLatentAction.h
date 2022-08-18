@@ -15,8 +15,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LuaEnv.h"
 #include "Tickable.h"
-#include "Engine/LatentActionManager.h"
 #include "UnLuaLatentAction.generated.h"
 
 DECLARE_DYNAMIC_DELEGATE_OneParam(FUnLuaLatentActionCallback, int32, InLinkage);
@@ -27,19 +27,13 @@ class UUnLuaLatentAction : public UObject, public FTickableGameObject
     GENERATED_BODY()
 
 public:
-    const static int32 MAGIC_LEGACY_LINKAGE = 0x01DC0DE;
-    
     UPROPERTY()
     FUnLuaLatentActionCallback Callback;
 
+    UnLua::FLuaEnv* Env;
+
     UFUNCTION()
     void OnCompleted(int32 InLinkage) const;
-
-    UFUNCTION(BlueprintCallable)
-    FLatentActionInfo CreateInfo(int32 Linkage = 0);
-
-    UFUNCTION(BlueprintCallable)
-    FLatentActionInfo CreateInfoForLegacy();
 
     UFUNCTION(BlueprintCallable)
     bool GetTickableWhenPaused();
