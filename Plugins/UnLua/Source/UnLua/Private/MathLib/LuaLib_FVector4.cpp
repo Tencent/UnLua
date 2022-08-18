@@ -60,25 +60,18 @@ static int32 FVector4_New(lua_State* L)
         }
     }
 
-    UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-    return 0;
+    return luaL_error(L, "invalid parameters");
 }
 
 static int32 FVector4_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector4* V = (FVector4*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector4!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector4");
 
     UnLua::TFieldSetter4<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
@@ -88,10 +81,7 @@ static int32 FVector4_UNM(lua_State* L)
 {
     FVector4* V = (FVector4*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector4!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector4");
 
     void* Userdata = NewTypedUserdata(L, FVector4);
     new(Userdata) FVector4(-(*V));

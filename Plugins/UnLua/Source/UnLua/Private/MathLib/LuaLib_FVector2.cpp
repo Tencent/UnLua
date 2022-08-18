@@ -20,10 +20,7 @@ static int32 FVector2D_New(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     void* Userdata = NewTypedUserdata(L, FVector2D);
 
@@ -49,8 +46,7 @@ static int32 FVector2D_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
 
@@ -61,17 +57,11 @@ static int32 FVector2D_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector2D");
 
     UnLua::TFieldSetter2<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
@@ -81,17 +71,11 @@ static int32 FVector2D_Normalize(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector2D");
 
     if (NumParams == 1)
     {
@@ -104,7 +88,7 @@ static int32 FVector2D_Normalize(lua_State* L)
     }
     else
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return luaL_error(L, "invalid parameters");
     }
     
     return 0;
@@ -114,17 +98,11 @@ static int32 FVector2D_IsNormalized(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector2D");
 
     lua_pushboolean(L, FMath::Abs(1.f - V->SizeSquared()) < THRESH_VECTOR_NORMALIZED);
     return 1;
@@ -134,10 +112,7 @@ static int32 FVector2D_UNM(lua_State* L)
 {
     FVector2D* V = (FVector2D*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector2D!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector2D");
 
     void* Userdata = NewTypedUserdata(L, FVector2D);
     new(Userdata) FVector2D(-(*V));

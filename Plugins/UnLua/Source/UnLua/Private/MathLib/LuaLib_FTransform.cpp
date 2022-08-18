@@ -96,38 +96,27 @@ static int32 FTransform_New(lua_State* L)
         }
     }
 
-    UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-    return 0;
+    return luaL_error(L, "invalid parameters");
 }
 
 static int32 FTransform_Blend(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 3)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FTransform* A = (FTransform*)GetCppInstanceFast(L, 1);
     if (!A)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform A!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FTransform A");
+
     FTransform* B = (FTransform*)GetCppInstanceFast(L, 2);
     if (!B)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform B!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FTransform B");
 
     FTransform* C = (FTransform*)GetCppInstanceFast(L, 3);
     if (!C)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform C!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FTransform C");
+
     const float Alpha = lua_tonumber(L, 4);
     A->Blend(*B, *C, Alpha);
     return 0;
@@ -137,23 +126,15 @@ static int32 FTransform_BlendWith(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 3)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FTransform* A = (FTransform*)GetCppInstanceFast(L, 1);
     if (!A)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform A!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FTransform A");
+
     FTransform* B = (FTransform*)GetCppInstanceFast(L, 2);
     if (!B)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FTransform B!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FTransform B");
 
     const float Alpha = lua_tonumber(L, 3);
     A->BlendWith(*B, Alpha);

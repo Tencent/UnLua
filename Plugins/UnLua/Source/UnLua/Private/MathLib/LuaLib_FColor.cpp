@@ -52,8 +52,7 @@ static int32 FColor_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
     return 1;
@@ -63,17 +62,12 @@ static int32 FColor_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FColor* A = (FColor*)GetCppInstanceFast(L, 1);
     if (!A)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FColor!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FColor");
+
     if (NumParams > 1)
     {
         A->R = (uint8)lua_tonumber(L, 2);
@@ -97,23 +91,15 @@ static int32 FColor_Add(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 2)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FColor* A = (FColor*)GetCppInstanceFast(L, 1);
     if (!A)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FColor A!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FColor A");
+
     FColor* B = (FColor*)GetCppInstanceFast(L, 2);
     if (!B)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FColor B!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FColor B");
 
     FColor C = *A;
     C += (*B);

@@ -16,76 +16,67 @@
 #include "LuaCore.h"
 #include "Kismet/DataTableFunctionLibrary.h"
 
-
 namespace UnLua
 {
+    /**
+     * Get row data with structure.
+     */
+    static int32 UDataTable_GetRowDataStructure(lua_State* L)
+    {
+        int32 NumParams = lua_gettop(L);
+        if (NumParams != 2)
+            return luaL_error(L, "invalid parameters");
 
-	/**
-	 * Get row data with structure.
-	 */
-	static int32 UDataTable_GetRowDataStructure(lua_State* L)
-	{
-		int32 NumParams = lua_gettop(L);
-		if (NumParams != 2)
-		{
-			UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-			return 0;
-		}
+        UDataTable* Table = Cast<UDataTable>(UnLua::GetUObject(L, 1));
+        if (!Table)
+            return luaL_error(L, "invalid UDataTable");
 
-		UDataTable* Table = Cast<UDataTable>(UnLua::GetUObject(L, 1));
-		if (!Table)
-		{
-			UE_LOG(LogUnLua, Log, TEXT("%s: Invalid Table!"), ANSI_TO_TCHAR(__FUNCTION__));
-			return 0;
-		}
+        if (!IsType(L, 2, TType<FName>()))
+            return luaL_error(L, "invalid row name");
 
-		if (!IsType(L, 2, TType<FName>()))
-		{
-			UE_LOG(LogUnLua, Log, TEXT("%s: Invalid Name!"), ANSI_TO_TCHAR(__FUNCTION__));
-			return 0;
-		}
-		FName RowName = UnLua::Get(L, 2, TType<FName>());
+        FName RowName = UnLua::Get(L, 2, TType<FName>());
+        void* RowPtr = Table->FindRowUnchecked(RowName);
 
-		void* RowPtr = Table->FindRowUnchecked(RowName);
+        if (RowPtr == nullptr)
+        {
+            lua_pushnil(L);
+        }
+        else
+        {
+            const UScriptStruct* StructType = Table->GetRowStruct();
 
-		if (RowPtr == nullptr)
-		{
-			lua_pushnil(L);
-		}
-		else
-		{
-			const UScriptStruct* StructType = Table->GetRowStruct();
+            if (StructType != nullptr)
+            {
+                FString Name = FString("F" + StructType->GetName());
+                uint8 StructPadding = StructType->GetMinAlignment();
+                uint8 Padding = StructPadding < 8 ? 8 : StructPadding;
+                void* Userdata = NewUserdataWithPadding(L, StructType->GetStructureSize(), TCHAR_TO_UTF8(*Name), Padding);
+                if (Userdata != nullptr)
+                {
+                    if (StructType->StructFlags & STRUCT_CopyNative)
+                    {
+                        //Do ScriptStruct Construct
+                        UScriptStruct::ICppStructOps* TheCppStructOps = StructType->GetCppStructOps();
+                        TheCppStructOps->Construct(Userdata);
+                    }
+                    StructType->CopyScriptStruct(Userdata, RowPtr);
+                }
+            }
+        }
+        return 1;
+    }
 
-			if (StructType != nullptr) {
-				FString Name = FString("F" + StructType->GetName());
-				uint8 StructPadding = StructType->GetMinAlignment();
-				uint8 Padding = StructPadding < 8 ? 8 : StructPadding;
-				void* Userdata = NewUserdataWithPadding(L, StructType->GetStructureSize(), TCHAR_TO_UTF8(*Name), Padding);
-				if (Userdata != nullptr) {
-					if (StructType->StructFlags & STRUCT_CopyNative) {
-						//Do ScriptStruct Construct
-						UScriptStruct::ICppStructOps* TheCppStructOps = StructType->GetCppStructOps();
-						TheCppStructOps->Construct(Userdata);
-					}
-					StructType->CopyScriptStruct(Userdata, RowPtr);
-				}
-			}
-		}
-		return 1;
-	}
+    static const luaL_Reg UDataTableLib[] =
+    {
+        {"GetRowDataStructure", UDataTable_GetRowDataStructure},
+        {nullptr, nullptr}
+    };
 
-	static const luaL_Reg UDataTableLib[] =
-	{
-		{ "GetRowDataStructure", UDataTable_GetRowDataStructure },
-		{ nullptr, nullptr }
-	};
+    BEGIN_EXPORT_REFLECTED_CLASS(UDataTableFunctionLibrary)
+        ADD_STATIC_FUNCTION_EX("GetTableDataRowFromName", bool, Generic_GetDataTableRowFromName, const UDataTable*, FName, void*)
+        ADD_STATIC_FUNCTION_EX("GetDataTableRowFromName", bool, Generic_GetDataTableRowFromName, const UDataTable*, FName, void*)
+        ADD_LIB(UDataTableLib)
+    END_EXPORT_CLASS()
 
-
-	//export GetTableDataRowFromName
-	BEGIN_EXPORT_REFLECTED_CLASS(UDataTableFunctionLibrary)
-	ADD_STATIC_FUNCTION_EX("GetTableDataRowFromName", bool, Generic_GetDataTableRowFromName, const UDataTable*, FName, void*)
-	ADD_STATIC_FUNCTION_EX("GetDataTableRowFromName", bool, Generic_GetDataTableRowFromName, const UDataTable*, FName, void*)
-	ADD_LIB(UDataTableLib)
-	END_EXPORT_CLASS()
-	IMPLEMENT_EXPORTED_CLASS(UDataTableFunctionLibrary)
+    IMPLEMENT_EXPORTED_CLASS(UDataTableFunctionLibrary)
 }

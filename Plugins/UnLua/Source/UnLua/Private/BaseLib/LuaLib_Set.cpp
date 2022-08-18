@@ -16,46 +16,34 @@
 #include "LuaCore.h"
 #include "Containers/LuaSet.h"
 
-static int32 TSet_New(lua_State *L)
+static int32 TSet_New(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
     if (!TypeInterface)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Failed to create TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid element type");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->NewSet(L, TypeInterface, FLuaSet::OwnedBySelf);
-    
+
     return 1;
 }
 
 /**
  * @see FLuaSet::Num(...)
  */
-static int32 TSet_Length(lua_State *L)
+static int32 TSet_Length(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
     lua_pushinteger(L, Set->Num());
     return 1;
@@ -64,21 +52,15 @@ static int32 TSet_Length(lua_State *L)
 /**
  * @see FLuaSet::Add(...)
  */
-static int32 TSet_Add(lua_State *L)
+static int32 TSet_Add(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
@@ -90,21 +72,15 @@ static int32 TSet_Add(lua_State *L)
 /**
  * @see FLuaSet::Remove(...)
  */
-static int32 TSet_Remove(lua_State *L)
+static int32 TSet_Remove(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
@@ -117,21 +93,15 @@ static int32 TSet_Remove(lua_State *L)
 /**
  * @see FLuaSet::Contains(...)
  */
-static int32 TSet_Contains(lua_State *L)
+static int32 TSet_Contains(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
@@ -144,21 +114,15 @@ static int32 TSet_Contains(lua_State *L)
 /**
  * @see FLuaSet::Clear(...)
  */
-static int32 TSet_Clear(lua_State *L)
+static int32 TSet_Clear(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
     Set->Clear();
     return 0;
@@ -167,49 +131,37 @@ static int32 TSet_Clear(lua_State *L)
 /**
  * @see FLuaSet::ToArray(...)
  */
-static int32 TSet_ToArray(lua_State *L)
+static int32 TSet_ToArray(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
-    void *Userdata = NewUserdataWithPadding(L, sizeof(FLuaArray), "TArray");
-    FLuaArray *Array = Set->ToArray(Userdata);
+    void* Userdata = NewUserdataWithPadding(L, sizeof(FLuaArray), "TArray");
+    FLuaArray* Array = Set->ToArray(Userdata);
     return 1;
 }
 
 /**
  * GC function
  */
-static int32 TSet_Delete(lua_State *L)
+static int32 TSet_Delete(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Set);
-    
+
     Set->~FLuaSet();
     return 0;
 }
@@ -217,24 +169,18 @@ static int32 TSet_Delete(lua_State *L)
 /**
  * Convert the set to a Lua table
  */
-static int32 TSet_ToTable(lua_State *L)
+static int32 TSet_ToTable(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaSet *Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
+    FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
     if (!Set)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TSet!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TSet");
 
-    void *MemData = FMemory::Malloc(sizeof(FLuaArray), alignof(FLuaArray));
-    FLuaArray *Array = Set->ToArray(MemData);
+    void* MemData = FMemory::Malloc(sizeof(FLuaArray), alignof(FLuaArray));
+    FLuaArray* Array = Set->ToArray(MemData);
     Array->Inner->Initialize(Array->ElementCache);
     lua_newtable(L);
     for (int32 i = 0; i < Array->Num(); ++i)
@@ -251,18 +197,19 @@ static int32 TSet_ToTable(lua_State *L)
 
 static const luaL_Reg TSetLib[] =
 {
-    { "Length", TSet_Length },
-    { "Num", TSet_Length },
-    { "Add", TSet_Add },
-    { "Remove", TSet_Remove },
-    { "Contains", TSet_Contains },
-    { "Clear", TSet_Clear },
-    { "ToArray", TSet_ToArray },
-    { "ToTable", TSet_ToTable },
-    { "__gc", TSet_Delete },
-    { "__call", TSet_New },
-    { nullptr, nullptr }
+    {"Length", TSet_Length},
+    {"Num", TSet_Length},
+    {"Add", TSet_Add},
+    {"Remove", TSet_Remove},
+    {"Contains", TSet_Contains},
+    {"Clear", TSet_Clear},
+    {"ToArray", TSet_ToArray},
+    {"ToTable", TSet_ToTable},
+    {"__gc", TSet_Delete},
+    {"__call", TSet_New},
+    {nullptr, nullptr}
 };
 
 EXPORT_UNTYPED_CLASS(TSet, false, TSetLib)
+
 IMPLEMENT_EXPORTED_CLASS(TSet)

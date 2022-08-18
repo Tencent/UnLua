@@ -27,36 +27,24 @@
  * the last four parameters "Weapon.AK47_C", 'WeaponColor', ULevel and Name are optional.
  * see programming guide for detail.
  */
-static int32 UWorld_SpawnActor(lua_State *L)
+static int32 UWorld_SpawnActor(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams < 2)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        lua_pushnil(L);
-        return 1;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    UWorld *World = Cast<UWorld>(UnLua::GetUObject(L, 1));
+    UWorld* World = Cast<UWorld>(UnLua::GetUObject(L, 1));
     if (!World)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid world!"), ANSI_TO_TCHAR(__FUNCTION__));
-        lua_pushnil(L);
-        return 1;
-    }
+        return luaL_error(L, "invalid world");
 
-    UClass *Class = Cast<UClass>(UnLua::GetUObject(L, 2));
+    UClass* Class = Cast<UClass>(UnLua::GetUObject(L, 2));
     if (!Class)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid class!"), ANSI_TO_TCHAR(__FUNCTION__));
-        lua_pushnil(L);
-        return 1;
-    }
+        return luaL_error(L, "invalid actor class");
 
     FTransform Transform;
     if (NumParams > 2)
     {
-        FTransform *TransformPtr = (FTransform*)GetCppInstanceFast(L, 3);
+        FTransform* TransformPtr = (FTransform*)GetCppInstanceFast(L, 3);
         if (TransformPtr)
         {
             Transform = *TransformPtr;
@@ -71,16 +59,16 @@ static int32 UWorld_SpawnActor(lua_State *L)
     }
     if (NumParams > 4)
     {
-        AActor *Owner = Cast<AActor>(UnLua::GetUObject(L, 5));
+        AActor* Owner = Cast<AActor>(UnLua::GetUObject(L, 5));
         check(!Owner || (Owner && World == Owner->GetWorld()));
         SpawnParameters.Owner = Owner;
     }
     if (NumParams > 5)
     {
-        AActor *Actor = Cast<AActor>(UnLua::GetUObject(L, 6));
+        AActor* Actor = Cast<AActor>(UnLua::GetUObject(L, 6));
         if (Actor)
         {
-            APawn *Instigator = Cast<APawn>(Actor);
+            APawn* Instigator = Cast<APawn>(Actor);
             if (!Instigator)
             {
                 Instigator = Actor->GetInstigator();
@@ -89,19 +77,22 @@ static int32 UWorld_SpawnActor(lua_State *L)
         }
     }
 
-    if (NumParams > 8) {
-        ULevel *Level = Cast<ULevel>(UnLua::GetUObject(L, 9));
-        if (Level) {
+    if (NumParams > 8)
+    {
+        ULevel* Level = Cast<ULevel>(UnLua::GetUObject(L, 9));
+        if (Level)
+        {
             SpawnParameters.OverrideLevel = Level;
         }
     }
 
-    if (NumParams > 9) {
+    if (NumParams > 9)
+    {
         SpawnParameters.Name = FName(lua_tostring(L, 10));
     }
 
     {
-        const char *ModuleName = NumParams > 6 ? lua_tostring(L, 7) : nullptr;
+        const char* ModuleName = NumParams > 6 ? lua_tostring(L, 7) : nullptr;
         int32 TableRef = LUA_NOREF;
         if (NumParams > 7 && lua_type(L, 8) == LUA_TTABLE)
         {
@@ -109,7 +100,7 @@ static int32 UWorld_SpawnActor(lua_State *L)
             TableRef = luaL_ref(L, LUA_REGISTRYINDEX);
         }
         FScopedLuaDynamicBinding Binding(L, Class, UTF8_TO_TCHAR(ModuleName), TableRef);
-        AActor *NewActor = World->SpawnActor(Class, &Transform, SpawnParameters);
+        AActor* NewActor = World->SpawnActor(Class, &Transform, SpawnParameters);
         UnLua::PushUObject(L, NewActor);
     }
 
@@ -121,36 +112,24 @@ static int32 UWorld_SpawnActor(lua_State *L)
  *  WeaponClass, InitialTransform, WeaponColor, "Weapon.AK47_C", ActorSpawnParameters
  * )
  */
-static int32 UWorld_SpawnActorEx(lua_State *L)
+static int32 UWorld_SpawnActorEx(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams < 2)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        lua_pushnil(L);
-        return 1;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    UWorld *World = Cast<UWorld>(UnLua::GetUObject(L, 1));
+    UWorld* World = Cast<UWorld>(UnLua::GetUObject(L, 1));
     if (!World)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid world!"), ANSI_TO_TCHAR(__FUNCTION__));
-        lua_pushnil(L);
-        return 1;
-    }
+        return luaL_error(L, "invalid world");
 
-    UClass *Class = Cast<UClass>(UnLua::GetUObject(L, 2));
+    UClass* Class = Cast<UClass>(UnLua::GetUObject(L, 2));
     if (!Class)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid class!"), ANSI_TO_TCHAR(__FUNCTION__));
-        lua_pushnil(L);
-        return 1;
-    }
+        return luaL_error(L, "invalid class");
 
     FTransform Transform;
     if (NumParams > 2)
     {
-        FTransform *TransformPtr = (FTransform*)GetCppInstanceFast(L, 3);
+        FTransform* TransformPtr = (FTransform*)GetCppInstanceFast(L, 3);
         if (TransformPtr)
         {
             Transform = *TransformPtr;
@@ -164,17 +143,18 @@ static int32 UWorld_SpawnActorEx(lua_State *L)
             lua_pushvalue(L, 4);
             TableRef = luaL_ref(L, LUA_REGISTRYINDEX);
         }
-        const char *ModuleName = NumParams > 4 ? lua_tostring(L, 5) : nullptr;
+        const char* ModuleName = NumParams > 4 ? lua_tostring(L, 5) : nullptr;
         FActorSpawnParameters SpawnParameters;
         if (NumParams > 5)
         {
-            FActorSpawnParameters *ActorSpawnParametersPtr = (FActorSpawnParameters*)GetCppInstanceFast(L, 6);
-            if (ActorSpawnParametersPtr) {
+            FActorSpawnParameters* ActorSpawnParametersPtr = (FActorSpawnParameters*)GetCppInstanceFast(L, 6);
+            if (ActorSpawnParametersPtr)
+            {
                 SpawnParameters = *ActorSpawnParametersPtr;
             }
         }
         FScopedLuaDynamicBinding Binding(L, Class, UTF8_TO_TCHAR(ModuleName), TableRef);
-        AActor *NewActor = World->SpawnActor(Class, &Transform, SpawnParameters);
+        AActor* NewActor = World->SpawnActor(Class, &Transform, SpawnParameters);
         UnLua::PushUObject(L, NewActor);
     }
 
@@ -182,7 +162,9 @@ static int32 UWorld_SpawnActorEx(lua_State *L)
 }
 
 DEFINE_TYPE(ESpawnActorCollisionHandlingMethod)
+
 DEFINE_TYPE(EObjectFlags)
+
 DEFINE_TYPE(FActorSpawnParameters::ESpawnActorNameMode)
 
 BEGIN_EXPORT_CLASS(FActorSpawnParameters)
@@ -213,17 +195,19 @@ BEGIN_EXPORT_CLASS(FActorSpawnParameters)
     ADD_PROPERTY(ObjectFlags)
 #endif
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(FActorSpawnParameters)
 
 static const luaL_Reg UWorldLib[] =
 {
-    { "SpawnActor", UWorld_SpawnActor },
-    { "SpawnActorEx", UWorld_SpawnActorEx },
-    { nullptr, nullptr }
+    {"SpawnActor", UWorld_SpawnActor},
+    {"SpawnActorEx", UWorld_SpawnActorEx},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(UWorld)
     ADD_LIB(UWorldLib)
     ADD_FUNCTION(GetTimeSeconds)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(UWorld)
