@@ -12,7 +12,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "Engine/World.h"
 #include "LuaDelegateHandler.h"
 #include "LuaEnv.h"
 
@@ -43,6 +42,13 @@ void ULuaDelegateHandler::AddTo(FMulticastDelegateProperty* InProperty, void* In
     TMulticastDelegateTraits<FMulticastDelegateType>::AddDelegate(InProperty, MoveTemp(DynamicDelegate), nullptr, InDelegate);
 }
 
+UWorld* ULuaDelegateHandler::GetWorld() const
+{
+    if (SelfObject.IsValid())
+        return SelfObject->GetWorld();
+    return UObject::GetWorld();
+}
+
 void ULuaDelegateHandler::RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate)
 {
     FScriptDelegate DynamicDelegate;
@@ -69,19 +75,7 @@ void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 
 ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject)
 {
-    UObject* Outer;
-
-    if (InSelfObject)
-        Outer = InSelfObject->GetOuter();
-    else if (InOwner)
-        Outer = InOwner->GetOuter();
-    else
-        Outer = nullptr;
-
-    if (!Outer)
-        Outer = GetTransientPackage();
-
-    const auto Ret = NewObject<ULuaDelegateHandler>(Outer);
+    const auto Ret = NewObject<ULuaDelegateHandler>();
     Ret->Env = InEnv->AsShared();
     Ret->LuaRef = InLuaRef;
     Ret->SelfObject = InSelfObject ? InSelfObject : InOwner;

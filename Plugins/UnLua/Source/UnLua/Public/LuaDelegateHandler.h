@@ -38,6 +38,8 @@ public:
 
     void AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate);
 
+    virtual UWorld* GetWorld() const override;
+
     virtual void ProcessEvent(UFunction* Function, void* Parms) override;
 
     void RemoveFrom(FMulticastDelegateProperty* InProperty, void* InDelegate);
