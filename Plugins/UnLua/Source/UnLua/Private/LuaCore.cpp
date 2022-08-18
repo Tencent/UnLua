@@ -842,6 +842,29 @@ int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &
 }
 
 /**
+ * Get Lua instance for a UObject
+ */
+bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object)
+{
+    if (!Object)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return false;
+    }
+
+    lua_getfield(L, LUA_REGISTRYINDEX, "UnLua_ObjectMap");
+    lua_pushlightuserdata(L, Object);
+    int32 Type = lua_rawget(L, -2);
+    if (Type != LUA_TNIL)
+    {
+        lua_remove(L, -2);
+        return true;
+    }
+    lua_pop(L, 2);
+    return false;
+}
+
+/**
  * Push a Lua function (by a function name) and push a UObject instance as its first parameter
  */
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName)
