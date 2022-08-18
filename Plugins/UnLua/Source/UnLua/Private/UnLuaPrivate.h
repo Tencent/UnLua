@@ -21,7 +21,7 @@
     {\
     	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
         luaL_traceback(L, L, "", 0); \
-        UE_LOG(LogUnLua, Log, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
+        UE_LOG(LogUnLua, Log, TEXT("%s%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
         lua_pop(L,1); \
     }
 
@@ -29,7 +29,7 @@
     {\
     	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
         luaL_traceback(L, L, "", 0); \
-        UE_LOG(LogUnLua, Warning, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
+        UE_LOG(LogUnLua, Warning, TEXT("%s%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
         lua_pop(L,1); \
     }
 
@@ -37,7 +37,7 @@
     {\
     	FString LogMsg = FString::Printf(Format, ##__VA_ARGS__);\
         luaL_traceback(L, L, "", 0); \
-        UE_LOG(LogUnLua, Error, TEXT("%s\n%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
+        UE_LOG(LogUnLua, Error, TEXT("%s%s"),*LogMsg,UTF8_TO_TCHAR(lua_tostring(L,-1))); \
         lua_pop(L,1); \
     }
 
