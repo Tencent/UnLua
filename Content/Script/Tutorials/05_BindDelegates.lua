@@ -5,11 +5,9 @@
     绑定/解绑成对出现，是编写代码的良好习惯
 ]]--
 
-require "UnLua"
-
 local FLinearColor = UE.FLinearColor
 
-local M = Class()
+local M = UnLua.Class()
 
 function M:Construct()
     self.ClickMeButton.OnClicked:Add(self, self.OnButtonClicked)

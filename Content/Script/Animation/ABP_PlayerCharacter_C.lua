@@ -1,13 +1,12 @@
-require "UnLua"
+---@type ABP_PlayerCharacter_C
+local M = UnLua.Class()
 
-local ABP_PlayerCharacter_C = Class()
-
-function ABP_PlayerCharacter_C:AnimNotify_NotifyPhysics()
+function M:AnimNotify_NotifyPhysics()
 	local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 	BPI_Interfaces.ChangeToRagdoll(self.Pawn)
 end
 
-function ABP_PlayerCharacter_C:BlueprintBeginPlay()
+function M:BlueprintBeginPlay()
 	self.Velocity = UE.FVector()
 	self.ForwardVec = UE.FVector()
 	self.RightVec = UE.FVector()
@@ -15,7 +14,7 @@ function ABP_PlayerCharacter_C:BlueprintBeginPlay()
 	self.Pawn = self:TryGetPawnOwner()
 end
 
-function ABP_PlayerCharacter_C:BlueprintUpdateAnimation(DeltaTimeX)
+function M:BlueprintUpdateAnimation(DeltaTimeX)
 	local Pawn = self:TryGetPawnOwner(self.Pawn)
 	if not Pawn then
 		return
@@ -51,4 +50,4 @@ function ABP_PlayerCharacter_C:BlueprintUpdateAnimation(DeltaTimeX)
 	end
 end
 
-return ABP_PlayerCharacter_C
+return M

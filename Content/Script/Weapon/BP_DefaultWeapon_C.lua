@@ -1,8 +1,7 @@
-require "UnLua"
+---@type BP_WeaponBase_C
+local M = UnLua.Class("Weapon.BP_WeaponBase_C")
 
-local BP_DefaultWeapon_C = Class("Weapon.BP_WeaponBase_C")
-
-function BP_DefaultWeapon_C:UserConstructionScript()
+function M:UserConstructionScript()
 	self.Super.UserConstructionScript(self)
 	self.InfiniteAmmo = true
 	self.ProjectileClass = UE.UClass.Load("/Game/Core/Blueprints/Weapon/BP_DefaultProjectile.BP_DefaultProjectile_C")
@@ -10,7 +9,7 @@ function BP_DefaultWeapon_C:UserConstructionScript()
 	self.World = self:GetWorld()
 end
 
-function BP_DefaultWeapon_C:SpawnProjectile()
+function M:SpawnProjectile()
 	local Transform = self:GetFireInfo()
 	local R = UE.UKismetMathLibrary.RandomFloat()
 	local G = UE.UKismetMathLibrary.RandomFloat()
@@ -20,4 +19,4 @@ function BP_DefaultWeapon_C:SpawnProjectile()
 	self.World:SpawnActor(self.ProjectileClass, Transform, UE.ESpawnActorCollisionHandlingMethod.AlwaysSpawn, self, self.Instigator, "Weapon.BP_DefaultProjectile_C", BaseColor)
 end
 
-return BP_DefaultWeapon_C
+return M

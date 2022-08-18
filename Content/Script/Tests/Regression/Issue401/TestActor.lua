@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 function M:Test1(Array)
     return Array:Length()

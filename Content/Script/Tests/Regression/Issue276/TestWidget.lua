@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 local function run(self)
     local action = NewObject(UE.UUnLuaLatentAction, self)

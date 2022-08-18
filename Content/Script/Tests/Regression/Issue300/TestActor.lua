@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     Result1 = 10

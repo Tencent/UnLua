@@ -1,6 +1,5 @@
-require "UnLua"
-
-local M = Class()
+---@type UTPSGameInstance
+local M = UnLua.Class()
 
 function M:ReceiveInit()
 	print("TPSGameInstance:ReceiveInit")

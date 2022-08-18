@@ -11,11 +11,9 @@
     Content/Script/Tutorials/ChatCharacter.lua
 ]] --
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     if not self:HasAuthority() then

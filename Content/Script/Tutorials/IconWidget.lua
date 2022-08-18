@@ -1,10 +1,9 @@
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 local FVector2D = UE.FVector2D
 local FLinearColor = UE.FLinearColor
 
-local M = Class()
+---@type IconWidget_C
+local M = UnLua.Class()
 
 function M:RandomPosition()
     local x = math.random(0, 1920)

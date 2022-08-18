@@ -1,10 +1,9 @@
-require "UnLua"
-
-local BP_WeaponBase_C = Class()
+---@type BP_WeaponBase_C
+local M = UnLua.Class()
 
 local EFireType = {	FT_Projectile = 0, FT_InstantHit = 1 }
 
-function BP_WeaponBase_C:UserConstructionScript()
+function M:UserConstructionScript()
 	self.IsFiring = false
 	self.InfiniteAmmo = false
 	self.FireInterval = 0.2
@@ -16,24 +15,24 @@ function BP_WeaponBase_C:UserConstructionScript()
 	self.AimingFOV = 45.0
 end
 
-function BP_WeaponBase_C:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	self.CurrentAmmo = self.MaxAmmo
 end
 
-function BP_WeaponBase_C:StartFire()
+function M:StartFire()
 	self.IsFiring = true
 	self:FireAmmunition()
-	self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({self, BP_WeaponBase_C.Refire}, self.FireInterval, true)
+	self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({self, M.Refire}, self.FireInterval, true)
 end
 
-function BP_WeaponBase_C:StopFire()
+function M:StopFire()
 	if self.IsFiring then
 		self.IsFiring = false
 		UE.UKismetSystemLibrary.K2_ClearTimerHandle(self, self.TimerHandle)
 	end
 end
 
-function BP_WeaponBase_C:FireAmmunition()
+function M:FireAmmunition()
 	self:ConsumeAmmo()
 	self:PlayWeaponAnimation()
 	self:PlayMuzzleEffect()
@@ -45,31 +44,31 @@ function BP_WeaponBase_C:FireAmmunition()
 	end
 end
 
-function BP_WeaponBase_C:ConsumeAmmo()
+function M:ConsumeAmmo()
 	if not self.InfiniteAmmo then
 		local Ammo = self.CurrentAmmo - self.AmmoPerShot
 		self.CurrentAmmo = math.max(Ammo, 0)
 	end
 end
 
-function BP_WeaponBase_C:PlayWeaponAnimation()
+function M:PlayWeaponAnimation()
 end
 
-function BP_WeaponBase_C:PlayMuzzleEffect()
+function M:PlayMuzzleEffect()
 end
 
-function BP_WeaponBase_C:PlayFireSound()
+function M:PlayFireSound()
 end
 
-function BP_WeaponBase_C:ProjectileFire()
+function M:ProjectileFire()
 	self:SpawnProjectile()
 end
 
-function BP_WeaponBase_C:SpawnProjectile()
+function M:SpawnProjectile()
 	return nil
 end
 
-function BP_WeaponBase_C:InstantFire()
+function M:InstantFire()
 	local Transform = self:GetFireInfo()
 	local Start = Transform.Translation
 	local ForwardVector = Transform.Rotation:GetForwardVector()
@@ -83,7 +82,7 @@ function BP_WeaponBase_C:InstantFire()
 	end
 end
 
-function BP_WeaponBase_C:GetFireInfo()
+function M:GetFireInfo()
 	local UBPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 	local TraceStart, TraceDirection = UBPI_Interfaces.GetWeaponTraceInfo(self.Instigator)
 	local Delta = TraceDirection * self.WeaponTraceDistance
@@ -103,15 +102,15 @@ function BP_WeaponBase_C:GetFireInfo()
 	return Transform
 end
 
-function BP_WeaponBase_C:Refire()
+function M:Refire()
 	local bHasAmmo = self:HasAmmo()
 	if bHasAmmo and self.IsFiring then
 		self:FireAmmunition()
 	end
 end
 
-function BP_WeaponBase_C:HasAmmo()
+function M:HasAmmo()
 	return self.InfiniteAmmo or self.CurrentAmmo > 0
 end
 
-return BP_WeaponBase_C
+return M

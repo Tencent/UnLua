@@ -1,22 +1,21 @@
-require "UnLua"
+---@type BP_AICharacter_C
+local M = UnLua.Class("BP_CharacterBase_C")
 
-local BP_AICharacter_C = Class("BP_CharacterBase_C")
-
-function BP_AICharacter_C:Initialize(Initializer)
+function M:Initialize(Initializer)
 	self.Super.Initialize(self)
 	self.Damage = 128.0
 	self.DamageType = UE.UDamageType
 end
 
---function BP_AICharacter_C:UserConstructionScript()
+--function M:UserConstructionScript()
 --end
 
-function BP_AICharacter_C:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	self.Super.ReceiveBeginPlay(self)
-	self.Sphere.OnComponentBeginOverlap:Add(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
+	self.Sphere.OnComponentBeginOverlap:Add(self, M.OnComponentBeginOverlap_Sphere)
 end
 
-function BP_AICharacter_C:Died_Multicast_RPC(DamageType)
+function M:Died_Multicast_RPC(DamageType)
 	self.Super.Died_Multicast_RPC(self, DamageType)
 	self.Sphere:SetCollisionEnabled(UE.ECollisionEnabled.NoCollision)
 	local NewLocation = UE.FVector(0.0, 0.0, self.CapsuleComponent.CapsuleHalfHeight)
@@ -28,10 +27,10 @@ function BP_AICharacter_C:Died_Multicast_RPC(DamageType)
 		local BPI_Interfaces = UE.UClass.Load("/Game/Core/Blueprints/BPI_Interfaces.BPI_Interfaces_C")
 		BPI_Interfaces.NotifyEnemyDied(GameMode)
 	end
-	--self.Sphere.OnComponentBeginOverlap:Remove(self, BP_AICharacter_C.OnComponentBeginOverlap_Sphere)
+	--self.Sphere.OnComponentBeginOverlap:Remove(self, M.OnComponentBeginOverlap_Sphere)
 end
 
-function BP_AICharacter_C:OnComponentBeginOverlap_Sphere(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
+function M:OnComponentBeginOverlap_Sphere(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
 	local BP_PlayerCharacter = UE.UClass.Load("/Game/Core/Blueprints/Player/BP_PlayerCharacter.BP_PlayerCharacter_C")
 	local PlayerCharacter = OtherActor:Cast(BP_PlayerCharacter)
 	if PlayerCharacter then
@@ -40,4 +39,4 @@ function BP_AICharacter_C:OnComponentBeginOverlap_Sphere(OverlappedComponent, Ot
 	end
 end
 
-return BP_AICharacter_C
+return M

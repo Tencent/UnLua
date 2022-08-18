@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 Result = 0
 

@@ -5,11 +5,9 @@
     本脚本由 "Content/Tutorials/01_HelloWorld/HelloWorld.map" 的关卡蓝图绑定
 ]]
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 -- 所有绑定到Lua的对象初始化时都会调用Initialize的实例方法
 function M:Initialize()

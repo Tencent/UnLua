@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 function M:InitState(Parent, Name)
     self.Name = Name

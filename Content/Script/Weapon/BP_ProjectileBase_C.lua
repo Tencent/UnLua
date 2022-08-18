@@ -1,18 +1,17 @@
-require "UnLua"
+---@type BP_ProjectileBase_C
+local M = UnLua.Class()
 
-local BP_ProjectileBase_C = Class()
-
-function BP_ProjectileBase_C:UserConstructionScript()
+function M:UserConstructionScript()
 	self.Damage = 128.0
 	self.DamageType = nil
-	self.Sphere.OnComponentHit:Add(self, BP_ProjectileBase_C.OnComponentHit_Sphere)
+	self.Sphere.OnComponentHit:Add(self, M.OnComponentHit_Sphere)
 end
 
-function BP_ProjectileBase_C:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	self:SetLifeSpan(4.0)
 end
 
-function BP_ProjectileBase_C:OnComponentHit_Sphere(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
+function M:OnComponentHit_Sphere(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit)
 	local BP_CharacterBase = UE.UClass.Load("/Game/Core/Blueprints/BP_CharacterBase.BP_CharacterBase_C")
 	local Character = OtherActor:Cast(BP_CharacterBase)
 	if Character then
@@ -23,8 +22,8 @@ function BP_ProjectileBase_C:OnComponentHit_Sphere(HitComponent, OtherActor, Oth
 	self:K2_DestroyActor()
 end
 
-function BP_ProjectileBase_C:ReceiveDestroyed()
-	--self.Sphere.OnComponentHit:Remove(self, BP_ProjectileBase_C.OnComponentHit_Sphere)
+function M:ReceiveDestroyed()
+	--self.Sphere.OnComponentHit:Remove(self, M.OnComponentHit_Sphere)
 end
 
-return BP_ProjectileBase_C
+return M

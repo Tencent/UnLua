@@ -1,10 +1,8 @@
-require "UnLua"
+local M = UnLua.Class()
 
-local BP_AIController_C = Class()
-
-function BP_AIController_C:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	local BehaviorTree = UE.UObject.Load("/Game/Core/Blueprints/AI/BT_Enemy")
 	self:RunBehaviorTree(BehaviorTree)
 end
 
-return BP_AIController_C
+return M

@@ -1,8 +1,6 @@
-require "UnLua"
+local M = UnLua.Class()
 
-local UnLuaPerformanceTestProxy = Class()
-
-function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	local N = 1000000
 	local Multiplier = 1000000000.0 / N
 	local RawObject = self.Object
@@ -203,4 +201,4 @@ function UnLuaPerformanceTestProxy:ReceiveBeginPlay()
 	LogPerformanceData(Message)
 end
 
-return UnLuaPerformanceTestProxy
+return M
