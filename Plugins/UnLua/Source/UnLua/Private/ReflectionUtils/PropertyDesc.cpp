@@ -1375,8 +1375,7 @@ public:
         if (lua_isfunction(L, IndexInStack))
         {
             FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
-            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
-            lua_pop(L, 1);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, IndexInStack, Delegate, Object);
             return bCopyValue;
         }
 
@@ -1478,8 +1477,7 @@ public:
         if (lua_isfunction(L, IndexInStack))
         {
             FScriptDelegate *Delegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
-            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, -1, Delegate, Object);
-            lua_pop(L, 1);
+            UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Bind(L, IndexInStack, Delegate, Object);
             return bCopyValue;
         }
         
