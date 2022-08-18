@@ -1423,6 +1423,9 @@ int32 Class_Index(lua_State *L)
     if (!Self)
         return 1;
 
+    if (UnLua::LowLevel::IsReleasedPtr(Self))
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *Property->GetName())));
+
     Property->Read(L, Self, false);
     lua_remove(L, -2);
     return 1;
@@ -1466,6 +1469,9 @@ int32 Class_NewIndex(lua_State *L)
             void* Self = GetCppInstance(L, 1);
             if (Self)
             {
+                if (UnLua::LowLevel::IsReleasedPtr(Self))
+                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *Property->GetName())));
+
 #if ENABLE_TYPE_CHECK == 1
                 if (IsPropertyOwnerTypeValid(Property.Get(), Self))
                     Property->Write(L, Self, 3);
