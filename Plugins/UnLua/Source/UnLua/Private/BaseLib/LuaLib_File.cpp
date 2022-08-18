@@ -1,11 +1,5 @@
 #include "UnLuaEx.h"
-#include "Containers/LuaArray.h"
-#include "LuaCore.h"
-#include "lauxlib.h"
-#include "luaconf.h"
 #include "HAL/FileManager.h"
-
-
 
 class UE4File
 {

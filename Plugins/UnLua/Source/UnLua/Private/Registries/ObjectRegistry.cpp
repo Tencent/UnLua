@@ -13,14 +13,13 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "ObjectRegistry.h"
-#include "lauxlib.h"
 #include "LowLevel.h"
 #include "LuaEnv.h"
 #include "UnLuaDelegates.h"
 
 namespace UnLua
 {
-    static const char* ObjectMap = "ObjectMap";
+    static const char* REGISTRY_KEY = "UnLua_ObjectMap";
 
     static int ReleaseSharedPtr(lua_State* L)
     {
@@ -34,7 +33,7 @@ namespace UnLua
     {
         const auto L = Env->GetMainState();
 
-        lua_pushstring(L, ObjectMap); // create weak table 'ObjectMap'
+        lua_pushstring(L, REGISTRY_KEY);
         LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
@@ -63,7 +62,7 @@ namespace UnLua
             return;
         }
 
-        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         const auto Type = lua_rawget(L, -2);
         if (Type == LUA_TNIL)
@@ -90,7 +89,7 @@ namespace UnLua
 
         int OldTop = lua_gettop(L);
 
-        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         lua_newtable(L); // create a Lua table ('INSTANCE')
         PushObjectCore(L, Object); // push UObject ('RAW_UOBJECT')
@@ -150,8 +149,10 @@ namespace UnLua
         if (!ObjectRefs.RemoveAndCopyValue(Object, Ref))
             return;
 
-        RemoveFromObjectMapAndPushToStack(Object);
         const auto L = Env->GetMainState();
+        const auto Top = lua_gettop(L);
+        RemoveFromObjectMapAndPushToStack(Object);
+
         if (Ref == LUA_NOREF)
         {
             if (lua_isnil(L, -1))
@@ -164,7 +165,7 @@ namespace UnLua
             void* Userdata = GetUserdataFast(L, -1, &bTwoLvlPtr);
             check(bTwoLvlPtr)
             *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
-            lua_pop(L, 1);
+            lua_settop(L, Top);
             return;
         }
 
@@ -176,19 +177,14 @@ namespace UnLua
         lua_rawget(L, -2);
         void* Userdata = lua_touserdata(L, -1);
         *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
-        lua_pop(L, 1);
 
-        // INSTANCE.Object = nil
-        lua_pushlightuserdata(L, Object);
-        lua_pushnil(L);
-        lua_rawset(L, -3);
-        lua_pop(L, 1);
+        lua_settop(L, Top);
     }
 
     void FObjectRegistry::RemoveFromObjectMapAndPushToStack(UObject* Object)
     {
         const auto L = Env->GetMainState();
-        lua_getfield(L, LUA_REGISTRYINDEX, ObjectMap);
+        lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         lua_rawget(L, -2);
         lua_pushlightuserdata(L, Object);

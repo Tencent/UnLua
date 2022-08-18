@@ -6,24 +6,22 @@
 -- @DATE ${date} ${time}
 --
 
-require "UnLua"
+---@type ClassName
+local M = UnLua.Class()
 
----@class ClassName
-local TemplateName = Class()
-
---function TemplateName:Initialize(Initializer)
---end
-
---function TemplateName:BlueprintInitializeAnimation()
---end
-
---function TemplateName:BlueprintBeginPlay()
---end
-
---function TemplateName:BlueprintUpdateAnimation(DeltaTimeX)
---end
-
--- function TemplateName:BlueprintPostEvaluateAnimation()
+-- function M:Initialize(Initializer)
 -- end
 
-return TemplateName
+-- function M:BlueprintInitializeAnimation()
+-- end
+
+-- function M:BlueprintBeginPlay()
+-- end
+
+-- function M:BlueprintUpdateAnimation(DeltaTimeX)
+-- end
+
+-- function M:BlueprintPostEvaluateAnimation()
+-- end
+
+return M

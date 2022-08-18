@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.2.4] - 2022-8-19
+- 支持配置按C/C++编译Lua环境
+- 支持Lua启动入口脚本配置
+- 默认自动将 `Content/Script` 目录加入打包设置
+
+### Fixed
+- UE5下的Script编译警告
+- 智能提示文件重复生成 [#498](https://github.com/Tencent/UnLua/issues/498)
+- 智能提示蓝图类型使用 `_C` 后缀 [#493](https://github.com/Tencent/UnLua/pull/493)
+- PIE运行状态下保存对象，可能引起编辑器崩溃 [#489](https://github.com/Tencent/UnLua/pull/489)
+- `bAutoStartup` 配置选项没有生效
+- 当 `UnLuaHotReload.lua` 不存在时会报错
+- 通过C++类绑定的时候使用自动创建脚本功能会崩溃 [#490](https://github.com/Tencent/UnLua/issues/490)
+
+### Changed
+- Lua模版文件中使用 `@type` 注解 [#498](https://github.com/Tencent/UnLua/issues/498)
+- 使用智能指针保存 `UEnum` 类型指针来区分有效性 [#488](https://github.com/Tencent/UnLua/pull/488)
+- Lua源码作为外部第三方模块引入，默认使用C编译
+
 ## [2.2.3] - 2022-7-15
 
 ### Added

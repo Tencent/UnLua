@@ -126,9 +126,7 @@ bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData)
 
 void FUnLuaIntelliSenseGenerator::Export(const UBlueprint* Blueprint)
 {
-    const FString BPName = Blueprint->GetName();
-    const FString Content = UnLua::IntelliSense::Get(Blueprint);
-    SaveFile("/Game", BPName, Content);
+    Export(Blueprint->GeneratedClass);
 }
 
 void FUnLuaIntelliSenseGenerator::Export(const UField* Field)
@@ -138,8 +136,16 @@ void FUnLuaIntelliSenseGenerator::Export(const UField* Field)
 #else
     const UPackage* Package = (UPackage*)Field->GetTypedOuter(UPackage::StaticClass());
 #endif
-    const FString ModuleName = Package->GetName();
-    const FString FileName = UnLua::IntelliSense::GetTypeName(Field);
+    auto ModuleName = Package->GetName();
+    if (!Field->IsNative())
+    {
+        int32 LastSlashIndex;
+        if (ModuleName.FindLastChar('/', LastSlashIndex))
+            ModuleName.LeftInline(LastSlashIndex);
+    }
+    FString FileName = UnLua::IntelliSense::GetTypeName(Field);
+    if (FileName.EndsWith("_C"))
+        FileName.LeftChopInline(2);
     const FString Content = UnLua::IntelliSense::Get(Field);
     SaveFile(ModuleName, FileName, Content);
 }

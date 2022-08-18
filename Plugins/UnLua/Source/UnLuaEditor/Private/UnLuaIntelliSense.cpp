@@ -274,7 +274,7 @@ namespace UnLua
             if (!Field)
                 return "";
             if (!Field->IsNative() && Field->GetName().EndsWith("_C"))
-                return Field->GetName().LeftChop(2);
+                return Field->GetName();
             const UStruct* Struct = Cast<UStruct>(Field);
             if (Struct)
                 return Struct->GetPrefixCPP() + Struct->GetName();
@@ -342,6 +342,10 @@ namespace UnLua
             if (CastField<FObjectProperty>(Property))
             {
                 const UClass* Class = ((FObjectProperty*)Property)->PropertyClass;
+                if (Cast<UBlueprintGeneratedClass>(Class))
+                {
+                    return FString::Printf(TEXT("%s"), *Class->GetName());
+                }
                 return FString::Printf(TEXT("%s%s"), Class->GetPrefixCPP(), *Class->GetName());
             }
 

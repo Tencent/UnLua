@@ -6,21 +6,19 @@
 -- @DATE ${date} ${time}
 --
 
-require "UnLua"
+---@type ClassName
+local M = UnLua.Class()
 
----@class ClassName
-local TemplateName = Class()
-
---function TemplateName:Initialize(Initializer)
+--function M:Initialize(Initializer)
 --end
 
---function TemplateName:PreConstruct(IsDesignTime)
+--function M:PreConstruct(IsDesignTime)
 --end
 
--- function TemplateName:Construct()
+-- function M:Construct()
 -- end
 
---function TemplateName:Tick(MyGeometry, InDeltaTime)
+--function M:Tick(MyGeometry, InDeltaTime)
 --end
 
-return TemplateName
+return M

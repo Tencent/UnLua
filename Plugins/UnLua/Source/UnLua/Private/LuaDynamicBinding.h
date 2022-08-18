@@ -15,7 +15,7 @@
 #pragma once
 
 #include "CoreUObject.h"
-#include "lauxlib.h"
+#include "lua.hpp"
 
 struct FLuaDynamicBinding
 {

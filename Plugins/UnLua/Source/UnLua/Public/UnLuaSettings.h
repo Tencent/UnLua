@@ -28,6 +28,10 @@ class UNLUA_API UUnLuaSettings : public UObject
 public:
     UUnLuaSettings(const FObjectInitializer& ObjectInitializer);
 
+    /** Entry module name of lua env. Leave it empty to skip execution on startup. */
+    UPROPERTY(Config, EditAnywhere, Category="Runtime")
+    FString StartupModuleName = TEXT("");
+
     /** Prevent from infinite loops in lua. Timeout in seconds. */
     UPROPERTY(Config, EditAnywhere, Category="Runtime")
     int32 DeadLoopCheck = 0;

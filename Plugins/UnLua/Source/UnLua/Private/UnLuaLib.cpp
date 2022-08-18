@@ -1,6 +1,4 @@
-#include "lauxlib.h"
 #include "UnLuaLib.h"
-
 #include "LowLevel.h"
 #include "LuaEnv.h"
 #include "UnLuaBase.h"
@@ -214,7 +212,7 @@ namespace UnLua
         {
             lua_register(L, "print", LogInfo);
             luaL_requiref(L, "UnLua", LuaOpen, 1);
-            luaL_dostring(L, "_G.require = require('UnLuaHotReload').require");
+            luaL_dostring(L, "pcall(function() _G.require = require('UnLuaHotReload').require end)");
             LegacySupport(L);
             return 1;
         }

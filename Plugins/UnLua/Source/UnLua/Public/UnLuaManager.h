@@ -15,7 +15,7 @@
 #pragma once
 
 #include "InputCoreTypes.h"
-#include "lauxlib.h"
+#include "lua.hpp"
 #include "UnLuaCompatibility.h"
 #include "UnLuaManager.generated.h"
 

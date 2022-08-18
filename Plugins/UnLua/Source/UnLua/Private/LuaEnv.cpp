@@ -20,10 +20,8 @@
 #include "LowLevel.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
-#include "lstate.h"
 #include "LuaCore.h"
 #include "LuaDynamicBinding.h"
-#include "lualib.h"
 #include "UELib.h"
 #include "ObjectReferencer.h"
 #include "UnLuaDelegates.h"
@@ -31,6 +29,7 @@
 #include "UnLuaLegacy.h"
 #include "UnLuaLib.h"
 #include "UnLuaSettings.h"
+#include "lstate.h"
 
 namespace UnLua
 {
@@ -43,6 +42,7 @@ namespace UnLua
     {
         const auto Settings = GetDefault<UUnLuaSettings>();
         ModuleLocator = Settings->ModuleLocatorClass.GetDefaultObject();
+        ensureMsgf(ModuleLocator, TEXT("Invalid lua module locator, lua binding will not work properly. please check unlua runtime settings."));
 
         RegisterDelegates();
 
@@ -120,7 +120,11 @@ namespace UnLua
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
 
-        DoString("pcall(require,'Main')", "Main.lua");
+        if (!Settings->StartupModuleName.IsEmpty())
+        {
+            const auto Chunk = FString::Printf(TEXT("require '%s'"), *Settings->StartupModuleName);
+            DoString(Chunk);
+        }
     }
 
     FLuaEnv::~FLuaEnv()
@@ -221,8 +225,16 @@ namespace UnLua
 
         for (UInputComponent* InputComponent : CandidateInputComponents)
         {
-            if (!InputComponent->IsRegistered() || InputComponent->IsPendingKill())
+            if (!InputComponent->IsRegistered())
                 continue;
+
+#if ENGINE_MAJOR_VERSION >=5
+            if (!IsValid(InputComponent))
+                continue;
+#else
+            if (InputComponent->IsPendingKill())
+                continue;
+#endif
 
             AActor* Actor = Cast<AActor>(InputComponent->GetOuter());
             Manager->ReplaceInputs(Actor, InputComponent); // try to replace/override input events
@@ -268,6 +280,9 @@ namespace UnLua
         if (Class->GetName().Contains(TEXT("SKEL_")))
             return false;
 
+        if (!ensureMsgf(ModuleLocator, TEXT("Invalid lua module locator, lua binding will not work properly. please check unlua runtime settings.")))
+            return false;
+
         const auto ModuleName = ModuleLocator->Locate(Object);
         if (ModuleName.IsEmpty())
             return false;
@@ -284,13 +299,24 @@ namespace UnLua
 
     bool FLuaEnv::DoString(const FString& Chunk, const FString& ChunkName)
     {
-        // TODO: env support
-        // TODO: return value support
+        const FTCHARToUTF8 ChunkUTF8(*Chunk);
+        const FTCHARToUTF8 ChunkNameUTF8(*ChunkName);
         const auto Guard = GetDeadLoopCheck()->MakeGuard();
-        bool bOk = !luaL_dostring(L, TCHAR_TO_UTF8(*Chunk));
-        if (bOk)
-            return bOk;
-        ReportLuaCallError(L);
+        lua_pushcfunction(L, ReportLuaCallError);
+        const auto MsgHandlerIdx = lua_gettop(L);
+        if (!LoadBuffer(ChunkUTF8.Get(), ChunkUTF8.Length(), ChunkNameUTF8.Get()))
+        {
+            lua_pop(L, 1);
+            return false;
+        }
+
+        const auto Result = lua_pcall(L, 0, LUA_MULTRET, MsgHandlerIdx);
+        if (Result == LUA_OK)
+        {
+            lua_remove(L, MsgHandlerIdx);
+            return true;
+        }
+        lua_pop(L, lua_gettop(L) - MsgHandlerIdx + 1);
         return false;
     }
 
