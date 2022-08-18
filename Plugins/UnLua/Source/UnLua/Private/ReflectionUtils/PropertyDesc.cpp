@@ -346,18 +346,24 @@ public:
 
     virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCopyValue) const override
     {
+        auto Object = UnLua::GetUObject(L, IndexInStack, false);
+        if (UnLua::LowLevel::IsReleasedPtr(Object))
+        {
+            UNLUA_LOGWARNING(L, LogUnLua, Warning, TEXT("attempt to set property %s with released object"), *GetName());
+            Object = nullptr;
+        }
+
         if (MetaClass)
         {
-            UClass *Value = Cast<UClass>(UnLua::GetUObject(L, IndexInStack));
-            if (Value && !Value->IsChildOf(MetaClass))
+            UClass *Class = Cast<UClass>(Object);
+            if (Class && !Class->IsChildOf(MetaClass))
             {
-                Value = nullptr;
+                Class = nullptr;
             }
-            ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, Value);
+            ObjectBaseProperty->SetObjectPropertyValue(ValuePtr, Object);
         }
         else
         {
-            UObject* Object = UnLua::GetUObject(L, IndexInStack);
 #if ENABLE_TYPE_CHECK == 1
             if (Object)
             {
