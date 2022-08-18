@@ -136,6 +136,12 @@ namespace UnLua
         return 1;
     }
 
+    FORCEINLINE int32 Push(lua_State *L, const TCHAR *V, bool bCopy = false)
+    {
+        lua_pushstring(L, TCHAR_TO_UTF8(V));
+        return 1;
+    }
+
     FORCEINLINE int32 Push(lua_State *L, FString &V, bool bCopy = false)
     {
         lua_pushstring(L, TCHAR_TO_UTF8(*V));
@@ -558,6 +564,11 @@ namespace UnLua
     FORCEINLINE const char* Get(lua_State *L, int32 Index, TType<const char*>)
     {
         return lua_tostring(L, Index);
+    }
+
+    FORCEINLINE const TCHAR* Get(lua_State *L, int32 Index, TType<const TCHAR*>)
+    {
+        return UTF8_TO_TCHAR(lua_tostring(L, Index));
     }
 
     FORCEINLINE FString Get(lua_State *L, int32 Index, TType<FString>)

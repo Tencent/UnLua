@@ -121,18 +121,6 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool (*TraverseWo
 bool PeekTableElement(lua_State *L, void *Userdata);
 
 /**
- * Lua global functions
- */
-int32 Global_GetUProperty(lua_State *L);
-int32 Global_SetUProperty(lua_State *L);
-int32 Global_LoadObject(lua_State *L);
-int32 Global_LoadClass(lua_State *L);
-int32 Global_NewObject(lua_State *L);
-UNLUA_API int32 Global_Print(lua_State *L);
-int32 Global_AddToClassWhiteSet(lua_State* L);
-int32 Global_RemoveFromClassWhiteSet(lua_State* L);
-
-/**
  * Functions to handle UEnum
  */
 int32 Enum_Index(lua_State *L);

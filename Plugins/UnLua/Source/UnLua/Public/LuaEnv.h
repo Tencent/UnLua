@@ -49,6 +49,8 @@ namespace UnLua
 
         virtual ~FLuaEnv() override;
 
+        static TMap<lua_State*, FLuaEnv*>& GetAll();
+
         static FLuaEnv* FindEnv(const lua_State* L);
 
         static FLuaEnv& FindEnvChecked(const lua_State* L);

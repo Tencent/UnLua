@@ -8,18 +8,19 @@
 
 require "UnLua"
 
+---@class ClassName
 local TemplateName = Class()
 
 --function TemplateName:Initialize(Initializer)
 --end
 
---function TemplateName:PreConstruct(IsDesignTime)
+--function TemplateName:ReceiveBeginPlay()
 --end
 
--- function TemplateName:Construct()
+--function TemplateName:ReceiveEndPlay()
+--end
+
+-- function TemplateName:ReceiveTick(DeltaSeconds)
 -- end
-
---function TemplateName:Tick(MyGeometry, InDeltaTime)
---end
 
 return TemplateName

@@ -17,6 +17,8 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "ToolMenus.h"
 #include "UnLuaSettings.h"
+#include "UnLuaIntelliSense.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -280,32 +282,29 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     }
 
     static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
+    static TArray<UClass*> TemplateClasses =
+    {
+        AActor::StaticClass(),
+        UActorComponent::StaticClass(),
+        UAnimInstance::StaticClass(),
+        UAnimNotifyState::StaticClass(),
+        UUserWidget::StaticClass()
+    };
 
-    FString TemplateName;
-    if (Class->IsChildOf(AActor::StaticClass()))
+    FString TemplateFilePath;
+    for (const auto& TemplateClass : TemplateClasses)
     {
-        // default BlueprintEvents for Actor
-        TemplateName = ContentDir + TEXT("/ActorTemplate.lua");
-    }
-    else if (Class->IsChildOf(UUserWidget::StaticClass()))
-    {
-        // default BlueprintEvents for UserWidget (UMG)
-        TemplateName = ContentDir + TEXT("/UserWidgetTemplate.lua");
-    }
-    else if (Class->IsChildOf(UAnimInstance::StaticClass()))
-    {
-        // default BlueprintEvents for AnimInstance (animation blueprint)
-        TemplateName = ContentDir + TEXT("/AnimInstanceTemplate.lua");
-    }
-    else if (Class->IsChildOf(UActorComponent::StaticClass()))
-    {
-        // default BlueprintEvents for ActorComponent
-        TemplateName = ContentDir + TEXT("/ActorComponentTemplate.lua");
+        if (Class->IsChildOf(TemplateClass))
+        {
+            TemplateFilePath = FString::Printf(TEXT("%s/Template/%s.lua"), *ContentDir, *TemplateClass->GetName());
+            break;
+        }
     }
 
     FString Content;
-    FFileHelper::LoadFileToString(Content, *TemplateName);
-    Content = Content.Replace(TEXT("TemplateName"), *ClassName);
+    FFileHelper::LoadFileToString(Content, *TemplateFilePath);
+    Content = Content.Replace(TEXT("TemplateName"), *ClassName)
+                     .Replace(TEXT("ClassName"), *UnLua::IntelliSense::GetTypeName(Class));
 
     FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }

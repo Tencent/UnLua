@@ -39,7 +39,7 @@ void FUnLuaIntelliSenseGenerator::Initialize()
     if (bInitialized)
         return;
 
-    OutputDir = IPluginManager::Get().FindPlugin("UnLua")->GetBaseDir() + "/Intermediate/";
+    OutputDir = IPluginManager::Get().FindPlugin("UnLua")->GetBaseDir() + "/Intermediate/IntelliSense";
 
     FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
     AssetRegistryModule.Get().OnAssetAdded().AddRaw(this, &FUnLuaIntelliSenseGenerator::OnAssetAdded);
@@ -91,6 +91,7 @@ void FUnLuaIntelliSenseGenerator::UpdateAll()
     if (SlowTask.ShouldCancel())
         return;
     ExportUE(NativeTypes);
+    ExportUnLua();
     SlowTask.EnterProgressFrame();
 }
 
@@ -149,6 +150,19 @@ void FUnLuaIntelliSenseGenerator::ExportUE(const TArray<const UField*> Types)
     SaveFile("", "UE", Content);
 }
 
+void FUnLuaIntelliSenseGenerator::ExportUnLua()
+{
+    const auto ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
+    const auto SrcDir = ContentDir / "IntelliSense";
+    const auto DstDir = OutputDir;
+
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    if (!PlatformFile.DirectoryExists(*SrcDir))
+        return;
+
+    PlatformFile.CopyDirectoryTree(*DstDir, *SrcDir, true);
+}
+
 void FUnLuaIntelliSenseGenerator::CollectTypes(TArray<const UField*>& Types)
 {
     for (TObjectIterator<UClass> It; It; ++It)
@@ -186,7 +200,7 @@ void FUnLuaIntelliSenseGenerator::CollectTypes(TArray<const UField*>& Types)
 void FUnLuaIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FString& FileName, const FString& GeneratedFileContent)
 {
     IFileManager& FileManager = IFileManager::Get();
-    const FString Directory = FString::Printf(TEXT("%sIntelliSense%s"), *OutputDir, *ModuleName);
+    const FString Directory = OutputDir / ModuleName;
     if (!FileManager.DirectoryExists(*Directory))
         FileManager.MakeDirectory(*Directory);
 
@@ -200,7 +214,7 @@ void FUnLuaIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FStr
 void FUnLuaIntelliSenseGenerator::DeleteFile(const FString& ModuleName, const FString& FileName)
 {
     IFileManager& FileManager = IFileManager::Get();
-    const FString Directory = FString::Printf(TEXT("%sIntelliSense/%s"), *OutputDir, *ModuleName);
+    const FString Directory = OutputDir / ModuleName;
     if (!FileManager.DirectoryExists(*Directory))
         FileManager.MakeDirectory(*Directory);
 

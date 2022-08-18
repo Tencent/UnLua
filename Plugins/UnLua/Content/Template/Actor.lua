@@ -8,9 +8,13 @@
 
 require "UnLua"
 
+---@class ClassName
 local TemplateName = Class()
 
 --function TemplateName:Initialize(Initializer)
+--end
+
+--function TemplateName:UserConstructionScript()
 --end
 
 --function TemplateName:ReceiveBeginPlay()
@@ -21,5 +25,14 @@ local TemplateName = Class()
 
 -- function TemplateName:ReceiveTick(DeltaSeconds)
 -- end
+
+--function TemplateName:ReceiveAnyDamage(Damage, DamageType, InstigatedBy, DamageCauser)
+--end
+
+--function TemplateName:ReceiveActorBeginOverlap(OtherActor)
+--end
+
+--function TemplateName:ReceiveActorEndOverlap(OtherActor)
+--end
 
 return TemplateName

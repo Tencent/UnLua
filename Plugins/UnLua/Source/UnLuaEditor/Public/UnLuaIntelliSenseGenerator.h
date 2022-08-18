@@ -47,6 +47,8 @@ private:
 
     void ExportUE(const TArray<const UField*> Types);
 
+    void ExportUnLua();
+
     void CollectTypes(TArray<const UField*> &Types);
     
     // File helper
