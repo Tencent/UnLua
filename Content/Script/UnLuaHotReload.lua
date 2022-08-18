@@ -163,9 +163,6 @@ local function make_sandbox()
         local func, env = load(module_name)
         if func then
             local _, new_module = xpcall(func, load_error_handler, ...)
-            if new_module == nil then
-                new_module = env
-            end
             if loaded_modules[module_name] == nil then
                 loaded_modules[module_name] = new_module
                 package.loaded[module_name] = new_module
