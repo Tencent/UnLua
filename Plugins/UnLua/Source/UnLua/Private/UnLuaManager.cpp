@@ -241,6 +241,9 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
 {
     check(Class);
 
+    if (Class->HasAnyFlags(RF_NeedPostLoad | RF_NeedPostLoadSubobjects))
+        return false;
+
     if (Classes.Contains(Class))
         return true;
 
