@@ -18,11 +18,11 @@ end
 function BP_Game_C:SpawnEnemy()
 	local PlayerCharacter = UE.UGameplayStatics.GetPlayerCharacter(self, 0)
 	if self.AliveEnemies < self.MaxEnemies and PlayerCharacter then
-		UE.UNavigationSystemV1.K2_GetRandomReachablePointInRadius(self, self.SpawnOrigin, self.SpawnLocation, 2000)		--
+		UE.UNavigationSystemV1.K2_GetRandomReachablePointInRadius(self, self.SpawnOrigin, self.SpawnLocation, 2000)
 		self.SpawnLocation.Z = self.SpawnLocation.Z + 100
 		local Target = PlayerCharacter:K2_GetActorLocation()
 		local SpawnRotation = UE.UKismetMathLibrary.FindLookAtRotation(self.SpawnLocation, Target)
-		UE.UAIBlueprintHelperLibrary.SpawnAIFromClass(self, self.AICharacterClass, nil, self.SpawnLocation, SpawnRotation)		--
+		UE.UAIBlueprintHelperLibrary.SpawnAIFromClass(self, self.AICharacterClass, nil, self.SpawnLocation, SpawnRotation)
 		self.AliveEnemies = self.AliveEnemies + 1
 		if self.AliveEnemies > self.MaxEnemies then
 			self.AliveEnemies = self.MaxEnemies
