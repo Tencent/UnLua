@@ -115,6 +115,10 @@ namespace UnLua
 
         void AddBuiltInLoader(const FString InName, lua_CFunction Loader);
 
+        void AddManualObjectReference(UObject* Object);
+
+        void RemoveManualObjectReference(UObject* Object);
+
     protected:
         lua_State* L;
 
