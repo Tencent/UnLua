@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 支持配置按C/C++编译Lua环境
 - 支持Lua启动入口脚本配置
 - 默认自动将 `Content/Script` 目录加入打包设置
+- 增加一些指针对象的合法性检查
+- `UnLua.HotReload` 支持手动指定热重载模块列表
 
 ### Fixed
 - UE5下的Script编译警告
@@ -17,11 +19,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `bAutoStartup` 配置选项没有生效
 - 当 `UnLuaHotReload.lua` 不存在时会报错
 - 通过C++类绑定的时候使用自动创建脚本功能会崩溃 [#490](https://github.com/Tencent/UnLua/issues/490)
+- 修复一些智能提示被过滤了的情况
+- 监听嵌套界面里的组件的事件会导致组件无法被回收
 
 ### Changed
 - Lua模版文件中使用 `@type` 注解 [#498](https://github.com/Tencent/UnLua/issues/498)
 - 使用智能指针保存 `UEnum` 类型指针来区分有效性 [#488](https://github.com/Tencent/UnLua/pull/488)
 - Lua源码作为外部第三方模块引入，默认使用C编译
+- Lua生成模版中统一使用 `UnLua.Class`，并增加类型注解
+- 调整所有LuaLib的异常抛出形式为 `luaL_error` 而不是仅输出错误日志
 
 ## [2.2.3] - 2022-7-15
 
