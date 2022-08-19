@@ -77,9 +77,9 @@ public class Lua : ModuleRules
         PublicDelayLoadDLLs.Add(m_LibName);
         PublicAdditionalLibraries.Add(libPath);
 
-        SetupForRuntimeDependency(dllPath);
+        SetupForRuntimeDependency(dllPath, "Win64");
         if (isDebug)
-            SetupForRuntimeDependency(pdbPath);
+            SetupForRuntimeDependency(pdbPath, "Win64");
     }
 
     private void BuildForAndroid()
@@ -380,12 +380,13 @@ public class Lua : ModuleRules
         return null;
     }
 
-    private void SetupForRuntimeDependency(string fullPath)
+    private void SetupForRuntimeDependency(string fullPath, string platform)
     {
         if (!File.Exists(fullPath))
             return;
         var fileName = Path.GetFileName(fullPath);
-        RuntimeDependencies.Add("$(BinaryOutputDir)/" + fileName, fullPath);
+        var dstPath = Path.Combine("$(ProjectDir)", "Binaries", platform, fileName);
+        RuntimeDependencies.Add(dstPath, fullPath);
     }
 
     private readonly string m_LuaVersion;
