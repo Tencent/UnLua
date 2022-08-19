@@ -601,7 +601,12 @@ local function reload_modules(module_names)
     sandbox.exit()
 end
 
-function M.reload()
+function M.reload(module_names)
+    if module_names then
+        reload_modules(module_names)
+        return
+    end
+
     local modified_modules = {}
 
     for module_name, time in pairs(loaded_module_times) do
