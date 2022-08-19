@@ -1,6 +1,5 @@
-require "UnLua"
-
-local M = Class()
+---@type BP_UnLuaTestStubActor_C
+local M = UnLua.Class()
 
 function M:Initialize()
     self.InitializeCalled = true

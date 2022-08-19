@@ -46,8 +46,7 @@ static int32 FLinearColor_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
     return 1;
@@ -57,17 +56,11 @@ static int32 FLinearColor_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FLinearColor* V = (FLinearColor*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FLinearColor!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FLinearColor");
 
     UnLua::TFieldSetter4<float>::Set(L, NumParams, &V->R);
     return 0;

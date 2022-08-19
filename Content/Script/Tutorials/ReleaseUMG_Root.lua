@@ -1,6 +1,5 @@
-require "UnLua"
-
-local M = Class()
+---@type ReleaseUMG_Root_C
+local M = UnLua.Class()
 
 function M:Construct()
     print("Root Construct")

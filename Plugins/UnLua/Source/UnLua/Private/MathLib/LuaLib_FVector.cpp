@@ -44,8 +44,7 @@ static int32 FVector_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
     return 1;
@@ -55,17 +54,11 @@ static int32 FVector_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector* V = (FVector*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector");
 
     UnLua::TFieldSetter3<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
@@ -75,18 +68,11 @@ static int32 FVector_Normalize(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector* V = (FVector*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
-
+        return luaL_error(L, "invalid FVector");
 
     if (NumParams == 1)
     {
@@ -99,8 +85,7 @@ static int32 FVector_Normalize(lua_State* L)
     }
     else
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
+        return luaL_error(L, "invalid parameters");
     }
 
     return 1;
@@ -110,10 +95,7 @@ static int32 FVector_UNM(lua_State* L)
 {
     FVector* V = (FVector*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FVector!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FVector");
 
     void* Userdata = NewTypedUserdata(L, FVector);
     new(Userdata) FVector(-(*V));

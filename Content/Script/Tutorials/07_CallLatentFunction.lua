@@ -2,11 +2,9 @@
     说明：在Lua协程中可以方便的使用UE4的Latent函数实现延迟执行的效果
 ]] --
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 local function run(self, name)
     Screen.Print(string.format("协程%s：启动", name))

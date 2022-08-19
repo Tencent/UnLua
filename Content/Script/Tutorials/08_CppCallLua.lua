@@ -14,11 +14,9 @@
     Source\TPSProject\TutorialBlueprintFunctionLibrary.cpp
 ]]--
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     local msg =

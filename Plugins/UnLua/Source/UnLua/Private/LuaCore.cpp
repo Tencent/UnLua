@@ -842,6 +842,29 @@ int32 GetDelegateInfo(lua_State *L, int32 Index, UObject* &Object, const void* &
 }
 
 /**
+ * Get Lua instance for a UObject
+ */
+bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object)
+{
+    if (!Object)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid object!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return false;
+    }
+
+    lua_getfield(L, LUA_REGISTRYINDEX, "UnLua_ObjectMap");
+    lua_pushlightuserdata(L, Object);
+    int32 Type = lua_rawget(L, -2);
+    if (Type != LUA_TNIL)
+    {
+        lua_remove(L, -2);
+        return true;
+    }
+    lua_pop(L, 2);
+    return false;
+}
+
+/**
  * Push a Lua function (by a function name) and push a UObject instance as its first parameter
  */
 int32 PushFunction(lua_State *L, UObjectBaseUtility *Object, const char *FunctionName)
@@ -1423,6 +1446,9 @@ int32 Class_Index(lua_State *L)
     if (!Self)
         return 1;
 
+    if (UnLua::LowLevel::IsReleasedPtr(Self))
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *Property->GetName())));
+
     Property->Read(L, Self, false);
     lua_remove(L, -2);
     return 1;
@@ -1466,6 +1492,9 @@ int32 Class_NewIndex(lua_State *L)
             void* Self = GetCppInstance(L, 1);
             if (Self)
             {
+                if (UnLua::LowLevel::IsReleasedPtr(Self))
+                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *Property->GetName())));
+
 #if ENABLE_TYPE_CHECK == 1
                 if (IsPropertyOwnerTypeValid(Property.Get(), Self))
                     Property->Write(L, Self, 3);

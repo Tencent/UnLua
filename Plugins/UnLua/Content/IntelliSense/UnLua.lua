@@ -6,8 +6,9 @@ local UnLua = {}
 function UnLua.Class(SuperClass)
 end
 
----Reload all modified modules
-function UnLua.HotReload()
+---Hot reload lua modules
+---@param ModuleNames table @[opt]Specify a list of module names that need hot reloading. If this parameter is not passed, it will be obtained by default according to the file modification timestamp
+function UnLua.HotReload(ModuleNames)
 end
 
 _G.UnLua = UnLua

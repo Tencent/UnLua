@@ -10,11 +10,9 @@
     Source\TPSProject\TutorialBlueprintFunctionLibrary.cpp
 ]]
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 local function print_intro()
     local msg =

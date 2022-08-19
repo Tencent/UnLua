@@ -19,11 +19,9 @@
     TMap        Plugins\UnLua\Source\UnLua\Private\BaseLib\LuaLib_Map.cpp
 ]] --
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 local function print_intro()
     local msg =

@@ -84,6 +84,7 @@ void FUnLuaIntelliSenseGenerator::UpdateAll()
     {
         if (SlowTask.ShouldCancel())
             break;
+
         Export(Type);
         SlowTask.EnterProgressFrame();
     }

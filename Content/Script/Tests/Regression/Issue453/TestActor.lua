@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     local Struct1 = UE.UObject.Load("/UnLuaTestSuite/Tests/Regression/Issue453/Struct_Issue453")

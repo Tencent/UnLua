@@ -38,8 +38,7 @@ static int32 FQuat_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
 
@@ -50,17 +49,11 @@ static int32 FQuat_Normalize(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FQuat* V = (FQuat*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FQuat!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FQuat");
 
     if (NumParams == 1)
     {
@@ -73,7 +66,7 @@ static int32 FQuat_Normalize(lua_State* L)
     }
     else
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return luaL_error(L, "invalid parameters");
     }
 
     return 0;
@@ -87,17 +80,12 @@ static int32 FQuat_FromAxisAndAngle(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 2)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FVector* Axis = (FVector*)GetCppInstanceFast(L, 1);
     if (!Axis)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid Axis!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid Axis");
+
     const float Angle = lua_tonumber(L, 2);
 
     if (NumParams > 2)
@@ -120,17 +108,12 @@ static int32 FQuat_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FQuat* V = (FQuat*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FQuat!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FQuat");
+
     UnLua::TFieldSetter4<unluaReal>::Set(L, NumParams, &V->X);
     return 0;
 }

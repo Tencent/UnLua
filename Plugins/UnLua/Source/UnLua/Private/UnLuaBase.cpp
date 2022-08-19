@@ -366,8 +366,15 @@ namespace UnLua
 
             const auto LuaArray = Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
             FScriptArray *DestScriptArray = LuaArray->GetContainerPtr();       // create a new FScriptArray
+
+#if ENGINE_MAJOR_VERSION >=5
+            DestScriptArray->Empty(Num, ElementSize, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+            DestScriptArray->Add(Num, ElementSize, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
+#else
             DestScriptArray->Empty(Num, ElementSize);
             DestScriptArray->Add(Num, ElementSize);
+#endif
+
             if (Num)
             {
                 uint8 *SrcData = (uint8*)ScriptArray->GetData();

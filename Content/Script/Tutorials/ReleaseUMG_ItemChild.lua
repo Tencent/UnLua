@@ -1,6 +1,5 @@
-require "UnLua"
-
-local M = Class()
+---@type ReleaseUMG_ItemChild_C
+local M = UnLua.Class()
 
 function M:Construct()
     print("ItemChild Construct")

@@ -1,8 +1,7 @@
-require "UnLua"
+---@type BP_CharacterBase_C
+local M = UnLua.Class()
 
-local BP_CharacterBase_C = Class()
-
-function BP_CharacterBase_C:Initialize(Initializer)
+function M:Initialize(Initializer)
 	self.IsDead = false
 	self.BodyDuration = 3.0
 	self.BoneName = nil
@@ -11,10 +10,10 @@ function BP_CharacterBase_C:Initialize(Initializer)
 	self.MaxHealth = Health
 end
 
---function BP_CharacterBase_C:UserConstructionScript()
+--function M:UserConstructionScript()
 --end
 
-function BP_CharacterBase_C:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	local Weapon = self:SpawnWeapon()
 	if Weapon then
 		Weapon:K2_AttachToComponent(self.WeaponPoint, nil, UE.EAttachmentRule.SnapToTarget, UE.EAttachmentRule.SnapToTarget, UE.EAttachmentRule.SnapToTarget)
@@ -22,43 +21,43 @@ function BP_CharacterBase_C:ReceiveBeginPlay()
 	end
 end
 
-function BP_CharacterBase_C:SpawnWeapon()
+function M:SpawnWeapon()
 	return nil
 end
 
-function BP_CharacterBase_C:StartFire_Server_RPC()
+function M:StartFire_Server_RPC()
 	self:StartFire_Multicast()
 end
 
-function BP_CharacterBase_C:StartFire_Multicast_RPC()
+function M:StartFire_Multicast_RPC()
 	if self.Weapon then
 		self.Weapon:StartFire()
 	end
 end
 
-function BP_CharacterBase_C:StopFire_Server_RPC()
+function M:StopFire_Server_RPC()
 	self:StopFire_Multicast()
 end
 
-function BP_CharacterBase_C:StopFire_Multicast_RPC()
+function M:StopFire_Multicast_RPC()
 	if self.Weapon then
 		self.Weapon:StopFire()
 	end
 end
 
-function BP_CharacterBase_C:ReceiveAnyDamage(Damage, DamageType, InstigatedBy, DamageCauser)
+function M:ReceiveAnyDamage(Damage, DamageType, InstigatedBy, DamageCauser)
 	if not self.IsDead then
 		local Health = self.Health - Damage
 		self.Health = math.max(Health, 0)
 		if Health <= 0.0 then
 			self:Died_Multicast(DamageType)
-			local co = coroutine.create(BP_CharacterBase_C.Destroy)
+			local co = coroutine.create(M.Destroy)
 			coroutine.resume(co, self, self.BodyDuration)
 		end
 	end
 end
 
-function BP_CharacterBase_C:Died_Multicast_RPC(DamageType)
+function M:Died_Multicast_RPC(DamageType)
 	self.IsDead = true
 	self.CapsuleComponent:SetCollisionEnabled(UE.ECollisionEnabled.NoCollision)
 	self:StopFire()
@@ -68,7 +67,7 @@ function BP_CharacterBase_C:Died_Multicast_RPC(DamageType)
 	end
 end
 
-function BP_CharacterBase_C:Destroy(Duration)
+function M:Destroy(Duration)
 	UE.UKismetSystemLibrary.Delay(self, Duration)
 	if not self:IsValid() then
 		return false
@@ -80,8 +79,8 @@ function BP_CharacterBase_C:Destroy(Duration)
 	self:K2_DestroyActor()
 end
 
-function BP_CharacterBase_C:ChangeToRagdoll()
+function M:ChangeToRagdoll()
 	self.Mesh:SetSimulatePhysics(true)
 end
 
-return BP_CharacterBase_C
+return M

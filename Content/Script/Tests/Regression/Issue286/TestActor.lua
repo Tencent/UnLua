@@ -1,6 +1,4 @@
-require "UnLua"
-
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     local map = UE.TMap(UE.FName, UE.FVector)

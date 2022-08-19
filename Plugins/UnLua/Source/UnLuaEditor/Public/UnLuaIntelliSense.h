@@ -32,7 +32,7 @@ namespace UnLua
         
         UNLUAEDITOR_API FString Get(const UClass* Class);
         
-        UNLUAEDITOR_API FString Get(const UFunction* Function);
+        UNLUAEDITOR_API FString Get(const UFunction* Function, FString ForceClassName = "");
 
         UNLUAEDITOR_API FString Get(const FProperty* Property);
 

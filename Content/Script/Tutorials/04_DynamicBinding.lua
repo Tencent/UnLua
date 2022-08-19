@@ -10,11 +10,9 @@
     注意：无论哪种绑定方式，都需要指定脚本文件路径。它是一个相对于 {工程目录}/Content/Script 下的相对路径。
 ]]--
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     local msg =

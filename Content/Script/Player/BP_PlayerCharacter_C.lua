@@ -1,18 +1,17 @@
-require "UnLua"
-
-local BP_PlayerCharacter_C= Class("BP_CharacterBase_C")
+---@type BP_PlayerCharacter_C
+local M= UnLua.Class("BP_CharacterBase_C")
 
 local Lerp = UE.UKismetMathLibrary.Lerp
 
---function BP_PlayerCharacter_C:UserConstructionScript()
+--function M:UserConstructionScript()
 --end
 
-function BP_PlayerCharacter_C:OnZoomInOutUpdate(Alpha)
+function M:OnZoomInOutUpdate(Alpha)
 	local FOV = Lerp(self.DefaultFOV, self.Weapon.AimingFOV, Alpha)
 	self.Camera:SetFieldOfView(FOV)
 end
 
-function BP_PlayerCharacter_C:SpawnWeapon()
+function M:SpawnWeapon()
 	local World = self:GetWorld()
 	if not World then
 		return
@@ -29,20 +28,20 @@ function BP_PlayerCharacter_C:SpawnWeapon()
 	return NewWeapon
 end
 
-function BP_PlayerCharacter_C:ReceiveBeginPlay()
+function M:ReceiveBeginPlay()
 	self.Super.ReceiveBeginPlay(self)
 	self.DefaultFOV = self.Camera.FieldOfView
-	self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({self, BP_PlayerCharacter_C.FallCheck}, 1.0, true)
+	self.TimerHandle = UE.UKismetSystemLibrary.K2_SetTimerDelegate({self, M.FallCheck}, 1.0, true)
 	local InterpFloats = self.ZoomInOut.TheTimeline.InterpFloats
 	local FloatTrack = InterpFloats:GetRef(1)
-	FloatTrack.InterpFunc:Bind(self, BP_PlayerCharacter_C.OnZoomInOutUpdate)
+	FloatTrack.InterpFunc:Bind(self, M.OnZoomInOutUpdate)
 end
 
-function BP_PlayerCharacter_C:ReceiveDestroyed()
+function M:ReceiveDestroyed()
 	UE.UKismetSystemLibrary.K2_ClearTimerHandle(self, self.TimerHandle)
 end
 
-function BP_PlayerCharacter_C:UpdateAiming(IsAiming)
+function M:UpdateAiming(IsAiming)
 	if self.Weapon then
 		if IsAiming then
 			self.ZoomInOut:Play()
@@ -52,24 +51,24 @@ function BP_PlayerCharacter_C:UpdateAiming(IsAiming)
 	end
 end
 
-function BP_PlayerCharacter_C:FallCheck()
+function M:FallCheck()
 	local Location = self:K2_GetActorLocation()
 	if Location.Z < -200.0 then
 	    UE.UKismetSystemLibrary.ExecuteConsoleCommand(self, "RestartLevel")
 	end
 end
 
-function BP_PlayerCharacter_C:GetWeaponTraceInfo()
+function M:GetWeaponTraceInfo()
 	local TraceLocation = self.Camera:K2_GetComponentLocation()
 	local TraceDirection = self.Camera:GetForwardVector()
 	return TraceLocation, TraceDirection
 end
 
 --[[
-function BP_PlayerCharacter_C:GetWeaponTraceInfo(TraceStart, TraceDirection)
+function M:GetWeaponTraceInfo(TraceStart, TraceDirection)
 	self.Camera:K2_GetComponentLocation(TraceStart)
 	self.Camera:GetForwardVector(TraceDirection)
 end
 ]]
 
-return BP_PlayerCharacter_C
+return M

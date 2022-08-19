@@ -132,8 +132,22 @@ namespace UnLua
             }
 
             // declaration
-            Ret += FString::Printf(TEXT("local %s = {}\r\n\r\n"), *EscapeSymbolName(TypeName));
+            const auto EscapedClassName = EscapeSymbolName(TypeName);
+            Ret += FString::Printf(TEXT("local %s = {}\r\n\r\n"), *EscapedClassName);
 
+            // interface functions
+            for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::IncludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::IncludeInterfaces); FunctionIt; ++FunctionIt)
+            {
+                const UFunction* Function = *FunctionIt;
+                if (!Function->GetOwnerClass()->IsChildOf(UInterface::StaticClass()))
+                    continue;
+                if (!IsValid(Function))
+                    continue;
+                if (FObjectEditorUtils::IsFunctionHiddenFromClass(Function, Class))
+                    continue;
+                Ret += Get(Function, EscapedClassName) + "\r\n";
+            }
+            
             // functions
             for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::ExcludeInterfaces); FunctionIt; ++FunctionIt)
             {
@@ -157,7 +171,7 @@ namespace UnLua
             return Ret;
         }
 
-        FString Get(const UFunction* Function)
+        FString Get(const UFunction* Function, FString ForceClassName)
         {
             FString Ret = GetCommentBlock(Function);
             FString Properties;
@@ -207,7 +221,7 @@ namespace UnLua
                 Ret += TEXT("\r\n");
             }
 
-            const auto ClassName = EscapeSymbolName(GetTypeName(Function->GetOwnerClass()));
+            const auto ClassName = ForceClassName.IsEmpty() ? EscapeSymbolName(GetTypeName(Function->GetOwnerClass())) : ForceClassName;
             const auto FunctionName = Function->GetName();
             const auto bIsStatic = Function->HasAnyFunctionFlags(FUNC_Static);
             if (IsValidFunctionName(FunctionName))
@@ -483,8 +497,9 @@ namespace UnLua
             if (Function->HasAnyFunctionFlags(FUNC_UbergraphFunction))
                 return false;
 
-            if (!UEdGraphSchema_K2::CanUserKismetCallFunction(Function))
-                return false;
+            // 这个会导致USubsystemBlueprintLibrary.GetWorldSubsystem之类的被过滤掉
+            // if (!UEdGraphSchema_K2::CanUserKismetCallFunction(Function))
+            //     return false;
 
             const FString Name = Function->GetName();
             if (Name.IsEmpty())

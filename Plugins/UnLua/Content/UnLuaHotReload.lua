@@ -163,9 +163,6 @@ local function make_sandbox()
         local func, env = load(module_name)
         if func then
             local _, new_module = xpcall(func, load_error_handler, ...)
-            if new_module == nil then
-                new_module = env
-            end
             if loaded_modules[module_name] == nil then
                 loaded_modules[module_name] = new_module
                 package.loaded[module_name] = new_module
@@ -604,7 +601,12 @@ local function reload_modules(module_names)
     sandbox.exit()
 end
 
-function M.reload()
+function M.reload(module_names)
+    if module_names then
+        reload_modules(module_names)
+        return
+    end
+
     local modified_modules = {}
 
     for module_name, time in pairs(loaded_module_times) do

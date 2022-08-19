@@ -1,9 +1,8 @@
-require "UnLua"
-
 local FVector = UE.FVector
 local FLinearColor = UE.FLinearColor
 
-local M = Class()
+---@type GravitySphereActor_C
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     local r = math.random()

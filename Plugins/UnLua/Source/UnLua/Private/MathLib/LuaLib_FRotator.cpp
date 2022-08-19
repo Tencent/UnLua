@@ -43,8 +43,7 @@ static int32 FRotator_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
 
@@ -55,17 +54,11 @@ static int32 GetRotatorScaledAxis(lua_State* L, EAxis::Type Axis, int32 MinParam
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < MinParams)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FRotator* A = (FRotator*)GetCppInstanceFast(L, 1);
     if (!A)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FRotator!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FRotator");
 
     if (NumParams > MinParams)
     {
@@ -103,17 +96,11 @@ static int32 FRotator_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FRotator* V = (FRotator*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FRotator!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FRotator");
 
     UnLua::TFieldSetter3<unluaReal>::Set(L, NumParams, &V->Pitch);
     return 0;

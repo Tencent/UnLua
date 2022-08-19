@@ -43,8 +43,7 @@ static int32 FIntVector_New(lua_State* L)
         }
     default:
         {
-            UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-            return 0;
+            return luaL_error(L, "invalid parameters");
         }
     }
     return 1;
@@ -54,17 +53,11 @@ static int32 FIntVector_Set(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FIntVector* V = (FIntVector*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntVector!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FIntVector");
 
     UnLua::TFieldSetter3<int32>::Set(L, NumParams, &V->X);
     return 0;
@@ -74,17 +67,11 @@ static int32 FIntVector_SizeSquared(lua_State* L)
 {
     const int32 NumParams = lua_gettop(L);
     if (NumParams < 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FIntVector* V = (FIntVector*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntVector!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FIntVector");
 
     int32 S = V->X * V->X + V->Y * V->Y + V->Z * V->Z;
     lua_pushnumber(L, S);
@@ -95,10 +82,7 @@ static int32 FIntVector_UNM(lua_State* L)
 {
     FIntVector* V = (FIntVector*)GetCppInstanceFast(L, 1);
     if (!V)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid FIntVector!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid FIntVector");
 
     void* Userdata = NewTypedUserdata(L, FIntVector);
     new(Userdata) FIntVector(-V->X, -V->Y, -V->Z);

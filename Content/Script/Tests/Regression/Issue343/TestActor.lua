@@ -1,9 +1,7 @@
-require "UnLua"
-
 local FVector = UE.FVector
 local FLinearColor = UE.FLinearColor
 
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     ReceiveBeginPlayCalled = 1

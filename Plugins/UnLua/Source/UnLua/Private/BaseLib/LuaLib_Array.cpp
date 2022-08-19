@@ -16,21 +16,15 @@
 #include "LuaCore.h"
 #include "Containers/LuaArray.h"
 
-static int32 TArray_New(lua_State *L)
+static int32 TArray_New(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
     if (!TypeInterface)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Failed to create TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "failed to create TArray");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
@@ -42,35 +36,22 @@ static int TArray_Enumerable(lua_State* L)
     int32 NumParams = lua_gettop(L);
 
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)(lua_touserdata(L, 1));
 
     if (!Enumerator || !*Enumerator)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid enumerator!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid enumerator");
 
     const auto Array = (*Enumerator)->LuaArray;
-
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     if (Array->IsValidIndex((*Enumerator)->Index))
     {
         UnLua::Push(L, (*Enumerator)->Index + 1);
-
         Array->Inner->Read(L, Array->GetData((*Enumerator)->Index), false);
-
         (*Enumerator)->Index += 1;
-
         return 2;
     }
 
@@ -80,42 +61,21 @@ static int TArray_Enumerable(lua_State* L)
 static int32 TArray_Pairs(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
-
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
-
     if (!Array)
-    {
         return 0;
-    }
 
-    // Enumerable
     lua_pushcfunction(L, TArray_Enumerable);
-
-    // Enumerable userdata
-    FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)lua_newuserdata(
-        L, sizeof(FLuaArray::FLuaArrayEnumerator*));
-
+    FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)lua_newuserdata(L, sizeof(FLuaArray::FLuaArrayEnumerator*));
     *Enumerator = new FLuaArray::FLuaArrayEnumerator(Array, 0);
 
-    // Enumerable userdata mt
     lua_newtable(L);
-
-    // Enumerable userdata mt gc
     lua_pushcfunction(L, FLuaArray::FLuaArrayEnumerator::gc);
-
-    // Enumerable userdata mt
     lua_setfield(L, -2, "__gc");
-
-    // Enumerable userdata
     lua_setmetatable(L, -2);
-
-    // Enumerable userdata nil
     lua_pushnil(L);
 
     return 3;
@@ -124,21 +84,15 @@ static int32 TArray_Pairs(lua_State* L)
 /**
  * @see FLuaArray::Num(...)
  */
-static int32 TArray_Length(lua_State *L)
+static int32 TArray_Length(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     lua_pushinteger(L, Array->Num());
     return 1;
@@ -147,24 +101,18 @@ static int32 TArray_Length(lua_State *L)
 /**
  * @see FLuaArray::Add(...)
  */
-static int32 TArray_Add(lua_State *L)
+static int32 TArray_Add(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = Array->AddDefaulted();
-    uint8 *Data = Array->GetData(Index);
+    uint8* Data = Array->GetData(Index);
     Array->Inner->Write(L, Data, 2);
     ++Index;
     lua_pushinteger(L, Index);
@@ -174,21 +122,15 @@ static int32 TArray_Add(lua_State *L)
 /**
  * @see FLuaArray::AddUnique(...)
  */
-static int32 TArray_AddUnique(lua_State *L)
+static int32 TArray_AddUnique(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Inner->Write(L, Array->ElementCache, 2);
@@ -202,21 +144,15 @@ static int32 TArray_AddUnique(lua_State *L)
 /**
  * @see FLuaArray::Find(...)
  */
-static int32 TArray_Find(lua_State *L)
+static int32 TArray_Find(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Inner->Write(L, Array->ElementCache, 2);
@@ -230,21 +166,15 @@ static int32 TArray_Find(lua_State *L)
 /**
  * @see FLuaArray::Insert(...)
  */
-static int32 TArray_Insert(lua_State *L)
+static int32 TArray_Insert(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 3)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Inner->Write(L, Array->ElementCache, 2);
@@ -258,21 +188,15 @@ static int32 TArray_Insert(lua_State *L)
 /**
  * @see FLuaArray::Remove(...)
  */
-static int32 TArray_Remove(lua_State *L)
+static int32 TArray_Remove(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = lua_tointeger(L, 2);
     --Index;
@@ -283,21 +207,15 @@ static int32 TArray_Remove(lua_State *L)
 /**
  * @see FLuaArray::RemoveItem(...)
  */
-static int32 TArray_RemoveItem(lua_State *L)
+static int32 TArray_RemoveItem(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Inner->Write(L, Array->ElementCache, 2);
@@ -310,21 +228,15 @@ static int32 TArray_RemoveItem(lua_State *L)
 /**
  * @see FLuaArray::Clear(...)
  */
-static int32 TArray_Clear(lua_State *L)
+static int32 TArray_Clear(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Clear();
     return 0;
@@ -333,21 +245,15 @@ static int32 TArray_Clear(lua_State *L)
 /**
  * @see FLuaArray::Reserve(...)
  */
-static int32 TArray_Reserve(lua_State *L)
+static int32 TArray_Reserve(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Size = lua_tointeger(L, 2);
     bool bSuccess = Array->Reserve(Size);
@@ -362,21 +268,15 @@ static int32 TArray_Reserve(lua_State *L)
 /**
  * @see FLuaArray::Resize(...)
  */
-static int32 TArray_Resize(lua_State *L)
+static int32 TArray_Resize(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 NewSize = lua_tointeger(L, 2);
     Array->Resize(NewSize);
@@ -386,23 +286,17 @@ static int32 TArray_Resize(lua_State *L)
 /**
  * @see FLuaArray::GetData(...)
  */
-static int32 TArray_GetData(lua_State *L)
+static int32 TArray_GetData(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
-    void *Data = Array->GetData();
+    void* Data = Array->GetData();
     lua_pushlightuserdata(L, Data);
     return 1;
 }
@@ -410,21 +304,15 @@ static int32 TArray_GetData(lua_State *L)
 /**
  * @see FLuaArray::Get(...). Create a copy for the element
  */
-static int32 TArray_Get(lua_State *L)
+static int32 TArray_Get(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = lua_tointeger(L, 2);
     --Index;
@@ -444,21 +332,15 @@ static int32 TArray_Get(lua_State *L)
 /**
  * @see FLuaArray::Get(...). Return a reference for the element
  */
-static int32 TArray_GetRef(lua_State *L)
+static int32 TArray_GetRef(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = lua_tointeger(L, 2);
     --Index;
@@ -468,7 +350,7 @@ static int32 TArray_GetRef(lua_State *L)
         return 0;
     }
 
-    const void *Element = Array->GetData(Index);
+    const void* Element = Array->GetData(Index);
     Array->Inner->Read(L, Element, false);
     return 1;
 }
@@ -476,21 +358,15 @@ static int32 TArray_GetRef(lua_State *L)
 /**
  * @see FLuaArray::Set(...)
  */
-static int32 TArray_Set(lua_State *L)
+static int32 TArray_Set(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 3)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = lua_tointeger(L, 2);
     --Index;
@@ -510,21 +386,15 @@ static int32 TArray_Set(lua_State *L)
 /**
  * @see FLuaArray::Swap(...)
  */
-static int32 TArray_Swap(lua_State *L)
+static int32 TArray_Swap(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 3)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 A = lua_tointeger(L, 2);
     int32 B = lua_tointeger(L, 3);
@@ -537,21 +407,15 @@ static int32 TArray_Swap(lua_State *L)
 /**
  * @see FLuaArray::Shuffle(...)
  */
-static int32 TArray_Shuffle(lua_State *L)
+static int32 TArray_Shuffle(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Shuffle();
     return 0;
@@ -560,21 +424,15 @@ static int32 TArray_Shuffle(lua_State *L)
 /**
  * Get the last index of the array
  */
-static int32 TArray_LastIndex(lua_State *L)
+static int32 TArray_LastIndex(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = Array->Num();
     lua_pushinteger(L, Index);
@@ -584,21 +442,15 @@ static int32 TArray_LastIndex(lua_State *L)
 /**
  * @see FLuaArray::IsValidIndex(...)
  */
-static int32 TArray_IsValidIndex(lua_State *L)
+static int32 TArray_IsValidIndex(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     int32 Index = lua_tointeger(L, 2);
     --Index;
@@ -610,21 +462,15 @@ static int32 TArray_IsValidIndex(lua_State *L)
 /**
  * @see FLuaArray::Find(...)
  */
-static int32 TArray_Contains(lua_State *L)
+static int32 TArray_Contains(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Inner->Write(L, Array->ElementCache, 2);
@@ -639,28 +485,19 @@ static int32 TArray_Contains(lua_State *L)
 /**
  * @see FLuaArray::Append(...)
  */
-static int32 TArray_Append(lua_State *L)
+static int32 TArray_Append(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
-    FLuaArray *SourceArray = (FLuaArray*)(GetCppInstanceFast(L, 2));
+    FLuaArray* SourceArray = (FLuaArray*)(GetCppInstanceFast(L, 2));
     if (!SourceArray)
-    {
-        UNLUA_LOGERROR(L, LogUnLua, Log, TEXT("%s: Invalid source TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid source TArray");
 
     Array->Append(*SourceArray);
     return 0;
@@ -669,21 +506,15 @@ static int32 TArray_Append(lua_State *L)
 /**
  * GC function
  */
-static int32 TArray_Delete(lua_State *L)
+static int32 TArray_Delete(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Array);
@@ -695,21 +526,15 @@ static int32 TArray_Delete(lua_State *L)
 /**
  * Convert the array to a Lua table
  */
-static int32 TArray_ToTable(lua_State *L)
+static int32 TArray_ToTable(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
-    FLuaArray *Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
     if (!Array)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid TArray!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid TArray");
 
     lua_newtable(L);
     Array->Inner->Initialize(Array->ElementCache);
@@ -731,13 +556,8 @@ static int32 TArray_Index(lua_State* L)
         return TArray_Get(L);
     }
 
-    // mt
     lua_getmetatable(L, 1);
-
-    // mt,mt.key/nil
     lua_getfield(L, -1, lua_tostring(L, 2));
-
-    // mt.key/nil
     lua_remove(L, -2);
 
     return 1;
@@ -750,35 +570,36 @@ static int32 TArray_NewIndex(lua_State* L)
 
 static const luaL_Reg TArrayLib[] =
 {
-    { "Length", TArray_Length },
-    { "Num", TArray_Length },
-    { "Add", TArray_Add },
-    { "AddUnique", TArray_AddUnique },
-    { "Find", TArray_Find },
-    { "Insert", TArray_Insert },
-    { "Remove", TArray_Remove },
-    { "RemoveItem", TArray_RemoveItem },
-    { "Clear", TArray_Clear },
-    { "Reserve", TArray_Reserve },
-    { "Resize", TArray_Resize },
-    { "GetData", TArray_GetData },
-    { "Get", TArray_Get },
-    { "GetRef", TArray_GetRef },
-    { "Set", TArray_Set },
-    { "Swap", TArray_Swap },
-    { "Shuffle", TArray_Shuffle },
-    { "LastIndex", TArray_LastIndex },
-    { "IsValidIndex", TArray_IsValidIndex },
-    { "Contains", TArray_Contains },
-    { "Append", TArray_Append },
-    { "ToTable", TArray_ToTable },
-    { "__gc", TArray_Delete },
-    { "__call", TArray_New },
-    { "__pairs", TArray_Pairs },
-    { "__index", TArray_Index },
-    { "__newindex", TArray_NewIndex },
-    { nullptr, nullptr }
+    {"Length", TArray_Length},
+    {"Num", TArray_Length},
+    {"Add", TArray_Add},
+    {"AddUnique", TArray_AddUnique},
+    {"Find", TArray_Find},
+    {"Insert", TArray_Insert},
+    {"Remove", TArray_Remove},
+    {"RemoveItem", TArray_RemoveItem},
+    {"Clear", TArray_Clear},
+    {"Reserve", TArray_Reserve},
+    {"Resize", TArray_Resize},
+    {"GetData", TArray_GetData},
+    {"Get", TArray_Get},
+    {"GetRef", TArray_GetRef},
+    {"Set", TArray_Set},
+    {"Swap", TArray_Swap},
+    {"Shuffle", TArray_Shuffle},
+    {"LastIndex", TArray_LastIndex},
+    {"IsValidIndex", TArray_IsValidIndex},
+    {"Contains", TArray_Contains},
+    {"Append", TArray_Append},
+    {"ToTable", TArray_ToTable},
+    {"__gc", TArray_Delete},
+    {"__call", TArray_New},
+    {"__pairs", TArray_Pairs},
+    {"__index", TArray_Index},
+    {"__newindex", TArray_NewIndex},
+    {nullptr, nullptr}
 };
 
 EXPORT_UNTYPED_CLASS(TArray, false, TArrayLib)
+
 IMPLEMENT_EXPORTED_CLASS(TArray)

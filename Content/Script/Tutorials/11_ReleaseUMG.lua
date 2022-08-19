@@ -15,11 +15,9 @@
     查看指定对象的引用链：Obj Refs Name=ReleaseUMG_Root_C_0
 ]] --
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 local function print_intro()
     local msg =

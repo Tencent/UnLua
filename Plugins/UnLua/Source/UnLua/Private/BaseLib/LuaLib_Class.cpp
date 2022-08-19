@@ -50,24 +50,18 @@ int32 UClass_Load(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     const char* ClassPath = lua_tostring(L, 1);
     if (!ClassPath)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid class name!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid class name");
 
     FString Name = UTF8_TO_TCHAR(ClassPath);
 
 #if UNLUA_LEGACY_BLUEPRINT_PATH
     LeagcyAppendSuffix(Name);
 #endif
-    
+
     UClass* Class = LoadObject<UClass>(nullptr, *Name);
     if (!Class)
         return 0;
@@ -86,24 +80,15 @@ static int32 UClass_IsChildOf(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 2)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     UClass* SrcClass = Cast<UClass>(UnLua::GetUObject(L, 1));
     if (!SrcClass)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid source class!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid source class");
 
     UClass* TargetClass = Cast<UClass>(UnLua::GetUObject(L, 2));
     if (!TargetClass)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid target class!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid target class");
 
     bool bValid = SrcClass->IsChildOf(TargetClass);
     lua_pushboolean(L, bValid);
@@ -118,17 +103,11 @@ static int32 UClass_GetDefaultObject(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
     if (NumParams != 1)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid parameters!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid parameters");
 
     UClass* SrcClass = Cast<UClass>(UnLua::GetUObject(L, 1));
     if (!SrcClass)
-    {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Invalid source class!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return 0;
-    }
+        return luaL_error(L, "invalid source class");
 
     UObject* Ret = SrcClass->GetDefaultObject();
     if (Ret)
@@ -147,13 +126,14 @@ static int32 UClass_GetDefaultObject(lua_State* L)
 
 static const luaL_Reg UClassLib[] =
 {
-    { "Load", UClass_Load },
-    { "IsChildOf", UClass_IsChildOf },
-    { "GetDefaultObject", UClass_GetDefaultObject },
-    { nullptr, nullptr }
+    {"Load", UClass_Load},
+    {"IsChildOf", UClass_IsChildOf},
+    {"GetDefaultObject", UClass_GetDefaultObject},
+    {nullptr, nullptr}
 };
 
 BEGIN_EXPORT_REFLECTED_CLASS(UClass)
-ADD_LIB(UClassLib)
+    ADD_LIB(UClassLib)
 END_EXPORT_CLASS()
+
 IMPLEMENT_EXPORTED_CLASS(UClass)

@@ -16,11 +16,9 @@
     注意：这里不可以写成 self.Overridden:SayHi(name)
 ]] --
 
-require "UnLua"
-
 local Screen = require "Tutorials.Screen"
 
-local M = Class()
+local M = UnLua.Class()
 
 function M:ReceiveBeginPlay()
     local msg = self:SayHi("陌生人")
