@@ -147,6 +147,7 @@ int32 Class_Cast(lua_State* L);
 /**
  * Functions to handle UScriptStruct
  */
+int32 ScriptStruct_Index(lua_State *L);
 int32 ScriptStruct_New(lua_State *L);
 int32 ScriptStruct_Delete(lua_State *L);
 int32 ScriptStruct_Copy(lua_State *L);
