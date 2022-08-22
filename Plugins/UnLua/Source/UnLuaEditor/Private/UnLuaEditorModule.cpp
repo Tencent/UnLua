@@ -32,6 +32,9 @@
 #include "Toolbars/AnimationBlueprintToolbar.h"
 #include "Toolbars/BlueprintToolbar.h"
 #include "Toolbars/MainMenuToolbar.h"
+#if ENGINE_MAJOR_VERSION > 4
+#include "UObject/ObjectSaveContext.h"
+#endif
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -56,9 +59,13 @@ public:
 
         UUnLuaEditorFunctionLibrary::WatchScriptDirectory();
 
+#if ENGINE_MAJOR_VERSION > 4
+        UPackage::PreSavePackageWithContextEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSavingWithContext);
+        UPackage::PackageSavedWithContextEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSavedWithContext);
+#else
         UPackage::PreSavePackageEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaving);
         UPackage::PackageSavedEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaved);
-
+#endif
         SetupPackagingSettings();
     }
 
@@ -68,8 +75,13 @@ public:
         FCoreDelegates::OnPostEngineInit.RemoveAll(this);
         UnregisterSettings();
 
+#if ENGINE_MAJOR_VERSION > 4
+        UPackage::PreSavePackageWithContextEvent.RemoveAll(this);
+        UPackage::PackageSavedWithContextEvent.RemoveAll(this);
+#else
         UPackage::PreSavePackageEvent.RemoveAll(this);
         UPackage::PackageSavedEvent.RemoveAll(this);
+#endif
     }
 
 private:
@@ -128,6 +140,18 @@ private:
         return true;
     }
 
+#if ENGINE_MAJOR_VERSION > 4
+    void OnPackageSavingWithContext(UPackage* Package, FObjectPreSaveContext Context)
+    {
+        OnPackageSaving(Package);
+    }
+
+    void OnPackageSavedWithContext(const FString& PackageFileName, UPackage* Package, FObjectPostSaveContext Context)
+    {
+        OnPackageSaved(PackageFileName, Package);
+    }
+#endif
+
     void OnPackageSaving(UPackage* Package)
     {
         if (!GEditor || !GEditor->PlayWorld)
@@ -142,22 +166,19 @@ private:
             SuspendedPackages.Add(Package, Class);
             return false;
         }, false);
-
-        UE_LOG(LogUnLua, Log, TEXT("OnPackageSaving:%s"), *Package->GetFullName());
     }
 
-    void OnPackageSaved(const FString& String, UObject* Object)
+    void OnPackageSaved(const FString& PackageFileName, UObject* Outer)
     {
         if (!GEditor || !GEditor->PlayWorld)
             return;
 
-        UPackage* Package = (UPackage*)Object;
+        UPackage* Package = (UPackage*)Outer;
         if (SuspendedPackages.Contains(Package))
         {
             ULuaFunction::ResumeOverrides(SuspendedPackages[Package]);
             SuspendedPackages.Remove(Package);
         }
-        UE_LOG(LogUnLua, Log, TEXT("OnPackageSaved:%s %s"), *String, *Object->GetFullName());
     }
 
     void SetupPackagingSettings()
