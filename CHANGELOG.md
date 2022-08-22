@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [2.2.4] - 2022-8-19
 - 支持配置按C/C++编译Lua环境
 - 支持Lua启动入口脚本配置
+- 支持Lua环境手动启动参数
 - 默认自动将 `Content/Script` 目录加入打包设置
 - 增加一些指针对象的合法性检查
 - `UnLua.HotReload` 支持手动指定热重载模块列表
