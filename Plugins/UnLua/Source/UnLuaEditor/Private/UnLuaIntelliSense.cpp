@@ -135,6 +135,20 @@ namespace UnLua
             const auto EscapedClassName = EscapeSymbolName(TypeName);
             Ret += FString::Printf(TEXT("local %s = {}\r\n\r\n"), *EscapedClassName);
 
+            TArray<FString> GenFunctionNames;
+
+            // functions
+            for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::ExcludeInterfaces); FunctionIt; ++FunctionIt)
+            {
+                const UFunction* Function = *FunctionIt;
+                if (!IsValid(Function))
+                    continue;
+                if (FObjectEditorUtils::IsFunctionHiddenFromClass(Function, Class))
+                    continue;
+                Ret += Get(Function) + "\r\n";
+                GenFunctionNames.Add(Function->GetName());
+            }
+
             // interface functions
             for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::IncludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::IncludeInterfaces); FunctionIt; ++FunctionIt)
             {
@@ -145,18 +159,9 @@ namespace UnLua
                     continue;
                 if (FObjectEditorUtils::IsFunctionHiddenFromClass(Function, Class))
                     continue;
+                if (GenFunctionNames.Contains(Function->GetName()))
+                    continue;
                 Ret += Get(Function, EscapedClassName) + "\r\n";
-            }
-            
-            // functions
-            for (TFieldIterator<UFunction> FunctionIt(Class, EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated, EFieldIteratorFlags::ExcludeInterfaces); FunctionIt; ++FunctionIt)
-            {
-                const UFunction* Function = *FunctionIt;
-                if (!IsValid(Function))
-                    continue;
-                if (FObjectEditorUtils::IsFunctionHiddenFromClass(Function, Class))
-                    continue;
-                Ret += Get(Function) + "\r\n";
             }
 
             // exported functions
@@ -503,6 +508,10 @@ namespace UnLua
 
             const FString Name = Function->GetName();
             if (Name.IsEmpty())
+                return false;
+
+            // 避免运行时生成智能提示，把覆写的函数也生成了
+            if (Name.EndsWith("__Overridden"))
                 return false;
 
             return true;
