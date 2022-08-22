@@ -47,6 +47,19 @@ void FLuaEnvSpec::Define()
             TEST_EQUAL(A, 1);
             TEST_EQUAL(B, 2);
         });
+
+        It(TEXT("支持启动脚本和参数"), EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            UnLua::FLuaEnv Env;
+            const auto L = Env.GetMainState();
+            TMap<FString, UObject*> Args;
+            Args.Add("GWorld", GWorld);
+            Env.Start(TEXT("Tests.Specs.LuaEnv.支持启动脚本和参数"), Args);
+            lua_getglobal(L, "GWorld");
+            const auto Actual = (UWorld*)UnLua::GetUObject(L, -1);
+            const auto Expected = (UWorld*)GWorld;
+            TEST_EQUAL(Actual, Expected);
+        });
     });
 
     AfterEach([this]
@@ -55,4 +68,4 @@ void FLuaEnvSpec::Define()
     });
 }
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif
