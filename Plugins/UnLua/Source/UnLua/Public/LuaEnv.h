@@ -55,6 +55,10 @@ namespace UnLua
 
         static FLuaEnv& FindEnvChecked(const lua_State* L);
 
+        void Start(const TMap<FString, UObject*>& Args = {});
+
+        void Start(const FString& StartupModuleName, const TMap<FString, UObject*>& Args);
+
         const FString& GetName();
 
         void SetName(FString InName);
@@ -68,18 +72,6 @@ namespace UnLua
         virtual bool TryReplaceInputs(UObject* Object);
 
         bool DoString(const FString& Chunk, const FString& ChunkName = "chunk");
-
-        bool LoadString(const TArray<uint8>& Chunk, const FString& ChunkName = "chunk")
-        {
-            const char* Bytes = (char*)Chunk.GetData();
-            return LoadBuffer(Bytes, Chunk.Num(), TCHAR_TO_UTF8(*ChunkName));
-        }
-
-        bool LoadString(const FString& Chunk, const FString& ChunkName = "chunk")
-        {
-            const FTCHARToUTF8 Bytes(*Chunk);
-            return LoadBuffer(Bytes.Get(), Bytes.Length(), TCHAR_TO_UTF8(*ChunkName));
-        }
 
         virtual void GC();
 
@@ -128,6 +120,18 @@ namespace UnLua
 
         virtual lua_Alloc GetLuaAllocator() const;
 
+        bool LoadString(const TArray<uint8>& Chunk, const FString& ChunkName = "chunk")
+        {
+            const char* Bytes = (char*)Chunk.GetData();
+            return LoadBuffer(Bytes, Chunk.Num(), TCHAR_TO_UTF8(*ChunkName));
+        }
+
+        bool LoadString(const FString& Chunk, const FString& ChunkName = "chunk")
+        {
+            const FTCHARToUTF8 Bytes(*Chunk);
+            return LoadBuffer(Bytes.Get(), Bytes.Length(), TCHAR_TO_UTF8(*ChunkName));
+        }
+
     private:
         void AddSearcher(lua_CFunction Searcher, int Index) const;
 
@@ -164,5 +168,6 @@ namespace UnLua
         FDelegateHandle OnWorldTickStartHandle;
         FString Name = TEXT("Env_0");
         bool bObjectArrayListenerRegistered;
+        bool bStarted;
     };
 }

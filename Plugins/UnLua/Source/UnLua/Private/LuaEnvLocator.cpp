@@ -18,7 +18,10 @@
 TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator::Locate(const UObject* Object)
 {
     if (!Env)
+    {
         Env = MakeShared<UnLua::FLuaEnv>();
+        Env->Start();
+    }
     return Env;
 }
 
@@ -68,6 +71,7 @@ TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::Locate(const UObject* 
     {
         Ret = MakeShared<UnLua::FLuaEnv>();
         Ret->SetName(FString::Printf(TEXT("Env_%d"), Envs.Num() + 1));
+        Ret->Start();
         Envs.Add(GameInstance, Ret);
     }
     return Ret;
@@ -92,6 +96,9 @@ void ULuaEnvLocator_ByGameInstance::Reset()
 TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::GetDefault()
 {
     if (!Env)
+    {
         Env = MakeShared<UnLua::FLuaEnv>();
+        Env->Start();
+    }
     return Env;
 }

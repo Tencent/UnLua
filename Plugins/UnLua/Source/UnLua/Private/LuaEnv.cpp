@@ -39,6 +39,7 @@ namespace UnLua
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
 
     FLuaEnv::FLuaEnv()
+        : bStarted(false)
     {
         const auto Settings = GetDefault<UUnLuaSettings>();
         ModuleLocator = Settings->ModuleLocatorClass.GetDefaultObject();
@@ -119,12 +120,6 @@ namespace UnLua
 
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
-
-        if (!Settings->StartupModuleName.IsEmpty())
-        {
-            const auto Chunk = FString::Printf(TEXT("require '%s'"), *Settings->StartupModuleName);
-            DoString(Chunk);
-        }
     }
 
     FLuaEnv::~FLuaEnv()
@@ -164,6 +159,37 @@ namespace UnLua
     FLuaEnv& FLuaEnv::FindEnvChecked(const lua_State* L)
     {
         return *AllEnvs.FindChecked(G(L)->mainthread);
+    }
+
+    void FLuaEnv::Start(const TMap<FString, UObject*>& Args)
+    {
+        const auto& Setting = *GetDefault<UUnLuaSettings>();
+        Start(Setting.StartupModuleName, Args);
+    }
+
+    void FLuaEnv::Start(const FString& StartupModuleName, const TMap<FString, UObject*>& Args)
+    {
+        if (bStarted)
+            return;
+
+        if (StartupModuleName.IsEmpty())
+        {
+            bStarted = true;
+            return;
+        }
+
+        const auto Guard = GetDeadLoopCheck()->MakeGuard();
+        lua_pushcfunction(L, ReportLuaCallError);
+        lua_getglobal(L, "require");
+        lua_pushstring(L, TCHAR_TO_UTF8(*StartupModuleName));
+        lua_createtable(L, 0, Args.Num());
+        for (auto Pair : Args)
+        {
+            PushUObject(L, Pair.Value);
+            lua_setfield(L, -2, TCHAR_TO_UTF8(*Pair.Key));
+        }
+        lua_pcall(L, 2, LUA_MULTRET, -4);
+        bStarted = true;
     }
 
     const FString& FLuaEnv::GetName()
