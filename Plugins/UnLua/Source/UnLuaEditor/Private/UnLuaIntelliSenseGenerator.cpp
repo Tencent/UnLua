@@ -102,7 +102,7 @@ bool FUnLuaIntelliSenseGenerator::IsBlueprint(const FAssetData& AssetData)
     return AssetClass == UBlueprint::StaticClass()->GetFName() || AssetClass == UWidgetBlueprint::StaticClass()->GetFName();
 }
 
-bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData)
+bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData, bool bLoad)
 {
     const auto& Settings = *GetDefault<UUnLuaEditorSettings>();
     if (!Settings.bGenerateIntelliSense)
@@ -111,7 +111,7 @@ bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData)
     if (!IsBlueprint(AssetData))
         return false;
 
-    const auto Asset = AssetData.FastGetAsset();
+    const auto Asset = AssetData.FastGetAsset(bLoad);
     if (!Asset)
         return false;
 
@@ -265,7 +265,7 @@ void FUnLuaIntelliSenseGenerator::OnAssetRenamed(const FAssetData& AssetData, co
 
 void FUnLuaIntelliSenseGenerator::OnAssetUpdated(const FAssetData& AssetData)
 {
-    if (!ShouldExport(AssetData))
+    if (!ShouldExport(AssetData, true))
         return;
 
     UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *AssetData.ObjectPath.ToString());
