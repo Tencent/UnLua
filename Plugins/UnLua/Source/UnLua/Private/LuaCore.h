@@ -105,9 +105,6 @@ UNLUA_API bool GetObjectMapping(lua_State *L, UObjectBaseUtility *Object);
  * Add Lua package path
  */
 UNLUA_API void AddPackagePath(lua_State *L, const char *Path);
-int LoadFromBuiltinLibs(lua_State *L);
-int LoadFromCustomLoader(lua_State *L);
-int LoadFromFileSystem(lua_State *L);
 
 /**
  * Functions to register collision enums
