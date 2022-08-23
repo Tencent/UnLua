@@ -50,11 +50,11 @@ void FLuaEnvSpec::Define()
 
         It(TEXT("支持启动脚本和参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            UnLua::FLuaEnv Env;
-            const auto L = Env.GetMainState();
+            UnLua::FLuaEnv Env1;
+            const auto L = Env1.GetMainState();
             TMap<FString, UObject*> Args;
             Args.Add("GWorld", GWorld);
-            Env.Start(TEXT("Tests.Specs.LuaEnv.支持启动脚本和参数"), Args);
+            Env1.Start(TEXT("Tests.Specs.LuaEnv.支持启动脚本和参数"), Args);
             lua_getglobal(L, "GWorld");
             const auto Actual = (UWorld*)UnLua::GetUObject(L, -1);
             const auto Expected = (UWorld*)GWorld;
