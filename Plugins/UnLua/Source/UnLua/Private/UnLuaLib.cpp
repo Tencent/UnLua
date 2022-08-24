@@ -43,7 +43,7 @@ namespace UnLua
 
         static int HotReload(lua_State* L)
         {
-            luaL_dostring(L, "require('UnLuaHotReload').reload()");
+            luaL_dostring(L, "require('UnLua.HotReload').reload()");
             return 0;
         }
 
@@ -212,7 +212,7 @@ namespace UnLua
         {
             lua_register(L, "print", LogInfo);
             luaL_requiref(L, "UnLua", LuaOpen, 1);
-            luaL_dostring(L, "pcall(function() _G.require = require('UnLuaHotReload').require end)");
+            luaL_dostring(L, "pcall(function() _G.require = require('UnLua.HotReload').require end)");
             LegacySupport(L);
             return 1;
         }

@@ -41,7 +41,7 @@ namespace UnLua
     public:
         DECLARE_MULTICAST_DELEGATE_OneParam(FOnCreated, FLuaEnv&);
 
-        DECLARE_DELEGATE_RetVal_ThreeParams(bool, FLuaFileLoader, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
+        DECLARE_DELEGATE_RetVal_FourParams(bool, FLuaFileLoader, const FLuaEnv& /* Env */, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
 
         static FOnCreated OnCreated;
 
@@ -105,6 +105,8 @@ namespace UnLua
 
         void AddLoader(const FLuaFileLoader Loader);
 
+        void AddContentLoader(const FString& ContentDir);
+
         void AddBuiltInLoader(const FString InName, lua_CFunction Loader);
 
     protected:
@@ -148,6 +150,7 @@ namespace UnLua
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FLuaFileLoader> CustomLoaders;
+        TArray<FString> ContentDirs = {TEXT("Content/Script"), TEXT("Plugins/UnLua/Content/Script")};
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
         ULuaModuleLocator* ModuleLocator;
         FCriticalSection CandidatesLock;
