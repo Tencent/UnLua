@@ -36,8 +36,8 @@ if(WIN32 AND NOT CYGWIN)
     add_library(Lua SHARED
         ${LUA_CORE}
     )
-elseif (APPLE)
-    if (IOS)
+elseif(APPLE)
+    if(IOS)
         add_definitions(-DLUA_NO_OS_EXECUTE)
         add_library(Lua STATIC
             ${LUA_CORE}
@@ -53,6 +53,7 @@ else()
     add_library(Lua STATIC
         ${LUA_CORE}
     )
+    target_compile_options(Lua PRIVATE -fPIC)
 endif()
 
 if(WIN32 AND NOT CYGWIN)
