@@ -1454,32 +1454,6 @@ int32 Class_Index(lua_State *L)
     return 1;
 }
 
-/**
- * __index meta methods for struct
- */
-int32 ScriptStruct_Index(lua_State *L)
-{
-    GetField(L);
-    if (lua_type(L, -1) != LUA_TUSERDATA)
-        return 1;
-
-    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
-    if (!Property.IsValid())
-        return 0;
-
-    void* Self = GetCppInstance(L, 1);
-    if (!Self)
-        return 1;
-
-    if (UnLua::LowLevel::IsReleasedPtr(Self))
-        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released struct"), *Property->GetName())));
-
-    Property->Read(L, Self, true);
-    lua_remove(L, -2);
-    return 1;
-}
-
 bool IsPropertyOwnerTypeValid(UnLua::ITypeOps* InProperty, void* InContainerPtr)
 {
     if (InProperty->StaticExported)
