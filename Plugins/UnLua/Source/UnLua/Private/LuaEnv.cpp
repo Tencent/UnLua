@@ -95,10 +95,6 @@ namespace UnLua
 #endif
         }
 
-        // add new package path
-        const FString LuaSrcPath = GLuaSrcFullPath + TEXT("?.lua");
-        AddPackagePath(L, TCHAR_TO_UTF8(*LuaSrcPath));
-
         FUnLuaDelegates::OnPreStaticallyExport.Broadcast();
 
         // register statically exported classes

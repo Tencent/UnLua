@@ -1056,26 +1056,6 @@ static int32 GetField(lua_State* L)
 }
 
 /**
- * Add a package path to package.path
- */
-void AddPackagePath(lua_State *L, const char *Path)
-{
-    if (!Path)
-    {
-        UE_LOG(LogUnLua, Warning, TEXT("%s, Invalid package path!"), ANSI_TO_TCHAR(__FUNCTION__));
-        return;
-    }
-
-    lua_getglobal(L, "package");
-    lua_getfield(L, -1, "path");
-    char FinalPath[MAX_SPRINTF];
-    FCStringAnsi::Sprintf(FinalPath, "%s;%s", lua_tostring(L, -1), Path);
-    lua_pushstring(L, FinalPath);
-    lua_setfield(L, -3, "path");
-    lua_pop(L, 2);
-}
-
-/**
  * Get collision related enums
  */
 static bool RegisterCollisionEnum(lua_State *L, const char *Name, lua_CFunction IndexFunc)
