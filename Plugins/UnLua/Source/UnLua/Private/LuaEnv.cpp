@@ -454,11 +454,6 @@ namespace UnLua
         CustomLoaders.Add(Loader);
     }
 
-    void FLuaEnv::AddContentLoader(const FString& ContentDir)
-    {
-        ContentDirs.Add(ContentDir);
-    }
-
     void FLuaEnv::AddBuiltInLoader(const FString InName, const lua_CFunction Loader)
     {
         BuiltinLoaders.Add(InName, Loader);
@@ -519,7 +514,7 @@ namespace UnLua
     {
         FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
         FileName.ReplaceInline(TEXT("."), TEXT("/"));
-        const auto RelativePath = FString::Printf(TEXT("%s.lua"), *FileName);
+
         auto& Env = *(FLuaEnv*)lua_touserdata(L, lua_upvalueindex(1));
         TArray<uint8> Data;
         FString FullPath;
@@ -530,20 +525,29 @@ namespace UnLua
                 return 1;
             return luaL_error(L, "file loading from file system error");
         };
-        
+
+        const auto PackagePath = UnLuaLib::GetPackagePath(L);
+        if (PackagePath.IsEmpty())
+            return 0;
+
+        TArray<FString> Patterns;
+        if (PackagePath.ParseIntoArray(Patterns, TEXT(";"), false) == 0)
+            return 0;
+
         // 优先加载下载目录下的单文件
-        for (auto& ContentDir : Env.ContentDirs)
+        for (auto& Pattern : Patterns)
         {
-            const auto PathWithPersistentDir = FPaths::Combine(FPaths::ProjectPersistentDownloadDir(), ContentDir, RelativePath);
+            Pattern.ReplaceInline(TEXT("?"), *FileName);
+            const auto PathWithPersistentDir = FPaths::Combine(FPaths::ProjectPersistentDownloadDir(), Pattern);
             FullPath = FPaths::ConvertRelativePathToFull(PathWithPersistentDir);
             if (FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
                 return LoadIt();
         }
 
         // 其次是打包目录下的文件
-        for (auto& ContentDir : Env.ContentDirs)
+        for (auto& Pattern : Patterns)
         {
-            const auto PathWithProjectDir = FPaths::Combine(FPaths::ProjectDir(), ContentDir, RelativePath);
+            const auto PathWithProjectDir = FPaths::Combine(FPaths::ProjectDir(), Pattern);
             FullPath = FPaths::ConvertRelativePathToFull(PathWithProjectDir);
             if (FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
                 return LoadIt();

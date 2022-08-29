@@ -105,8 +105,6 @@ namespace UnLua
 
         void AddLoader(const FLuaFileLoader Loader);
 
-        void AddContentLoader(const FString& ContentDir);
-
         void AddBuiltInLoader(const FString InName, lua_CFunction Loader);
 
     protected:
@@ -150,7 +148,6 @@ namespace UnLua
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FLuaFileLoader> CustomLoaders;
-        TArray<FString> ContentDirs = {TEXT("Content/Script"), TEXT("Plugins/UnLua/Content/Script")};
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
         ULuaModuleLocator* ModuleLocator;
         FCriticalSection CandidatesLock;
