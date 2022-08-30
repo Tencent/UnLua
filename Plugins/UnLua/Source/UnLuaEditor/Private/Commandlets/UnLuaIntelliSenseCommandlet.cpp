@@ -16,6 +16,7 @@
 
 #include "Binding.h"
 #include "Misc/FileHelper.h"
+#include "UnLuaIntelliSenseGenerator.h"
 
 UUnLuaIntelliSenseCommandlet::UUnLuaIntelliSenseCommandlet(const FObjectInitializer& ObjectInitializer)
     : Super(ObjectInitializer)
@@ -96,6 +97,19 @@ int32 UUnLuaIntelliSenseCommandlet::Main(const FString &Params)
     }
     
     SaveFile(ModuleName, TEXT("GlobalFunctions"), GeneratedFileContent);
+
+    // generate blueprint intellisense if needed
+    TArray<FString> Tokens;
+    TArray<FString> Switches;
+    TMap<FString, FString> ParamsMap;
+    ParseCommandLine(*Params, Tokens, Switches, ParamsMap);
+    FString BPKey = TEXT("BP");
+    if (ParamsMap.Contains(BPKey) && ParamsMap[BPKey] == TEXT("1"))
+    {
+        auto Generator = FUnLuaIntelliSenseGenerator::Get();
+        Generator->Initialize();
+        Generator->UpdateAll();
+    }
 
     return 0;
 }
