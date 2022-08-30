@@ -77,10 +77,12 @@ namespace UnLua
 
         void Clear(void* Delegate);
 
-        void NotifyHandlerBeginDestroy(const ULuaDelegateHandler* Handler);
+        void NotifyHandlerBeginDestroy(ULuaDelegateHandler* Handler);
 
     private:
         TSharedPtr<FFunctionDesc> GetSignatureDesc(const void* Delegate);
+
+        ULuaDelegateHandler* CreateHandler(int LuaRef, UObject* Owner, UObject* SelfObject);
 
         struct FDelegateInfo
         {

@@ -26,7 +26,7 @@ namespace UnLua
     public:
         explicit FClassRegistry(FLuaEnv* Env);
 
-        static TSharedPtr<FClassRegistry> Find(const lua_State* L);
+        static FClassRegistry* Find(const lua_State* L);
 
         static FClassDesc* Find(const char* TypeName);
 

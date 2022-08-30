@@ -58,16 +58,16 @@ namespace UnLua
 
         UELib::Open(L);
 
-        ObjectRegistry = MakeShared<FObjectRegistry>(this);
-        ClassRegistry = MakeShared<FClassRegistry>(this);
+        ObjectRegistry = new FObjectRegistry(this);
+        ClassRegistry = new FClassRegistry(this);
         ClassRegistry->Register("UObject");
         ClassRegistry->Register("UClass");
 
-        FunctionRegistry = MakeShared<FFunctionRegistry>(this);
-        DelegateRegistry = MakeShared<FDelegateRegistry>(this);
-        ContainerRegistry = MakeShared<FContainerRegistry>(this);
-        EnumRegistry = MakeShared<FEnumRegistry>(this);
-        DeadLoopCheck = MakeShared<FDeadLoopCheck>(this);
+        FunctionRegistry = new FFunctionRegistry(this);
+        DelegateRegistry = new FDelegateRegistry(this);
+        ContainerRegistry = new FContainerRegistry(this);
+        EnumRegistry = new FEnumRegistry(this);
+        DeadLoopCheck = new FDeadLoopCheck(this);
 
         AutoObjectReference.SetName("UnLua_AutoReference");
         ManualObjectReference.SetName("UnLua_ManualReference");
@@ -126,6 +126,14 @@ namespace UnLua
     {
         lua_close(L);
         AllEnvs.Remove(L);
+
+        delete ClassRegistry;
+        delete ObjectRegistry;
+        delete DelegateRegistry;
+        delete FunctionRegistry;
+        delete ContainerRegistry;
+        delete EnumRegistry;
+        delete DeadLoopCheck;
 
         if (Manager)
         {

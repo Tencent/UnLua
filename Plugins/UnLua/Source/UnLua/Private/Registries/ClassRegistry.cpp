@@ -33,7 +33,7 @@ namespace UnLua
     {
     }
 
-    TSharedPtr<FClassRegistry> FClassRegistry::Find(const lua_State* L)
+    FClassRegistry* FClassRegistry::Find(const lua_State* L)
     {
         const auto Env = FLuaEnv::FindEnv(L);
         if (Env == nullptr)

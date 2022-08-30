@@ -28,7 +28,11 @@ namespace UnLua
     FDelegateRegistry::~FDelegateRegistry()
     {
         for (auto& Pair : CachedHandlers)
-            Env->AutoObjectReference.Remove(Pair.Value.Get());
+        {
+            const auto ToRelease = Pair.Value.Get();
+            ToRelease->Reset();
+            Env->AutoObjectReference.Remove(ToRelease);
+        }
         Delegates.Empty();
         FCoreUObjectDelegates::GetPostGarbageCollect().Remove(PostGarbageCollectHandle);
     }
@@ -63,13 +67,18 @@ namespace UnLua
         }
 
         for (auto& Key : ToRemove)
-            CachedHandlers.Remove(Key);
+        {
+            TWeakObjectPtr<ULuaDelegateHandler> Handler;
+            if (CachedHandlers.RemoveAndCopyValue(Key, Handler) && Handler.IsValid())
+                Handler->Reset();
+        }
     }
 
-    void FDelegateRegistry::NotifyHandlerBeginDestroy(const ULuaDelegateHandler* Handler)
+    void FDelegateRegistry::NotifyHandlerBeginDestroy(ULuaDelegateHandler* Handler)
     {
         const auto L = Env->GetMainState();
         luaL_unref(L, LUA_REGISTRYINDEX, Handler->LuaRef);
+        Handler->Reset();
     }
 
 #pragma region FScriptDelgate
@@ -126,7 +135,7 @@ namespace UnLua
 
         lua_pushvalue(L, Index);
         const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
+        const auto Handler = CreateHandler(Ref, Info.Owner.Get(), SelfObject);
         Handler->BindTo(Delegate);
         Env->AutoObjectReference.Add(Handler);
         CachedHandlers.Add(DelegatePair, Handler);
@@ -195,7 +204,7 @@ namespace UnLua
 
         lua_pushvalue(L, Index);
         const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
-        const auto Handler = ULuaDelegateHandler::CreateFrom(Env, Ref, Info.Owner.Get(), SelfObject);
+        const auto Handler = CreateHandler(Ref, Info.Owner.Get(), SelfObject);
         Env->AutoObjectReference.Add(Handler);
         Handler->AddTo(Info.MulticastProperty, Delegate);
         CachedHandlers.Add(DelegatePair, Handler);
@@ -255,5 +264,14 @@ namespace UnLua
         if (!Info->Desc)
             Info->Desc = MakeShared<FFunctionDesc>(Info->SignatureFunction, nullptr);
         return Info->Desc;
+    }
+
+    ULuaDelegateHandler* FDelegateRegistry::CreateHandler(int LuaRef, UObject* Owner, UObject* SelfObject)
+    {
+        const auto Ret = NewObject<ULuaDelegateHandler>();
+        Ret->Registry = this;
+        Ret->LuaRef = LuaRef;
+        Ret->SelfObject = SelfObject ? SelfObject : Owner;
+        return Ret;
     }
 }

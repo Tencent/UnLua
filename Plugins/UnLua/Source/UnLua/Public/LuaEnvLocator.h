@@ -24,13 +24,13 @@ class UNLUA_API ULuaEnvLocator : public UObject
 {
     GENERATED_BODY()
 public:
-    virtual TSharedPtr<UnLua::FLuaEnv> Locate(const UObject* Object);
+    virtual UnLua::FLuaEnv* Locate(const UObject* Object);
 
     virtual void HotReload();
 
     virtual void Reset();
 
-    TSharedPtr<UnLua::FLuaEnv> Env;
+    TSharedPtr<UnLua::FLuaEnv, ESPMode::ThreadSafe> Env;
 };
 
 UCLASS()
@@ -38,13 +38,13 @@ class UNLUA_API ULuaEnvLocator_ByGameInstance : public ULuaEnvLocator
 {
     GENERATED_BODY()
 public:
-    virtual TSharedPtr<UnLua::FLuaEnv> Locate(const UObject* Object) override;
+    virtual UnLua::FLuaEnv* Locate(const UObject* Object) override;
 
     virtual void HotReload() override;
 
     virtual void Reset() override;
 
-    TSharedPtr<UnLua::FLuaEnv> GetDefault();
+    UnLua::FLuaEnv* GetDefault();
 
-    TMap<TWeakObjectPtr<UGameInstance>, TSharedPtr<UnLua::FLuaEnv>> Envs;
+    TMap<TWeakObjectPtr<UGameInstance>, TSharedPtr<UnLua::FLuaEnv, ESPMode::ThreadSafe>> Envs;
 };
