@@ -467,10 +467,9 @@ namespace UnLua
             return 0;
 
         const auto SkipLen = 3 < Data.Num() && (0xEF == Data[0]) && (0xBB == Data[1]) && (0xBF == Data[2]) ? 3 : 0; // skip UTF-8 BOM mark
-        const auto ChunkName = TCHAR_TO_UTF8(*RelativePath);
         const auto Chunk = (const char*)(Data.GetData() + SkipLen);
         const auto ChunkSize = Data.Num() - SkipLen;
-        if (!UnLua::LoadChunk(L, Chunk, ChunkSize, ChunkName))
+        if (!UnLua::LoadChunk(L, Chunk, ChunkSize, TCHAR_TO_UTF8(*RelativePath)))
             return luaL_error(L, "file loading from file system error");
 
         return 1;
