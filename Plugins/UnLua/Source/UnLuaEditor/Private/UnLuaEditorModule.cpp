@@ -162,10 +162,12 @@ private:
             const auto Class = Cast<UClass>(Object);
             if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
                 return true;
-            ULuaFunction::SuspendOverrides(Class);
             SuspendedPackages.Add(Package, Class);
             return false;
         }, false);
+
+        for (const auto Pair : SuspendedPackages)
+            ULuaFunction::SuspendOverrides(Pair.Value);
     }
 
     void OnPackageSaved(const FString& PackageFileName, UObject* Outer)
