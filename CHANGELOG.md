@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Lua持有结构体下的TArray字段，在结构体本身被GC后访问该数组会导致崩溃 [#505](https://github.com/Tencent/UnLua/issues/505)
 - `TCHAR_TO_XXX` 等宏应该只在行内传参使用 [#508](https://github.com/Tencent/UnLua/pull/508)
 - 退出游戏时候可能访问已经被释放的 `UUnLuaManager` 引起的崩溃 [#504](https://github.com/Tencent/UnLua/issues/504)
+- UE5下在编辑器运行游戏的同时编译并保存动画蓝图会Crash [#510](https://github.com/Tencent/UnLua/issues/510)
 
 ### Changed
 - Lua模版文件中使用 `@type` 注解 [#498](https://github.com/Tencent/UnLua/issues/498)
