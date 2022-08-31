@@ -135,7 +135,7 @@ namespace UnLua
         delete EnumRegistry;
         delete DeadLoopCheck;
 
-        if (Manager)
+        if (!IsEngineExitRequested() && Manager)
         {
             Manager->Cleanup();
             Manager->RemoveFromRoot();
