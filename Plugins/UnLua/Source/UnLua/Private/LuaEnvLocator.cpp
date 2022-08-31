@@ -15,14 +15,14 @@
 #include "Engine/World.h"
 #include "LuaEnvLocator.h"
 
-TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator::Locate(const UObject* Object)
+UnLua::FLuaEnv* ULuaEnvLocator::Locate(const UObject* Object)
 {
     if (!Env)
     {
-        Env = MakeShared<UnLua::FLuaEnv>();
+        Env = MakeShared<UnLua::FLuaEnv, ESPMode::ThreadSafe>();
         Env->Start();
     }
-    return Env;
+    return Env.Get();
 }
 
 void ULuaEnvLocator::HotReload()
@@ -37,7 +37,7 @@ void ULuaEnvLocator::Reset()
     Env.Reset();
 }
 
-TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::Locate(const UObject* Object)
+UnLua::FLuaEnv* ULuaEnvLocator_ByGameInstance::Locate(const UObject* Object)
 {
     if (!Object)
         return GetDefault();
@@ -62,19 +62,15 @@ TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::Locate(const UObject* 
             return GetDefault();
     }
 
-    TSharedPtr<UnLua::FLuaEnv> Ret;
-    if (Envs.Contains(GameInstance))
-    {
-        Ret = Envs.FindRef(GameInstance);
-    }
-    else
-    {
-        Ret = MakeShared<UnLua::FLuaEnv>();
-        Ret->SetName(FString::Printf(TEXT("Env_%d"), Envs.Num() + 1));
-        Ret->Start();
-        Envs.Add(GameInstance, Ret);
-    }
-    return Ret;
+    const auto Exists = Envs.Find(GameInstance);
+    if (Exists)
+        return (*Exists).Get();
+
+    const TSharedPtr<UnLua::FLuaEnv, ESPMode::ThreadSafe> Ret = MakeShared<UnLua::FLuaEnv, ESPMode::ThreadSafe>();
+    Ret->SetName(FString::Printf(TEXT("Env_%d"), Envs.Num() + 1));
+    Ret->Start();
+    Envs.Add(GameInstance, Ret);
+    return Ret.Get();
 }
 
 void ULuaEnvLocator_ByGameInstance::HotReload()
@@ -93,12 +89,12 @@ void ULuaEnvLocator_ByGameInstance::Reset()
     Envs.Empty();
 }
 
-TSharedPtr<UnLua::FLuaEnv> ULuaEnvLocator_ByGameInstance::GetDefault()
+UnLua::FLuaEnv* ULuaEnvLocator_ByGameInstance::GetDefault()
 {
     if (!Env)
     {
-        Env = MakeShared<UnLua::FLuaEnv>();
+        Env = MakeShared<UnLua::FLuaEnv, ESPMode::ThreadSafe>();
         Env->Start();
     }
-    return Env;
+    return Env.Get();
 }

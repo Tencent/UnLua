@@ -133,7 +133,7 @@ namespace UnLua
             bIsActive = bActive;
         }
 
-        virtual TSharedPtr<FLuaEnv> GetEnv(UObject* Object) override
+        virtual FLuaEnv* GetEnv(UObject* Object) override
         {
             if (!bIsActive)
                 return nullptr;

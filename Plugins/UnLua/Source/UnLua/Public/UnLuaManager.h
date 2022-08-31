@@ -37,8 +37,6 @@ public:
 
     bool Bind(UObject *Object, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
 
-    void OnWorldCleanup(UWorld* World, bool bArg, bool bCond);
-
     void NotifyUObjectDeleted(const UObjectBase *Object);
 
     void Cleanup();

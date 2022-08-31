@@ -20,7 +20,7 @@ static const FName NAME_Dummy = TEXT("Dummy");
 ULuaDelegateHandler::ULuaDelegateHandler()
 {
     LuaRef = LUA_NOREF;
-    Env.Reset();
+    Registry = nullptr;
     Delegate = nullptr;
 }
 
@@ -58,26 +58,20 @@ void ULuaDelegateHandler::RemoveFrom(FMulticastDelegateProperty* InProperty, voi
 
 void ULuaDelegateHandler::BeginDestroy()
 {
-    if (Env.IsValid())
-    {
-        const auto PinnedEnv = Env.Pin();
-        PinnedEnv->GetDelegateRegistry()->NotifyHandlerBeginDestroy(this);
-    }
+    if (Registry)
+        Registry->NotifyHandlerBeginDestroy(this);
     UObject::BeginDestroy();
+}
+
+void ULuaDelegateHandler::Reset()
+{
+    LuaRef = LUA_NOREF;
+    Registry = nullptr;
+    Delegate = nullptr;
 }
 
 void ULuaDelegateHandler::ProcessEvent(UFunction* Function, void* Parms)
 {
-    if (!Env.IsValid())
-        return;
-    Env.Pin()->GetDelegateRegistry()->Execute(this, Parms);
-}
-
-ULuaDelegateHandler* ULuaDelegateHandler::CreateFrom(UnLua::FLuaEnv* InEnv, int32 InLuaRef, UObject* InOwner, UObject* InSelfObject)
-{
-    const auto Ret = NewObject<ULuaDelegateHandler>();
-    Ret->Env = InEnv->AsShared();
-    Ret->LuaRef = InLuaRef;
-    Ret->SelfObject = InSelfObject ? InSelfObject : InOwner;
-    return Ret;
+    if (Registry)
+        Registry->Execute(this, Parms);
 }

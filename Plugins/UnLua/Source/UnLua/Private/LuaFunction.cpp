@@ -109,16 +109,13 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
 
     Outer->AddFunctionToFunctionMap(LuaFunction, NewName);
 
+    LuaFunction->Next = Outer->Children;
+    Outer->Children = LuaFunction;
+
     if (Outer->IsRooted() || GUObjectArray.IsDisregardForGC(Outer))
-    {
         LuaFunction->AddToRoot();
-    }
     else
-    {
-        LuaFunction->Next = Outer->Children;
-        Outer->Children = LuaFunction;
         LuaFunction->AddToCluster(Outer);
-    }
 
     return true;
 }

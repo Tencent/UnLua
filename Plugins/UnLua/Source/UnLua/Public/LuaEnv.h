@@ -31,8 +31,7 @@
 namespace UnLua
 {
     class UNLUA_API FLuaEnv
-        : public FUObjectArray::FUObjectDeleteListener,
-          public TSharedFromThis<FLuaEnv>
+        : public FUObjectArray::FUObjectDeleteListener
     {
         friend FClassRegistry;
         friend FDelegateRegistry;
@@ -89,19 +88,19 @@ namespace UnLua
 
         UUnLuaManager* GetManager();
 
-        FORCEINLINE TSharedPtr<FClassRegistry> GetClassRegistry() const { return ClassRegistry; }
+        FORCEINLINE FClassRegistry* GetClassRegistry() const { return ClassRegistry; }
 
-        FORCEINLINE TSharedPtr<FObjectRegistry> GetObjectRegistry() const { return ObjectRegistry; }
+        FORCEINLINE FObjectRegistry* GetObjectRegistry() const { return ObjectRegistry; }
 
-        FORCEINLINE TSharedPtr<FDelegateRegistry> GetDelegateRegistry() const { return DelegateRegistry; }
+        FORCEINLINE FDelegateRegistry* GetDelegateRegistry() const { return DelegateRegistry; }
 
-        FORCEINLINE TSharedPtr<FFunctionRegistry> GetFunctionRegistry() const { return FunctionRegistry; }
+        FORCEINLINE FFunctionRegistry* GetFunctionRegistry() const { return FunctionRegistry; }
 
-        FORCEINLINE TSharedPtr<FContainerRegistry> GetContainerRegistry() const { return ContainerRegistry; }
+        FORCEINLINE FContainerRegistry* GetContainerRegistry() const { return ContainerRegistry; }
 
-        FORCEINLINE TSharedPtr<FEnumRegistry> GetEnumRegistry() const { return EnumRegistry; }
+        FORCEINLINE FEnumRegistry* GetEnumRegistry() const { return EnumRegistry; }
 
-        FORCEINLINE TSharedPtr<FDeadLoopCheck> GetDeadLoopCheck() const { return DeadLoopCheck; }
+        FORCEINLINE FDeadLoopCheck* GetDeadLoopCheck() const { return DeadLoopCheck; }
 
         void AddLoader(const FLuaFileLoader Loader);
 
@@ -154,13 +153,13 @@ namespace UnLua
         FObjectReferencer AutoObjectReference;
         FObjectReferencer ManualObjectReference;
         UUnLuaManager* Manager = nullptr;
-        TSharedPtr<FClassRegistry> ClassRegistry;
-        TSharedPtr<FObjectRegistry> ObjectRegistry;
-        TSharedPtr<FDelegateRegistry> DelegateRegistry;
-        TSharedPtr<FFunctionRegistry> FunctionRegistry;
-        TSharedPtr<FContainerRegistry> ContainerRegistry;
-        TSharedPtr<FEnumRegistry> EnumRegistry;
-        TSharedPtr<FDeadLoopCheck> DeadLoopCheck;
+        FClassRegistry* ClassRegistry;
+        FObjectRegistry* ObjectRegistry;
+        FDelegateRegistry* DelegateRegistry;
+        FFunctionRegistry* FunctionRegistry;
+        FContainerRegistry* ContainerRegistry;
+        FEnumRegistry* EnumRegistry;
+        FDeadLoopCheck* DeadLoopCheck;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;

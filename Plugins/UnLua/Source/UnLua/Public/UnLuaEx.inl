@@ -785,10 +785,10 @@ namespace UnLua
     {
         // make sure the meta table is on the top of the stack if 'bIsReflected' is true
 
-        const auto ClassName = TCHAR_TO_UTF8(*Name);
+        FTCHARToUTF8 ClassName(*Name);
         if (!bIsReflected)
         {
-            int32 Type = luaL_getmetatable(L, ClassName);
+            int32 Type = luaL_getmetatable(L, ClassName.Get());
             lua_pop(L, 1);
             if (Type == LUA_TTABLE)
             {
@@ -809,7 +809,7 @@ namespace UnLua
                     }
                 }
 
-                luaL_newmetatable(L, ClassName);
+                luaL_newmetatable(L, ClassName.Get());
 
                 if (!SuperClassName.IsEmpty())
                 {
@@ -852,7 +852,7 @@ namespace UnLua
         if (!bIsReflected)
         {
             lua_getglobal(L, "UE");
-            lua_pushstring(L, ClassName);
+            lua_pushstring(L, ClassName.Get());
             lua_pushvalue(L, -3);
             lua_rawset(L, -3);
             lua_pop(L, 2);

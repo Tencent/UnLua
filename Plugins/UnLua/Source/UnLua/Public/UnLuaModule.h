@@ -27,7 +27,7 @@ public:
 
     virtual void SetActive(bool bActive) = 0;
 
-    virtual TSharedPtr<UnLua::FLuaEnv> GetEnv(UObject* Object = nullptr) = 0;
+    virtual UnLua::FLuaEnv* GetEnv(UObject* Object = nullptr) = 0;
 
     virtual void HotReload() = 0;
 };

@@ -14,39 +14,20 @@
 
 #pragma once
 
-#include "UnLuaTestHelpers.h"
-#include "Issue505Test.generated.h"
+#include "UnLuaInterface.h"
+#include "Issue500Test.generated.h"
 
-USTRUCT(BlueprintType)
-struct UNLUATESTSUITE_API FUnLuaIssue505Struct
-{
-    GENERATED_USTRUCT_BODY()
-
-    UPROPERTY()
-    TArray<FUnLuaTestTableRow> Array;
-
-    FUnLuaIssue505Struct()
-    {
-        FUnLuaTestTableRow Row1;
-        Row1.Level = 1;
-        Row1.Title = "Row1";
-        Array.Add(Row1);
-
-        FUnLuaTestTableRow Row2;
-        Row2.Level = 2;
-        Row2.Title = "Row2";
-        Array.Add(Row2);
-    }
-};
-
-UCLASS(BlueprintType)
-class UUnLuaIssue505Helper : public UObject
+UCLASS(Blueprintable)
+class UNLUATESTSUITE_API UObjectForIssue500 : public UObject, public IUnLuaInterface
 {
     GENERATED_BODY()
+
 public:
-    UFUNCTION(BlueprintCallable)
-    static FUnLuaIssue505Struct GetStruct()
+    UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+    FString Test();
+
+    virtual FString GetModuleName_Implementation() const override
     {
-        return FUnLuaIssue505Struct();
+        return TEXT("Tests.Regression.Issue500.ObjectForIssue500");
     }
 };

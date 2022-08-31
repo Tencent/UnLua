@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 通过C++类绑定的时候使用自动创建脚本功能会崩溃 [#490](https://github.com/Tencent/UnLua/issues/490)
 - 修复一些智能提示被过滤了的情况
 - 监听嵌套界面里的组件的事件会导致组件无法被回收
+- 覆写C++类型的函数后在蓝图编辑器里调用需要刷新节点才能编译过 [#500](https://github.com/Tencent/UnLua/issues/500)
 - Lua持有结构体下的TArray字段，在结构体本身被GC后访问该数组会导致崩溃 [#505](https://github.com/Tencent/UnLua/issues/505)
 
 ### Changed
