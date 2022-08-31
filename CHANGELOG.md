@@ -4,13 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.2.4] - 2022-8-19
+## [2.2.4] - 2022-9-1
 - 支持配置按C/C++编译Lua环境
 - 支持Lua启动入口脚本配置
 - 支持Lua环境手动启动参数
 - 默认自动将 `Content/Script` 目录加入打包设置
 - 增加一些指针对象的合法性检查
 - `UnLua.HotReload` 支持手动指定热重载模块列表
+- 支持Commandlet导出蓝图智能提示信息 [#507](https://github.com/Tencent/UnLua/pull/507)
 
 ### Fixed
 - UE5下的Script编译警告
@@ -24,6 +25,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 监听嵌套界面里的组件的事件会导致组件无法被回收
 - 覆写C++类型的函数后在蓝图编辑器里调用需要刷新节点才能编译过 [#500](https://github.com/Tencent/UnLua/issues/500)
 - Lua持有结构体下的TArray字段，在结构体本身被GC后访问该数组会导致崩溃 [#505](https://github.com/Tencent/UnLua/issues/505)
+- `TCHAR_TO_XXX` 等宏应该只在行内传参使用 [#508](https://github.com/Tencent/UnLua/pull/508)
+- 退出游戏时候可能访问已经被释放的 `UUnLuaManager` 引起的崩溃 [#504](https://github.com/Tencent/UnLua/issues/504)
 
 ### Changed
 - Lua模版文件中使用 `@type` 注解 [#498](https://github.com/Tencent/UnLua/issues/498)
@@ -31,6 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Lua源码作为外部第三方模块引入，默认使用C编译
 - Lua生成模版中统一使用 `UnLua.Class`，并增加类型注解
 - 调整所有LuaLib的异常抛出形式为 `luaL_error` 而不是仅输出错误日志
+- 切换场景时不再强制进行LuaGC
 
 ## [2.2.3] - 2022-7-15
 
