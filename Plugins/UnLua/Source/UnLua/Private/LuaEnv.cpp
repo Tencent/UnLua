@@ -471,6 +471,16 @@ namespace UnLua
         BuiltinLoaders.Add(InName, Loader);
     }
 
+    void FLuaEnv::AddManualObjectReference(UObject* Object)
+    {
+        ManualObjectReference.Add(Object);
+    }
+
+    void FLuaEnv::RemoveManualObjectReference(UObject* Object)
+    {
+        ManualObjectReference.Remove(Object);
+    }
+
     int FLuaEnv::LoadFromBuiltinLibs(lua_State* L)
     {
         const FLuaEnv* Env = (FLuaEnv*)lua_touserdata(L, lua_upvalueindex(1));
