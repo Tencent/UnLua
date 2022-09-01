@@ -185,16 +185,32 @@ private:
 
     void SetupPackagingSettings()
     {
+        static auto ScriptPaths = {TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
         const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
-        FDirectoryPath ScriptPath;
-        ScriptPath.Path = TEXT("Script");
-        for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
+        bool bModified = false;
+        auto Exists = [&](const wchar_t* Path)
         {
-            if (DirPath.Path == ScriptPath.Path)
-                return;
+            for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
+            {
+                if (DirPath.Path == Path)
+                    return true;
+            }
+            return false;
+        };
+
+        for (auto& ScriptPath : ScriptPaths)
+        {
+            if (Exists(ScriptPath))
+                continue;
+
+            FDirectoryPath DirectoryPath;
+            DirectoryPath.Path = ScriptPath;
+            PackagingSettings->DirectoriesToAlwaysStageAsUFS.Add(DirectoryPath);
+            bModified = true;
         }
-        PackagingSettings->DirectoriesToAlwaysStageAsUFS.Add(ScriptPath);
-        PackagingSettings->SaveConfig();
+
+        if (bModified)
+            PackagingSettings->SaveConfig();
     }
 
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;

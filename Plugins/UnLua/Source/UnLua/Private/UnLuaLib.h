@@ -20,5 +20,11 @@ namespace UnLua
     namespace UnLuaLib
     {
         int Open(lua_State* L);
+
+        /* 获取 UnLua.PackagePath */
+        FString GetPackagePath(lua_State* L);
+
+        /* 设置 UnLua.PackagePath */
+        void SetPackagePath(lua_State* L, const FString& PackagePath);
     }
 }

@@ -7,6 +7,8 @@ namespace UnLua
 {
     namespace UnLuaLib
     {
+        static const char* PACKAGE_PATH_KEY = "PackagePath";
+
         static FString GetMessage(lua_State* L)
         {
             const auto ArgCount = lua_gettop(L);
@@ -43,7 +45,7 @@ namespace UnLua
 
         static int HotReload(lua_State* L)
         {
-            luaL_dostring(L, "require('UnLuaHotReload').reload()");
+            luaL_dostring(L, "require('UnLua.HotReload').reload()");
             return 0;
         }
 
@@ -205,6 +207,8 @@ namespace UnLua
         {
             lua_newtable(L);
             luaL_setfuncs(L, UnLua_Functions, 0);
+            lua_pushstring(L, "Content/Script/?.lua;Plugins/UnLua/Content/Script/?.lua");
+            lua_setfield(L, -2, PACKAGE_PATH_KEY);
             return 1;
         }
 
@@ -212,9 +216,29 @@ namespace UnLua
         {
             lua_register(L, "print", LogInfo);
             luaL_requiref(L, "UnLua", LuaOpen, 1);
-            luaL_dostring(L, "pcall(function() _G.require = require('UnLuaHotReload').require end)");
+            luaL_dostring(L, "pcall(function() _G.require = require('UnLua.HotReload').require end)");
             LegacySupport(L);
             return 1;
+        }
+
+        FString GetPackagePath(lua_State* L)
+        {
+            lua_getglobal(L, "UnLua");
+            checkf(lua_istable(L, -1), TEXT("UnLuaLib not registered"));
+            lua_getfield(L, -1, PACKAGE_PATH_KEY);
+            const auto PackagePath = lua_tostring(L, -1);
+            checkf(PackagePath, TEXT("invalid PackagePath"));
+            lua_pop(L, 2);
+            return UTF8_TO_TCHAR(PackagePath);
+        }
+
+        void SetPackagePath(lua_State* L, const FString& PackagePath)
+        {
+            lua_getglobal(L, "UnLua");
+            checkf(lua_istable(L, -1), TEXT("UnLuaLib not registered"));
+            lua_pushstring(L, TCHAR_TO_UTF8(*PackagePath));
+            lua_setfield(L, -2, PACKAGE_PATH_KEY);
+            lua_pop(L, 2);
         }
     }
 }
