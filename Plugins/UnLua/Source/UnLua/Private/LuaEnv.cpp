@@ -355,6 +355,14 @@ namespace UnLua
         // TODO: env support
         // TODO: return value support
 
+#if WITH_EDITOR
+        if (Size > 3 && Buffer[0] == static_cast<char>(0xEF) && Buffer[1] == static_cast<char>(0xBB) && Buffer[2] == static_cast<char>(0xBF))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("Lua chunk with utf-8 BOM:%s"), UTF8_TO_TCHAR(InName));
+            return LoadBuffer(Buffer + 3, Size - 3, InName);
+        }
+#endif
+
         // loads the buffer as a Lua chunk
         const int32 Code = luaL_loadbufferx(L, Buffer, Size, InName, nullptr);
         if (Code != LUA_OK)
