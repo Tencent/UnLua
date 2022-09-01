@@ -52,6 +52,10 @@
   * [11_ReleaseUMG](Content/Script/Tutorials/11_ReleaseUMG.lua) 释放UMG相关对象
   * [12_CustomLoader](Content/Script/Tutorials/12_CustomLoader.lua) 自定义加载器
 
+# 最佳实践示例
+
+[Lyra with UnLua](https://github.com/xuyanghuang-tencent/LyraWithUnLua) 基于UE官方 **Lyra初学者游戏包** 的完整示例项目，目前正在施工中
+
 # 文档
 
 常用文档：[设置选项](Docs/CN/Settings.md) | [调试](Docs/CN/Debugging.md) | [智能提示](Docs/CN/IntelliSense.md) | [控制台命令](Docs/CN/ConsoleCommand.md) | [FAQ](Docs/CN/FAQ.md)

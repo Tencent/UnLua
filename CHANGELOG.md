@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [2.2.4] - 2022-9-1
+- 增加最佳实践工程示例 [Lyra with UnLua](https://github.com/xuyanghuang-tencent/LyraWithUnLua)
 - 支持配置按C/C++编译Lua环境
 - 支持Lua启动入口脚本配置
 - 支持Lua环境手动启动参数
