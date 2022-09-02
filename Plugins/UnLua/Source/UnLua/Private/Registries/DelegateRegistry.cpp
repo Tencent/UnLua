@@ -30,6 +30,8 @@ namespace UnLua
         for (auto& Pair : CachedHandlers)
         {
             const auto ToRelease = Pair.Value.Get();
+            if (!ToRelease)
+                continue;;
             ToRelease->Reset();
             Env->AutoObjectReference.Remove(ToRelease);
         }
