@@ -31,7 +31,7 @@ namespace UnLua
         {
             const auto ToRelease = Pair.Value.Get();
             if (!ToRelease)
-                continue;;
+                continue;
             ToRelease->Reset();
             Env->AutoObjectReference.Remove(ToRelease);
         }
