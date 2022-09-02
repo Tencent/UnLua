@@ -355,10 +355,12 @@ namespace UnLua
         // TODO: env support
         // TODO: return value support
 
-#if WITH_EDITOR
+#if UNLUA_LEGACY_ALLOW_BOM || WITH_EDITOR
         if (Size > 3 && Buffer[0] == static_cast<char>(0xEF) && Buffer[1] == static_cast<char>(0xBB) && Buffer[2] == static_cast<char>(0xBF))
         {
+#if !UNLUA_LEGACY_ALLOW_BOM
             UE_LOG(LogUnLua, Warning, TEXT("Lua chunk with utf-8 BOM:%s"), UTF8_TO_TCHAR(InName));
+#endif
             return LoadBuffer(Buffer + 3, Size - 3, InName);
         }
 #endif
