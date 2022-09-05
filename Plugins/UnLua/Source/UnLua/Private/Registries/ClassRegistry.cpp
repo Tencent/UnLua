@@ -121,7 +121,18 @@ namespace UnLua
     {
         int Type = luaL_getmetatable(L, MetatableName);
         if (Type == LUA_TTABLE)
-            return true;
+        {
+            FClassDesc* Ret = Find(MetatableName);
+            if (Ret && Ret->IsClass() && !Ret->IsStructValid())
+            {
+                // unregister invalid metatable
+                Unregister(Ret);
+            }
+            else
+            {
+                return true;
+            }
+        }
         lua_pop(L, 1);
 
         if (FindExportedNonReflectedClass(MetatableName))
