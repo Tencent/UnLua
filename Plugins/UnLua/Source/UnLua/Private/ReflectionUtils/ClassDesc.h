@@ -30,6 +30,8 @@ public:
 
     FORCEINLINE bool IsValid() const { return true; }
 
+    FORCEINLINE bool IsStructValid() const { return Struct.IsValid(); }
+
     FORCEINLINE bool IsScriptStruct() const { return bIsScriptStruct; }
 
     FORCEINLINE bool IsClass() const { return bIsClass; }
