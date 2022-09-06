@@ -310,6 +310,10 @@ namespace UnLua
 
     void FClassRegistry::Unregister(const FClassDesc* ClassDesc)
     {
+        if (ClassDesc->IsStructValid())
+        {
+            return;
+        }
         const auto L = Env->GetMainState();
         const auto MetatableName = ClassDesc->GetName();
         lua_pushnil(L);
