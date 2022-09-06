@@ -43,6 +43,8 @@ elseif(APPLE)
             ${LUA_CORE}
         )
     else()
+        set(CMAKE_MACOSX_RPATH 1)
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/libLua")
         set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15)
         add_definitions(-DLUA_USE_MACOSX)
         add_library(Lua SHARED
