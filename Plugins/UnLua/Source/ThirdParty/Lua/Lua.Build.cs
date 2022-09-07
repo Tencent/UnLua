@@ -91,7 +91,7 @@ public class Lua : ModuleRules
         var toolchain = AndroidExports.CreateToolChain(Target.ProjectFile);
         var NdkApiLevel = toolchain.GetNdkApiLevelInt(21);
 
-        var abiNames = new[] { "armeabi-v7a", "arm64-v8a" };
+        var abiNames = new[] { "armeabi-v7a", "arm64-v8a", "x86_64" };
         foreach (var abiName in abiNames)
         {
             var libFile = GetLibraryPath(abiName);
