@@ -188,7 +188,7 @@ private:
         static auto ScriptPaths = {TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
         const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
         bool bModified = false;
-        auto Exists = [&](const wchar_t* Path)
+        auto Exists = [&](const auto Path)
         {
             for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
             {
