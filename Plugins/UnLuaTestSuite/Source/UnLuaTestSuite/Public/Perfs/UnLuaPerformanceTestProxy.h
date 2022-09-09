@@ -24,6 +24,9 @@ class AUnLuaPerformanceTestProxy : public AActor, public IUnLuaInterface
     GENERATED_BODY()
 
 public:
+    UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
+    void Run(int32 N);
+
     UFUNCTION(BlueprintCallable)
     void NOP();
 
@@ -68,7 +71,7 @@ public:
 
     virtual FString GetModuleName_Implementation() const override
     {
-        return TEXT("UnLuaPerformanceTestProxy");
+        return TEXT("Tests.Benchmark.UnLuaPerformanceTestProxy");
     }
 
 private:

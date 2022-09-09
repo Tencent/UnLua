@@ -78,9 +78,6 @@ bool AUnLuaPerformanceTestProxy::GetMeshInfo(int32 &OutMeshID, FString &OutMeshN
     return true;
 }
 
-
-#if UE_BUILD_TEST
-
 #include "Misc/DateTime.h"
 #include "Misc/FileHelper.h"
 #include "UnLuaEx.h"
@@ -95,5 +92,3 @@ bool LogPerformanceData(const FString &Message)
 EXPORT_FUNCTION(bool, LogPerformanceData, const FString&)
 
 EXPORT_FUNCTION_EX(Seconds, double, FPlatformTime::Seconds)
-
-#endif
