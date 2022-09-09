@@ -48,6 +48,9 @@ DECLARE_MEMORY_STAT_EXTERN(TEXT("Persistent Parameter Buffer Memory"), STAT_UnLu
 DECLARE_MEMORY_STAT_EXTERN(TEXT("OutParmRec Memory"), STAT_UnLua_OutParmRec_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
 DECLARE_MEMORY_STAT_EXTERN(TEXT("Container Element Cache Memory"), STAT_UnLua_ContainerElementCache_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
 
+#define UNLUA_DEFINE_STAT(Name) \
+    DEFINE_STAT(STAT_UnLua_##Name);
+
 #define UNLUA_STAT_MEMORY_ALLOC(Pointer, CounterName) \
     const auto _AllocedSize = FMemory::GetAllocSize(Pointer); \
     INC_MEMORY_STAT_BY(STAT_UnLua_##CounterName##_Memory, _AllocedSize);
@@ -73,11 +76,22 @@ DECLARE_MEMORY_STAT_EXTERN(TEXT("Container Element Cache Memory"), STAT_UnLua_Co
     _ReallocGuard.Ptr = Pointer; \
     _ReallocGuard.NewPtr = &NewPointer; \
 
+#define UNLUA_DECLARE_CYCLE_STAT(FriendlyName, StatName) \
+    DECLARE_CYCLE_STAT(TEXT(FriendlyName), STAT_##StatName, STATGROUP_UnLua)
+
+#define UNLUA_SCOPE_CYCLE_COUNTER(StatName) \
+    SCOPE_CYCLE_COUNTER(STAT_##StatName)
+
 #else
+
+#define UNLUA_DEFINE_STAT(Name)
 
 #define UNLUA_STAT_MEMORY_ALLOC(Pointer, CounterName)
 #define UNLUA_STAT_MEMORY_FREE(PointerName, CounterName)
 #define UNLUA_STAT_MEMORY_REALLOC(Pointer, NewPointer, CounterName)
+
+#define UNLUA_DECLARE_CYCLE_STAT(FriendlyName, StatName)
+#define UNLUA_SCOPE_CYCLE_COUNTER(StatName)
 
 #endif
 
