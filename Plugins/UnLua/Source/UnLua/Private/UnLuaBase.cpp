@@ -307,14 +307,9 @@ namespace UnLua
     UObject* GetUObject(lua_State *L, int32 Index, bool bReturnNullIfInvalid)
     {
         UObject* Object = (UObject*)GetCppInstance(L, Index);
-        if (bReturnNullIfInvalid && !IsUObjectValid(Object))
-        {
+        if (UNLIKELY(bReturnNullIfInvalid && !IsUObjectValid(Object)))
             return nullptr;
-        }
-        else
-        {
-            return Object;
-        }
+        return Object;
     }
 
     /**
