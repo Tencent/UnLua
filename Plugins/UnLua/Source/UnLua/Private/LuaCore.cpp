@@ -1478,8 +1478,8 @@ int32 Class_NewIndex(lua_State *L)
                     return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
 
 #if ENABLE_TYPE_CHECK == 1
-                if (IsPropertyOwnerTypeValid(Property.Get(), Self))
-                    Property->Write(L, Self, 3);
+                if (IsPropertyOwnerTypeValid((*Property).Get(), Self))
+                    (*Property)->Write(L, Self, 3);
 #else
                 (*Property)->Write(L, Self, 3);
 #endif
