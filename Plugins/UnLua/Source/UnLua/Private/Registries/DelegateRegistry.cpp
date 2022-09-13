@@ -71,7 +71,12 @@ namespace UnLua
         for (auto& Key : ToRemove)
         {
             TWeakObjectPtr<ULuaDelegateHandler> Handler;
-            CachedHandlers.RemoveAndCopyValue(Key, Handler);
+            if (CachedHandlers.RemoveAndCopyValue(Key, Handler))
+            {
+                const auto L = Env->GetMainState();
+                luaL_unref(L, LUA_REGISTRYINDEX, Handler->LuaRef);
+                Handler->Reset();
+            }
         }
     }
 
