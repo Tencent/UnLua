@@ -1415,7 +1415,7 @@ int32 Class_Index(lua_State *L)
 {
     GetField(L);
 
-    void* Ptr = lua_touserdata(L, -1);
+    auto Ptr = lua_touserdata(L, -1);
     if (!Ptr)
         return 1;
 
@@ -1465,23 +1465,23 @@ int32 Class_NewIndex(lua_State *L)
 {
     GetField(L);
 
-    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-    if (lua_type(L, -1) == LUA_TUSERDATA)
+    auto Ptr = lua_touserdata(L, -1);
+    if (Ptr)
     {
-        const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
-        if (Property.IsValid())
+        auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
+        if (Property->IsValid())
         {
             void* Self = GetCppInstance(L, 1);
             if (Self)
             {
                 if (UnLua::LowLevel::IsReleasedPtr(Self))
-                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *Property->GetName())));
+                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
 
 #if ENABLE_TYPE_CHECK == 1
                 if (IsPropertyOwnerTypeValid(Property.Get(), Self))
                     Property->Write(L, Self, 3);
 #else
-                Property->Write(L, Self, 3);
+                (*Property)->Write(L, Self, 3);
 #endif
             }
         }
