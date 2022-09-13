@@ -557,7 +557,10 @@ static int32 TArray_Index(lua_State* L)
     }
 
     lua_getmetatable(L, 1);
-    lua_getfield(L, -1, lua_tostring(L, 2));
+    if (lua_compare(L, 1, -1, LUA_OPEQ))
+        lua_pushnil(L);
+    else
+        lua_getfield(L, -1, lua_tostring(L, 2));
     lua_remove(L, -2);
 
     return 1;
