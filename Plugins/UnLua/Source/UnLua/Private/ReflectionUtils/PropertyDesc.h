@@ -41,8 +41,6 @@ class FPropertyDesc : public UnLua::ITypeInterface
 public:
     static FPropertyDesc* Create(FProperty *InProperty);
 
-	virtual ~FPropertyDesc();
-
     /**
      * Check the validity of this property
      *
@@ -115,7 +113,7 @@ public:
      */
     FORCEINLINE virtual void GetValue(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const 
     {
-        if (!IsValid())
+        if (UNLIKELY(!IsValid()))
         {
             UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
             lua_pushnil(L);
@@ -220,8 +218,6 @@ protected:
     TWeakFieldPtr<FProperty> PropertyPtr;
     int8 PropertyType;
     FString Name = TEXT("");
-public:
-    static TMap<FProperty*,FPropertyDesc*> Property2Desc;
 };
 
 UNLUA_API int32 GetPropertyType(const FProperty *Property);
