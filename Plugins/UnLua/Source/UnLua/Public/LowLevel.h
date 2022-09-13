@@ -22,7 +22,7 @@ namespace UnLua
     {
         const static UObject* ReleasedPtr = (UObject*)0xDEAD;
 
-        bool IsReleasedPtr(const void* Ptr);
+        FORCEINLINE bool IsReleasedPtr(const void* Ptr) { return Ptr == ReleasedPtr; }
 
         /**
          * Create weak key table
