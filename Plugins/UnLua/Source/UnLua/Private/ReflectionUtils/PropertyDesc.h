@@ -132,7 +132,7 @@ public:
      */
     FORCEINLINE virtual bool SetValue(lua_State *L, void *ContainerPtr, int32 IndexInStack = -1, bool bCopyValue = true) const
     {
-        if (!IsValid())
+        if (UNLIKELY(!IsValid()))
         {
             UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
             return false;
