@@ -16,6 +16,7 @@
 
 #include "lua.hpp"
 #include "Registries/FunctionRegistry.h"
+#include "Containers/StaticBitArray.h"
 
 struct lua_State;
 struct FParameterCollection;
@@ -114,8 +115,9 @@ public:
     void BroadcastMulticastDelegate(lua_State *L, int32 NumParams, int32 FirstParamIndex, FMulticastScriptDelegate *ScriptDelegate);
 
 private:
-    void* PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, uint64& CleanupFlags, void* Userdata = nullptr);
-    int32 PostCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, void* Params, const uint64& CleanupFlags);
+    typedef TStaticBitArray<64U> FFlagArray;
+    void* PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Userdata = nullptr);
+    int32 PostCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, void* Params, const FFlagArray& CleanupFlags);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 

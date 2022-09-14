@@ -23,6 +23,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "LuaDeadLoopCheck.h"
+#include "Containers/StaticBitArray.h"
 
 /**
  * Function descriptor constructor
@@ -284,7 +285,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     bool bLocal = true;
 #endif
 
-    uint64 CleanupFlags = 0;
+    FFlagArray CleanupFlags;
     void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
 
     UFunction *FinalFunction = Function.Get();
@@ -364,7 +365,7 @@ int32 FFunctionDesc::ExecuteDelegate(lua_State *L, int32 NumParams, int32 FirstP
         return 0;
     }
 
-    uint64 CleanupFlags = 0;
+    FFlagArray CleanupFlags;
     void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
     ScriptDelegate->ProcessDelegate<UObject>(Params);
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);
@@ -381,7 +382,7 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
         return;
     }
 
-    uint64 CleanupFlags = 0;
+    FFlagArray CleanupFlags;
     void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
     ScriptDelegate->ProcessMulticastDelegate<UObject>(Params);
     PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // !!! have no return values for multi-cast delegates
@@ -390,7 +391,7 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
 /**
  * Prepare values of properties for the UFunction
  */
-void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, uint64& CleanupFlags, void* Userdata)
+void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Userdata)
 {
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     void* Params = Buffer;
@@ -427,8 +428,7 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
         }
         if (i == ReturnPropertyIndex)
         {
-            if (ParamIndex >= NumParams || !Property->CopyBack(L, FirstParamIndex + ParamIndex, Params))
-                CleanupFlags |= static_cast<uint64>(1) << i;
+            CleanupFlags[i] = ParamIndex >= NumParams || !Property->CopyBack(L, FirstParamIndex + ParamIndex, Params);
             continue;
         }
         if (ParamIndex < NumParams)
@@ -440,7 +440,7 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
                 UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Invalid parameter type calling ufunction : %s,parameter : %d, error msg : %s"), *FuncName, ParamIndex, *ErrorMsg);
             }
 #endif
-            CleanupFlags |= static_cast<uint64>(Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false)) << i;
+            CleanupFlags[i] = Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false);
         }
         else if (!Property->IsOutParameter())
         {
@@ -452,7 +452,7 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
                 {
                     const void *ValuePtr = (*DefaultValue)->GetValue();
                     Property->CopyValue(Params, ValuePtr);
-                    CleanupFlags |= static_cast<uint64>(1) << i;
+                    CleanupFlags[i] = true;
                 }
             }
             else
@@ -475,7 +475,7 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
 /**
  * Handling 'out' properties
  */
-int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIndex, void* Params, const uint64& CleanupFlags)
+int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIndex, void* Params, const FFlagArray& CleanupFlags)
 {
     int32 NumReturnValues = 0;
 
@@ -494,7 +494,7 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
     if (ReturnPropertyIndex > INDEX_NONE)
     {
         const auto& Property = Properties[ReturnPropertyIndex];
-        if ((CleanupFlags >> ReturnPropertyIndex) & 1)
+        if (CleanupFlags[ReturnPropertyIndex])
         {
             Property->GetValue(L, Params, true);
         }
@@ -526,7 +526,7 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
 
     for (int32 i = 0; i < Properties.Num(); ++i)
     {
-        if ((CleanupFlags >> i) & 1)
+        if (CleanupFlags[i])
         {
             Properties[i]->DestroyValue(Params);
         }
