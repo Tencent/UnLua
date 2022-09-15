@@ -15,18 +15,14 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "UnLuaInterface.h"
-#include "UnLuaPerformanceTestProxy.generated.h"
+#include "UnLuaBenchmarkProxy.generated.h"
 
 UCLASS()
-class AUnLuaPerformanceTestProxy : public AActor, public IUnLuaInterface
+class AUnLuaBenchmarkProxy : public AActor
 {
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintCallable, BlueprintImplementableEvent)
-    void Run(int32 N);
-
     UFUNCTION(BlueprintCallable)
     void NOP();
 
@@ -52,13 +48,13 @@ public:
     bool Raycast(const FVector &Origin, const FVector &Direction) const;
 
     UFUNCTION(BlueprintCallable)
-    void GetIndices(TArray<int32> &OutIndices) const;
+    void GetIndices(UPARAM(ref) TArray<int32> &OutIndices);
 
     UFUNCTION(BlueprintCallable)
     void UpdateIndices(const TArray<int32> &NewIndices);
 
     UFUNCTION(BlueprintCallable)
-    void GetPositions(TArray<FVector> &OutPositions) const;
+    void GetPositions(UPARAM(ref) TArray<FVector> &OutPositions) const;
 
     UFUNCTION(BlueprintCallable)
     void UpdatePositions(const TArray<FVector> &NewPositions);
@@ -69,27 +65,21 @@ public:
     UFUNCTION(BlueprintCallable)
     bool GetMeshInfo(int32 &OutMeshID, FString &OutMeshName, FVector &OutCOM, TArray<int32> &OutIndices, TArray<FVector> &OutPositions, TArray<FVector> &OutPredictedPositions) const;
 
-    virtual FString GetModuleName_Implementation() const override
-    {
-        return TEXT("Tests.Benchmark.UnLuaPerformanceTestProxy");
-    }
-
-private:
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     int32 MeshID;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     FString MeshName;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     FVector COM;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<int32> Indices;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<FVector> Positions;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<FVector> PredictedPositions;
 };
