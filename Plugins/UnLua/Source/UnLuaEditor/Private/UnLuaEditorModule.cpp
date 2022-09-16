@@ -210,7 +210,7 @@ private:
         }
 
         if (bModified)
-            PackagingSettings->SaveConfig();
+            PackagingSettings->TryUpdateDefaultConfigFile();
     }
 
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
