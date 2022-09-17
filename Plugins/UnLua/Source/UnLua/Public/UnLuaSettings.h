@@ -42,4 +42,8 @@ public:
 
     UPROPERTY(Config, EditAnywhere, Category=Runtime, Meta=(AllowAbstract="false", DisplayName="LuaModuleLocator"))
     TSubclassOf<ULuaModuleLocator> ModuleLocatorClass = ULuaModuleLocator::StaticClass();
+
+    /** List of classes to bind on startup. */
+    UPROPERTY(config, EditAnywhere, Category=Runtime, meta = (DisplayName = "List of classes to bind on startup", RelativeToGameContentDir, LongPackageName))
+    TArray<TSubclassOf<UObject>> PreBindClasses;
 };

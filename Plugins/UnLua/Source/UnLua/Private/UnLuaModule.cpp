@@ -106,8 +106,15 @@ namespace UnLua
 
                 for (const auto Class : TObjectRange<UClass>())
                 {
-                    const auto Env = EnvLocator->Locate(Class);
-                    Env->TryBind(Class);
+                    for (const auto TargetClass : Settings.PreBindClasses)
+                    {
+                        if (Class->IsChildOf(TargetClass))
+                        {
+                            const auto Env = EnvLocator->Locate(Class);
+                            Env->TryBind(Class);
+                            break;
+                        }
+                    }
                 }
             }
             else
