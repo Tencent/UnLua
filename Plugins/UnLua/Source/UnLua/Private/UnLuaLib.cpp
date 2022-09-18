@@ -216,7 +216,20 @@ namespace UnLua
         {
             lua_register(L, "print", LogInfo);
             luaL_requiref(L, "UnLua", LuaOpen, 1);
-            luaL_dostring(L, "pcall(function() _G.require = require('UnLua.HotReload').require end)");
+            luaL_dostring(L, R"(
+                setmetatable(UnLua, {
+                    __index = function(t, k)
+                        local ok, result = pcall(require, "UnLua." .. tostring(k))
+                        if ok then
+                            rawset(t, k, result)
+                            return result
+                        else
+                            t.LogWarn(string.format("failed to load module UnLua.%s\n%s", k, result))
+                        end
+                    end
+                })
+                pcall(function() _G.require = require('UnLua.HotReload').require end)
+            )");
             LegacySupport(L);
             return 1;
         }

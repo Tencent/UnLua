@@ -221,6 +221,27 @@ void UUnLuaManager::OnMapLoaded(UWorld *World)
     }
 }
 
+UDynamicBlueprintBinding* UUnLuaManager::GetOrAddBindingObject(UClass* Class, UClass* BindingClass)
+{
+    auto BPGC = Cast<UBlueprintGeneratedClass>(Class);
+    if (!BPGC)
+        return nullptr;
+
+    UDynamicBlueprintBinding* BindingObject = UBlueprintGeneratedClass::GetDynamicBindingObject(Class, BindingClass);
+    if (!BindingObject)
+    {
+        BindingObject = (UDynamicBlueprintBinding*)NewObject<UObject>(GetTransientPackage(), BindingClass);
+        BPGC->DynamicBindingObjects.Add(BindingObject);
+    }
+    return BindingObject;
+}
+
+void UUnLuaManager::Override(UClass* Class, FName FunctionName, FName LuaFunctionName)
+{
+    if (const auto Function = GetClass()->FindFunctionByName(FunctionName))
+        ULuaFunction::Override(Function, Class, LuaFunctionName);
+}
+
 /**
  * Callback for completing a latent function
  */
@@ -296,6 +317,17 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
             if (!BindInfo.UEFunctions.Find(LuaFuncName) && LuaFuncName.ToString().StartsWith(TEXT("AnimNotify_")))
                 ULuaFunction::Override(AnimNotifyFunc, Class, LuaFuncName);
         }
+    }
+
+    if (auto BPGC = Cast<UBlueprintGeneratedClass>(Class))
+    {
+        lua_rawgeti(L, LUA_REGISTRYINDEX, Ref);
+        lua_getglobal(L, "UnLua");
+        lua_getfield(L, -1, "Input");
+        UnLua::FLuaTable InputTable(Env, -1);
+        UnLua::FLuaTable ModuleTable(Env, -3);
+        InputTable.Call("PerformBindings", ModuleTable, this, BPGC);
+        lua_pop(L, 3);
     }
 
     return true;
