@@ -52,6 +52,34 @@ function M.BindKey(Module, KeyName, KeyEvent, Handler, Args)
     end)
 end
 
+function M.BindAction(Module, ActionName, KeyEvent, Handler, Args)
+    Args = Args or {}
+    Module.__UnLuaInputBindings = Module.__UnLuaInputBindings or {}
+    local FunctionName = MakeLuaFunction(Module, string.format("UnLuaInput_%s_%s", ActionName, KeyEvent), Handler, 0)
+    local Bindings = Module.__UnLuaInputBindings
+    table.insert(Bindings, function(Manager, Class)
+        local BindingObject = Manager:GetOrAddBindingObject(Class, UE.UInputActionDelegateBinding)
+        for _, OldBinding in pairs(BindingObject.InputActionDelegateBindings) do
+            if OldBinding.FunctionNameToBind == FunctionName then
+                -- PIE下这个蓝图可能已经绑定过了
+                Manager:Override(Class, "InputAction", FunctionName)
+                return
+            end
+        end
+
+        local Binding = UE.FBlueprintInputActionDelegateBinding()
+        Binding.bConsumeInput = GetBooleanArg(Args, "ConsumeInput", true)
+        Binding.bExecuteWhenPaused = GetBooleanArg(Args, "ExecuteWhenPaused", false)
+        Binding.bOverrideParentBinding = GetBooleanArg(Args, "OverrideParentBinding", true)
+        Binding.InputActionName = ActionName
+        Binding.InputKeyEvent = UE.EInputEvent["IE_" .. KeyEvent]
+        Binding.FunctionNameToBind = FunctionName
+        BindingObject.InputActionDelegateBindings:Add(Binding)
+        
+        Manager:Override(Class, "InputAction", FunctionName)
+    end)
+end
+
 function M.PerformBindings(Module, Manager, Class)
     local Bindings = Module.__UnLuaInputBindings
     if not Bindings then
