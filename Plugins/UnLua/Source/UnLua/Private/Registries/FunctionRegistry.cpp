@@ -22,7 +22,7 @@ namespace UnLua
     void FFunctionRegistry::Invoke(ULuaFunction* Function, UObject* Context, FFrame& Stack, RESULT_DECL)
     {
         // TODO: refactor
-        if (!Env->GetObjectRegistry()->IsBound(Context))
+        if (UNLIKELY(!Env->GetObjectRegistry()->IsBound(Context)))
             Env->TryBind(Context);
 
         const auto SelfRef = Env->GetObjectRegistry()->GetBoundRef(Context);
