@@ -975,82 +975,82 @@ static void PushField(lua_State *L, TSharedPtr<FFieldDesc> Field)
     }
 }
 
-/**
- * Get a field (property or function)
- */
-static int32 GetField(lua_State* L)
+static void GetFieldInternal(lua_State* L) 
 {
-    int32 Type = lua_getmetatable(L, 1);       // get meta table of table/userdata (first parameter passed in)
-    check(Type == 1 && lua_istable(L, -1));
+    lua_pop(L, 1);
 
-    lua_pushvalue(L, 2);                    // push key
-    Type = lua_rawget(L, -2);
+    lua_pushstring(L, "__name");
+    auto Type = lua_rawget(L, -2);
+    check(Type == LUA_TSTRING);
 
-    if (Type == LUA_TNIL)
+    const char* ClassName = lua_tostring(L, -1);
+    const char* FieldName = lua_tostring(L, 2);
+
+    lua_pop(L, 1);
+
+    // TODO: refactor
+    const auto Registry = UnLua::FClassRegistry::Find(L);
+    FClassDesc* ClassDesc = Registry->Register(ClassName);
+    TSharedPtr<FFieldDesc> Field = ClassDesc->RegisterField(FieldName, ClassDesc);
+    if (Field && Field->IsValid())
     {
-        lua_pop(L, 1);
-
-        lua_pushstring(L, "__name");
-        Type = lua_rawget(L, -2);
-        check(Type == LUA_TSTRING);
-
-        const char* ClassName = lua_tostring(L, -1);
-        const char* FieldName = lua_tostring(L, 2);
-
-        lua_pop(L, 1);
-
-        // TODO: refactor
-        const auto Registry = UnLua::FClassRegistry::Find(L);
-        FClassDesc* ClassDesc = Registry->Register(ClassName);
-        TSharedPtr<FFieldDesc> Field = ClassDesc->RegisterField(FieldName, ClassDesc);
-        if (Field && Field->IsValid())
+        bool bCached = false;
+        bool bInherited = Field->IsInherited();
+        if (bInherited)
         {
-            bool bCached = false;
-            bool bInherited = Field->IsInherited();
-            if (bInherited)
-            {
-                FString SuperStructName = Field->GetOuterName();
-                const auto Pushed = Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName));
-                check(Pushed);
-                lua_pushvalue(L, 2);
-                Type = lua_rawget(L, -2);
-                bCached = Type != LUA_TNIL;
-                if (!bCached)
-                {
-                    lua_pop(L, 1);
-                }
-            }
-
+            FString SuperStructName = Field->GetOuterName();
+            const auto Pushed = Registry->PushMetatable(L, TCHAR_TO_UTF8(*SuperStructName));
+            check(Pushed);
+            lua_pushvalue(L, 2);
+            Type = lua_rawget(L, -2);
+            bCached = Type != LUA_TNIL;
             if (!bCached)
             {
-                PushField(L, Field);                // Property / closure
-                lua_pushvalue(L, 2);                // key
-                lua_pushvalue(L, -2);               // Property / closure
-                lua_rawset(L, -4);
+                lua_pop(L, 1);
             }
-            if (bInherited)
-            {
-                lua_remove(L, -2);
-                lua_pushvalue(L, 2);                // key
-                lua_pushvalue(L, -2);               // Property / closure
-                lua_rawset(L, -4);
-            }
+        }
+
+        if (!bCached)
+        {
+            PushField(L, Field);                // Property / closure
+            lua_pushvalue(L, 2);                // key
+            lua_pushvalue(L, -2);               // Property / closure
+            lua_rawset(L, -4);
+        }
+        if (bInherited)
+        {
+            lua_remove(L, -2);
+            lua_pushvalue(L, 2);                // key
+            lua_pushvalue(L, -2);               // Property / closure
+            lua_rawset(L, -4);
+        }
+    }
+    else
+    {
+        if (ClassDesc->IsClass())
+        {
+            luaL_getmetatable(L, "UClass");
+            lua_pushvalue(L, 2);                // push key
+            lua_rawget(L, -2);
+            lua_remove(L, -2);
         }
         else
         {
-            if (ClassDesc->IsClass())
-            {
-                luaL_getmetatable(L, "UClass");
-                lua_pushvalue(L, 2);                // push key
-                lua_rawget(L, -2);
-                lua_remove(L, -2);
-            }
-            else
-            {
-                lua_pushnil(L);
-            }
+            lua_pushnil(L);
         }
     }
+}
+
+/**
+ * Get a field (property or function)
+ */
+FORCEINLINE static int32 GetField(lua_State* L)
+{
+    lua_getmetatable(L, 1);
+    lua_pushvalue(L, 2);
+    int32 Type = lua_rawget(L, -2);
+    if (Type == LUA_TNIL)
+        GetFieldInternal(L);
     lua_remove(L, -2);
     return 1;
 }
@@ -1414,23 +1414,25 @@ int32 Enum_GetDisplayNameTextByValue(lua_State* L)
 int32 Class_Index(lua_State *L)
 {
     GetField(L);
-    if (lua_type(L, -1) != LUA_TUSERDATA)
+
+    auto Ptr = lua_touserdata(L, -1);
+    if (!Ptr)
         return 1;
 
-    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
-    if (!Property.IsValid())
+    auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
+    if (!Property->IsValid())
         return 0;
-
-    void* Self = GetCppInstance(L, 1);
+    
+    auto Self = GetCppInstance(L, 1);
     if (!Self)
         return 1;
 
     if (UnLua::LowLevel::IsReleasedPtr(Self))
-        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *Property->GetName())));
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *(*Property)->GetName())));
 
-    Property->Read(L, Self, false);
+    (*Property)->Read(L, Self, false);
     lua_remove(L, -2);
+
     return 1;
 }
 
@@ -1463,23 +1465,23 @@ int32 Class_NewIndex(lua_State *L)
 {
     GetField(L);
 
-    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-    if (lua_type(L, -1) == LUA_TUSERDATA)
+    auto Ptr = lua_touserdata(L, -1);
+    if (Ptr)
     {
-        const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
-        if (Property.IsValid())
+        auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
+        if (Property->IsValid())
         {
             void* Self = GetCppInstance(L, 1);
             if (Self)
             {
                 if (UnLua::LowLevel::IsReleasedPtr(Self))
-                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *Property->GetName())));
+                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
 
 #if ENABLE_TYPE_CHECK == 1
-                if (IsPropertyOwnerTypeValid(Property.Get(), Self))
-                    Property->Write(L, Self, 3);
+                if (IsPropertyOwnerTypeValid((*Property).Get(), Self))
+                    (*Property)->Write(L, Self, 3);
 #else
-                Property->Write(L, Self, 3);
+                (*Property)->Write(L, Self, 3);
 #endif
             }
         }

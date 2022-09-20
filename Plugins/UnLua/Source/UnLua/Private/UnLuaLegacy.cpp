@@ -15,10 +15,10 @@
 #include "UnLuaEx.h"
 #include "UnLuaPrivate.h"
 
-DEFINE_STAT(STAT_UnLua_Lua_Memory);
-DEFINE_STAT(STAT_UnLua_PersistentParamBuffer_Memory);
-DEFINE_STAT(STAT_UnLua_OutParmRec_Memory);
-DEFINE_STAT(STAT_UnLua_ContainerElementCache_Memory);
+UNLUA_DEFINE_STAT(Lua_Memory);
+UNLUA_DEFINE_STAT(PersistentParamBuffer_Memory);
+UNLUA_DEFINE_STAT(OutParmRec_Memory);
+UNLUA_DEFINE_STAT(ContainerElementCache_Memory);
 
 namespace UnLua
 {

@@ -21,19 +21,11 @@
 #include "Containers/LuaMap.h"
 #include "ObjectReferencer.h"
 
-TMap<FProperty*,FPropertyDesc*> FPropertyDesc::Property2Desc;
-
 FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty) 
 {
-    Property2Desc.Add(Property,this);
     PropertyType = CPT_None;
     PropertyPtr = InProperty;
     Name = Property->GetName();
-}
-
-FPropertyDesc::~FPropertyDesc()
-{
-    Property2Desc.Remove(Property);
 }
 
 bool FPropertyDesc::IsValid() const
@@ -786,7 +778,7 @@ public:
             {
                 if (!bCopyValue && Property->HasAnyPropertyFlags(CPF_OutParm))
                 {
-                    if (Src->ElementSize < ArrayProperty->ElementSize)
+                    if (Src->ElementSize < ArrayProperty->Inner->ElementSize)
                     {
                         FScriptArrayHelper Helper(ArrayProperty, ValuePtr);
                         if (Src->Num() > 0)

@@ -19,11 +19,6 @@ namespace UnLua
 {
     namespace LowLevel
     {
-        bool IsReleasedPtr(const void* Ptr)
-        {
-            return Ptr == ReleasedPtr;
-        }
-
         /**
          * Create weak key table
          */
