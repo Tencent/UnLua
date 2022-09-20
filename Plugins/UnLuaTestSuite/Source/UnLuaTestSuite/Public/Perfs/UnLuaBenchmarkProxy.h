@@ -48,13 +48,13 @@ public:
     bool Raycast(const FVector &Origin, const FVector &Direction) const;
 
     UFUNCTION(BlueprintCallable)
-    void GetIndices(UPARAM(ref) TArray<int32> &OutIndices);
+    void GetIndices(TArray<int32> &OutIndices) const;
 
     UFUNCTION(BlueprintCallable)
     void UpdateIndices(const TArray<int32> &NewIndices);
 
     UFUNCTION(BlueprintCallable)
-    void GetPositions(UPARAM(ref) TArray<FVector> &OutPositions) const;
+    void GetPositions(TArray<FVector> &OutPositions) const;
 
     UFUNCTION(BlueprintCallable)
     void UpdatePositions(const TArray<FVector> &NewPositions);

@@ -52,7 +52,7 @@ bool AUnLuaBenchmarkProxy::Raycast(const FVector &Origin, const FVector &Directi
     return true;
 }
 
-void AUnLuaBenchmarkProxy::GetIndices(TArray<int32> &OutIndices)
+void AUnLuaBenchmarkProxy::GetIndices(TArray<int32> &OutIndices) const
 {
 }
 
