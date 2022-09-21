@@ -22,6 +22,11 @@ namespace UnLua
 {
     class FLuaEnv;
 
+    struct FManualRefProxy
+    {
+        TWeakObjectPtr<UObject> Object;
+    };
+
     class FObjectRegistry
     {
     public:
@@ -60,6 +65,16 @@ namespace UnLua
          * 将指定的UObject从Lua环境解绑。
          */
         void Unbind(UObject* Object);
+
+        /**
+         * 增加对指定对象的手动引用，并将对应的代理对象压入栈顶
+         */;
+        void AddManualRef(lua_State* L, UObject* Object);
+
+        /**
+         * 强制移除指定对象的手动引用
+         */
+        void RemoveManualRef(UObject* Object);
 
     private:
         void RemoveFromObjectMapAndPushToStack(UObject* Object);

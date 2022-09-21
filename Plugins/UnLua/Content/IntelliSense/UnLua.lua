@@ -14,6 +14,17 @@ end
 function UnLua.HotReload(ModuleNames)
 end
 
+---Add or find a manual reference to specified UObject. This prevents the object from UE GC.
+---@param Object UObject
+---@return userdata @Proxy object of the reference. The reference of UObject will be removed when proxy object deleted by lua GC.
+function UnLua.Ref(Object)
+end
+
+---Force remove all manual reference to specified UObject.
+---@param Object UObject
+function UnLua.Unref(Object)
+end
+
 _G.UnLua = UnLua
 
 ---@class TArray<TElement>

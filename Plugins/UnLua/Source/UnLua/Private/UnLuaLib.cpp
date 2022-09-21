@@ -49,11 +49,35 @@ namespace UnLua
             return 0;
         }
 
+        static int Ref(lua_State* L)
+        {
+            const auto Object = GetUObject(L, -1);
+            if (!Object)
+                return luaL_error(L, "invalid UObject");
+
+            const auto& Env = FLuaEnv::FindEnvChecked(L);
+            Env.GetObjectRegistry()->AddManualRef(L, Object);
+            return 1;
+        }
+
+        static int Unref(lua_State* L)
+        {
+            const auto Object = GetUObject(L, -1);
+            if (!Object)
+                return luaL_error(L, "invalid UObject");
+
+            const auto& Env = FLuaEnv::FindEnvChecked(L);
+            Env.GetObjectRegistry()->RemoveManualRef(Object);
+            return 0;
+        }
+
         static constexpr luaL_Reg UnLua_Functions[] = {
             {"Log", LogInfo},
             {"LogWarn", LogWarn},
             {"LogError", LogError},
             {"HotReload", HotReload},
+            {"Ref", Ref},
+            {"Unref", Unref},
             {NULL, NULL}
         };
 
