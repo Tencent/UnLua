@@ -211,6 +211,8 @@ namespace UnLua
             end
 
             _G.Class = Class
+            _G.GetUProperty = GetUProperty
+            _G.SetUProperty = SetUProperty
             )";
 
             lua_register(L, "UEPrint", LogInfo);
