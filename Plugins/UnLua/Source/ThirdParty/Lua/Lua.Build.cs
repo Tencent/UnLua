@@ -174,12 +174,17 @@ public class Lua : ModuleRules
     
     private void BuildForMac()
     {
-        var libFile = GetLibraryPath();
+        var abiName = Target.Architecture;
+        var libFile = GetLibraryPath(abiName);
         if (!File.Exists(libFile))
         {
-            var buildDir = CMake();
-            var buildFile = Path.Combine(buildDir, m_LibName);
             EnsureDirectoryExists(libFile);
+            var args = new Dictionary<string, string>
+            {
+                { "CMAKE_OSX_ARCHITECTURES", Target.Architecture }
+            };
+            var buildDir = CMake(args);
+            var buildFile = Path.Combine(buildDir, m_LibName);
             File.Copy(buildFile, libFile, true);
         }
 
