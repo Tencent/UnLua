@@ -215,7 +215,7 @@ void FUnLuaIntelliSenseGenerator::SaveFile(const FString& ModuleName, const FStr
     FString FileContent;
     FFileHelper::LoadFileToString(FileContent, *FilePath);
     if (FileContent != GeneratedFileContent)
-        FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
+        FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
 void FUnLuaIntelliSenseGenerator::DeleteFile(const FString& ModuleName, const FString& FileName)
