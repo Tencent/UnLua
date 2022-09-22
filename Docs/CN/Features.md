@@ -40,4 +40,4 @@
 * 全局表里的函数
 
 ## 其他工具
-* TODO
+* 支持[自定义生成Lua模版](CustomTemplate.md)
