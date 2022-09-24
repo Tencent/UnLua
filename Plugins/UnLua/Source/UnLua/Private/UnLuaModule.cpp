@@ -106,8 +106,15 @@ namespace UnLua
 
                 for (const auto Class : TObjectRange<UClass>())
                 {
-                    for (const auto TargetClass : Settings.PreBindClasses)
+                    for (const auto ClassPath : Settings.PreBindClasses)
                     {
+                        if (!ClassPath.IsValid())
+                            continue;
+
+                        const auto TargetClass = ClassPath.ResolveClass();
+                        if (!TargetClass)
+                            continue;
+
                         if (Class->IsChildOf(TargetClass))
                         {
                             const auto Env = EnvLocator->Locate(Class);

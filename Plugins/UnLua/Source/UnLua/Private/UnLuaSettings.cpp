@@ -17,6 +17,7 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 
 UUnLuaSettings::UUnLuaSettings(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
     PreBindClasses.Add(UBlueprintFunctionLibrary::StaticClass());
     PreBindClasses.Add(UAnimNotifyState::StaticClass());
