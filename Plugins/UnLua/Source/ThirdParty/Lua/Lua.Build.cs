@@ -377,8 +377,10 @@ public class Lua : ModuleRules
             {
                 if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2019)
                     return "Visual Studio 16 2019";
+#if UE_4_27_OR_LATER
                 if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2022)
                     return "Visual Studio 17 2022";
+#endif
             }
         }
 
