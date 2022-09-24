@@ -373,7 +373,13 @@ public class Lua : ModuleRules
                 return "Ninja";
             if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
                 return "Ninja";
-            return "Visual Studio 16 2019";
+            if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
+            {
+                if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2019)
+                    return "Visual Studio 16 2019";
+                if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2022)
+                    return "Visual Studio 17 2022";
+            }
         }
 
         if (osPlatform == PlatformID.Unix)
