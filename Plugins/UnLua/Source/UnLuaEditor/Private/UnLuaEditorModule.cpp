@@ -210,7 +210,13 @@ private:
         }
 
         if (bModified)
+        {
+#if ENGINE_MAJOR_VERSION >= 5
+            PackagingSettings->TryUpdateDefaultConfigFile();
+#else
             PackagingSettings->UpdateDefaultConfigFile();
+#endif
+        }
     }
 
     TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
