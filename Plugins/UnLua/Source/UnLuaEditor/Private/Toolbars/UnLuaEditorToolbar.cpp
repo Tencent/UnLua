@@ -281,14 +281,14 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
         return;
     }
 
-    static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
+    static FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir();
     for (; Class; Class = Class->GetSuperClass())
     {
         auto TemplateClassName = Class->GetName().EndsWith("_C") ? Class->GetName().LeftChop(2) : Class->GetName();
         auto RelativeFilePath = "LuaTemplates" / TemplateClassName + ".lua";
         auto FullFilePath = FPaths::ProjectConfigDir() / RelativeFilePath;
         if (!FPaths::FileExists(FullFilePath))
-            FullFilePath = ContentDir / RelativeFilePath;
+            FullFilePath = BaseDir / RelativeFilePath;
 
         if (!FPaths::FileExists(FullFilePath))
             continue;
