@@ -18,8 +18,10 @@
 
 void FUnLuaEditorCommands::RegisterCommands()
 {
-    UI_COMMAND(CreateLuaTemplate, "Create Lua Template", "Create lua template file", EUserInterfaceActionType::Button, FInputChord());
-    UI_COMMAND(CopyAsRelativePath, "Copy as Relative Path", "Copy module name as relative path.", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(CreateLuaTemplate, "Create Lua Template", "Create lua template file", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(CopyAsRelativePath, "Copy as Relative Path", "Copy module name as relative path.", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(CreateDefaultLuaTemplate, "Create Default Lua Template", "Create lua default template file", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(CopyAsDefaultModuleName, "Copy as Default Module Name", "Copy as default module name.", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(BindToLua, "Bind", "Implement UnLuaInterface", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(UnbindFromLua, "Unbind", "Remove the implementation of UnLuaInterface", EUserInterfaceActionType::Button, FInputChord());
     UI_COMMAND(HotReload, "Hot Reload", "Hot reload all lua states", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Alt, EKeys::L));

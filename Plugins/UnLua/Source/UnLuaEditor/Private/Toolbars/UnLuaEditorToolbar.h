@@ -32,7 +32,11 @@ public:
 
     void CreateLuaTemplate_Executed();
 
-    void CopyAsRelativePath_Executed() const;
+	void CopyAsRelativePath_Executed() const;
+
+	void CreateLuaDefualtTemplate_Executed();
+
+	void CopyAsDefualtModuleName_Executed() const;
 
     void BindToLua_Executed() const;
 
