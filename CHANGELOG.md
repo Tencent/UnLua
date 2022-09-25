@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Delegate的闭包函数的upvalue无法被gc [#516](https://github.com/Tencent/UnLua/issues/516)
 - 在Lua中访问TArray不存在的字段会报stackoverflow
 - 自动保存的打包设置没有生效
+- UE5下打包后UnLua配置没有正确加载
 
 ### Changed
 - 默认关闭运行时对`UTF-8 BOM`文件头的加载支持，需要兼容请开启[兼容UTF-8 BOM文件头](./Docs/CN/Settings.md#兼容UTF-8%20BOM文件头)选项
