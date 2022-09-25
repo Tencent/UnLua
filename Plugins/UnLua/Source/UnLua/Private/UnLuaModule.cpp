@@ -242,6 +242,13 @@ namespace UnLua
                                                                   GetMutableDefault<UUnLuaSettings>());
             Section->OnModified().BindRaw(this, &FUnLuaModule::OnSettingsModified);
 #endif
+
+#if ENGINE_MAJOR_VERSION >=5 && !WITH_EDITOR
+            // UE5下打包后没有从{PROJECT}/Config/DefaultUnLua.ini加载，这里强制刷新一下
+            FString UnLuaIni = TEXT("UnLua");
+            GConfig->LoadGlobalIniFile(UnLuaIni, *UnLuaIni, nullptr, true);
+            UUnLuaSettings::StaticClass()->GetDefaultObject()->ReloadConfig();
+#endif
         }
 
         void UnregisterSettings()
