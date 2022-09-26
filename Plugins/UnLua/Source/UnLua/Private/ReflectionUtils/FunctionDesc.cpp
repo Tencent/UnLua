@@ -276,6 +276,9 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     if (Object == nullptr)
         return luaL_error(L, "attempt to call UFunction '%s' on NULL object. (check the usage of ':' and '.')", TCHAR_TO_UTF8(*FuncName));
 
+    if (Object->IsUnreachable())
+        return luaL_error(L, "attempt to call UFunction '%s' on Unreachable object '%s'.", TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*Object->GetName()));
+
 #if SUPPORTS_RPC_CALL
     int32 Callspace = Object->GetFunctionCallspace(Function.Get(), nullptr);
     bool bRemote = Callspace & FunctionCallspace::Remote;
