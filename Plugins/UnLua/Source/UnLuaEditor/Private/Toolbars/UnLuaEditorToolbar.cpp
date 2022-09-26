@@ -282,9 +282,9 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     }
 
     static FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir();
-    for (; Class; Class = Class->GetSuperClass())
+    for (auto TemplateClass = Class; TemplateClass; TemplateClass = TemplateClass->GetSuperClass())
     {
-        auto TemplateClassName = Class->GetName().EndsWith("_C") ? Class->GetName().LeftChop(2) : Class->GetName();
+        auto TemplateClassName = TemplateClass->GetName().EndsWith("_C") ? TemplateClass->GetName().LeftChop(2) : TemplateClass->GetName();
         auto RelativeFilePath = "Config/LuaTemplates" / TemplateClassName + ".lua";
         auto FullFilePath = FPaths::ProjectConfigDir() / RelativeFilePath;
         if (!FPaths::FileExists(FullFilePath))
