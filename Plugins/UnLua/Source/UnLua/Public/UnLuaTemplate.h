@@ -84,9 +84,9 @@ namespace UnLua
 
 
     /**
-     * Traits class which tests if a type is primitive or pointer
+     * Traits class which tests if a type is primitive or pointer or UStruct
      */
-    template <typename T> struct TIsPrimitiveTypeOrPointer { enum { Value = TOr<TIsPrimitiveType<T>, TIsPointer<T>>::Value }; };
+    template <typename T> struct TIsPrimitiveTypeOrPointerOrUStruct { enum { Value = TOr<TIsPrimitiveType<T>, TIsPointer<T>, TIsUStruct<T>>::Value }; };
 
 
     /**
@@ -95,7 +95,7 @@ namespace UnLua
     template <typename T> struct TArgTypeTraits
     {
         typedef typename TDecay<T>::Type RT;
-        typedef typename TChooseClass<TIsPrimitiveTypeOrPointer<RT>::Value, RT, typename std::add_lvalue_reference<T>::type>::Result Type;
+        typedef typename TChooseClass<TIsPrimitiveTypeOrPointerOrUStruct<RT>::Value, RT, typename std::add_lvalue_reference<T>::type>::Result Type;
     };
     
     

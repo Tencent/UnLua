@@ -135,7 +135,7 @@ namespace UnLua
     /**
      * Push non-const reference parameters to Lua stack 
      */
-    template <typename T, bool IsRef = TIsReferenceType<T>::Value, bool IsConst = TIsConstType<typename TRemoveReference<T>::Type>::Value, bool IsPrimTypeOrPtr = TIsPrimitiveTypeOrPointer<typename TRemoveReference<T>::Type>::Value>
+    template <typename T, bool IsRef = TIsReferenceType<T>::Value, bool IsConst = TIsConstType<typename TRemoveReference<T>::Type>::Value, bool IsPrimTypeOrPtrOrUStruct = TIsPrimitiveTypeOrPointerOrUStruct<typename TRemoveReference<T>::Type>::Value>
     struct TNonConstRefParamHelper
     {
         static int Push(lua_State *L, T &&V) { return 0; }
