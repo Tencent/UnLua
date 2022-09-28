@@ -50,11 +50,8 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     
     bStaticFunc = InFunction->HasAnyFunctionFlags(FUNC_Static);         // a static function?
 
-    UClass *OuterClass = InFunction->GetOuterUClass();
-    if (OuterClass->HasAnyClassFlags(CLASS_Interface) && OuterClass != UInterface::StaticClass())
-    {
-        bInterfaceFunc = true;                                          // a function in interface?
-    }
+    const auto OuterClass = Cast<UClass>(InFunction->GetOuter());
+    bInterfaceFunc = OuterClass && OuterClass->HasAnyClassFlags(CLASS_Interface) && OuterClass != UInterface::StaticClass();
 
     // create persistent parameter buffer. memory for speed
 #if ENABLE_PERSISTENT_PARAM_BUFFER
