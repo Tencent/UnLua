@@ -82,7 +82,6 @@ namespace UnLua
         enum { Value = sizeof(Check<T>(0)) == sizeof(uint8) };
     };
 
-
     /**
      * Traits class which tests if a type is primitive or pointer or UStruct
      */
