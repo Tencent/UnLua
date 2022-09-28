@@ -67,6 +67,21 @@ namespace UnLua
     template<> struct TIsPrimitiveType<FName> { enum { Value = true }; };
     template<> struct TIsPrimitiveType<FText> { enum { Value = true }; };
 
+    /**
+     * Traits class which tests if a type is UStruct
+     */
+    template <typename T>
+    class TIsUStruct
+    {
+        template <typename A>
+        static uint8 Check(decltype(&A::StaticStruct));
+        template <typename B>
+        static uint16 Check(...);
+
+    public:
+        enum { Value = sizeof(Check<T>(0)) == sizeof(uint8) };
+    };
+
 
     /**
      * Traits class which tests if a type is primitive or pointer
