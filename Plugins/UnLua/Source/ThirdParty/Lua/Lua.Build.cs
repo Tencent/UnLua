@@ -91,7 +91,7 @@ public class Lua : ModuleRules
         var toolchain = AndroidExports.CreateToolChain(Target.ProjectFile);
         var NdkApiLevel = toolchain.GetNdkApiLevelInt(21);
 
-        var abiNames = new[] { "armeabi-v7a", "arm64-v8a" };
+        var abiNames = new[] { "armeabi-v7a", "arm64-v8a", "x86_64" };
         foreach (var abiName in abiNames)
         {
             var libFile = GetLibraryPath(abiName);
@@ -174,12 +174,17 @@ public class Lua : ModuleRules
     
     private void BuildForMac()
     {
-        var libFile = GetLibraryPath();
+        var abiName = Target.Architecture;
+        var libFile = GetLibraryPath(abiName);
         if (!File.Exists(libFile))
         {
-            var buildDir = CMake();
-            var buildFile = Path.Combine(buildDir, m_LibName);
             EnsureDirectoryExists(libFile);
+            var args = new Dictionary<string, string>
+            {
+                { "CMAKE_OSX_ARCHITECTURES", Target.Architecture }
+            };
+            var buildDir = CMake(args);
+            var buildFile = Path.Combine(buildDir, m_LibName);
             File.Copy(buildFile, libFile, true);
         }
 
@@ -368,7 +373,15 @@ public class Lua : ModuleRules
                 return "Ninja";
             if (Target.Platform.IsInGroup(UnrealPlatformGroup.Android))
                 return "Ninja";
-            return "Visual Studio 16 2019";
+            if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
+            {
+                if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2019)
+                    return "Visual Studio 16 2019";
+#if UE_4_27_OR_LATER
+                if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2022)
+                    return "Visual Studio 17 2022";
+#endif
+            }
         }
 
         if (osPlatform == PlatformID.Unix)

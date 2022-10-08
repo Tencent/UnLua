@@ -270,43 +270,37 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
 
     TArray<FString> ModuleNameParts;
     ModuleName.ParseIntoArray(ModuleNameParts, TEXT("."));
-    const auto ClassName = ModuleNameParts.Last();
+    const auto TemplateName = ModuleNameParts.Last();
 
     const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/"));
     const auto FileName = FString::Printf(TEXT("%s%s.lua"), *GLuaSrcFullPath, *RelativePath);
 
     if (FPaths::FileExists(FileName))
     {
-        UE_LOG(LogUnLua, Warning, TEXT("%s"), *FText::Format(LOCTEXT("FileAlreadyExists", "Lua file ({0}) is already existed!"), FText::FromString(ClassName)).ToString());
+        UE_LOG(LogUnLua, Warning, TEXT("%s"), *FText::Format(LOCTEXT("FileAlreadyExists", "Lua file ({0}) is already existed!"), FText::FromString(TemplateName)).ToString());
         return;
     }
 
-    static FString ContentDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir();
-    static TArray<UClass*> TemplateClasses =
+    static FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir();
+    for (auto TemplateClass = Class; TemplateClass; TemplateClass = TemplateClass->GetSuperClass())
     {
-        AActor::StaticClass(),
-        UActorComponent::StaticClass(),
-        UAnimInstance::StaticClass(),
-        UAnimNotifyState::StaticClass(),
-        UUserWidget::StaticClass()
-    };
+        auto TemplateClassName = TemplateClass->GetName().EndsWith("_C") ? TemplateClass->GetName().LeftChop(2) : TemplateClass->GetName();
+        auto RelativeFilePath = "Config/LuaTemplates" / TemplateClassName + ".lua";
+        auto FullFilePath = FPaths::ProjectConfigDir() / RelativeFilePath;
+        if (!FPaths::FileExists(FullFilePath))
+            FullFilePath = BaseDir / RelativeFilePath;
 
-    FString TemplateFilePath;
-    for (const auto& TemplateClass : TemplateClasses)
-    {
-        if (Class->IsChildOf(TemplateClass))
-        {
-            TemplateFilePath = FString::Printf(TEXT("%s/Template/%s.lua"), *ContentDir, *TemplateClass->GetName());
-            break;
-        }
+        if (!FPaths::FileExists(FullFilePath))
+            continue;
+
+        FString Content;
+        FFileHelper::LoadFileToString(Content, *FullFilePath);
+        Content = Content.Replace(TEXT("TemplateName"), *TemplateName)
+                         .Replace(TEXT("ClassName"), *UnLua::IntelliSense::GetTypeName(Class));
+
+        FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+        break;
     }
-
-    FString Content;
-    FFileHelper::LoadFileToString(Content, *TemplateFilePath);
-    Content = Content.Replace(TEXT("TemplateName"), *ClassName)
-                     .Replace(TEXT("ClassName"), *UnLua::IntelliSense::GetTypeName(Class));
-
-    FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
 }
 
 void FUnLuaEditorToolbar::RevealInExplorer_Executed()

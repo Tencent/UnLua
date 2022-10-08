@@ -20,11 +20,27 @@
 namespace UnLua
 {
     static const char* REGISTRY_KEY = "UnLua_ObjectMap";
+    static const char* MANUAL_REF_PROXY_MAP = "UnLua_ManualRefProxyMap";
 
     static int ReleaseSharedPtr(lua_State* L)
     {
         const auto Ptr = (TSharedPtr<void>*)lua_touserdata(L, 1);
         Ptr->Reset();
+        return 0;
+    }
+
+    static int ReleaseManualRef(lua_State* L)
+    {
+        auto& Env = FLuaEnv::FindEnvChecked(L);
+        const auto Proxy = (FManualRefProxy*)lua_touserdata(L, 1);
+        const auto Object = Proxy->Object.Get();
+        if (!Object)
+            return 0;
+
+        lua_getfield(L, LUA_REGISTRYINDEX, MANUAL_REF_PROXY_MAP);
+        lua_pushlightuserdata(L, Object);
+        if (lua_rawget(L, -2) == LUA_TNIL)
+            Env.RemoveManualObjectReference(Object);
         return 0;
     }
 
@@ -37,10 +53,20 @@ namespace UnLua
         LowLevel::CreateWeakValueTable(L);
         lua_rawset(L, LUA_REGISTRYINDEX);
 
+        lua_pushstring(L, MANUAL_REF_PROXY_MAP);
+        LowLevel::CreateWeakValueTable(L);
+        lua_rawset(L, LUA_REGISTRYINDEX);
+        
         luaL_newmetatable(L, "TSharedPtr");
         lua_pushstring(L, "__gc");
         lua_pushcfunction(L, ReleaseSharedPtr);
         lua_rawset(L, -3);
+
+        luaL_newmetatable(L, "UnLuaManualRefProxy");
+        lua_pushstring(L, "__gc");
+        lua_pushcfunction(L, ReleaseManualRef);
+        lua_rawset(L, -3);
+
         lua_pop(L, 1);
     }
 
@@ -179,6 +205,37 @@ namespace UnLua
         *((void**)Userdata) = (void*)LowLevel::ReleasedPtr;
 
         lua_settop(L, Top);
+    }
+
+    void FObjectRegistry::AddManualRef(lua_State* L, UObject* Object)
+    {
+        lua_getfield(L, LUA_REGISTRYINDEX, MANUAL_REF_PROXY_MAP);
+        lua_pushlightuserdata(L, Object);
+        if (lua_rawget(L, -2) == LUA_TNIL)
+        {
+            lua_pop(L, 1);
+            Env->AddManualObjectReference(Object);
+            auto Ptr = lua_newuserdata(L, sizeof(FManualRefProxy));
+            auto Proxy = new(Ptr)FManualRefProxy;
+            Proxy->Object = Object;
+            luaL_getmetatable(L, "UnLuaManualRefProxy");
+            lua_setmetatable(L, -2);
+            lua_pushlightuserdata(L, Object);
+            lua_pushvalue(L, -2);
+            lua_rawset(L, -4);
+        }
+        lua_remove(L, -2);
+    }
+
+    void FObjectRegistry::RemoveManualRef(UObject* Object)
+    {
+        const auto L = Env->GetMainState();
+        lua_getfield(L, LUA_REGISTRYINDEX, MANUAL_REF_PROXY_MAP);
+        lua_pushlightuserdata(L, Object);
+        lua_pushnil(L);
+        lua_rawset(L, -3);
+        lua_pop(L, 1);
+        Env->RemoveManualObjectReference(Object);
     }
 
     void FObjectRegistry::RemoveFromObjectMapAndPushToStack(UObject* Object)

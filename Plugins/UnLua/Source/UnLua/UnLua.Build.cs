@@ -25,8 +25,6 @@ public class UnLua : ModuleRules
 {
     public UnLua(ReadOnlyTargetRules Target) : base(Target)
     {
-        SetupScripts();
-
         bEnforceIWYU = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
@@ -85,19 +83,6 @@ public class UnLua : ModuleRules
         loadBoolConfig("bWithUE4Namespace", "WITH_UE4_NAMESPACE", true);
         loadBoolConfig("bLegacyReturnOrder", "UNLUA_LEGACY_RETURN_ORDER", false);
         loadBoolConfig("bLegacyBlueprintPath", "UNLUA_LEGACY_BLUEPRINT_PATH", false);
-    }
-
-    private void SetupScripts()
-    {
-        const string UnLuaSourceFileName = "UnLuaHotReload.lua";
-        var PluginContentDirectory = Path.Combine(PluginDirectory, "Content");
-        var DefaultScriptDirectory = Path.Combine(Target.ProjectFile.Directory.ToString(), "Content/Script");
-        if (!Directory.Exists(DefaultScriptDirectory))
-            Directory.CreateDirectory(DefaultScriptDirectory);
-
-        var SrcPath = Path.Combine(PluginContentDirectory, UnLuaSourceFileName);
-        var DstPath = Path.Combine(DefaultScriptDirectory, UnLuaSourceFileName);
-        if (!File.Exists(DstPath) && File.Exists(SrcPath))
-            File.Copy(SrcPath, DstPath);
+        loadBoolConfig("bLegacyAllowUTF8WithBOM", "UNLUA_LEGACY_ALLOW_BOM", false);
     }
 }

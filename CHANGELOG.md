@@ -4,7 +4,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.0] - 2022-10-8
+
+### Added
+- 支持使用 `UnLua.PackagePath` 的方式来搜索Lua文件，也支持从插件Content目录加载
+- 支持Android下的x86_64
+- 支持自定义预绑定类型，参考[预绑定类型列表](./Docs/CN/Settings.md#预绑定类型列表)配置选项
+- 支持UE5下的蓝图UMG输入绑定，使用新增的 `UnLua.Input` 模块，可以做到更细节的输入绑定
+- `UnLua.Ref` 和 `UnLua.Unref` 接口，提供将 `UObject` 生命周期和Lua侧同步的管理机制
+- 提升Lua访问UE函数和属性的性能
+- [自定义生成Lua模版](./Docs/CN/CustomTemplate.md)
+
+### Fixed
+- Mac下编辑器的dylib无法加载
+- PushMetatable时会使用旧的metatable [#515](https://github.com/Tencent/UnLua/pull/515)
+- Delegate的闭包函数的upvalue无法被gc [#516](https://github.com/Tencent/UnLua/issues/516)
+- 在Lua中访问TArray不存在的字段会报stackoverflow
+- 自动保存的打包设置没有生效
+- UE5下打包后UnLua配置没有正确加载
+
+### Changed
+- 默认关闭运行时对`UTF-8 BOM`文件头的加载支持，需要兼容请开启[兼容UTF-8 BOM文件头](./Docs/CN/Settings.md#兼容UTF-8%20BOM文件头)选项
+
+### Removed
+- 移除 `AddPackagePath` 接口
+
 ## [2.2.4] - 2022-9-1
+
+### Added
 - 增加最佳实践工程示例 [Lyra with UnLua](https://github.com/xuyanghuang-tencent/LyraWithUnLua)
 - 支持配置按C/C++编译Lua环境
 - 支持Lua启动入口脚本配置

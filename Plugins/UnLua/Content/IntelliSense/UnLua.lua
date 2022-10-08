@@ -1,6 +1,9 @@
 ---@class UnLua
 local UnLua = {}
 
+---Similar to "package.path" for lua module searching with UnLua loader. Used by FLuaEnv::LoadFromFileSystem.
+UnLua.PackagePath = "Content/Script/?.lua;Plugins/UnLua/Content/Script/?.lua"
+
 ---Define a lua class for binding.
 ---@param SuperClass string @[opt]
 function UnLua.Class(SuperClass)
@@ -9,6 +12,17 @@ end
 ---Hot reload lua modules
 ---@param ModuleNames table @[opt]Specify a list of module names that need hot reloading. If this parameter is not passed, it will be obtained by default according to the file modification timestamp
 function UnLua.HotReload(ModuleNames)
+end
+
+---Add or find a manual reference to specified UObject. This prevents the object from UE GC.
+---@param Object UObject
+---@return userdata @Proxy object of the reference. The reference of UObject will be removed when proxy object deleted by lua GC.
+function UnLua.Ref(Object)
+end
+
+---Force remove all manual reference to specified UObject.
+---@param Object UObject
+function UnLua.Unref(Object)
 end
 
 _G.UnLua = UnLua

@@ -22,6 +22,11 @@ namespace UnLua
 {
     class FLuaEnv;
 
+    struct FManualRefProxy
+    {
+        TWeakObjectPtr<UObject> Object;
+    };
+
     class FObjectRegistry
     {
     public:
@@ -37,7 +42,7 @@ namespace UnLua
         void Push(lua_State* L, UObject* Object);
 
         template <typename T>
-        TSharedPtr<T> Get(lua_State* L, int Index);
+        FORCEINLINE TSharedPtr<T> Get(lua_State* L, int Index);
 
         /**
          * 将一个UObject绑定到Lua环境，作为lua table访问。
@@ -61,6 +66,16 @@ namespace UnLua
          */
         void Unbind(UObject* Object);
 
+        /**
+         * 增加对指定对象的手动引用，并将对应的代理对象压入栈顶
+         */;
+        void AddManualRef(lua_State* L, UObject* Object);
+
+        /**
+         * 强制移除指定对象的手动引用
+         */
+        void RemoveManualRef(UObject* Object);
+
     private:
         void RemoveFromObjectMapAndPushToStack(UObject* Object);
 
@@ -71,14 +86,16 @@ namespace UnLua
     template <typename T>
     void FObjectRegistry::Push(lua_State* L, TSharedPtr<T> Ptr)
     {
-        const auto Userdata = NewSmartPointer(L, sizeof(TSharedPtr<T>), "TSharedPtr");
+        const auto Userdata = lua_newuserdata(L, sizeof(TSharedPtr<T>));
+        luaL_getmetatable(L, "TSharedPtr");
+        lua_setmetatable(L, -2);
         new(Userdata) TSharedPtr<T>(Ptr);
     }
 
     template <typename T>
     TSharedPtr<T> FObjectRegistry::Get(lua_State* L, int Index)
     {
-        const auto Ptr = GetSmartPointer(L, Index);
+        const auto Ptr = lua_touserdata(L, Index);
         return *static_cast<TSharedPtr<T>*>(Ptr);
     }
 }

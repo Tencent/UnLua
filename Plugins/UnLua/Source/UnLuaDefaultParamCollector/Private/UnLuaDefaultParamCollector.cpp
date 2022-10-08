@@ -412,7 +412,7 @@ public:
         {
             if (GeneratedFileContent != FileContent)
             {
-                bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
+                bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
                 check(bResult);
             }
         }
@@ -422,7 +422,7 @@ public:
             // or do not update DefaultParamCollection.inl file if exists
             if (!FPaths::FileExists(FilePath) || FileContent.Len() == 0)
             {
-                bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
+                bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
                 check(bResult);
             }
         }

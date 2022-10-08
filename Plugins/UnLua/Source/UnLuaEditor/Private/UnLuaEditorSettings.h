@@ -90,6 +90,10 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bLegacyBlueprintPath = false;
 
+    /** Allow lua file with UTF-8 BOM header. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Legacy")
+    bool bLegacyAllowUTF8WithBOM = false;
+
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (defaultValue = 0))
     EUpdateMode UpdateMode;
 };

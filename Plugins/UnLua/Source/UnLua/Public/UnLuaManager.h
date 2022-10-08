@@ -15,6 +15,7 @@
 #pragma once
 
 #include "InputCoreTypes.h"
+#include "Engine/DynamicBlueprintBinding.h"
 #include "lua.hpp"
 #include "UnLuaCompatibility.h"
 #include "UnLuaManager.generated.h"
@@ -50,6 +51,12 @@ public:
     bool ReplaceInputs(AActor *Actor, class UInputComponent *InputComponent);
 
     void OnMapLoaded(UWorld *World);
+
+    UFUNCTION(BlueprintCallable)
+    UDynamicBlueprintBinding* GetOrAddBindingObject(UClass* Class, UClass* BindingClass);
+
+    UFUNCTION(BlueprintCallable)
+    void Override(UClass* Class, FName FunctionName, FName LuaFunctionName);
 
     UFUNCTION()
     void OnLatentActionCompleted(int32 LinkID);

@@ -128,7 +128,7 @@ void UUnLuaIntelliSenseCommandlet::SaveFile(const FString &ModuleName, const FSt
     FFileHelper::LoadFileToString(FileContent, *FilePath);
     if (FileContent != GeneratedFileContent)
     {
-        bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath);
+        bool bResult = FFileHelper::SaveStringToFile(GeneratedFileContent, *FilePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
         check(bResult);
     }
 }

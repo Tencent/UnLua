@@ -41,8 +41,6 @@ class FPropertyDesc : public UnLua::ITypeInterface
 public:
     static FPropertyDesc* Create(FProperty *InProperty);
 
-	virtual ~FPropertyDesc();
-
     /**
      * Check the validity of this property
      *
@@ -115,7 +113,7 @@ public:
      */
     FORCEINLINE virtual void GetValue(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const 
     {
-        if (!IsValid())
+        if (UNLIKELY(!IsValid()))
         {
             UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
             lua_pushnil(L);
@@ -134,7 +132,7 @@ public:
      */
     FORCEINLINE virtual bool SetValue(lua_State *L, void *ContainerPtr, int32 IndexInStack = -1, bool bCopyValue = true) const
     {
-        if (!IsValid())
+        if (UNLIKELY(!IsValid()))
         {
             UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
             return false;
@@ -173,7 +171,13 @@ public:
     virtual int32 GetAlignment() const override { return Property->GetMinAlignment(); }
     virtual uint32 GetValueTypeHash(const void *Src) const override { return Property->GetValueTypeHash(Src); }
     virtual void Initialize(void *Dest) const override { Property->InitializeValue(Dest); }
-    virtual void Destruct(void *Dest) const override { Property->DestroyValue(Dest); }
+
+    virtual void Destruct(void* Dest) const override
+    {
+        if (PropertyPtr.IsValid())
+            Property->DestroyValue(Dest);
+    }
+
     virtual void Copy(void *Dest, const void *Src) const override { Property->CopySingleValue(Dest, Src); }
     virtual bool Identical(const void *A, const void *B) const override { return Property->Identical(A, B); }
     virtual FString GetName() const override { return Name; }
@@ -220,8 +224,6 @@ protected:
     TWeakFieldPtr<FProperty> PropertyPtr;
     int8 PropertyType;
     FString Name = TEXT("");
-public:
-    static TMap<FProperty*,FPropertyDesc*> Property2Desc;
 };
 
 UNLUA_API int32 GetPropertyType(const FProperty *Property);

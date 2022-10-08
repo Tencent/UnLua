@@ -78,7 +78,7 @@ static int32 UObject_IsValid(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     UObject* Object = UnLua::GetUObject(L, 1);
-    const bool bValid = UnLua::IsUObjectValid(Object) && IsValid(Object);
+    const bool bValid = UnLua::IsUObjectValid(Object) && IsValid(Object) && !Object->IsUnreachable();
     lua_pushboolean(L, bValid);
     return 1;
 }

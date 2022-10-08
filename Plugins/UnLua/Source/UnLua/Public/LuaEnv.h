@@ -40,7 +40,7 @@ namespace UnLua
     public:
         DECLARE_MULTICAST_DELEGATE_OneParam(FOnCreated, FLuaEnv&);
 
-        DECLARE_DELEGATE_RetVal_ThreeParams(bool, FLuaFileLoader, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
+        DECLARE_DELEGATE_RetVal_FourParams(bool, FLuaFileLoader, const FLuaEnv& /* Env */, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
 
         static FOnCreated OnCreated;
 
@@ -105,6 +105,10 @@ namespace UnLua
         void AddLoader(const FLuaFileLoader Loader);
 
         void AddBuiltInLoader(const FString InName, lua_CFunction Loader);
+
+        void AddManualObjectReference(UObject* Object);
+
+        void RemoveManualObjectReference(UObject* Object);
 
     protected:
         lua_State* L;

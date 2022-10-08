@@ -13,7 +13,13 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaSettings.h"
+#include "Animation/AnimNotifies/AnimNotify.h"
+#include "Animation/AnimNotifies/AnimNotifyState.h"
 
 UUnLuaSettings::UUnLuaSettings(const FObjectInitializer& ObjectInitializer)
+    : Super(ObjectInitializer)
 {
+    PreBindClasses.Add(UBlueprintFunctionLibrary::StaticClass());
+    PreBindClasses.Add(UAnimNotifyState::StaticClass());
+    PreBindClasses.Add(UAnimNotify::StaticClass());
 }

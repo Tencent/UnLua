@@ -16,6 +16,7 @@
 
 #include "lua.hpp"
 #include "Registries/FunctionRegistry.h"
+#include "Containers/StaticBitArray.h"
 
 struct lua_State;
 struct FParameterCollection;
@@ -113,9 +114,10 @@ public:
      */
     void BroadcastMulticastDelegate(lua_State *L, int32 NumParams, int32 FirstParamIndex, FMulticastScriptDelegate *ScriptDelegate);
 
-   private:
-    void* PreCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, TArray<bool> &CleanupFlags, void *Userdata = nullptr);
-    int32 PostCall(lua_State *L, int32 NumParams, int32 FirstParamIndex, void *Params, const TArray<bool> &CleanupFlags);
+private:
+    typedef TStaticBitArray<64U> FFlagArray;
+    void* PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Userdata = nullptr);
+    int32 PostCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, void* Params, const FFlagArray& CleanupFlags);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 
@@ -126,6 +128,7 @@ public:
 #endif
 #if !SUPPORTS_RPC_CALL
     FOutParmRec *OutParmRec;
+    uint8 NumCalls;                 // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
 #endif
     TArray<TUniquePtr<FPropertyDesc>> Properties;
     TArray<int32> OutPropertyIndices;
@@ -133,7 +136,6 @@ public:
     int32 ReturnPropertyIndex;
     int32 LatentPropertyIndex;
     uint8 NumRefProperties;
-    uint8 NumCalls;                 // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
     uint8 bStaticFunc : 1;
     uint8 bInterfaceFunc : 1;
     int32 ParmsSize;

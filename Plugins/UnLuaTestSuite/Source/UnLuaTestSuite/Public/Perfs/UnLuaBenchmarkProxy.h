@@ -15,11 +15,10 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
-#include "UnLuaInterface.h"
-#include "UnLuaPerformanceTestProxy.generated.h"
+#include "UnLuaBenchmarkProxy.generated.h"
 
 UCLASS()
-class AUnLuaPerformanceTestProxy : public AActor, public IUnLuaInterface
+class AUnLuaBenchmarkProxy : public AActor
 {
     GENERATED_BODY()
 
@@ -66,27 +65,21 @@ public:
     UFUNCTION(BlueprintCallable)
     bool GetMeshInfo(int32 &OutMeshID, FString &OutMeshName, FVector &OutCOM, TArray<int32> &OutIndices, TArray<FVector> &OutPositions, TArray<FVector> &OutPredictedPositions) const;
 
-    virtual FString GetModuleName_Implementation() const override
-    {
-        return TEXT("UnLuaPerformanceTestProxy");
-    }
-
-private:
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     int32 MeshID;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     FString MeshName;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     FVector COM;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<int32> Indices;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<FVector> Positions;
 
-    UPROPERTY()
+    UPROPERTY(BlueprintReadWrite)
     TArray<FVector> PredictedPositions;
 };

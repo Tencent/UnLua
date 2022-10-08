@@ -31,7 +31,7 @@ end
 local function SetupKeyBindings()
     local key_names = {
         -- 字母
-        "A", "B", "C", "D", "E","F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+        "A", "B", --[["C",]] "D", "E","F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", --[["V", ]] "W", "X", "Y", "Z",
         -- 数字
         "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
         -- 小键盘
@@ -65,5 +65,30 @@ end
 
 SetupKeyBindings()
 SetupAxisBindings()
+
+--[[
+    使用UnLua.Input.BindXXX接口可以实现更细节的输入绑定控制
+
+    更多请参考：
+    UnLua\Plugins\UnLua\Content\Script\UnLua\Input.lua
+]]
+
+local BindKey = UnLua.Input.BindKey
+
+BindKey(M, "C", "Pressed", function(self, Key)
+    Screen.Print("按下了C")
+end)
+
+BindKey(M, "C", "Pressed", function(self, Key)
+    Screen.Print("复制")
+end, { Ctrl = true })
+
+BindKey(M, "V", "Pressed", function(self, Key)
+    Screen.Print("按下了V")
+end)
+
+BindKey(M, "V", "Pressed", function(self, Key)
+    Screen.Print("粘贴")
+end, { Ctrl = true })
 
 return M
