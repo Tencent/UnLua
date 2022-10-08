@@ -15,6 +15,8 @@
 #include "Engine/World.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/PlayerController.h"
+#include "DirectoryWatcherModule.h"
+#include "IDirectoryWatcher.h"
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "LowLevel.h"
@@ -206,6 +208,28 @@ namespace UnLua
         Name = InName;
     }
 
+    void FLuaEnv::Watch(const TArray<FString>& Directories)
+    {
+        auto& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
+        const auto DirectoryWatcher = DirectoryWatcherModule.Get();
+        if (!DirectoryWatcher)
+            return;
+
+        for (const auto& Watcher : Watchers)
+            DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(Watcher.Directory, Watcher.Handle);
+        Watchers.Reset();
+
+        for (const auto& Directory : Directories)
+        {
+            if (!FPaths::DirectoryExists(Directory))
+                continue;
+            FDirectoryWatcherPayload Watcher;
+            Watcher.Directory = Directory;
+            const auto& Delegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLuaEnv::OnLuaFileChanged);
+            DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(Watcher.Directory, Delegate, Watcher.Handle);
+        }
+    }
+
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
@@ -272,6 +296,22 @@ namespace UnLua
 
         CandidateInputComponents.Empty();
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
+    }
+
+    void FLuaEnv::OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges)
+    {
+        TArray<FString> ToReload;
+        for (auto& FileChange : FileChanges)
+        {
+            if (FileChange.Action != FFileChangeData::FCA_Modified)
+                continue;
+
+            const auto ModuleName = PathToModuleName.Find(FileChange.Filename);
+            if (!ModuleName)
+                continue;
+            ToReload.AddUnique(*ModuleName);
+        }
+        HotReload(ToReload);
     }
 
     bool FLuaEnv::TryBind(UObject* Object)
@@ -385,9 +425,12 @@ namespace UnLua
         lua_gc(L, LUA_GCCOLLECT, 0);
     }
 
-    void FLuaEnv::HotReload()
+    void FLuaEnv::HotReload(const TArray<FString>& ModuleNames)
     {
-        DoString("UnLua.HotReload()");
+        if (ModuleNames.Num() == 0)
+            DoString("UnLua.HotReload()");
+        else
+            DoString("UnLua.HotReload({'" + FString::Join(ModuleNames, TEXT("','")) + "'})");
     }
 
     int32 FLuaEnv::FindThread(const lua_State* Thread)
@@ -536,8 +579,8 @@ namespace UnLua
 
     int FLuaEnv::LoadFromFileSystem(lua_State* L)
     {
-        FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
-        FileName.ReplaceInline(TEXT("."), TEXT("/"));
+        const FString ModuleName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
+        const auto FileName = ModuleName.Replace(TEXT("."), TEXT("/"));
 
         auto& Env = *(FLuaEnv*)lua_touserdata(L, lua_upvalueindex(1));
         TArray<uint8> Data;
@@ -546,7 +589,10 @@ namespace UnLua
         auto LoadIt = [&]
         {
             if (Env.LoadString(Data, TCHAR_TO_UTF8(*FullPath)))
+            {
+                Env.PathToModuleName.Add(FullPath, ModuleName);
                 return 1;
+            }
             return luaL_error(L, "file loading from file system error");
         };
 

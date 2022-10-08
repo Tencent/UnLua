@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "IDirectoryWatcher.h"
 #include "Engine/EngineBaseTypes.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
@@ -62,6 +63,8 @@ namespace UnLua
 
         void SetName(FString InName);
 
+        void Watch(const TArray<FString>& Directories);
+
         virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;
 
         virtual void OnUObjectArrayShutdown() override;
@@ -74,7 +77,7 @@ namespace UnLua
 
         virtual void GC();
 
-        virtual void HotReload();
+        virtual void HotReload(const TArray<FString>& ModuleNames = {});
 
         FORCEINLINE lua_State* GetMainState() const { return L; }
 
@@ -144,11 +147,21 @@ namespace UnLua
 
         void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
 
+        void OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges);
+
         void RegisterDelegates();
 
         void UnRegisterDelegates();
 
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
+
+        struct FDirectoryWatcherPayload
+        {
+            FString Directory;
+            FDelegateHandle Handle;
+        };
+
+        TArray<FDirectoryWatcherPayload> Watchers;
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FLuaFileLoader> CustomLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
@@ -166,6 +179,7 @@ namespace UnLua
         FDeadLoopCheck* DeadLoopCheck;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
+        TMap<FString, FString> PathToModuleName;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
         TArray<UInputComponent*> CandidateInputComponents;
         FDelegateHandle OnWorldTickStartHandle;

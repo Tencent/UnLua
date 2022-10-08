@@ -45,7 +45,9 @@ namespace UnLua
 
         static int HotReload(lua_State* L)
         {
-            luaL_dostring(L, "require('UnLua.HotReload').reload()");
+            luaL_loadstring(L, "require('UnLua.HotReload').reload(...)");
+            lua_insert(L, 1);
+            lua_pcall(L, lua_gettop(L)-1, LUA_MULTRET, 0);
             return 0;
         }
 

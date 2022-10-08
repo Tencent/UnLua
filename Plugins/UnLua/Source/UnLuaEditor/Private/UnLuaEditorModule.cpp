@@ -18,6 +18,7 @@
 #include "Misc/CoreDelegates.h"
 #include "Editor.h"
 #include "BlueprintEditorModule.h"
+#include "DirectoryWatcherModule.h"
 #include "UnLuaIntelliSenseGenerator.h"
 #include "UnLua.h"
 #include "ISettingsModule.h"
@@ -38,195 +39,207 @@
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
-class FUnLuaEditorModule : public IModuleInterface
+namespace UnLua
 {
-public:
-    FUnLuaEditorModule()
+    class FUnLuaEditorModule : public IModuleInterface
     {
-    }
+    public:
+        FUnLuaEditorModule()
+        {
+        }
 
-    virtual void StartupModule() override
-    {
-        Style = FUnLuaEditorStyle::GetInstance();
+        virtual void StartupModule() override
+        {
+            Style = FUnLuaEditorStyle::GetInstance();
 
-        FUnLuaEditorCommands::Register();
+            FUnLuaEditorCommands::Register();
 
-        FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnLuaEditorModule::OnPostEngineInit);
+            FCoreDelegates::OnPostEngineInit.AddRaw(this, &FUnLuaEditorModule::OnPostEngineInit);
 
-        MainMenuToolbar = MakeShareable(new FMainMenuToolbar);
-        BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
-        AnimationBlueprintToolbar = MakeShareable(new FAnimationBlueprintToolbar);
+            MainMenuToolbar = MakeShareable(new FMainMenuToolbar);
+            BlueprintToolbar = MakeShareable(new FBlueprintToolbar);
+            AnimationBlueprintToolbar = MakeShareable(new FAnimationBlueprintToolbar);
 
-        UUnLuaEditorFunctionLibrary::WatchScriptDirectory();
+            UUnLuaEditorFunctionLibrary::WatchScriptDirectory();
 
 #if ENGINE_MAJOR_VERSION > 4
-        UPackage::PreSavePackageWithContextEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSavingWithContext);
-        UPackage::PackageSavedWithContextEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSavedWithContext);
+            UPackage::PreSavePackageWithContextEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSavingWithContext);
+            UPackage::PackageSavedWithContextEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSavedWithContext);
 #else
-        UPackage::PreSavePackageEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaving);
-        UPackage::PackageSavedEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaved);
+            UPackage::PreSavePackageEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaving);
+            UPackage::PackageSavedEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaved);
 #endif
-        SetupPackagingSettings();
-    }
+            SetupPackagingSettings();
+        }
 
-    virtual void ShutdownModule() override
-    {
-        FUnLuaEditorCommands::Unregister();
-        FCoreDelegates::OnPostEngineInit.RemoveAll(this);
-        UnregisterSettings();
+        virtual void ShutdownModule() override
+        {
+            FUnLuaEditorCommands::Unregister();
+            FCoreDelegates::OnPostEngineInit.RemoveAll(this);
+            UnregisterSettings();
 
 #if ENGINE_MAJOR_VERSION > 4
-        UPackage::PreSavePackageWithContextEvent.RemoveAll(this);
-        UPackage::PackageSavedWithContextEvent.RemoveAll(this);
+            UPackage::PreSavePackageWithContextEvent.RemoveAll(this);
+            UPackage::PackageSavedWithContextEvent.RemoveAll(this);
 #else
-        UPackage::PreSavePackageEvent.RemoveAll(this);
-        UPackage::PackageSavedEvent.RemoveAll(this);
+            UPackage::PreSavePackageEvent.RemoveAll(this);
+            UPackage::PackageSavedEvent.RemoveAll(this);
 #endif
-    }
-
-private:
-    void OnPostEngineInit()
-    {
-        RegisterSettings();
-
-        if (!GEditor)
-        {
-            // Loading MainFrame module with '-game' is not supported
-            return;
         }
 
-        MainMenuToolbar->Initialize();
-        BlueprintToolbar->Initialize();
-        AnimationBlueprintToolbar->Initialize();
-        FUnLuaIntelliSenseGenerator::Get()->Initialize();
-
-        IMainFrameModule& MainFrameModule = FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT("MainFrame"));
-        MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
-    }
-
-    void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
-    {
-        // register default key input to 'HotReload' Lua
-        FPlayWorldCommands::GlobalPlayWorldActions->MapAction(
-            FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
-    }
-
-    void RegisterSettings() const
-    {
-        ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
-        if (SettingsModule)
+    private:
+        void OnPostEngineInit()
         {
-            const TSharedPtr<ISettingsSection> Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua Editor",
-                                                                                          LOCTEXT("UnLuaEditorSettingsName", "UnLua Editor"),
-                                                                                          LOCTEXT("UnLuaEditorSettingsDescription", "UnLua Editor Settings"),
-                                                                                          GetMutableDefault<UUnLuaEditorSettings>());
-            Section->OnModified().BindRaw(this, &FUnLuaEditorModule::OnSettingsModified);
-        }
-    }
+            RegisterSettings();
 
-    void UnregisterSettings() const
-    {
-        ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
-        if (SettingsModule)
-            SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua Editor");
-    }
-
-    bool OnSettingsModified() const
-    {
-        const auto BuildFile = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir() / "Source/UnLua/UnLua.Build.cs";
-        auto& FileManager = IFileManager::Get();
-        if (FileManager.FileExists(*BuildFile))
-            FileManager.SetTimeStamp(*BuildFile, FDateTime::UtcNow());
-        return true;
-    }
-
-#if ENGINE_MAJOR_VERSION > 4
-    void OnPackageSavingWithContext(UPackage* Package, FObjectPreSaveContext Context)
-    {
-        OnPackageSaving(Package);
-    }
-
-    void OnPackageSavedWithContext(const FString& PackageFileName, UPackage* Package, FObjectPostSaveContext Context)
-    {
-        OnPackageSaved(PackageFileName, Package);
-    }
-#endif
-
-    void OnPackageSaving(UPackage* Package)
-    {
-        if (!GEditor || !GEditor->PlayWorld)
-            return;
-
-        ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
-        {
-            const auto Class = Cast<UClass>(Object);
-            if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
-                return true;
-            SuspendedPackages.Add(Package, Class);
-            return false;
-        }, false);
-
-        for (const auto Pair : SuspendedPackages)
-            ULuaFunction::SuspendOverrides(Pair.Value);
-    }
-
-    void OnPackageSaved(const FString& PackageFileName, UObject* Outer)
-    {
-        if (!GEditor || !GEditor->PlayWorld)
-            return;
-
-        UPackage* Package = (UPackage*)Outer;
-        if (SuspendedPackages.Contains(Package))
-        {
-            ULuaFunction::ResumeOverrides(SuspendedPackages[Package]);
-            SuspendedPackages.Remove(Package);
-        }
-    }
-
-    void SetupPackagingSettings()
-    {
-        static auto ScriptPaths = {TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
-        const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
-        bool bModified = false;
-        auto Exists = [&](const auto Path)
-        {
-            for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
+            if (!GEditor)
             {
-                if (DirPath.Path == Path)
-                    return true;
+                // Loading MainFrame module with '-game' is not supported
+                return;
             }
-            return false;
-        };
 
-        for (auto& ScriptPath : ScriptPaths)
-        {
-            if (Exists(ScriptPath))
-                continue;
+            MainMenuToolbar->Initialize();
+            BlueprintToolbar->Initialize();
+            AnimationBlueprintToolbar->Initialize();
+            FUnLuaIntelliSenseGenerator::Get()->Initialize();
 
-            FDirectoryPath DirectoryPath;
-            DirectoryPath.Path = ScriptPath;
-            PackagingSettings->DirectoriesToAlwaysStageAsUFS.Add(DirectoryPath);
-            bModified = true;
+            IMainFrameModule& MainFrameModule = FModuleManager::LoadModuleChecked<IMainFrameModule>(TEXT("MainFrame"));
+            MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
+
+            Env = MakeUnique<FLuaEnv>();
+            Env->DoString("UnLua.PackagePath='Content/EditorScript/?.lua;Plugins/UnLua/Content/EditorScript/?.lua;' .. UnLua.PackagePath");
+            Env->Watch({
+                IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir() / "EditorScript",
+                FPaths::ProjectContentDir() / "EditorScript"
+            });
+            Env->Start("Main", {});
         }
 
-        if (bModified)
+        void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
         {
-#if ENGINE_MAJOR_VERSION >= 5
-            PackagingSettings->TryUpdateDefaultConfigFile();
-#else
-            PackagingSettings->UpdateDefaultConfigFile();
+            // register default key input to 'HotReload' Lua
+            FPlayWorldCommands::GlobalPlayWorldActions->MapAction(
+                FUnLuaEditorCommands::Get().HotReload, FExecuteAction::CreateStatic(UUnLuaFunctionLibrary::HotReload), FCanExecuteAction());
+        }
+
+        void RegisterSettings() const
+        {
+            ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
+            if (SettingsModule)
+            {
+                const TSharedPtr<ISettingsSection> Section = SettingsModule->RegisterSettings("Project", "Plugins", "UnLua Editor",
+                                                                                              LOCTEXT("UnLuaEditorSettingsName", "UnLua Editor"),
+                                                                                              LOCTEXT("UnLuaEditorSettingsDescription", "UnLua Editor Settings"),
+                                                                                              GetMutableDefault<UUnLuaEditorSettings>());
+                Section->OnModified().BindRaw(this, &FUnLuaEditorModule::OnSettingsModified);
+            }
+        }
+
+        void UnregisterSettings() const
+        {
+            ISettingsModule* SettingsModule = FModuleManager::GetModulePtr<ISettingsModule>("Settings");
+            if (SettingsModule)
+                SettingsModule->UnregisterSettings("Project", "Plugins", "UnLua Editor");
+        }
+
+        bool OnSettingsModified() const
+        {
+            const auto BuildFile = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir() / "Source/UnLua/UnLua.Build.cs";
+            auto& FileManager = IFileManager::Get();
+            if (FileManager.FileExists(*BuildFile))
+                FileManager.SetTimeStamp(*BuildFile, FDateTime::UtcNow());
+            return true;
+        }
+
+#if ENGINE_MAJOR_VERSION > 4
+        void OnPackageSavingWithContext(UPackage* Package, FObjectPreSaveContext Context)
+        {
+            OnPackageSaving(Package);
+        }
+
+        void OnPackageSavedWithContext(const FString& PackageFileName, UPackage* Package, FObjectPostSaveContext Context)
+        {
+            OnPackageSaved(PackageFileName, Package);
+        }
 #endif
-        }
-    }
 
-    TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
-    TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
-    TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
-    TSharedPtr<FUnLuaIntelliSenseGenerator> IntelliSenseGenerator;
-    TSharedPtr<ISlateStyle> Style;
-    TMap<UPackage*, UClass*> SuspendedPackages;
-};
+        void OnPackageSaving(UPackage* Package)
+        {
+            if (!GEditor || !GEditor->PlayWorld)
+                return;
+
+            ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
+            {
+                const auto Class = Cast<UClass>(Object);
+                if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
+                    return true;
+                SuspendedPackages.Add(Package, Class);
+                return false;
+            }, false);
+
+            for (const auto Pair : SuspendedPackages)
+                ULuaFunction::SuspendOverrides(Pair.Value);
+        }
+
+        void OnPackageSaved(const FString& PackageFileName, UObject* Outer)
+        {
+            if (!GEditor || !GEditor->PlayWorld)
+                return;
+
+            UPackage* Package = (UPackage*)Outer;
+            if (SuspendedPackages.Contains(Package))
+            {
+                ULuaFunction::ResumeOverrides(SuspendedPackages[Package]);
+                SuspendedPackages.Remove(Package);
+            }
+        }
+
+        void SetupPackagingSettings()
+        {
+            static auto ScriptPaths = {TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
+            const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
+            bool bModified = false;
+            auto Exists = [&](const auto Path)
+            {
+                for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
+                {
+                    if (DirPath.Path == Path)
+                        return true;
+                }
+                return false;
+            };
+
+            for (auto& ScriptPath : ScriptPaths)
+            {
+                if (Exists(ScriptPath))
+                    continue;
+
+                FDirectoryPath DirectoryPath;
+                DirectoryPath.Path = ScriptPath;
+                PackagingSettings->DirectoriesToAlwaysStageAsUFS.Add(DirectoryPath);
+                bModified = true;
+            }
+
+            if (bModified)
+            {
+#if ENGINE_MAJOR_VERSION >= 5
+                PackagingSettings->TryUpdateDefaultConfigFile();
+#else
+                PackagingSettings->UpdateDefaultConfigFile();
+#endif
+            }
+        }
+
+        TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
+        TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
+        TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
+        TSharedPtr<FUnLuaIntelliSenseGenerator> IntelliSenseGenerator;
+        TSharedPtr<ISlateStyle> Style;
+        TMap<UPackage*, UClass*> SuspendedPackages;
+        TUniquePtr<FLuaEnv> Env;
+    };
+}
+
+IMPLEMENT_MODULE(UnLua::FUnLuaEditorModule, UnLuaEditor)
 
 #undef LOCTEXT_NAMESPACE
-
-IMPLEMENT_MODULE(FUnLuaEditorModule, UnLuaEditor)
