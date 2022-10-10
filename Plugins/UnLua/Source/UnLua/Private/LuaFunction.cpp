@@ -21,6 +21,10 @@
 static constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
 static auto OverriddenSuffix = FUTF8ToTCHAR("__Overridden");
 
+#if WITH_EDITOR
+const static FName NAME_CallInEditor(TEXT("CallInEditor"));
+#endif
+
 TMap<UClass*, UClass*> ULuaFunction::SuspendedOverrides;
 
 static UClass* MakeOrphanedClass(const UClass* Class)
@@ -101,8 +105,10 @@ bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
     else
         LuaFunction->SetSuperStruct(Function);
 
-    if (!FPlatformProperties::RequiresCookedData())
-        UMetaData::CopyMetadata(Function, LuaFunction);
+#if WITH_EDITOR
+    UMetaData::CopyMetadata(Function, LuaFunction);
+    Function->RemoveMetaData(NAME_CallInEditor);
+#endif
 
     LuaFunction->StaticLink(true);
     LuaFunction->Initialize();
