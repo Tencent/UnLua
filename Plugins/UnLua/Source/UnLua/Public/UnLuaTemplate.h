@@ -80,7 +80,7 @@ namespace UnLua
     template <typename T> struct TArgTypeTraits
     {
         typedef typename TDecay<T>::Type RT;
-        typedef typename TChooseClass<TIsPrimitiveTypeOrPointer<RT>::Value, RT, typename std::add_lvalue_reference<T>::type>::Result Type;
+        typedef typename TChooseClass<TIsPrimitiveTypeOrPointer<RT>::Value, RT, typename TRemoveCV<T>::Type>::Result Type;
     };
     
     
