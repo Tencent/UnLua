@@ -170,6 +170,11 @@ namespace UnLua
     private:
         virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
         {
+#if WITH_EDITOR
+            if (GIsCookerLoadingPackage)
+                return;
+#endif
+
             // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectCreated : %p"), ObjectBase);
             UObject* Object = (UObject*)ObjectBase;
 
