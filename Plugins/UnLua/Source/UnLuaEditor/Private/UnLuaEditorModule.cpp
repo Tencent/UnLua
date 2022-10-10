@@ -18,6 +18,7 @@
 #include "Misc/CoreDelegates.h"
 #include "Editor.h"
 #include "BlueprintEditorModule.h"
+#include "EditorHotReloadWatcher.h"
 #include "UnLuaIntelliSenseGenerator.h"
 #include "UnLua.h"
 #include "ISettingsModule.h"
@@ -121,7 +122,7 @@ namespace UnLua
 
             Env = MakeUnique<FLuaEnv>();
             Env->DoString("UnLua.PackagePath='Content/EditorScript/?.lua;Plugins/UnLua/Content/EditorScript/?.lua;' .. UnLua.PackagePath");
-            Env->Watch({
+            Env->Watch<FEditorHotReloadWatcher>({
                 IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir() / "EditorScript",
                 FPaths::ProjectContentDir() / "EditorScript"
             });

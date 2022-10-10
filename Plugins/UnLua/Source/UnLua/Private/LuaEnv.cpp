@@ -15,10 +15,6 @@
 #include "Engine/World.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/PlayerController.h"
-#if WITH_EDITOR
-#include "DirectoryWatcherModule.h"
-#include "IDirectoryWatcher.h"
-#endif
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "LowLevel.h"
@@ -210,33 +206,6 @@ namespace UnLua
         Name = InName;
     }
 
-#if WITH_EDITOR
-
-    void FLuaEnv::Watch(const TArray<FString>& Directories)
-    {
-        // TODO: refactor this to editor module
-        auto& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
-        const auto DirectoryWatcher = DirectoryWatcherModule.Get();
-        if (!DirectoryWatcher)
-            return;
-
-        for (const auto& Watcher : Watchers)
-            DirectoryWatcher->UnregisterDirectoryChangedCallback_Handle(Watcher.Directory, Watcher.Handle);
-        Watchers.Reset();
-
-        for (const auto& Directory : Directories)
-        {
-            if (!FPaths::DirectoryExists(Directory))
-                continue;
-            FDirectoryWatcherPayload Watcher;
-            Watcher.Directory = Directory;
-            const auto& Delegate = IDirectoryWatcher::FDirectoryChanged::CreateRaw(this, &FLuaEnv::OnLuaFileChanged);
-            DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(Watcher.Directory, Delegate, Watcher.Handle);
-        }
-    }
-
-#endif
-
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
@@ -304,24 +273,6 @@ namespace UnLua
         CandidateInputComponents.Empty();
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }
-
-#if WITH_EDITOR
-    void FLuaEnv::OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges)
-    {
-        TArray<FString> ToReload;
-        for (auto& FileChange : FileChanges)
-        {
-            if (FileChange.Action != FFileChangeData::FCA_Modified)
-                continue;
-
-            const auto ModuleName = PathToModuleName.Find(FileChange.Filename);
-            if (!ModuleName)
-                continue;
-            ToReload.AddUnique(*ModuleName);
-        }
-        HotReload(ToReload);
-    }
-#endif
 
     bool FLuaEnv::TryBind(UObject* Object)
     {
@@ -599,7 +550,7 @@ namespace UnLua
         {
             if (Env.LoadString(Data, TCHAR_TO_UTF8(*FullPath)))
             {
-                Env.PathToModuleName.Add(FullPath, ModuleName);
+                Env.OnModuleLoaded.Broadcast(ModuleName, FullPath);
                 return 1;
             }
             return luaL_error(L, "file loading from file system error");

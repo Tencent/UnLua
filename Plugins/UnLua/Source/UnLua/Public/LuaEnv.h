@@ -14,9 +14,6 @@
 
 #pragma once
 
-#if WITH_EDITOR
-#include "IDirectoryWatcher.h"
-#endif
 #include "Engine/EngineBaseTypes.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
@@ -30,6 +27,7 @@
 #include "HAL/Platform.h"
 #include "LuaDeadLoopCheck.h"
 #include "LuaModuleLocator.h"
+#include "IHotReloadWatcher.h"
 
 namespace UnLua
 {
@@ -43,9 +41,13 @@ namespace UnLua
     public:
         DECLARE_MULTICAST_DELEGATE_OneParam(FOnCreated, FLuaEnv&);
 
+        DECLARE_MULTICAST_DELEGATE_TwoParams(FOnModuleLoaded, const FString& /* ModuleName */, const FString& /* FilePath */);
+
         DECLARE_DELEGATE_RetVal_FourParams(bool, FLuaFileLoader, const FLuaEnv& /* Env */, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
 
         static FOnCreated OnCreated;
+
+        FOnModuleLoaded OnModuleLoaded;
 
         FLuaEnv();
 
@@ -65,9 +67,13 @@ namespace UnLua
 
         void SetName(FString InName);
 
-#if WITH_EDITOR
-        void Watch(const TArray<FString>& Directories);
-#endif
+        template <class T>
+        void Watch(const TArray<FString>& Directories)
+        {
+            if (!Watcher)
+                Watcher = MakeUnique<T>(this);
+            Watcher->Watch(Directories);
+        }
 
         virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;
 
@@ -155,24 +161,12 @@ namespace UnLua
 
         void UnRegisterDelegates();
 
-#if WITH_EDITOR
-        void OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges);
-
-        struct FDirectoryWatcherPayload
-        {
-            FString Directory;
-            FDelegateHandle Handle;
-        };
-
-        TArray<FDirectoryWatcherPayload> Watchers;
-
-#endif
-
         static TMap<lua_State*, FLuaEnv*> AllEnvs;
 
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FLuaFileLoader> CustomLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading
+        TUniquePtr<IHotReloadWatcher> Watcher;
         ULuaModuleLocator* ModuleLocator;
         FCriticalSection CandidatesLock;
         FObjectReferencer AutoObjectReference;
@@ -187,7 +181,6 @@ namespace UnLua
         FDeadLoopCheck* DeadLoopCheck;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;
-        TMap<FString, FString> PathToModuleName;
         FDelegateHandle OnAsyncLoadingFlushUpdateHandle;
         TArray<UInputComponent*> CandidateInputComponents;
         FDelegateHandle OnWorldTickStartHandle;
