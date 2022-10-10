@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.3.0]
+## [2.3.0] - 2022-10-8
 
 ### Added
 - 支持使用 `UnLua.PackagePath` 的方式来搜索Lua文件，也支持从插件Content目录加载

@@ -171,7 +171,13 @@ public:
     virtual int32 GetAlignment() const override { return Property->GetMinAlignment(); }
     virtual uint32 GetValueTypeHash(const void *Src) const override { return Property->GetValueTypeHash(Src); }
     virtual void Initialize(void *Dest) const override { Property->InitializeValue(Dest); }
-    virtual void Destruct(void *Dest) const override { Property->DestroyValue(Dest); }
+
+    virtual void Destruct(void* Dest) const override
+    {
+        if (PropertyPtr.IsValid())
+            Property->DestroyValue(Dest);
+    }
+
     virtual void Copy(void *Dest, const void *Src) const override { Property->CopySingleValue(Dest, Src); }
     virtual bool Identical(const void *A, const void *B) const override { return Property->Identical(A, B); }
     virtual FString GetName() const override { return Name; }

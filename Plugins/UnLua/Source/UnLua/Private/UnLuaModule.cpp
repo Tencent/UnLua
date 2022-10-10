@@ -106,7 +106,7 @@ namespace UnLua
 
                 for (const auto Class : TObjectRange<UClass>())
                 {
-                    for (const auto ClassPath : Settings.PreBindClasses)
+                    for (const auto& ClassPath : Settings.PreBindClasses)
                     {
                         if (!ClassPath.IsValid())
                             continue;
