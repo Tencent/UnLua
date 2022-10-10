@@ -36,4 +36,16 @@ public:
      */
     UFUNCTION(BlueprintNativeEvent)
     FString GetModuleName() const;
+
+#if WITH_EDITOR
+
+    /**
+     * Return true if the object run in editor.
+     **/
+    UFUNCTION(BlueprintNativeEvent)
+    bool RunInEditor() const;
+
+#endif
+
+    bool RunInEditor_Implementation() const { return false; }
 };

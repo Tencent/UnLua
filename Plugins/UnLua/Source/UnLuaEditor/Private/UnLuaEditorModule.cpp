@@ -18,14 +18,15 @@
 #include "Misc/CoreDelegates.h"
 #include "Editor.h"
 #include "BlueprintEditorModule.h"
-#include "DirectoryWatcherModule.h"
 #include "UnLuaIntelliSenseGenerator.h"
 #include "UnLua.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
+#include "LuaEnvLocator.h"
 #include "UnLuaEditorSettings.h"
 #include "UnLuaEditorFunctionLibrary.h"
 #include "UnLuaFunctionLibrary.h"
+#include "UnLuaInterface.h"
 #include "Kismet2/DebuggerCommands.h"
 #include "Interfaces/IMainFrameModule.h"
 #include "Interfaces/IPluginManager.h"
@@ -70,10 +71,18 @@ namespace UnLua
             UPackage::PackageSavedEvent.AddRaw(this, &FUnLuaEditorModule::OnPackageSaved);
 #endif
             SetupPackagingSettings();
+
+            ULuaEnvLocator::OnEditorLocate.BindRaw(this, &FUnLuaEditorModule::OnEditorLocate);
         }
 
         virtual void ShutdownModule() override
         {
+            if (GEditor)
+            {
+                GEditor->OnBlueprintPreCompile().RemoveAll(this);
+                GEditor->OnBlueprintCompiled().RemoveAll(this);
+            }
+
             FUnLuaEditorCommands::Unregister();
             FCoreDelegates::OnPostEngineInit.RemoveAll(this);
             UnregisterSettings();
@@ -85,6 +94,8 @@ namespace UnLua
             UPackage::PreSavePackageEvent.RemoveAll(this);
             UPackage::PackageSavedEvent.RemoveAll(this);
 #endif
+
+            ULuaEnvLocator::OnEditorLocate.Unbind();
         }
 
     private:
@@ -97,6 +108,8 @@ namespace UnLua
                 // Loading MainFrame module with '-game' is not supported
                 return;
             }
+
+            GEditor->OnBlueprintPreCompile().AddRaw(this, &FUnLuaEditorModule::OnBlueprintPreCompile);
 
             MainMenuToolbar->Initialize();
             BlueprintToolbar->Initialize();
@@ -230,6 +243,51 @@ namespace UnLua
             }
         }
 
+        void OnBlueprintPreCompile(UBlueprint* Blueprint)
+        {
+            auto Handle = Blueprint->OnCompiled().AddRaw(this, &FUnLuaEditorModule::OnBlueprintCompiled);
+            ObservingBlueprints.Add(Blueprint, Handle);
+        }
+
+        void OnBlueprintCompiled(UBlueprint* Blueprint)
+        {
+            ObservingBlueprints.Remove(Blueprint);
+            auto Class = Blueprint->GeneratedClass;
+            if (!Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
+                return;
+            if (!IUnLuaInterface::Execute_RunInEditor(Class->GetDefaultObject()))
+                return;
+            Env->TryBind(Blueprint->GeneratedClass);
+        }
+
+        FLuaEnv* OnEditorLocate(const UObject* Object) const
+        {
+            const UObject* CDO;
+            if (Object->HasAnyFlags(RF_ClassDefaultObject | RF_ArchetypeObject))
+            {
+                CDO = Object;
+            }
+            else
+            {
+                const auto Class = Cast<UClass>(Object);
+                CDO = Class ? Class->GetDefaultObject(false) : Object->GetClass()->GetDefaultObject(false);
+            }
+
+            if (!CDO)
+                return nullptr;
+
+            if (CDO->HasAnyFlags(RF_NeedInitialization))
+                return nullptr;
+
+            if (!CDO->GetClass()->ImplementsInterface(UUnLuaInterface::StaticClass()))
+                return nullptr;
+
+            if (!IUnLuaInterface::Execute_RunInEditor(CDO))
+                return nullptr;
+
+            return Env.Get();
+        }
+
         TSharedPtr<FBlueprintToolbar> BlueprintToolbar;
         TSharedPtr<FAnimationBlueprintToolbar> AnimationBlueprintToolbar;
         TSharedPtr<FMainMenuToolbar> MainMenuToolbar;
@@ -237,6 +295,7 @@ namespace UnLua
         TSharedPtr<ISlateStyle> Style;
         TMap<UPackage*, UClass*> SuspendedPackages;
         TUniquePtr<FLuaEnv> Env;
+        TMap<UBlueprint*, FDelegateHandle> ObservingBlueprints;
     };
 }
 

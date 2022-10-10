@@ -15,8 +15,10 @@
 #include "Engine/World.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/PlayerController.h"
+#if WITH_EDITOR
 #include "DirectoryWatcherModule.h"
 #include "IDirectoryWatcher.h"
+#endif
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "LowLevel.h"
@@ -208,8 +210,11 @@ namespace UnLua
         Name = InName;
     }
 
+#if WITH_EDITOR
+
     void FLuaEnv::Watch(const TArray<FString>& Directories)
     {
+        // TODO: refactor this to editor module
         auto& DirectoryWatcherModule = FModuleManager::LoadModuleChecked<FDirectoryWatcherModule>("DirectoryWatcher");
         const auto DirectoryWatcher = DirectoryWatcherModule.Get();
         if (!DirectoryWatcher)
@@ -229,6 +234,8 @@ namespace UnLua
             DirectoryWatcher->RegisterDirectoryChangedCallback_Handle(Watcher.Directory, Delegate, Watcher.Handle);
         }
     }
+
+#endif
 
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
@@ -298,6 +305,7 @@ namespace UnLua
         FWorldDelegates::OnWorldTickStart.Remove(OnWorldTickStartHandle);
     }
 
+#if WITH_EDITOR
     void FLuaEnv::OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges)
     {
         TArray<FString> ToReload;
@@ -313,6 +321,7 @@ namespace UnLua
         }
         HotReload(ToReload);
     }
+#endif
 
     bool FLuaEnv::TryBind(UObject* Object)
     {

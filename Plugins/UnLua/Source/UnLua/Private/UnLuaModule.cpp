@@ -51,6 +51,14 @@ namespace UnLua
 #endif
             RegisterSettings();
 
+            const auto& Settings = *GetDefault<UUnLuaSettings>();
+            const auto EnvLocatorClass = *Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : *Settings.EnvLocatorClass;
+            EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
+            EnvLocator->AddToRoot();
+
+            GUObjectArray.AddUObjectCreateListener(this);
+            GUObjectArray.AddUObjectDeleteListener(this);
+
 #if ALLOW_CONSOLE
             ConsoleCommands = MakeUnique<FUnLuaConsoleCommands>(this);
 #endif
@@ -77,8 +85,21 @@ namespace UnLua
 
         virtual void ShutdownModule() override
         {
+            if (!UObjectInitialized())
+                return;
+
             UnregisterSettings();
             SetActive(false);
+
+            EnvLocator->RemoveFromRoot();
+            EnvLocator = nullptr;
+
+            FClassRegistry::Cleanup();
+            FEnumRegistry::Cleanup();
+
+            GUObjectArray.RemoveUObjectCreateListener(this);
+            GUObjectArray.RemoveUObjectDeleteListener(this);
+            GPropertyCreator.Cleanup();
         }
 
         virtual bool IsActive() override
@@ -93,15 +114,7 @@ namespace UnLua
 
             if (bActive)
             {
-                OnHandleSystemErrorHandle = FCoreDelegates::OnHandleSystemError.AddRaw(this, &FUnLuaModule::OnSystemError);
-                OnHandleSystemEnsureHandle = FCoreDelegates::OnHandleSystemEnsure.AddRaw(this, &FUnLuaModule::OnSystemError);
-                GUObjectArray.AddUObjectCreateListener(this);
-                GUObjectArray.AddUObjectDeleteListener(this);
-
-                const auto& Settings = *GetMutableDefault<UUnLuaSettings>();
-                const auto EnvLocatorClass = *Settings.EnvLocatorClass == nullptr ? ULuaEnvLocator::StaticClass() : *Settings.EnvLocatorClass;
-                EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
-                EnvLocator->AddToRoot();
+                const auto& Settings = *GetDefault<UUnLuaSettings>();
                 FDeadLoopCheck::Timeout = Settings.DeadLoopCheck;
 
                 for (const auto Class : TObjectRange<UClass>())
@@ -126,21 +139,18 @@ namespace UnLua
             }
             else
             {
-                FCoreDelegates::OnHandleSystemError.Remove(OnHandleSystemErrorHandle);
-                FCoreDelegates::OnHandleSystemEnsure.Remove(OnHandleSystemEnsureHandle);
-                GUObjectArray.RemoveUObjectCreateListener(this);
-                GUObjectArray.RemoveUObjectDeleteListener(this);
                 EnvLocator->Reset();
-                EnvLocator->RemoveFromRoot();
-                EnvLocator = nullptr;
-                FClassRegistry::Cleanup();
-                FEnumRegistry::Cleanup();
-                GPropertyCreator.Cleanup();
-
                 for (const auto Class : TObjectRange<UClass>())
                 {
                     if (Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
+                    {
+#if WITH_EDITOR
+                        const auto CDO = Class->GetDefaultObject(false);
+                        if (CDO && IUnLuaInterface::Execute_RunInEditor(CDO))
+                            continue;
+#endif
                         ULuaFunction::RestoreOverrides(Class);
+                    }
                 }
             }
 
@@ -149,15 +159,11 @@ namespace UnLua
 
         virtual FLuaEnv* GetEnv(UObject* Object) override
         {
-            if (!bIsActive)
-                return nullptr;
             return EnvLocator->Locate(Object);
         }
 
         virtual void HotReload() override
         {
-            if (!bIsActive)
-                return;
             EnvLocator->HotReload();
         }
 
@@ -165,9 +171,6 @@ namespace UnLua
         virtual void NotifyUObjectCreated(const UObjectBase* ObjectBase, int32 Index) override
         {
             // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectCreated : %p"), ObjectBase);
-            if (!bIsActive)
-                return;
-
             UObject* Object = (UObject*)ObjectBase;
 
             const auto Env = EnvLocator->Locate(Object);
@@ -179,8 +182,6 @@ namespace UnLua
         virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
         {
             // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectDeleted : %p"), Object);
-            if (!bIsActive)
-                return;
 
             if (FClassRegistry::StaticUnregister(Object))
                 return;
@@ -190,17 +191,8 @@ namespace UnLua
 
         virtual void OnUObjectArrayShutdown() override
         {
-            if (!bIsActive)
-                return;
-
             GUObjectArray.RemoveUObjectCreateListener(this);
             GUObjectArray.RemoveUObjectDeleteListener(this);
-
-            bIsActive = false;
-        }
-
-        void OnSystemError() const
-        {
         }
 
 #if WITH_EDITOR
@@ -283,8 +275,6 @@ namespace UnLua
 
         bool bIsActive = false;
         ULuaEnvLocator* EnvLocator = nullptr;
-        FDelegateHandle OnHandleSystemErrorHandle;
-        FDelegateHandle OnHandleSystemEnsureHandle;
 #if ALLOW_CONSOLE
         TUniquePtr<UnLua::FUnLuaConsoleCommands> ConsoleCommands;
 #endif

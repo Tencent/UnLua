@@ -41,26 +41,33 @@ public class UnLua : ModuleRules
             }
         );
 
-        PublicDependencyModuleNames.AddRange(
+        PublicDependencyModuleNames.AddRange(new[]
+        {
+            "Lua"
+        });
+
+        PrivateDependencyModuleNames.AddRange(
             new[]
             {
                 "Core",
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "InputCore",
-                "Lua"
+                "InputCore"
             }
         );
 
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 
         if (Target.bBuildEditor)
+        {
             PrivateDependencyModuleNames.Add("UnrealEd");
+            PrivateDependencyModuleNames.Add("DirectoryWatcher");
+        }
 
         var projectDir = Target.ProjectFile.Directory;
         var configFilePath = projectDir + "/Config/DefaultUnLuaEditor.ini";
-        var configFileReference = new FileReference(configFilePath); 
+        var configFileReference = new FileReference(configFilePath);
         var configFile = FileReference.Exists(configFileReference) ? new ConfigFile(configFileReference) : new ConfigFile();
         var config = new ConfigHierarchy(new[] { configFile });
         const string Section = "/Script/UnLuaEditor.UnLuaEditorSettings";

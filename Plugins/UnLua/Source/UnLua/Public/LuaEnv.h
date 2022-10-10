@@ -14,7 +14,9 @@
 
 #pragma once
 
+#if WITH_EDITOR
 #include "IDirectoryWatcher.h"
+#endif
 #include "Engine/EngineBaseTypes.h"
 #include "Registries/ObjectRegistry.h"
 #include "Registries/ClassRegistry.h"
@@ -63,7 +65,9 @@ namespace UnLua
 
         void SetName(FString InName);
 
+#if WITH_EDITOR
         void Watch(const TArray<FString>& Directories);
+#endif
 
         virtual void NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index) override;
 
@@ -147,13 +151,12 @@ namespace UnLua
 
         void OnWorldTickStart(UWorld* World, ELevelTick TickType, float DeltaTime);
 
-        void OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges);
-
         void RegisterDelegates();
 
         void UnRegisterDelegates();
 
-        static TMap<lua_State*, FLuaEnv*> AllEnvs;
+#if WITH_EDITOR
+        void OnLuaFileChanged(const TArray<FFileChangeData>& FileChanges);
 
         struct FDirectoryWatcherPayload
         {
@@ -162,6 +165,11 @@ namespace UnLua
         };
 
         TArray<FDirectoryWatcherPayload> Watchers;
+
+#endif
+
+        static TMap<lua_State*, FLuaEnv*> AllEnvs;
+
         TMap<FString, lua_CFunction> BuiltinLoaders;
         TArray<FLuaFileLoader> CustomLoaders;
         TArray<FWeakObjectPtr> Candidates; // binding candidates during async loading

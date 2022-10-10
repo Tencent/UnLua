@@ -23,13 +23,23 @@ UCLASS()
 class UNLUA_API ULuaEnvLocator : public UObject
 {
     GENERATED_BODY()
+
 public:
+#if WITH_EDITOR
+
+    DECLARE_DELEGATE_RetVal_OneParam(UnLua::FLuaEnv*, FOnEditorLocate, const UObject*)
+
+    static FOnEditorLocate OnEditorLocate;
+
+#endif
+
     virtual UnLua::FLuaEnv* Locate(const UObject* Object);
 
     virtual void HotReload();
 
     virtual void Reset();
 
+protected:
     TSharedPtr<UnLua::FLuaEnv, ESPMode::ThreadSafe> Env;
 };
 
