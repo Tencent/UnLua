@@ -121,12 +121,11 @@ namespace UnLua
             MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
 
             Env = MakeUnique<FLuaEnv>();
-            Env->DoString("UnLua.PackagePath='Content/EditorScript/?.lua;Plugins/UnLua/Content/EditorScript/?.lua;' .. UnLua.PackagePath");
             Env->Watch<FEditorHotReloadWatcher>({
-                IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir() / "EditorScript",
-                FPaths::ProjectContentDir() / "EditorScript"
+                IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir() / "Script",
+                FPaths::ProjectContentDir() / "Script"
             });
-            Env->Start("Main", {});
+            Env->Start("Editor.Main", {});
         }
 
         void OnMainFrameCreationFinished(TSharedPtr<SWindow> InRootWindow, bool bIsNewProjectWindow)
