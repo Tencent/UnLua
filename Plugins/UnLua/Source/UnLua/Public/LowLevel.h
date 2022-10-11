@@ -15,6 +15,7 @@
 #pragma once
 
 #include "lua.hpp"
+#include "UnLuaBase.h"
 
 namespace UnLua
 {
@@ -43,5 +44,7 @@ namespace UnLua
 
         /* Get package.loaded[ModuleName] */
         int GetLoadedModule(lua_State* L, const char *ModuleName);
+
+        bool CheckPropertyOwner(lua_State* L, UnLua::ITypeOps* InProperty, void* InContainerPtr);
     }
 }

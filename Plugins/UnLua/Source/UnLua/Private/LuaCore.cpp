@@ -1430,32 +1430,12 @@ int32 Class_Index(lua_State *L)
     if (UnLua::LowLevel::IsReleasedPtr(Self))
         return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *(*Property)->GetName())));
 
+    if (!UnLua::LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+        return 0;
+
     (*Property)->Read(L, Self, false);
     lua_remove(L, -2);
-
     return 1;
-}
-
-bool IsPropertyOwnerTypeValid(UnLua::ITypeOps* InProperty, void* InContainerPtr)
-{
-    if (InProperty->StaticExported)
-        return true;
-
-    UnLua::ITypeInterface* TypeInterface = (UnLua::ITypeInterface*)InProperty;
-    FProperty* Property = TypeInterface->GetUProperty();
-    if (!Property)
-        return true;
-
-    UObject* Object = (UObject*)InContainerPtr;
-    UClass* OwnerClass = Property->GetOwnerClass();
-    if (!OwnerClass)
-        return true;
-
-    if (Object->IsA(OwnerClass))
-        return true;
-
-    UE_LOG(LogUnLua, Error, TEXT("Writing property to invalid owner. %s should be a %s."), *Object->GetName(), *OwnerClass->GetName());
-    return false;
 }
 
 /**
@@ -1477,12 +1457,10 @@ int32 Class_NewIndex(lua_State *L)
                 if (UnLua::LowLevel::IsReleasedPtr(Self))
                     return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
 
-#if ENABLE_TYPE_CHECK == 1
-                if (IsPropertyOwnerTypeValid((*Property).Get(), Self))
-                    (*Property)->Write(L, Self, 3);
-#else
+                if (!UnLua::LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+                    return 0;
+
                 (*Property)->Write(L, Self, 3);
-#endif
             }
         }
     }
