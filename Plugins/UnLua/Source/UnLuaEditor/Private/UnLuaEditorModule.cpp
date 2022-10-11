@@ -78,6 +78,9 @@ namespace UnLua
 
         virtual void ShutdownModule() override
         {
+            ULuaEnvLocator::OnEditorLocate.Unbind();
+            Env.Reset();
+
             if (GEditor)
             {
                 GEditor->OnBlueprintPreCompile().RemoveAll(this);
@@ -95,8 +98,6 @@ namespace UnLua
             UPackage::PreSavePackageEvent.RemoveAll(this);
             UPackage::PackageSavedEvent.RemoveAll(this);
 #endif
-
-            ULuaEnvLocator::OnEditorLocate.Unbind();
         }
 
     private:
@@ -121,6 +122,7 @@ namespace UnLua
             MainFrameModule.OnMainFrameCreationFinished().AddRaw(this, &FUnLuaEditorModule::OnMainFrameCreationFinished);
 
             Env = MakeUnique<FLuaEnv>();
+            Env->SetName(TEXT("UnLuaEditorEnv"));
             Env->Watch<FEditorHotReloadWatcher>({
                 IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetContentDir() / "Script",
                 FPaths::ProjectContentDir() / "Script"
@@ -178,9 +180,6 @@ namespace UnLua
 
         void OnPackageSaving(UPackage* Package)
         {
-            if (!GEditor || !GEditor->PlayWorld)
-                return;
-
             ForEachObjectWithPackage(Package, [this, Package](UObject* Object)
             {
                 const auto Class = Cast<UClass>(Object);
@@ -196,9 +195,6 @@ namespace UnLua
 
         void OnPackageSaved(const FString& PackageFileName, UObject* Outer)
         {
-            if (!GEditor || !GEditor->PlayWorld)
-                return;
-
             UPackage* Package = (UPackage*)Outer;
             if (SuspendedPackages.Contains(Package))
             {
@@ -257,6 +253,7 @@ namespace UnLua
                 return;
             if (!IUnLuaInterface::Execute_RunInEditor(Class->GetDefaultObject()))
                 return;
+            Env->NotifyUObjectDeleted(Blueprint->GeneratedClass, -1);
             Env->TryBind(Blueprint->GeneratedClass);
         }
 

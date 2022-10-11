@@ -22,7 +22,7 @@ ULuaEnvLocator::FOnEditorLocate ULuaEnvLocator::OnEditorLocate;
 UnLua::FLuaEnv* ULuaEnvLocator::Locate(const UObject* Object)
 {
 #if WITH_EDITOR
-    if (OnEditorLocate.IsBound())
+    if (Object && OnEditorLocate.IsBound())
     {
         const auto EditorEnv = OnEditorLocate.Execute(Object);
         if (EditorEnv)
