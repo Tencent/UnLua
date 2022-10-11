@@ -129,5 +129,31 @@ namespace UnLua
             lua_remove(L, -2);
             return Type;
         }
+
+        bool CheckPropertyOwner(lua_State* L, UnLua::ITypeOps* InProperty, void* InContainerPtr)
+        {
+#if ENABLE_TYPE_CHECK == 1
+            if (InProperty->StaticExported)
+                return true;
+
+            UnLua::ITypeInterface* TypeInterface = (UnLua::ITypeInterface*)InProperty;
+            FProperty* Property = TypeInterface->GetUProperty();
+            if (!Property)
+                return true;
+
+            UObject* Object = (UObject*)InContainerPtr;
+            UClass* OwnerClass = Property->GetOwnerClass();
+            if (!OwnerClass)
+                return true;
+
+            if (Object->IsA(OwnerClass))
+                return true;
+
+            luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("Access property from invalid owner. %s should be a %s."), *Object->GetName(), *OwnerClass->GetName())));
+            return false;
+#else
+            return true;
+#endif
+        }
     }
 }

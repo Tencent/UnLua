@@ -87,56 +87,46 @@ namespace UnLua
 
         int32 GetUProperty(lua_State* L)
         {
-            if (lua_type(L, 2) != LUA_TUSERDATA)
-            {
-                lua_pushnil(L);
-                return 1;
-            }
+            auto Ptr = lua_touserdata(L, 2);
+            if (!Ptr)
+                return 0;
 
-            const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-            const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
-            if (!Property.IsValid())
-            {
-                lua_pushnil(L);
-                return 1;
-            }
+            auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
+            if (!Property->IsValid())
+                return 0;
 
-            void* Self = GetCppInstance(L, 1);
+            auto Self = GetCppInstance(L, 1);
             if (!Self)
-            {
-                lua_pushnil(L);
-                return 1;
-            }
+                return 0;
 
-            if (LowLevel::IsReleasedPtr(Self))
-            {
-                UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Property->GetName());
-                lua_pushnil(L);
-                return 1;
-            }
+            if (UnLua::LowLevel::IsReleasedPtr(Self))
+                return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *(*Property)->GetName())));
 
-            Property->Read(L, Self, false);
+            if (!LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+                return 0;
+
+            (*Property)->Read(L, Self, false);
             return 1;
         }
 
         int32 SetUProperty(lua_State* L)
         {
-            if (lua_type(L, 2) == LUA_TUSERDATA)
-            {
-                const auto Registry = FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-                const auto Property = Registry->Get<ITypeOps>(L, 2);
-                if (!Property.IsValid())
-                    return 0;
+            auto Ptr = lua_touserdata(L, 2);
+            if (!Ptr)
+                return 0;
 
-                UObject* Object = GetUObject(L, 1, false);
-                if (LowLevel::IsReleasedPtr(Object))
-                {
-                    UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Property->GetName());
-                    return 0;
-                }
+            auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
+            if (!Property->IsValid())
+                return 0;
 
-                Property->Write(L, Object, 3); // set UProperty value
-            }
+            auto Self = GetCppInstance(L, 1);
+            if (LowLevel::IsReleasedPtr(Self))
+                return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
+
+            if (!LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+                return 0;
+
+            (*Property)->Write(L, Self, 3);
             return 0;
         }
 
