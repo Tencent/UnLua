@@ -812,6 +812,8 @@ namespace UnLua
     template <typename T>
     struct TTypeInterface : public ITypeInterface
     {
+        virtual bool IsValid() const override { return true; }
+
         virtual bool IsPODType() const override { return TIsPODType<T>::Value; }
 
         virtual bool IsTriviallyDestructible() const override
@@ -883,6 +885,7 @@ namespace UnLua
     template <typename T>
     struct TTypeInterface<T*> : public ITypeInterface
     {
+        virtual bool IsValid() const override { return true; }
         virtual bool IsPODType() const override { return true; }
         virtual bool IsTriviallyDestructible() const override { return true; }
         virtual int32 GetSize() const override { return sizeof(T*); }
