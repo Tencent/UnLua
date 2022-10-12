@@ -48,7 +48,9 @@ namespace UnLua
 
     void FEditorHotReloadWatcher::OnModuleLoaded(const FString& ModuleName, const FString& FullPath)
     {
-        PathToModuleName.Add(FullPath, ModuleName);
+        auto NormalizedFullPath = FullPath;
+        FPaths::NormalizeFilename(NormalizedFullPath);
+        PathToModuleName.Add(NormalizedFullPath, ModuleName);
     }
 
     void FEditorHotReloadWatcher::OnFileChanged(const TArray<FFileChangeData>& FileChanges)
@@ -59,7 +61,9 @@ namespace UnLua
             if (FileChange.Action != FFileChangeData::FCA_Modified)
                 continue;
 
-            const auto ModuleName = PathToModuleName.Find(FileChange.Filename);
+            auto FullPath = FileChange.Filename;
+            FPaths::NormalizeFilename(FullPath);
+            const auto ModuleName = PathToModuleName.Find(FullPath);
             if (!ModuleName)
                 continue;
             ToReload.AddUnique(*ModuleName);
