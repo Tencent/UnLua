@@ -156,13 +156,13 @@ namespace UnLua
         lua_pushnumber(L, TypeHash);
         lua_rawset(L, -3);
 
+        lua_pushstring(L, "ClassDesc");
+        lua_pushlightuserdata(L, ClassDesc);
+        lua_rawset(L, -3);
+
         UScriptStruct* ScriptStruct = ClassDesc->AsScriptStruct();
         if (ScriptStruct)
         {
-            lua_pushstring(L, "ClassDesc");
-            lua_pushlightuserdata(L, ClassDesc);
-            lua_rawset(L, -3);
-
             lua_pushlightuserdata(L, ClassDesc);
 
             lua_pushstring(L, "Copy");
@@ -195,12 +195,9 @@ namespace UnLua
         else
         {
             UClass* Class = ClassDesc->AsClass();
+
             if (Class != UObject::StaticClass() && Class != UClass::StaticClass())
             {
-                lua_pushstring(L, "ClassDesc");
-                lua_pushlightuserdata(L, ClassDesc);
-                lua_rawset(L, -3);
-
                 lua_pushstring(L, "StaticClass");
                 lua_pushlightuserdata(L, ClassDesc);
                 lua_pushcclosure(L, Class_StaticClass, 1);
