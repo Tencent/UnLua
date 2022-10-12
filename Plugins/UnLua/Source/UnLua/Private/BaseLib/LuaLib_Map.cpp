@@ -299,6 +299,12 @@ static int32 TMap_ToTable(lua_State* L)
     if (!Map)
         return luaL_error(L, "invalid TMap");
 
+    if (!Map->KeyInterface->IsValid())
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap key type:%s"), *Map->ValueInterface->GetName())));
+
+    if (!Map->ValueInterface->IsValid())
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap value type:%s"), *Map->ValueInterface->GetName())));
+
     void* MemData = FMemory::Malloc(sizeof(FLuaArray), alignof(FLuaArray));
     FLuaArray* Keys = Map->Keys(MemData);
     Keys->Inner->Initialize(Keys->ElementCache);

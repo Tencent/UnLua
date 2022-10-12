@@ -536,6 +536,9 @@ static int32 TArray_ToTable(lua_State* L)
     if (!Array)
         return luaL_error(L, "invalid TArray");
 
+    if (!Array->Inner->IsValid())
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TArray element type:%s"), *Array->Inner->GetName())));
+
     lua_newtable(L);
     Array->Inner->Initialize(Array->ElementCache);
     for (int32 i = 0; i < Array->Num(); ++i)

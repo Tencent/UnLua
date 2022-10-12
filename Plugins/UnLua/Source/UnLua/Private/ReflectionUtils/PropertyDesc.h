@@ -46,7 +46,7 @@ public:
      *
      * @return - true if the property is valid, false otherwise
      */
-    bool IsValid() const;
+    virtual bool IsValid() const override;
 
     /**
      * Test if this property is a const reference parameter.

@@ -179,6 +179,9 @@ static int32 TSet_ToTable(lua_State* L)
     if (!Set)
         return luaL_error(L, "invalid TSet");
 
+    if (!Set->ElementInterface->IsValid())
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TSet element type:%s"), *Set->ElementInterface->GetName())));
+
     void* MemData = FMemory::Malloc(sizeof(FLuaArray), alignof(FLuaArray));
     FLuaArray* Array = Set->ToArray(MemData);
     Array->Inner->Initialize(Array->ElementCache);

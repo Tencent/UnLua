@@ -53,6 +53,7 @@ namespace UnLua
         ITypeInterface() { }
         virtual ~ITypeInterface() {}
 
+        virtual bool IsValid() const = 0;
         virtual bool IsPODType() const = 0;
         virtual bool IsTriviallyDestructible() const = 0;
         virtual int32 GetSize() const = 0;
