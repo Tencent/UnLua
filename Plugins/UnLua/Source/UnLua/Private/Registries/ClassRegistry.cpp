@@ -296,7 +296,9 @@ namespace UnLua
     FClassDesc* FClassRegistry::RegisterInternal(UStruct* Type, const FString& Name)
     {
         check(Type);
+#if !WITH_EDITOR
         check(!Classes.Contains(Type));
+#endif
 
         FClassDesc* ClassDesc = new FClassDesc(Type, Name);
         Classes.Add(Type, ClassDesc);
