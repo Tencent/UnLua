@@ -136,7 +136,13 @@ namespace UnLua
             if (InProperty->StaticExported)
                 return true;
 
-            UnLua::ITypeInterface* TypeInterface = (UnLua::ITypeInterface*)InProperty;
+            ITypeInterface* TypeInterface = (ITypeInterface*)InProperty;
+            if (!TypeInterface->IsValid())
+            {
+                luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("Access invalid property %s."), *TypeInterface->GetName())));
+                return false;
+            }
+
             FProperty* Property = TypeInterface->GetUProperty();
             if (!Property)
                 return true;
