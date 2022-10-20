@@ -46,9 +46,12 @@ namespace UnLua
     public:
         virtual void StartupModule() override
         {
+            PreloadLibraries();
+
 #if WITH_EDITOR
             FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
 #endif
+
             RegisterSettings();
 
 #if ALLOW_CONSOLE
@@ -228,6 +231,23 @@ namespace UnLua
         }
 
 #endif
+
+        void PreloadLibraries()
+        {
+#if PLATFORM_WINDOWS
+            // 防止类似AppleProResMedia插件忘了恢复Dll查找目录，还是需要主动加载一下Lua.dll
+            // https://github.com/Tencent/UnLua/issues/534
+            const auto DllHandle = FPlatformProcess::GetDllHandle(TEXT("Lua.dll"));
+            if (!DllHandle)
+            {
+                UE_LOG(LogUnLua, Error, TEXT("Failed to load required library Lua.dll. UnLua will not be functional.\nDllDirectories:\n"));
+                TArray<FString> DllDirectories;
+                FPlatformProcess::GetDllDirectories(DllDirectories);
+                for (auto& Dir : DllDirectories)
+                    UE_LOG(LogUnLua, Error, TEXT("%s"), *Dir);
+            }
+#endif
+        }
 
         void RegisterSettings()
         {
