@@ -50,6 +50,7 @@ bool TryToSetMetatable(lua_State *L, const char *MetatableName, UObject* Object 
 void* NewUserdataWithTwoLvPtrTag(lua_State* L, int Size, void* Object);
 void* NewUserdataWithContainerTag(lua_State* L, int Size);
 void MarkUserdataTwoLvPtrTag(void* Userdata);
+void SetUserdataFlags(void* Userdata, uint8 Flags);
 UNLUA_API uint8 CalcUserdataPadding(int32 Alignment);
 template <typename T> uint8 CalcUserdataPadding() { return CalcUserdataPadding(alignof(T)); }
 UNLUA_API void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
@@ -144,6 +145,7 @@ int32 Class_Cast(lua_State* L);
 /**
  * Functions to handle UScriptStruct
  */
+int32 ScriptStruct_Index(lua_State *L);
 int32 ScriptStruct_New(lua_State *L);
 int32 ScriptStruct_Delete(lua_State *L);
 int32 ScriptStruct_Copy(lua_State *L);
