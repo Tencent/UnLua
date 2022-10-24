@@ -14,19 +14,20 @@
 
 #pragma once
 
-#include "Commandlets/Commandlet.h"
-#include "UnLuaIntelliSenseCommandlet.generated.h"
+#include "UnLuaInterface.h"
+#include "Issue539Test.generated.h"
 
-UCLASS()
-class UUnLuaIntelliSenseCommandlet : public UCommandlet
+UCLASS(Blueprintable)
+class UNLUATESTSUITE_API UObjectForIssue539 : public UObject, public IUnLuaInterface
 {
-    GENERATED_UCLASS_BODY()
+    GENERATED_BODY()
 
 public:
-    virtual int32 Main(const FString& Params) override;
+    UFUNCTION(BlueprintImplementableEvent)
+    void Test(FVector& Dest, UObject*& Obj, float& Radius, bool& bStop);
 
-private:
-    void SaveFile(const FString &ModuleName, const FString &FileName, const FString &GeneratedFileContent);
-
-    FString IntermediateDir;
+    virtual FString GetModuleName_Implementation() const override
+    {
+        return TEXT("Tests.Regression.Issue539.ObjectForIssue539");
+    }
 };

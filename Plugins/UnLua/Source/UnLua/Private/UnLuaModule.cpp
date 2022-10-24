@@ -49,6 +49,7 @@ namespace UnLua
 #if WITH_EDITOR
             FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
 #endif
+
             RegisterSettings();
 
 #if ALLOW_CONSOLE

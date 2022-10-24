@@ -14,19 +14,23 @@
 
 #pragma once
 
-#include "Commandlets/Commandlet.h"
-#include "UnLuaIntelliSenseCommandlet.generated.h"
+#include "UnLuaInterface.h"
+#include "OutParamTest.generated.h"
 
-UCLASS()
-class UUnLuaIntelliSenseCommandlet : public UCommandlet
+UCLASS(Blueprintable)
+class UNLUATESTSUITE_API UOutParamTestStub : public UObject, public IUnLuaInterface
 {
-    GENERATED_UCLASS_BODY()
+    GENERATED_BODY()
 
 public:
-    virtual int32 Main(const FString& Params) override;
+    UFUNCTION(BlueprintImplementableEvent)
+    void ReturnFull(FVector& Dest, UObject*& Obj, float& Radius, bool& bStop);
 
-private:
-    void SaveFile(const FString &ModuleName, const FString &FileName, const FString &GeneratedFileContent);
+    UFUNCTION(BlueprintImplementableEvent)
+    void ReturnPartial(FVector& Dest, UObject*& Obj, float& Radius, bool& bStop);
 
-    FString IntermediateDir;
+    virtual FString GetModuleName_Implementation() const override
+    {
+        return TEXT("Tests.Specs.OutParam.OutParamTestStub");
+    }
 };
