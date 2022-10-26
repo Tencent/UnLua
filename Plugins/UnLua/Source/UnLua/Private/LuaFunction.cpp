@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 
+#include "Misc/EngineVersionComparison.h"
 #include "Engine/BlueprintGeneratedClass.h"
 #include "LuaFunction.h"
 #include "UnLuaModule.h"
@@ -28,7 +29,11 @@ static UClass* MakeOrphanedClass(const UClass* Class)
     FString OrphanedClassString = FString::Printf(TEXT("ORPHANED_DATA_ONLY_%s"), *Class->GetName());
     FName OrphanedClassName = MakeUniqueObjectName(GetTransientPackage(), UBlueprintGeneratedClass::StaticClass(), FName(*OrphanedClassString));
     UClass* OrphanedClass = NewObject<UBlueprintGeneratedClass>(GetTransientPackage(), OrphanedClassName, RF_Public | RF_Transient);
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
     OrphanedClass->ClassAddReferencedObjects = Class->AddReferencedObjects;
+#else
+    OrphanedClass->CppClassStaticFunctions = Class->CppClassStaticFunctions;
+#endif
     OrphanedClass->ClassFlags |= CLASS_CompiledFromBlueprint;
 #if WITH_EDITOR
     OrphanedClass->ClassGeneratedBy = Class->ClassGeneratedBy;
