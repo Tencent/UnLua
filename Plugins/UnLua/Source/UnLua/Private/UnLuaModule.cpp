@@ -104,6 +104,7 @@ namespace UnLua
                 EnvLocator = NewObject<ULuaEnvLocator>(GetTransientPackage(), EnvLocatorClass);
                 EnvLocator->AddToRoot();
                 FDeadLoopCheck::Timeout = Settings.DeadLoopCheck;
+                FDanglingCheck::Enabled = Settings.DanglingCheck;
 
                 for (const auto Class : TObjectRange<UClass>())
                 {

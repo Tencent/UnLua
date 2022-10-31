@@ -19,6 +19,8 @@
 
 namespace UnLua
 {
+    bool FDanglingCheck::Enabled;
+
     FDanglingCheck::FGuard::FGuard(FDanglingCheck* Owner)
         : Owner(Owner)
     {
@@ -29,13 +31,13 @@ namespace UnLua
     {
         Owner->GuardCount--;
 
-        if (Owner->Captured.Num() > 0)
+        if (Owner->CapturedStructs.Num() > 0)
         {
             const auto L = Owner->Env->GetMainState();
             lua_getfield(L, LUA_REGISTRYINDEX, "StructMap");
-            for (const auto& Pair : Owner->Captured)
+            for (const auto& StructPtr : Owner->CapturedStructs)
             {
-                lua_pushlightuserdata(L, Pair.Key);
+                lua_pushlightuserdata(L, StructPtr);
                 lua_rawget(L, -2);
                 if (lua_isnil(L, -1))
                 {
@@ -51,22 +53,22 @@ namespace UnLua
 
                 lua_pop(L, 1);
 
-                lua_pushlightuserdata(L, Pair.Key);
+                lua_pushlightuserdata(L, StructPtr);
                 lua_pushnil(L);
                 lua_rawset(L, -3);
             }
             lua_pop(L, 1);
             if (Owner->GuardCount == 0)
-                Owner->Captured.Empty();
+                Owner->CapturedStructs.Empty();
         }
 
         if (Owner->CapturedContainers.Num() > 0)
         {
             const auto L = Owner->Env->GetMainState();
             lua_getfield(L, LUA_REGISTRYINDEX, "ScriptContainerMap");
-            for (const auto& Pair : Owner->CapturedContainers)
+            for (const auto& ContainerPtr : Owner->CapturedContainers)
             {
-                lua_pushlightuserdata(L, Pair.Key);
+                lua_pushlightuserdata(L, ContainerPtr);
                 lua_rawget(L, -2);
                 if (lua_isnil(L, -1))
                 {
@@ -81,7 +83,7 @@ namespace UnLua
 
                 lua_pop(L, 1);
 
-                lua_pushlightuserdata(L, Pair.Key);
+                lua_pushlightuserdata(L, ContainerPtr);
                 lua_pushnil(L);
                 lua_rawset(L, -3);
             }
@@ -98,28 +100,22 @@ namespace UnLua
 
     TUniquePtr<FDanglingCheck::FGuard> FDanglingCheck::MakeGuard()
     {
+        if (!Enabled)
+            return TUniquePtr<FGuard>();
         return MakeUnique<FGuard>(this);
     }
 
-    void FDanglingCheck::Capture(lua_State* L, void* Value)
+    void FDanglingCheck::CaptureStruct(lua_State* L, void* Value)
     {
         if (!GuardCount)
             return;
-
-        luaL_traceback(L, L, nullptr, 0);
-        const auto Stack = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        lua_pop(L, 1);
-        Captured.Add(Value, Stack);
+        CapturedStructs.Add(Value);
     }
 
     void FDanglingCheck::CaptureContainer(lua_State* L, void* Value)
     {
         if (!GuardCount)
             return;
-
-        luaL_traceback(L, L, nullptr, 0);
-        const auto Stack = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        lua_pop(L, 1);
-        CapturedContainers.Add(Value, Stack);
+        CapturedContainers.Add(Value);
     }
 }

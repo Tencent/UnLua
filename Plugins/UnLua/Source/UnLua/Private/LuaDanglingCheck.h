@@ -24,6 +24,8 @@ namespace UnLua
     class FDanglingCheck
     {
     public:
+        static bool Enabled;
+
         class FGuard final
         {
         public:
@@ -39,14 +41,14 @@ namespace UnLua
 
         TUniquePtr<FGuard> MakeGuard();
 
-        void Capture(lua_State* L, void* Value);
+        void CaptureStruct(lua_State* L, void* Value);
 
         void CaptureContainer(lua_State* L, void* Value);
 
     private:
         FLuaEnv* Env;
         int32 GuardCount;
-        TMap<void*, FString> Captured;
-        TMap<void*, FString> CapturedContainers;
+        TSet<void*> CapturedStructs;
+        TSet<void*> CapturedContainers;
     };
 }

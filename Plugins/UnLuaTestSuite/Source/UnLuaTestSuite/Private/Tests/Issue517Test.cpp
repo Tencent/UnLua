@@ -16,6 +16,7 @@
 #include "Issue517Test.h"
 
 #include "LowLevel.h"
+#include "UnLuaSettings.h"
 #include "UnLuaTestCommon.h"
 #include "UnLuaTestHelpers.h"
 #include "Misc/AutomationTest.h"
@@ -31,6 +32,9 @@ struct FUnLuaTest_Issue517 : FUnLuaTestBase
 
     virtual bool SetUp() override
     {
+        auto& Settings = *GetMutableDefault<UUnLuaSettings>();
+        Settings.DanglingCheck = true;
+
         FUnLuaTestBase::SetUp();
 
         const auto World = GetWorld();
