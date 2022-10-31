@@ -37,45 +37,37 @@ struct FUnLuaTest_Issue517 : FUnLuaTestBase
         UnLua::PushUObject(L, World);
         lua_setglobal(L, "World");
 
-         const auto Chunk1 = R"(
-             Child = World:SpawnActor(UE.AIssue517Actor)
-             StructRef = Child.Struct
-             StructRef.X = 10
-             StructRef.Name = "MyStruct"
-             print(StructRef, StructRef.X, StructRef.Name)
-             print(Child.Struct, Child.Struct.X, StructRef.Name)
+        const auto Chunk1 = R"(
+            Actor = World:SpawnActor(UE.AIssue517Actor)
+            StructRef = Actor.Struct
+            StructRef.X = 10
+            StructRef.Name = "MyStruct"
+            print(StructRef, StructRef.X, StructRef.Name)
+            print(Actor.Struct, Actor.Struct.X, StructRef.Name)
 
-             Child:K2_DestroyActor()
-             )";
-         UnLua::RunChunk(L, Chunk1);
+            ArrayFromActor = Actor.ArrayFromActor
+            ArrayFromStruct = Actor.Struct.ArrayFromStruct
+            Actor:K2_DestroyActor()
+        )";
+        UnLua::RunChunk(L, Chunk1);
 
-         CollectGarbage(RF_Standalone, true);
-         lua_getfield(L, LUA_REGISTRYINDEX, "StructMap");
-         lua_pushnil(L);
-         while (lua_next(L, -2) != 0)
-         {
-             bool TwoLevelPtr;
-             auto Struct = (FIssue517Struct*)UnLua::GetPointer(L, -1, &TwoLevelPtr);
-             if (Struct->X == 10)
-             {
-                 void* Userdata = GetUserdataFast(L, -1, &TwoLevelPtr);
-                 check(TwoLevelPtr)
-                 *((void**)Userdata) = (void*)UnLua::LowLevel::ReleasedPtr;
-             }
-             lua_pop(L, 1);
-         }
-         lua_pop(L, 1);
-         
-         const auto Chunk2 = R"(
-             local registry = debug.getregistry()
-             local map = registry.StructMap
-             for k, v in pairs(map) do
-                 print(k, v)
-             end
-             print(tostring(StructRef), StructRef.X, StructRef.Name)
-             print(Child:GetName())
-         )";
-         UnLua::RunChunk(L, Chunk2);
+        CollectGarbage(RF_Standalone, true);
+
+        GetTestRunner().AddExpectedError(TEXT("released struct"), EAutomationExpectedErrorFlags::Contains);
+        const auto Chunk2 = R"(
+            print(StructRef.X, StructRef.Name)
+        )";
+        UnLua::RunChunk(L, Chunk2);
+
+        GetTestRunner().AddExpectedError(TEXT("invalid TArray"), EAutomationExpectedErrorFlags::Contains, 2);
+        const auto Chunk3 = R"(
+            print(ArrayFromActor:Num())
+        )";
+        UnLua::RunChunk(L, Chunk3);
+        const auto Chunk4 = R"(
+            print(ArrayFromStruct:Num())
+        )";
+        UnLua::RunChunk(L, Chunk4);
 
         return true;
     }

@@ -32,6 +32,9 @@ struct FIssue517Struct
 
     UPROPERTY()
     FString Name;
+
+    UPROPERTY()
+    TArray<int32> ArrayFromStruct;
 };
 
 UCLASS()
@@ -41,4 +44,7 @@ class AIssue517Actor : public AActor
 public:
     UPROPERTY()
     FIssue517Struct Struct;
+
+    UPROPERTY()
+    TArray<int32> ArrayFromActor;
 };
