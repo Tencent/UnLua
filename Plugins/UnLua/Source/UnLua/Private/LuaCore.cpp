@@ -86,6 +86,7 @@ void SetTableForClass(lua_State *L, const char *Name)
 
 #define USERDATA_MAGIC  0x1688
 #define BIT_VARIANT_TAG            (1 << 7)         // variant tag for userdata
+#define BIT_RELEASED_TAG            (1 << 6)        // this userdata was released and should not use anywhere
 #define BIT_TWOLEVEL_PTR        (1 << 5)            // two level pointer flag
 #define BIT_SCRIPT_CONTAINER    (1 << 4)            // script container (TArray, TSet, TMap) flag
 
@@ -291,6 +292,15 @@ void MarkUserdataTwoLvPtrTag(void* Userdata)
     }
 }
 
+void SetUserdataFlags(void* Userdata, uint8 Flags)
+{
+    Udata* U = (Udata*)((uint8*)Userdata - GetUdataHeaderSize());
+    FUserdataDesc* UserdataDesc = GetUserdataDesc(U);
+    if (UserdataDesc)
+    {
+        UserdataDesc->tag |= Flags;
+    }
+}
 
 /**
  * Get the address of userdata
@@ -374,7 +384,10 @@ void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr)
             && (UserdataDesc->tag & BIT_VARIANT_TAG))// if the userdata has a variant tag
         {
             bTwoLvlPtr = (UserdataDesc->tag & BIT_TWOLEVEL_PTR) != 0;        // test if the userdata is a two level pointer
-            Userdata = bTwoLvlPtr ? Buffer : Buffer + UserdataDesc->padding;    // add padding to userdata if it's not a two level pointer
+            if (UserdataDesc->tag & BIT_RELEASED_TAG)
+                Userdata = nullptr;
+            else
+                Userdata = bTwoLvlPtr ? Buffer : Buffer + UserdataDesc->padding;    // add padding to userdata if it's not a two level pointer
         }
         else
         {
@@ -503,6 +516,7 @@ void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &
         lua_pushlightuserdata(L, Key);
         lua_pushvalue(L, -2);
         lua_rawset(L, -4);                                  // cache it in 'ScriptContainerMap'
+        UnLua::FLuaEnv::FindEnv(L)->GetDanglingCheck()->CaptureContainer(L, Key);
     }
 #if UE_BUILD_DEBUG
     else
@@ -1589,6 +1603,28 @@ int32 Class_Cast(lua_State* L)
     return 1;
 }
 
+/**
+ * __index meta methods for struct
+ */
+int32 ScriptStruct_Index(lua_State *L)
+{
+    GetField(L);
+    if (lua_type(L, -1) != LUA_TUSERDATA)
+        return 1;
+
+    const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
+    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
+    if (!Property.IsValid())
+        return 0;
+
+    void* Self = GetCppInstanceFast(L, 1);
+    if (!Self)
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released struct"), *Property->GetName())));
+
+    Property->Read(L, Self, false);
+    lua_remove(L, -2);
+    return 1;
+}
 
 FClassDesc* ScriptStruct_CheckParam(lua_State *L)
 {

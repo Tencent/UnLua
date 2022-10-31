@@ -570,6 +570,9 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     // -3 = [function] ReportLuaCallError
     const auto ErrorHandlerIndex = lua_gettop(L) - 2;
 
+    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    const auto DanglingGuard = Env.GetDanglingCheck()->MakeGuard();
+
     // prepare parameters for Lua function
     for (const auto& Property : Properties)
     {
@@ -593,7 +596,6 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         NumResult++;
     }
 
-    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     const auto Guard = Env.GetDeadLoopCheck()->MakeGuard();
     if (lua_pcall(L, NumParams, LUA_MULTRET, -(NumParams + 2)) != LUA_OK)
     {

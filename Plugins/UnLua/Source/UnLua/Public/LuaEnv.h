@@ -25,6 +25,7 @@
 #include "lua.hpp"
 #include "ObjectReferencer.h"
 #include "HAL/Platform.h"
+#include "LuaDanglingCheck.h"
 #include "LuaDeadLoopCheck.h"
 #include "LuaModuleLocator.h"
 
@@ -100,6 +101,8 @@ namespace UnLua
 
         FORCEINLINE FEnumRegistry* GetEnumRegistry() const { return EnumRegistry; }
 
+        FORCEINLINE FDanglingCheck* GetDanglingCheck() const { return DanglingCheck; }
+
         FORCEINLINE FDeadLoopCheck* GetDeadLoopCheck() const { return DeadLoopCheck; }
 
         void AddLoader(const FLuaFileLoader Loader);
@@ -163,6 +166,7 @@ namespace UnLua
         FFunctionRegistry* FunctionRegistry;
         FContainerRegistry* ContainerRegistry;
         FEnumRegistry* EnumRegistry;
+        FDanglingCheck* DanglingCheck;
         FDeadLoopCheck* DeadLoopCheck;
         TMap<lua_State*, int32> ThreadToRef;
         TMap<int32, lua_State*> RefToThread;

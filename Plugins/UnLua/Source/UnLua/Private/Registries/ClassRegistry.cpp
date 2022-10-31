@@ -163,6 +163,10 @@ namespace UnLua
         UScriptStruct* ScriptStruct = ClassDesc->AsScriptStruct();
         if (ScriptStruct)
         {
+            lua_pushstring(L, "__index");
+            lua_pushcfunction(L, ScriptStruct_Index);
+            lua_rawset(L, -3);
+
             lua_pushlightuserdata(L, ClassDesc);
 
             lua_pushstring(L, "Copy");
