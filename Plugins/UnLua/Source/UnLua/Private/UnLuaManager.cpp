@@ -323,7 +323,11 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
     {
         lua_rawgeti(L, LUA_REGISTRYINDEX, Ref);
         lua_getglobal(L, "UnLua");
-        lua_getfield(L, -1, "Input");
+        if (lua_getfield(L, -1, "Input") != LUA_TTABLE)
+        {
+            lua_pop(L, 2);
+            return true;
+        }
         UnLua::FLuaTable InputTable(Env, -1);
         UnLua::FLuaTable ModuleTable(Env, -3);
         InputTable.Call("PerformBindings", ModuleTable, this, BPGC);
