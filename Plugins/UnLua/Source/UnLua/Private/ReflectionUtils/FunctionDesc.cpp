@@ -646,12 +646,14 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 
     // return value
     if (ReturnPropertyIndex > INDEX_NONE)
-    {   
+    {
+#if ENABLE_TYPE_CHECK == 1
         if (NumResultOnStack < 1)
         {
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("FuncName %s has return value, but no value found on stack!"),*FuncName);
         }
         else
+#endif
         {
             const auto& ReturnProperty = Properties[ReturnPropertyIndex];
 
@@ -660,11 +662,6 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 #else
             const auto IndexInStack = -NumResult;
 #endif
-            
-            // set value for blueprint side return property
-            const FOutParmRec* RetParam = OutParam ? FindOutParmRec(OutParam, ReturnProperty->GetProperty()) : nullptr;
-            if (RetParam)
-                ReturnProperty->SetValueInternal(L, RetParam->PropAddr, IndexInStack, true);
 
             // set value for return property
             check(RetValueAddress);
