@@ -17,7 +17,7 @@
 
 TMap<FName, FFunctionCollection> GDefaultParamCollection;
 
-#pragma optimize("", off)
+PRAGMA_DISABLE_OPTIMIZATION
 
 void CreateDefaultParamCollection()
 {
@@ -30,4 +30,4 @@ void CreateDefaultParamCollection()
     }
 }
 
-#pragma optimize("", on)
+PRAGMA_ENABLE_OPTIMIZATION
