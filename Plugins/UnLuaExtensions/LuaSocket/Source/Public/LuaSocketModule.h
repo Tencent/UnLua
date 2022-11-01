@@ -18,13 +18,11 @@
 #include "LuaEnv.h"
 #include "Modules/ModuleInterface.h"
 
-class UNLUAEXTENSIONS_API FUnLuaExtensionsModule : public IModuleInterface
+class LUASOCKET_API FLuaSocketModule : public IModuleInterface
 {
     virtual void StartupModule() override;
 
     virtual void ShutdownModule() override;
 
     static void OnLuaEnvCreated(UnLua::FLuaEnv& Env);
-
-    FDelegateHandle Handle;
 };

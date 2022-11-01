@@ -12,27 +12,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "UnLuaExtensionsModule.h"
+#include "LuaSocketModule.h"
 #include "LuaEnv.h"
 #include "luasocket.h"
 
-void FUnLuaExtensionsModule::StartupModule()
+void FLuaSocketModule::StartupModule()
 {
-    Handle = UnLua::FLuaEnv::OnCreated.AddStatic(&FUnLuaExtensionsModule::OnLuaEnvCreated);
+    UnLua::FLuaEnv::OnCreated.AddStatic(&FLuaSocketModule::OnLuaEnvCreated);
 
     for (const auto& Pair : UnLua::FLuaEnv::GetAll())
         OnLuaEnvCreated(*Pair.Value);
 }
 
-void FUnLuaExtensionsModule::ShutdownModule()
+void FLuaSocketModule::ShutdownModule()
 {
-    UnLua::FLuaEnv::OnCreated.Remove(Handle);
+    UnLua::FLuaEnv::OnCreated.RemoveAll(this);
 }
 
-void FUnLuaExtensionsModule::OnLuaEnvCreated(UnLua::FLuaEnv& Env)
+void FLuaSocketModule::OnLuaEnvCreated(UnLua::FLuaEnv& Env)
 {
     Env.AddBuiltInLoader(TEXT("socket"), luaopen_socket_core);
     Env.AddBuiltInLoader(TEXT("socket.core"), luaopen_socket_core);
+    Env.DoString("UnLua.PackagePath = UnLua.PackagePath .. ';/Plugins/UnLuaExtensions/LuaSocket/Content/Script/?.lua'");
 }
 
-IMPLEMENT_MODULE(FUnLuaExtensionsModule, UnLuaExtensions)
+IMPLEMENT_MODULE(FLuaSocketModule, LuaSocket)

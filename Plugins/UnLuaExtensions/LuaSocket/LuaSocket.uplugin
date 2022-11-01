@@ -2,8 +2,8 @@
     "FileVersion": 3,
     "Version": 1,
     "VersionName": "1.0.0",
-    "FriendlyName": "UnLua",
-    "Description": "Optional extensions for UnLua",
+    "FriendlyName": "LuaSocket",
+    "Description": "LuaSocket extensions for UnLua",
     "Category": "Scripting",
     "CreatedBy": "Tencent",
     "CreatedByURL": "https://www.tencent.com/",
@@ -15,7 +15,7 @@
     "Installed": false,
     "Modules": [
         {
-            "Name": "UnLuaExtensions",
+            "Name": "LuaSocket",
             "Type": "Runtime",
             "LoadingPhase": "Default",
             "WhitelistPlatforms": [ "Win64", "Mac", "IOS", "Android", "Linux" ]

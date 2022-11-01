@@ -16,17 +16,17 @@ using System;
 using System.IO;
 using UnrealBuildTool;
 
-public class UnLuaExtensions : ModuleRules
+public class LuaSocket : ModuleRules
 {
-    public UnLuaExtensions(ReadOnlyTargetRules Target) : base(Target)
+    public LuaSocket(ReadOnlyTargetRules Target) : base(Target)
     {
         bEnforceIWYU = false;
-        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bUseUnity = false;
+        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bEnableUndefinedIdentifierWarnings = false;
-        
+
         PublicDependencyModuleNames.AddRange(
-            new string[]
+            new[]
             {
                 "Core",
                 "CoreUObject",
@@ -34,10 +34,10 @@ public class UnLuaExtensions : ModuleRules
                 "InputCore",
             });
 
-        PrivateDependencyModuleNames.AddRange(new string[]
+        PrivateDependencyModuleNames.AddRange(new[]
         {
             "UnLua",
-            "Lua",
+            "Lua"
         });
 
         PrivateDefinitions.AddRange(
@@ -48,8 +48,7 @@ public class UnLuaExtensions : ModuleRules
                 "LUA_LIB"
             }
         );
-
-        var BasePath = Path.GetFullPath(Path.Combine(ModuleDirectory, "ThirdParty", "LuaSocket"));
-        PublicIncludePaths.Add(BasePath);
+        
+        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "src"));
     }
 }
