@@ -15,21 +15,8 @@
 #include "Engine/World.h"
 #include "LuaEnvLocator.h"
 
-#if WITH_EDITOR
-ULuaEnvLocator::FOnEditorLocate ULuaEnvLocator::OnEditorLocate;
-#endif
-
 UnLua::FLuaEnv* ULuaEnvLocator::Locate(const UObject* Object)
 {
-#if WITH_EDITOR
-    if (Object && OnEditorLocate.IsBound())
-    {
-        const auto EditorEnv = OnEditorLocate.Execute(Object);
-        if (EditorEnv)
-            return EditorEnv;
-    }
-#endif
-
     if (!Env)
     {
         Env = MakeShared<UnLua::FLuaEnv, ESPMode::ThreadSafe>();

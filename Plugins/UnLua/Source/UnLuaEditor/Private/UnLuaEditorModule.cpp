@@ -73,12 +73,12 @@ namespace UnLua
 #endif
             SetupPackagingSettings();
 
-            ULuaEnvLocator::OnEditorLocate.BindRaw(this, &FUnLuaEditorModule::OnEditorLocate);
+            FUnLuaDelegates::OnEditorLocate.BindRaw(this, &FUnLuaEditorModule::OnEditorLocate);
         }
 
         virtual void ShutdownModule() override
         {
-            ULuaEnvLocator::OnEditorLocate.Unbind();
+            FUnLuaDelegates::OnEditorLocate.Unbind();
             Env.Reset();
 
             if (GEditor)

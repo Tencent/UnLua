@@ -29,6 +29,7 @@
 #include "GameDelegates.h"
 #include "LuaEnvLocator.h"
 #include "UnLuaDebugBase.h"
+#include "UnLuaDelegates.h"
 #include "UnLuaInterface.h"
 #include "UnLuaSettings.h"
 #include "GameFramework/PlayerController.h"
@@ -141,19 +142,20 @@ namespace UnLua
             }
             else
             {
-                EnvLocator->Reset();
                 for (const auto Class : TObjectRange<UClass>())
                 {
-                    if (Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
-                    {
+                    if (!Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
+                        continue;
 #if WITH_EDITOR
-                        const auto CDO = Class->GetDefaultObject(false);
-                        if (CDO && IUnLuaInterface::Execute_RunInEditor(CDO))
-                            continue;
+                    if (Class->HasAnyClassFlags(CLASS_NewerVersionExists))
+                        continue;
+                    const auto CDO = Class->GetDefaultObject(false);
+                    if (CDO && IUnLuaInterface::Execute_RunInEditor(CDO))
+                        continue;
 #endif
-                        ULuaFunction::RestoreOverrides(Class);
-                    }
+                    ULuaFunction::RestoreOverrides(Class);
                 }
+                EnvLocator->Reset();
             }
 
             bIsActive = bActive;
@@ -161,6 +163,17 @@ namespace UnLua
 
         virtual FLuaEnv* GetEnv(UObject* Object) override
         {
+#if WITH_EDITOR
+            if (Object && FUnLuaDelegates::OnEditorLocate.IsBound())
+            {
+                if (const auto Env = FUnLuaDelegates::OnEditorLocate.Execute(Object))
+                    return Env;
+            }
+#endif
+
+            if (!bIsActive)
+                return nullptr;
+
             return EnvLocator->Locate(Object);
         }
 
@@ -179,11 +192,13 @@ namespace UnLua
 
             // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectCreated : %p"), ObjectBase);
             UObject* Object = (UObject*)ObjectBase;
+            const auto Env = GetEnv(Object);
+            if (!Env)
+                return;
 
-            const auto Env = EnvLocator->Locate(Object);
-            // UE_LOG(LogTemp, Log, TEXT("Locate %s for %s"), *Env->GetName(), *ObjectBase->GetFName().ToString());
             Env->TryBind(Object);
             Env->TryReplaceInputs(Object);
+            // UE_LOG(LogTemp, Log, TEXT("Locate %s for %s"), *Env->GetName(), *ObjectBase->GetFName().ToString());
         }
 
         virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
