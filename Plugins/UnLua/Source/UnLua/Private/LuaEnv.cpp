@@ -225,6 +225,8 @@ namespace UnLua
         if (Manager)
             Manager->NotifyUObjectDeleted(Object);
         ObjectRegistry->NotifyUObjectDeleted(Object);
+        ClassRegistry->NotifyUObjectDeleted(Object);
+        EnumRegistry->NotifyUObjectDeleted(Object);
 
         if (CandidateInputComponents.Num() <= 0)
             return;

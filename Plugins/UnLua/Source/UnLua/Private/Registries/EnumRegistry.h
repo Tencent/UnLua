@@ -28,17 +28,25 @@ namespace UnLua
 
         static FEnumDesc* Find(const char* InName);
 
+        static FEnumDesc* Find(const UEnum* Enum);
+
         static FEnumDesc* StaticRegister(const char* MetatableName);
 
         static bool StaticUnregister(const UObjectBase* Enum);
 
         static void Cleanup();
 
+        void NotifyUObjectDeleted(UObject* Object);
+
         FEnumDesc* Register(const char* MetatableName);
 
         FEnumDesc* Register(const UEnum* Enum);
 
+        void Unregister(const UEnum* Enum);
+
     private:
+        void Unregister(const FEnumDesc* ClassDesc, const bool bForce);
+
         static TMap<UEnum*, FEnumDesc*> Enums;
         static TMap<FName, FEnumDesc*> Name2Enums;
         FLuaEnv* Env;

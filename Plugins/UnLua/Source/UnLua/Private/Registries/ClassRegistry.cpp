@@ -112,7 +112,7 @@ namespace UnLua
         for (auto Pair : FLuaEnv::AllEnvs)
         {
             auto Registry = Pair.Value->GetClassRegistry();
-            Registry->Unregister(ClassDesc);
+            Registry->Unregister(ClassDesc, true);
         }
         return true;
     }
@@ -126,7 +126,7 @@ namespace UnLua
             if (Ret && Ret->IsClass() && !Ret->IsStructValid())
             {
                 // unregister invalid metatable
-                Unregister(Ret);
+                Unregister(Ret, true);
             }
             else
             {
@@ -267,12 +267,26 @@ namespace UnLua
         return Register(TCHAR_TO_UTF8(*MetatableName));
     }
 
+    void FClassRegistry::Unregister(const UStruct* Class)
+    {
+        const auto Desc = Find(Class);
+        if (!Desc)
+            return;
+        Desc->UnLoad();
+        Unregister(Desc, true);
+    }
+
     void FClassRegistry::Cleanup()
     {
         for (const auto Pair : Name2Classes)
             delete Pair.Value;
         Name2Classes.Empty();
         Classes.Empty();
+    }
+
+    void FClassRegistry::NotifyUObjectDeleted(UObject* Object)
+    {
+        Unregister((UStruct*)Object);
     }
 
     UField* FClassRegistry::LoadReflectedType(const char* InName)
@@ -300,9 +314,7 @@ namespace UnLua
     FClassDesc* FClassRegistry::RegisterInternal(UStruct* Type, const FString& Name)
     {
         check(Type);
-#if !WITH_EDITOR
         check(!Classes.Contains(Type));
-#endif
 
         FClassDesc* ClassDesc = new FClassDesc(Type, Name);
         Classes.Add(Type, ClassDesc);
@@ -311,12 +323,10 @@ namespace UnLua
         return ClassDesc;
     }
 
-    void FClassRegistry::Unregister(const FClassDesc* ClassDesc)
+    void FClassRegistry::Unregister(const FClassDesc* ClassDesc, const bool bForce)
     {
-        if (ClassDesc->IsStructValid())
-        {
+        if (ClassDesc->IsStructValid() && !bForce)
             return;
-        }
         const auto L = Env->GetMainState();
         const auto MetatableName = ClassDesc->GetName();
         lua_pushnil(L);

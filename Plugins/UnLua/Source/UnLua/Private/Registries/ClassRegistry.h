@@ -42,6 +42,8 @@ namespace UnLua
 
         static void Cleanup();
 
+        void NotifyUObjectDeleted(UObject* Object);
+
         bool PushMetatable(lua_State* L, const char* MetatableName);
 
         bool TrySetMetatable(lua_State* L, const char* MetatableName);
@@ -50,10 +52,12 @@ namespace UnLua
 
         FClassDesc* Register(const UStruct* Class);
 
+        void Unregister(const UStruct* Class);
+
     private:
         static FClassDesc* RegisterInternal(UStruct* Type, const FString& Name);
 
-        void Unregister(const FClassDesc* ClassDesc);
+        void Unregister(const FClassDesc* ClassDesc, const bool bForce);
 
         static TMap<UStruct*, FClassDesc*> Classes;
         static TMap<FName, FClassDesc*> Name2Classes;

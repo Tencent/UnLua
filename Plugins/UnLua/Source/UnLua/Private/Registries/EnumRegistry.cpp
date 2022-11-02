@@ -40,6 +40,12 @@ namespace UnLua
         return Ret ? *Ret : nullptr;
     }
 
+    FEnumDesc* FEnumRegistry::Find(const UEnum* Enum)
+    {
+        FEnumDesc** Ret = Enums.Find(Enum);
+        return Ret ? *Ret : nullptr;
+    }
+
     FEnumDesc* FEnumRegistry::StaticRegister(const char* MetatableName)
     {
         FEnumDesc* Ret = Find(MetatableName);
@@ -76,6 +82,11 @@ namespace UnLua
             delete Pair.Value;
         Name2Enums.Empty();
         Enums.Empty();
+    }
+
+    void FEnumRegistry::NotifyUObjectDeleted(UObject* Object)
+    {
+        Unregister((UEnum*)Object);
     }
 
     FEnumDesc* FEnumRegistry::Register(const char* MetatableName)
@@ -134,5 +145,24 @@ namespace UnLua
     {
         const auto MetatableName = LowLevel::GetMetatableName(Enum);
         return Register(TCHAR_TO_UTF8(*MetatableName));
+    }
+
+    void FEnumRegistry::Unregister(const UEnum* Enum)
+    {
+        const auto Desc = Find(Enum);
+        if (!Desc)
+            return;
+        Desc->UnLoad();
+        Unregister(Desc, true);
+    }
+
+    void FEnumRegistry::Unregister(const FEnumDesc* EnumDesc, const bool bForce)
+    {
+        if (EnumDesc->IsValid() && !bForce)
+            return;
+        const auto L = Env->GetMainState();
+        const auto MetatableName = EnumDesc->GetName();
+        lua_pushnil(L);
+        lua_setfield(L, LUA_REGISTRYINDEX, TCHAR_TO_UTF8(*MetatableName));
     }
 }
