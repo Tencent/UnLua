@@ -16,6 +16,15 @@
 #include "LuaCore.h"
 #include "Containers/LuaSet.h"
 
+static FORCEINLINE void TSet_Guard(lua_State* L, FLuaSet* Set)
+{
+    if (!Set)
+        luaL_error(L, "invalid TSet");
+
+    if (!Set->ElementInterface->IsValid())
+        luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TSet element type:%s"), *Set->ElementInterface->GetName())));
+}
+
 static int32 TSet_New(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
@@ -42,8 +51,7 @@ static int32 TSet_Length(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     lua_pushinteger(L, Set->Num());
     return 1;
@@ -59,8 +67,7 @@ static int32 TSet_Add(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
@@ -79,8 +86,7 @@ static int32 TSet_Remove(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
@@ -100,8 +106,7 @@ static int32 TSet_Contains(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     Set->ElementInterface->Initialize(Set->ElementCache);
     Set->ElementInterface->Write(L, Set->ElementCache, 2);
@@ -121,8 +126,7 @@ static int32 TSet_Clear(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     Set->Clear();
     return 0;
@@ -138,8 +142,7 @@ static int32 TSet_ToArray(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     void* Userdata = NewUserdataWithPadding(L, sizeof(FLuaArray), "TArray");
     FLuaArray* Array = Set->ToArray(Userdata);
@@ -156,8 +159,7 @@ static int32 TSet_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Set);
@@ -176,8 +178,7 @@ static int32 TSet_ToTable(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    if (!Set)
-        return luaL_error(L, "invalid TSet");
+    TSet_Guard(L, Set);
 
     if (!Set->ElementInterface->IsValid())
         return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TSet element type:%s"), *Set->ElementInterface->GetName())));

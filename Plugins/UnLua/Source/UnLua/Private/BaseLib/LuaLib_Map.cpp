@@ -16,6 +16,18 @@
 #include "LuaCore.h"
 #include "Containers/LuaMap.h"
 
+static FORCEINLINE void TMap_Guard(lua_State* L, FLuaMap* Map)
+{
+    if (!Map)
+        luaL_error(L, "invalid TMap");
+
+    if (!Map->KeyInterface->IsValid())
+        luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap key type:%s"), *Map->ValueInterface->GetName())));
+
+    if (!Map->ValueInterface->IsValid())
+        luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap value type:%s"), *Map->ValueInterface->GetName())));
+}
+
 static int32 TMap_New(lua_State* L)
 {
     int32 NumParams = lua_gettop(L);
@@ -47,8 +59,7 @@ static int TMap_Enumerable(lua_State* L)
         return luaL_error(L, "invalid enumerator");
 
     const auto Map = (*Enumerator)->LuaMap;
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     while ((*Enumerator)->Index < Map->GetMaxIndex())
     {
@@ -75,8 +86,7 @@ static int32 TMap_Pairs(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return 0;
+    TMap_Guard(L, Map);
 
     lua_pushcfunction(L, TMap_Enumerable);
     FLuaMap::FLuaMapEnumerator** Enumerator = (FLuaMap::FLuaMapEnumerator**)lua_newuserdata(L, sizeof(FLuaMap::FLuaMapEnumerator*));
@@ -101,8 +111,7 @@ static int32 TMap_Length(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     lua_pushinteger(L, Map->Num());
     return 1;
@@ -118,8 +127,7 @@ static int32 TMap_Add(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
     Map->KeyInterface->Initialize(Map->ElementCache);
@@ -142,8 +150,7 @@ static int32 TMap_Remove(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     Map->KeyInterface->Initialize(Map->ElementCache);
     Map->KeyInterface->Write(L, Map->ElementCache, 2);
@@ -163,8 +170,7 @@ static int32 TMap_Find(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
     Map->KeyInterface->Initialize(Map->ElementCache);
@@ -194,8 +200,7 @@ static int32 TMap_FindRef(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     Map->KeyInterface->Initialize(Map->ElementCache);
     Map->KeyInterface->Write(L, Map->ElementCache, 2);
@@ -223,8 +228,7 @@ static int32 TMap_Clear(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     Map->Clear();
     return 0;
@@ -240,8 +244,7 @@ static int32 TMap_Keys(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     void* Userdata = NewUserdataWithPadding(L, sizeof(FLuaArray), "TArray");
     FLuaArray* Array = Map->Keys(Userdata);
@@ -258,8 +261,7 @@ static int32 TMap_Values(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     void* Userdata = NewUserdataWithPadding(L, sizeof(FLuaArray), "TArray");
     FLuaArray* Array = Map->Values(Userdata);
@@ -276,8 +278,7 @@ static int32 TMap_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Map);
@@ -296,8 +297,7 @@ static int32 TMap_ToTable(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    if (!Map)
-        return luaL_error(L, "invalid TMap");
+    TMap_Guard(L, Map);
 
     if (!Map->KeyInterface->IsValid())
         return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap key type:%s"), *Map->ValueInterface->GetName())));

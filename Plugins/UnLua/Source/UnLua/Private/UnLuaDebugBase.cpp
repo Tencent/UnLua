@@ -712,4 +712,18 @@ namespace UnLua
         return CallStack;
     }
 
-} // namespace UnLua
+    PRAGMA_DISABLE_OPTIMIZATION
+
+    /* 方便在IDE断点调试窗口中直接运行UnLua::PrintCallStack(L)来打印当前堆栈 */
+    void PrintCallStack(lua_State* L)
+    {
+        if (!L)
+            return;
+
+        luaL_traceback(L, L, "", 0);
+        UE_LOG(LogUnLua, Log, TEXT("%s"), UTF8_TO_TCHAR(lua_tostring(L,-1)));
+        lua_pop(L, 1);
+    }
+
+    PRAGMA_ENABLE_OPTIMIZATION
+}

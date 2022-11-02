@@ -17,6 +17,14 @@ self["function name with space"]() -- “静态函数”
 self["function name with space"](self) -- “实例函数”
 ```
 
+## 为什么新建的工程安装了UnLua，打开后提示 `could not be compiled. Try rebuilding from source manually`？
+
+新建工程时选择C++项目，而不是蓝图项目。
+
+## 找不到UnLua的绑定按钮？
+
+蓝图编辑器的窗口宽度太小，导致绑定图标被收缩到下拉按钮了，试试最大化编辑器窗口。
+
 ## 为什么覆写蓝图方法时，都需要带上 `Receive` 这样的前缀？
 
 我们在蓝图中看到的方法名，很多都是经过对阅读友好化处理过的，以 `Actor` 上最常见的 `BeginPlay` 为例，在C++中是这样的：
@@ -28,6 +36,10 @@ self["function name with space"](self) -- “实例函数”
 ```
 
 实际上蓝图中对应的就是 `ReceiveBeginPlay` 这个方法，只是通过 `DisplayName` 让我们在蓝图里看起来更友好一些。
+
+## `UE.XXX` 好像访问不到我创建的蓝图类型？
+
+从 `2.2.0` 版本开始，`UE.XXX` 只支持访问C++类型，蓝图类型需要先通过 `UE.UClass.Load` 加载再使用。
 
 ## 多继承层次里不能覆写接口的方法吗？
 

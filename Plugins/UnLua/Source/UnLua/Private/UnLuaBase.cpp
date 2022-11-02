@@ -133,6 +133,8 @@ namespace UnLua
             return false;
         }
 
+        const auto& Env = FLuaEnv::FindEnvChecked(L);
+        const auto DanglingGuard = Env.GetDanglingCheck()->MakeGuard();
         bool bSuccess = !luaL_dostring(L, Chunk);       // loads and runs the given chunk
         if (!bSuccess)
         {
@@ -264,6 +266,7 @@ namespace UnLua
             if (!bAlwaysCreate)
             {
                 // cache the new userdata in 'StructMap
+                FLuaEnv::FindEnv(L)->GetDanglingCheck()->CaptureStruct(L, Value);
                 lua_pushlightuserdata(L, Value);
                 lua_pushvalue(L, -2);
                 lua_rawset(L, -4);

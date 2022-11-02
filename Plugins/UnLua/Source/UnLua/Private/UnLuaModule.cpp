@@ -49,6 +49,7 @@ namespace UnLua
 #if WITH_EDITOR
             FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
 #endif
+
             RegisterSettings();
 
             const auto& Settings = *GetDefault<UUnLuaSettings>();
@@ -116,10 +117,11 @@ namespace UnLua
             {
                 const auto& Settings = *GetDefault<UUnLuaSettings>();
                 FDeadLoopCheck::Timeout = Settings.DeadLoopCheck;
+                FDanglingCheck::Enabled = Settings.DanglingCheck;
 
                 for (const auto Class : TObjectRange<UClass>())
                 {
-                    for (const auto ClassPath : Settings.PreBindClasses)
+                    for (const auto& ClassPath : Settings.PreBindClasses)
                     {
                         if (!ClassPath.IsValid())
                             continue;

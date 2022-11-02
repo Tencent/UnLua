@@ -565,8 +565,15 @@ static FOutParmRec* FindOutParmRec(FOutParmRec *OutParam, FProperty *OutProperty
  */
 bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const
 {
+    // -1 = [table/userdata] UObject for self
+    // -2 = [function] to call
+    // -3 = [function] ReportLuaCallError
+    const auto ErrorHandlerIndex = lua_gettop(L) - 2;
+
+    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    const auto DanglingGuard = Env.GetDanglingCheck()->MakeGuard();
+
     // prepare parameters for Lua function
-    FOutParmRec *OutParam = OutParams;
     for (const auto& Property : Properties)
     {
         if (Property->IsReturnParameter())
@@ -589,67 +596,64 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         NumResult++;
     }
 
-    const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     const auto Guard = Env.GetDeadLoopCheck()->MakeGuard();
-    bool bSuccess = CallFunction(L, NumParams, NumResult);      // pcall
-    if (!bSuccess)
+    if (lua_pcall(L, NumParams, LUA_MULTRET, -(NumParams + 2)) != LUA_OK)
     {
+        lua_settop(L, ErrorHandlerIndex - 1);
         return false;
     }
 
     // out value
     // suppose out param is also pushed on stack? this is assumed done by user... so we can not trust it
-    int32 NumResultOnStack = lua_gettop(L);
-    if (NumResult <= NumResultOnStack)
-    {
-        int32 OutPropertyIndex = -NumResult;
+    int32 NumResultOnStack = lua_gettop(L) - ErrorHandlerIndex;
+    int32 OutPropertyIndex = -NumResult;
 #if !UNLUA_LEGACY_RETURN_ORDER
-        if (ReturnPropertyIndex > INDEX_NONE)
-            OutPropertyIndex++;
+    if (ReturnPropertyIndex > INDEX_NONE)
+        OutPropertyIndex++;
 #endif
 
-        OutParam = OutParams;
-
-        for (int32 i = 0; i < OutPropertyIndices.Num(); ++i)
+    FOutParmRec *OutParam = OutParams;
+    for (int32 i = 0; i < OutPropertyIndices.Num(); i++)
+    {
+        const auto& OutProperty = Properties[OutPropertyIndices[i]];
+        if (OutProperty->IsReferenceParameter())
         {
-            const auto& OutProperty = Properties[OutPropertyIndices[i]];
-            if (OutProperty->IsReferenceParameter())
+            OutPropertyIndex++;
+            continue;
+        }
+        OutParam = FindOutParmRec(OutParam, OutProperty->GetProperty());
+        if (OutParam)
+        {
+            // user do push it on stack?
+            if (-OutPropertyIndex > NumResultOnStack)
             {
-                continue;
-            }
-            OutParam = FindOutParmRec(OutParam, OutProperty->GetProperty());
-            if (!OutParam)
-            {
-                OutProperty->SetValue(L, InParams, OutPropertyIndex, true);
+                // so we need copy it back from input parameter
+                OutProperty->CopyBack(OutParam->PropAddr, OutProperty->GetProperty()->ContainerPtrToValuePtr<void>(InParams)); // copy back value to out property
             }
             else
             {
-                // user do push it on stack?
-                int32 Type = lua_type(L, OutPropertyIndex);
-                if (Type == LUA_TNIL)
-                {
-                    // so we need copy it back from input parameter
-                    OutProperty->CopyBack(OutParam->PropAddr, OutProperty->GetProperty()->ContainerPtrToValuePtr<void>(InParams));   // copy back value to out property
-                }
-                else
-                {   
-                    // copy it from stack
-                    OutProperty->SetValueInternal(L, OutParam->PropAddr, OutPropertyIndex, true);       // set value for out property
-                }
-                OutParam = OutParam->NextOutParm;
+                // copy it from stack
+                OutProperty->SetValueInternal(L, OutParam->PropAddr, OutPropertyIndex, true); // set value for out property
             }
-            ++OutPropertyIndex;
+            OutParam = OutParam->NextOutParm;
         }
+        else
+        {
+            OutProperty->SetValue(L, InParams, OutPropertyIndex, true);
+        }
+        OutPropertyIndex++;
     }
-    
+
     // return value
     if (ReturnPropertyIndex > INDEX_NONE)
-    {   
+    {
+#if ENABLE_TYPE_CHECK == 1
         if (NumResultOnStack < 1)
         {
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("FuncName %s has return value, but no value found on stack!"),*FuncName);
         }
         else
+#endif
         {
             const auto& ReturnProperty = Properties[ReturnPropertyIndex];
 
@@ -658,11 +662,6 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 #else
             const auto IndexInStack = -NumResult;
 #endif
-            
-            // set value for blueprint side return property
-            const FOutParmRec* RetParam = OutParam ? FindOutParmRec(OutParam, ReturnProperty->GetProperty()) : nullptr;
-            if (RetParam)
-                ReturnProperty->SetValueInternal(L, RetParam->PropAddr, IndexInStack, true);
 
             // set value for return property
             check(RetValueAddress);
@@ -670,7 +669,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         }
     }
 
-    lua_pop(L, NumResult);
+    lua_settop(L, ErrorHandlerIndex - 1);
     return true;
 }
 
