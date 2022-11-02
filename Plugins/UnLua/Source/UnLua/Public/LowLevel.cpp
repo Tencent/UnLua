@@ -130,7 +130,7 @@ namespace UnLua
             return Type;
         }
 
-        bool CheckPropertyOwner(lua_State* L, UnLua::ITypeOps* InProperty, void* InContainerPtr)
+        bool CheckPropertyOwner(lua_State* L, ITypeOps* InProperty, void* InContainerPtr)
         {
 #if ENABLE_TYPE_CHECK == 1
             if (InProperty->StaticExported)
