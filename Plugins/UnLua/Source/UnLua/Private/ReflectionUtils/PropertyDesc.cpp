@@ -23,56 +23,18 @@
 
 FPropertyDesc::FPropertyDesc(FProperty *InProperty) : Property(InProperty) 
 {
-    PropertyType = CPT_None;
     PropertyPtr = InProperty;
     Name = Property->GetName();
 }
 
 bool FPropertyDesc::IsValid() const
 {
-    if (!PropertyPtr.IsValid())
+#if WITH_EDITOR
+    // 蓝图重新编译后会导致PropertyPtr持续有效，但原来的Property无效了
+    if (PropertyPtr.Get() != Property)
         return false;
-    
-#if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 25
-    return UnLua::IsUObjectValid(Property);
-#else
-    bool bValid = true;
-
-    switch (PropertyType)
-    {
-    case CPT_Interface:
-        {
-            bValid = UnLua::IsUObjectValid(((FInterfaceProperty*)Property)->InterfaceClass);
-            break;
-        }
-    case CPT_Delegate:
-        {
-            bValid = UnLua::IsUObjectValid(((FDelegateProperty*)Property)->SignatureFunction);
-            break;
-        }
-    case CPT_MulticastDelegate:
-    case CPT_MulticastSparseDelegate:
-        {
-            bValid = UnLua::IsUObjectValid(((FMulticastDelegateProperty*)Property)->SignatureFunction);
-            break;
-        }
-    case CPT_Struct:
-        {
-            bValid = UnLua::IsUObjectValid(((FStructProperty*)Property)->Struct);
-            break;
-        }
-    case CPT_ObjectReference:
-    case CPT_WeakObjectReference:
-    case CPT_LazyObjectReference:
-    case CPT_SoftObjectReference:
-        {
-            bValid = UnLua::IsUObjectValid(((FObjectPropertyBase*)Property)->PropertyClass);
-            break;
-        }
-    }
-
-    return bValid;
 #endif
+    return PropertyPtr.IsValid();
 }
 
 /**
@@ -415,11 +377,6 @@ public:
     explicit FSoftObjectPropertyDesc(FProperty* InProperty)
         : FPropertyDesc(InProperty)
     {
-    }
-
-    ~FSoftObjectPropertyDesc()
-    {
-        // release element property descriptor
     }
 
     virtual bool CopyBack(lua_State* L, int32 SrcIndexInStack, void* DestContainerPtr) override
@@ -1135,16 +1092,6 @@ private:
     TSharedPtr<UnLua::ITypeInterface> InnerProperty;
 };
 
-void FPropertyDesc::SetPropertyType(int8 Type)
-{
-    PropertyType = Type;
-}
-
-int8 FPropertyDesc::GetPropertyType()
-{
-    return PropertyType;
-}
-
 class FStructPropertyDesc : public FPropertyDesc
 {
 public:
@@ -1625,11 +1572,7 @@ FPropertyDesc* FPropertyDesc::Create(FProperty *InProperty)
         }
 #endif
     }
-	
-    if (PropertyDesc)
-    {
-        PropertyDesc->SetPropertyType(Type);
-    }
+
     return PropertyDesc;
 }
 
