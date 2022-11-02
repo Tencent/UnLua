@@ -87,46 +87,46 @@ namespace UnLua
 
         int32 GetUProperty(lua_State* L)
         {
-            auto Ptr = lua_touserdata(L, 2);
+            const auto Ptr = lua_touserdata(L, 2);
             if (!Ptr)
                 return 0;
 
-            auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
-            if (!Property->IsValid())
+            const auto Property = static_cast<TSharedPtr<ITypeOps>*>(Ptr)->Get();
+            if (!Property || !Property->IsValid())
                 return 0;
 
-            auto Self = GetCppInstance(L, 1);
+            const auto Self = GetCppInstance(L, 1);
             if (!Self)
                 return 0;
 
-            if (UnLua::LowLevel::IsReleasedPtr(Self))
-                return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *(*Property)->GetName())));
+            if (LowLevel::IsReleasedPtr(Self))
+                return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *Property->GetName())));
 
-            if (!LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+            if (!LowLevel::CheckPropertyOwner(L, Property, Self))
                 return 0;
 
-            (*Property)->Read(L, Self, false);
+            Property->Read(L, Self, false);
             return 1;
         }
 
         int32 SetUProperty(lua_State* L)
         {
-            auto Ptr = lua_touserdata(L, 2);
+            const auto Ptr = lua_touserdata(L, 2);
             if (!Ptr)
                 return 0;
 
-            auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
-            if (!Property->IsValid())
+            const auto Property = static_cast<TSharedPtr<ITypeOps>*>(Ptr)->Get();
+            if (!Property || !Property->IsValid())
                 return 0;
 
-            auto Self = GetCppInstance(L, 1);
+            const auto Self = GetCppInstance(L, 1);
             if (LowLevel::IsReleasedPtr(Self))
-                return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
+                return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *Property->GetName())));
 
-            if (!LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+            if (!LowLevel::CheckPropertyOwner(L, Property, Self))
                 return 0;
 
-            (*Property)->Write(L, Self, 3);
+            Property->Write(L, Self, 3);
             return 0;
         }
 
@@ -149,14 +149,12 @@ namespace UnLua
             local GetUProperty = GetUProperty
             local SetUProperty = SetUProperty
 
-            local NotExist = {}
-
             local function Index(t, k)
                 local mt = getmetatable(t)
                 local super = mt
                 while super do
                     local v = rawget(super, k)
-                    if v ~= nil and not rawequal(v, NotExist) then
+                    if v ~= nil then
                         rawset(t, k, v)
                         return v
                     end
@@ -169,11 +167,7 @@ namespace UnLua
                         return GetUProperty(t, p)
                     elseif type(p) == "function" then
                         rawset(t, k, p)
-                    elseif rawequal(p, NotExist) then
-                        return nil
                     end
-                else
-                    rawset(mt, k, NotExist)
                 end
 
                 return p

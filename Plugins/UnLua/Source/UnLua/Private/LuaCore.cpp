@@ -1429,25 +1429,25 @@ int32 Class_Index(lua_State *L)
 {
     GetField(L);
 
-    auto Ptr = lua_touserdata(L, -1);
+    const auto Ptr = lua_touserdata(L, -1);
     if (!Ptr)
         return 1;
 
-    auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
-    if (!Property->IsValid())
+    const auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr)->Get();
+    if (!Property || !Property->IsValid())
         return 0;
-    
-    auto Self = GetCppInstance(L, 1);
+
+    const auto Self = GetCppInstance(L, 1);
     if (!Self)
         return 1;
 
     if (UnLua::LowLevel::IsReleasedPtr(Self))
-        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *(*Property)->GetName())));
+        return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released object"), *Property->GetName())));
 
-    if (!UnLua::LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+    if (!UnLua::LowLevel::CheckPropertyOwner(L, Property, Self))
         return 0;
 
-    (*Property)->Read(L, Self, false);
+    Property->Read(L, Self, false);
     lua_remove(L, -2);
     return 1;
 }
@@ -1459,22 +1459,22 @@ int32 Class_NewIndex(lua_State *L)
 {
     GetField(L);
 
-    auto Ptr = lua_touserdata(L, -1);
+    const auto Ptr = lua_touserdata(L, -1);
     if (Ptr)
     {
-        auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
-        if (Property->IsValid())
+        const auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr)->Get();
+        if (Property && Property->IsValid())
         {
-            void* Self = GetCppInstance(L, 1);
+            const auto Self = GetCppInstance(L, 1);
             if (Self)
             {
                 if (UnLua::LowLevel::IsReleasedPtr(Self))
-                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *(*Property)->GetName())));
+                    return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to write property '%s' on released object"), *Property->GetName())));
 
-                if (!UnLua::LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
+                if (!UnLua::LowLevel::CheckPropertyOwner(L, Property, Self))
                     return 0;
 
-                (*Property)->Write(L, Self, 3);
+                Property->Write(L, Self, 3);
             }
         }
     }
@@ -1613,11 +1613,11 @@ int32 ScriptStruct_Index(lua_State *L)
         return 1;
 
     const auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry();
-    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1);
-    if (!Property.IsValid())
+    const auto Property = Registry->Get<UnLua::ITypeOps>(L, -1).Get();
+    if (!Property || !Property->IsValid())
         return 0;
 
-    void* Self = GetCppInstanceFast(L, 1);
+    const auto Self = GetCppInstanceFast(L, 1);
     if (!Self)
         return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released struct"), *Property->GetName())));
 

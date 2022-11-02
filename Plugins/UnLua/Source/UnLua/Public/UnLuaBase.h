@@ -35,13 +35,14 @@ namespace UnLua
      * Interface to manage Lua stack for a C++ type
      */
     struct ITypeOps
-    {   
+    {
         ITypeOps() { StaticExported = false; };
+        virtual ~ITypeOps() = default;
 
         virtual FString GetName() const = 0;
+        virtual bool IsValid() const = 0;
         virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const = 0;
         virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const = 0;
-
         bool StaticExported;
     };
 
@@ -50,10 +51,6 @@ namespace UnLua
      */
     struct ITypeInterface : public ITypeOps
     {
-        ITypeInterface() { }
-        virtual ~ITypeInterface() {}
-
-        virtual bool IsValid() const = 0;
         virtual bool IsPODType() const = 0;
         virtual bool IsTriviallyDestructible() const = 0;
         virtual int32 GetSize() const = 0;
@@ -71,11 +68,12 @@ namespace UnLua
      * Exported property interface
      */
     struct IExportedProperty : public ITypeOps
-    {   
-        IExportedProperty() { StaticExported = true;}
-        virtual ~IExportedProperty() {}
+    {
+       IExportedProperty() { StaticExported = true;}
 
-        virtual void Register(lua_State *L) = 0;
+       FORCEINLINE virtual bool IsValid() const override { return true; }
+
+       virtual void Register(lua_State *L) = 0;
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const = 0;
@@ -87,8 +85,7 @@ namespace UnLua
      */
     struct IExportedFunction
     {
-        virtual ~IExportedFunction() {}
-
+        virtual ~IExportedFunction() = default;
         virtual void Register(lua_State *L) = 0;
         virtual int32 Invoke(lua_State *L) = 0;
 
@@ -103,8 +100,7 @@ namespace UnLua
      */
     struct IExportedClass
     {
-        virtual ~IExportedClass() {}
-
+        virtual ~IExportedClass() = default;
         virtual void Register(lua_State *L) = 0;
         virtual void AddLib(const luaL_Reg *Lib) = 0;
         virtual bool IsReflected() const = 0;
@@ -123,8 +119,7 @@ namespace UnLua
      */
     struct IExportedEnum
     {
-        virtual ~IExportedEnum() {}
-
+        virtual ~IExportedEnum() = default;
         virtual void Register(lua_State *L) = 0;
 
 #if WITH_EDITOR
@@ -284,7 +279,7 @@ namespace UnLua
      * Push an untyped map (same memory layout with TMap)
      *
      * @param ScriptMap - untyped map
-     * @param TypeInterface - type info for the map
+     * @param ValueInterface - type info for the map
      * @param bCreateCopy - whether to copy the map
      * @return - the number of results on Lua stack
      */
