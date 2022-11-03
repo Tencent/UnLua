@@ -87,7 +87,7 @@ namespace UnLua
         else
         {
 #if 504 == LUA_VERSION_NUM
-            lua_gc(L, LUA_GCGEN);
+            lua_gc(L, LUA_GCGEN, 0, 0);
 #else
             // default Lua GC config in UnLua
             lua_gc(L, LUA_GCSETPAUSE, 100);
