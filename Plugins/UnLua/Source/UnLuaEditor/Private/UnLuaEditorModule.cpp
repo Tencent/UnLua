@@ -185,6 +185,8 @@ namespace UnLua
                 const auto Class = Cast<UClass>(Object);
                 if (!Class || Class->GetName().StartsWith(TEXT("SKEL_")) || Class->GetName().StartsWith(TEXT("REINST_")))
                     return true;
+                if (!Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
+                    return true;
                 SuspendedPackages.Add(Package, Class);
                 return false;
             }, false);
