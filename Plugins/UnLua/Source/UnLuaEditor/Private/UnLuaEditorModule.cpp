@@ -23,7 +23,7 @@
 #include "UnLua.h"
 #include "ISettingsModule.h"
 #include "ISettingsSection.h"
-#include "LuaEnvLocator.h"
+#include "IUnLuaEditorModule.h"
 #include "UnLuaEditorSettings.h"
 #include "UnLuaEditorFunctionLibrary.h"
 #include "UnLuaFunctionLibrary.h"
@@ -43,11 +43,38 @@
 
 namespace UnLua
 {
-    class FUnLuaEditorModule : public IModuleInterface
+    class FUnLuaEditorModule : public IUnLuaEditorModule
     {
     public:
         FUnLuaEditorModule()
         {
+        }
+
+        virtual FLuaEnv* GetEnv() override
+        {
+            return Env.Get();
+        }
+
+        virtual void AddPackagingDirectory(FString& RelativePath, bool bPak) const override
+        {
+            const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
+            auto& ToAdd = bPak ? PackagingSettings->DirectoriesToAlwaysStageAsUFS : PackagingSettings->DirectoriesToAlwaysStageAsNonUFS;
+            auto& ToRemove = bPak ? PackagingSettings->DirectoriesToAlwaysStageAsNonUFS : PackagingSettings->DirectoriesToAlwaysStageAsUFS;
+            auto Predicate = [&](const FDirectoryPath& DirPath) { return DirPath.Path == RelativePath; };
+
+            ToRemove.RemoveAll(Predicate);
+            if (ToAdd.FindByPredicate(Predicate))
+                return;
+
+            FDirectoryPath DirectoryPath;
+            DirectoryPath.Path = RelativePath;
+            ToAdd.Add(DirectoryPath);
+
+#if ENGINE_MAJOR_VERSION >= 5
+            PackagingSettings->TryUpdateDefaultConfigFile();
+#else
+            PackagingSettings->UpdateDefaultConfigFile();
+#endif
         }
 
         virtual void StartupModule() override
@@ -163,6 +190,9 @@ namespace UnLua
             auto& FileManager = IFileManager::Get();
             if (FileManager.FileExists(*BuildFile))
                 FileManager.SetTimeStamp(*BuildFile, FDateTime::UtcNow());
+
+            SetupPackagingSettings();
+
             return true;
         }
 
@@ -205,40 +235,16 @@ namespace UnLua
             }
         }
 
-        void SetupPackagingSettings()
+        void SetupPackagingSettings() const
         {
             static auto ScriptPaths = {TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
-            const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
-            bool bModified = false;
-            auto Exists = [&](const auto Path)
-            {
-                for (const auto& DirPath : PackagingSettings->DirectoriesToAlwaysStageAsUFS)
-                {
-                    if (DirPath.Path == Path)
-                        return true;
-                }
-                return false;
-            };
+            const auto& UnLuaEditorSettings = *GetDefault<UUnLuaEditorSettings>();
+            if (UnLuaEditorSettings.PackagingMode == EPackagingMode::Manual)
+                return;
 
-            for (auto& ScriptPath : ScriptPaths)
-            {
-                if (Exists(ScriptPath))
-                    continue;
-
-                FDirectoryPath DirectoryPath;
-                DirectoryPath.Path = ScriptPath;
-                PackagingSettings->DirectoriesToAlwaysStageAsUFS.Add(DirectoryPath);
-                bModified = true;
-            }
-
-            if (bModified)
-            {
-#if ENGINE_MAJOR_VERSION >= 5
-                PackagingSettings->TryUpdateDefaultConfigFile();
-#else
-                PackagingSettings->UpdateDefaultConfigFile();
-#endif
-            }
+            const auto bPak = UnLuaEditorSettings.PackagingMode == EPackagingMode::Pak;
+            for (FString ScriptPath : ScriptPaths)
+                AddPackagingDirectory(ScriptPath, bPak);
         }
 
         void OnBlueprintPreCompile(UBlueprint* Blueprint)

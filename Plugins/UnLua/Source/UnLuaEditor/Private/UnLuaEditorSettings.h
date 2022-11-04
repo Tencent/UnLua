@@ -36,6 +36,14 @@ enum class EHotReloadMode : uint8
     Never
 };
 
+UENUM()
+enum class EPackagingMode : uint8
+{
+    Pak,
+    NonPak,
+    Manual,
+};
+
 UCLASS(config=UnLuaEditor, defaultconfig, meta=(DisplayName="UnLuaEditor"))
 class UNLUAEDITOR_API UUnLuaEditorSettings : public UObject
 {
@@ -49,6 +57,10 @@ public:
     /** Whether or not generate intellisense files for lua. */
     UPROPERTY(config, EditAnywhere, Category = "Coding")
     bool bGenerateIntelliSense = true;
+
+    /** Pick a method for how lua files are packaged. */
+    UPROPERTY(config, EditAnywhere, Category = "Packaging", meta = (defaultValue = 0))
+    EPackagingMode PackagingMode;
 
     /** Whether or not startup UnLua module on game start. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
