@@ -37,6 +37,7 @@ namespace UnLua
 
     TMap<lua_State*, FLuaEnv*> FLuaEnv::AllEnvs;
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
+    FLuaEnv::FOnCreated FLuaEnv::OnDestroyed;
 
     FLuaEnv::FLuaEnv()
         : bStarted(false)
@@ -131,6 +132,7 @@ namespace UnLua
 
     FLuaEnv::~FLuaEnv()
     {
+        OnDestroyed.Broadcast(*this);
         lua_close(L);
         AllEnvs.Remove(L);
 

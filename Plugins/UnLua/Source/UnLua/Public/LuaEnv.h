@@ -41,9 +41,13 @@ namespace UnLua
     public:
         DECLARE_MULTICAST_DELEGATE_OneParam(FOnCreated, FLuaEnv&);
 
+        DECLARE_MULTICAST_DELEGATE_OneParam(FOnDestroyed, FLuaEnv&);
+
         DECLARE_DELEGATE_RetVal_FourParams(bool, FLuaFileLoader, const FLuaEnv& /* Env */, const FString& /* FilePath */, TArray<uint8>&/* Data */, FString&/* RealFilePath */);
 
         static FOnCreated OnCreated;
+
+        static FOnDestroyed OnDestroyed;
 
         FLuaEnv();
 
