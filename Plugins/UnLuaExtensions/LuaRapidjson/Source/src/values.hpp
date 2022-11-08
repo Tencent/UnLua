@@ -193,9 +193,9 @@ namespace values {
 			{
 				return Ctx(&arrayFn);
 			}
-			void submit(lua_State* L)
+			void submit(lua_State* InL)
 			{
-				fn_(L, this);
+				fn_(InL, this);
 			}
 
 			int index_;

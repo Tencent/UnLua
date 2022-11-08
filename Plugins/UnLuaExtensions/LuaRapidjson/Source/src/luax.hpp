@@ -46,7 +46,7 @@ namespace luax {
 		if (std::modf(lua_tonumber(L, idx), &intpart) == 0.0)
 		{
 			if (std::numeric_limits<lua_Integer>::min() <= intpart
-				&& intpart <= std::numeric_limits<lua_Integer>::max())
+				&& intpart <= (double)std::numeric_limits<lua_Integer>::max())
 			{
 				if (out)
 					*out = static_cast<int64_t>(intpart);
