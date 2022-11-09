@@ -190,6 +190,7 @@ public class Lua : ModuleRules
 
         PublicDefinitions.Add("LUA_USE_MACOSX");
         PublicAdditionalLibraries.Add(libFile);
+        RuntimeDependencies.Add(libFile);
     }
 
     private void BuildForIOS()
