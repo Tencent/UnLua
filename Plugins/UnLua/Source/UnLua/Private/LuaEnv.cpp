@@ -252,7 +252,7 @@ namespace UnLua
         if (!Actor)
             Actor = Cast<APawn>(Object->GetOuter());
 
-        if (!Actor || Actor->GetLocalRole() < ROLE_AutonomousProxy)
+        if (!Actor)
             return false;
 
         CandidateInputComponents.AddUnique((UInputComponent*)Object);
