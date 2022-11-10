@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.1]
+
+### Added
+- 支持UE5.1
+- 增加 `UnLua::PrintCallStack(L)` 的接口来方便在IDE里断点直接执行输出lua堆栈
+- 更多容器和结构体相关的访问保护，增加[悬垂指针检查](./Docs/CN/Settings.md#启用类型检查)选项
+- `UnLuaExtensions` 新增可选集成 [lua-protobuf](https://github.com/starwing/lua-protobuf) 和 [lua-rapidjson](https://github.com/xpol/lua-rapidjson)
+- 增加 `FLuaEnv` 的 `OnDestroyed` 事件
+
+### Fixed
+- Lua报错输出脚本路径如果太长会被截断
+- xxx:IsA(UE.UClass) 会报错
+- Lua覆写Out返回值时无法返回nil [#539](https://github.com/Tencent/UnLua/issues/539)
+- 安装 `Apple ProRes Media` 后会导致UnLua启动崩溃 [#534](https://github.com/Tencent/UnLua/issues/534)
+- Actor的Struct成员变量在Lua里引用，释放后仍旧可以访问 [#517](https://github.com/Tencent/UnLua/issues/517)
+- 在 `print` 时参数过多可能会导致Lua栈溢出的问题 [#543](https://github.com/Tencent/UnLua/pull/543)
+- 找不到 `UnLua.Input` 模块时不会再check了
+- 访问非TArray的结构体数组报错 [#554](https://github.com/Tencent/UnLua/issues/554)
+- 服务端 `Possess` 后，新角色上的 `InputComponent` 输入绑定无效 [#553](https://github.com/Tencent/UnLua/issues/553)
+
+### Changed
+- 在[启用类型检查](./Docs/CN/Settings.md#启用类型检查)时，需要依次返回返回值和Out参数，而不能像旧版本一样忽略不返回
+
 ## [2.3.0] - 2022-10-8
 
 ### Added
