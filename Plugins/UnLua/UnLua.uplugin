@@ -1,7 +1,7 @@
 {
     "FileVersion": 3,
     "Version": 2,
-    "VersionName": "2.3.0",
+    "VersionName": "2.3.1",
     "FriendlyName": "UnLua",
     "Description": "Lua scripting plugin",
     "Category": "Scripting",
