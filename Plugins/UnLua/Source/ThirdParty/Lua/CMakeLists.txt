@@ -52,6 +52,18 @@ elseif(APPLE)
             ${LUA_CORE}
         )
     endif()
+elseif(PS5)
+    add_definitions(-DLUA_NO_OS_EXECUTE)
+    add_definitions(-DLUA_NO_OS_TMPNAME)
+    add_definitions(-DLUA_NO_IO_TMPFILE)
+    add_library(Lua STATIC
+        ${LUA_CORE}
+    )
+    target_include_directories(Lua SYSTEM
+        PRIVATE ${SCE_PROSPERO_SDK_DIR}/target/include
+        PRIVATE ${SCE_PROSPERO_SDK_DIR}/target/include_common
+        PRIVATE ${LUA_SRC_PATH}/../src-ps5
+    )
 else()
     add_library(Lua STATIC
         ${LUA_CORE}
