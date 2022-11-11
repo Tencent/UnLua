@@ -1282,7 +1282,7 @@ public:
             UScriptStruct* ScriptStruct = CurrentClassDesc->AsScriptStruct();
             if (!ScriptStruct || !ScriptStruct->IsChildOf(StructProperty->Struct))
             {
-                ErrorMsg = FString::Printf(TEXT("struct %s needed but got %s"), *StructProperty->Struct->GetName(), *ScriptStruct->GetName());
+                ErrorMsg = FString::Printf(TEXT("struct %s needed but got %s"), *StructProperty->Struct->GetName(), ScriptStruct? *ScriptStruct->GetName(): TEXT("nil"));
                 return false;
             }
         }
