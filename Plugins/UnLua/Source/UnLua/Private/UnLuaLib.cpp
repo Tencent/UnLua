@@ -13,6 +13,11 @@ namespace UnLua
         {
             const auto ArgCount = lua_gettop(L);
             FString Message;
+            if (!lua_checkstack(L, ArgCount))
+            {
+            	luaL_error(L, "too many arguments, stack overflow");
+            	return Message;
+            }
             for (int ArgIndex = 1; ArgIndex <= ArgCount; ArgIndex++)
             {
                 if (ArgIndex > 1)

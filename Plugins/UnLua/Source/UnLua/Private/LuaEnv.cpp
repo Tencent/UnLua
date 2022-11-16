@@ -37,6 +37,7 @@ namespace UnLua
 
     TMap<lua_State*, FLuaEnv*> FLuaEnv::AllEnvs;
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
+    FLuaEnv::FOnCreated FLuaEnv::OnDestroyed;
 
     FLuaEnv::FLuaEnv()
         : bStarted(false)
@@ -98,7 +99,7 @@ namespace UnLua
         else
         {
 #if 504 == LUA_VERSION_NUM
-            lua_gc(L, LUA_GCGEN);
+            lua_gc(L, LUA_GCGEN, 0, 0);
 #else
             // default Lua GC config in UnLua
             lua_gc(L, LUA_GCSETPAUSE, 100);
@@ -131,6 +132,7 @@ namespace UnLua
 
     FLuaEnv::~FLuaEnv()
     {
+        OnDestroyed.Broadcast(*this);
         lua_close(L);
         AllEnvs.Remove(L);
 
@@ -252,7 +254,7 @@ namespace UnLua
         if (!Actor)
             Actor = Cast<APawn>(Object->GetOuter());
 
-        if (!Actor || Actor->GetLocalRole() < ROLE_AutonomousProxy)
+        if (!Actor)
             return false;
 
         CandidateInputComponents.AddUnique((UInputComponent*)Object);

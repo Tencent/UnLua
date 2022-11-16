@@ -591,16 +591,6 @@ UnLua::AddType(#Name, UnLua::GetTypeInterface<Type>()); \
         { \
             UnLua::ExportEnum(this);
 
-#define BEGIN_EXPORT_ENUM_EX(Enum, Name) \
-    DEFINE_NAMED_TYPE(#Name, Enum) \
-    static struct FExported##Name : public UnLua::FExportedEnum \
-    { \
-        typedef Enum EnumType; \
-        FExported##Name(const FString &InName) \
-            : UnLua::FExportedEnum(InName) \
-        { \
-            UnLua::ExportEnum(this);
-
 #define ADD_ENUM_VALUE(Value) \
             NameValues.Add(#Value, Value);
 

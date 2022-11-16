@@ -12,22 +12,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "DefaultParamCollection.h"
-#include "CoreUObject.h"
+#pragma once
 
-TMap<FName, FFunctionCollection> GDefaultParamCollection;
+#include "Issue554Test.generated.h"
 
-PRAGMA_DISABLE_OPTIMIZATION
-
-void CreateDefaultParamCollection()
+USTRUCT(BlueprintType)
+struct FIssue554Struct
 {
-    static bool CollectionCreated = false;
-    if (!CollectionCreated)
-    {
-        CollectionCreated = true;
+    GENERATED_BODY()
+    
+    UPROPERTY()
+    float Pitch{-34.0f};
 
-#include "DefaultParamCollection.inl"
-    }
-}
+    UPROPERTY()
+    float Yaw{270.0f};
+};
 
-PRAGMA_ENABLE_OPTIMIZATION
+UCLASS()
+class UIssue554Class : public UObject
+{
+    GENERATED_BODY()
+public:
+    UPROPERTY()
+    FIssue554Struct Struct;
+};

@@ -710,7 +710,11 @@ class TPropertyArrayPushPolicy<T, true>
 {
 public:
     static bool CheckMetaTable(const char *MetatableName) { return MetatableName != nullptr; }
-    static void PrePushArray(lua_State *L, const char *MetatableName) { luaL_getmetatable(L, MetatableName); }
+    static void PrePushArray(lua_State *L, const char *MetatableName)
+    {
+        const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+        Env.GetClassRegistry()->PushMetatable(L, MetatableName);
+    }
     static void PostPushArray(lua_State *L) { lua_pop(L, 1); }
 
     static void PostPushSingleElement(lua_State *L)

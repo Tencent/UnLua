@@ -12,22 +12,29 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "DefaultParamCollection.h"
-#include "CoreUObject.h"
+#pragma once
+#include "UnLuaInterface.h"
+#include "Issue556Test.generated.h"
 
-TMap<FName, FFunctionCollection> GDefaultParamCollection;
-
-PRAGMA_DISABLE_OPTIMIZATION
-
-void CreateDefaultParamCollection()
+USTRUCT(BlueprintType)
+struct FHexHandle
 {
-    static bool CollectionCreated = false;
-    if (!CollectionCreated)
+    GENERATED_BODY()
+    
+    UPROPERTY()
+    int32 Value;
+};
+
+UCLASS()
+class AIssue556Actor : public AActor, public IUnLuaInterface
+{
+    GENERATED_BODY()
+public:
+    virtual FString GetModuleName_Implementation() const override
     {
-        CollectionCreated = true;
-
-#include "DefaultParamCollection.inl"
+        return TEXT("Tests.Regression.Issue556.Issue556Actor");
     }
-}
 
-PRAGMA_ENABLE_OPTIMIZATION
+    UFUNCTION(BlueprintImplementableEvent)
+    void PlayerViewChanged(const TArray<FHexHandle>& AddHexHandles, const TArray<FHexHandle>& RemoveHexHandles);
+};

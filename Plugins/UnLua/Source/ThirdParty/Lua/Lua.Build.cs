@@ -171,7 +171,7 @@ public class Lua : ModuleRules
         var buildFile = Path.Combine(buildDir, m_LibName);
         File.Copy(buildFile, libFile, true);
     }
-    
+
     private void BuildForMac()
     {
         var abiName = Target.Architecture;
@@ -190,6 +190,7 @@ public class Lua : ModuleRules
 
         PublicDefinitions.Add("LUA_USE_MACOSX");
         PublicAdditionalLibraries.Add(libFile);
+        RuntimeDependencies.Add(libFile);
     }
 
     private void BuildForIOS()
@@ -209,6 +210,38 @@ public class Lua : ModuleRules
         }
 
         PublicAdditionalLibraries.Add(libFile);
+    }
+
+    private void BuildForPS5()
+    {
+        var libFile = GetLibraryPath();
+        PublicAdditionalLibraries.Add(libFile);
+        PublicIncludePaths.Add(Path.Combine(ModuleDirectory, m_LuaDirName, "src-ps5"));
+
+        if (File.Exists(libFile))
+            return;
+
+        var sceRootDir = Environment.GetEnvironmentVariable("SCE_ROOT_DIR");
+        if (string.IsNullOrEmpty(sceRootDir))
+            throw new BuildException("SCE_ROOT_DIR environment variable needed.");
+
+        var sceSdkDir = Environment.GetEnvironmentVariable("SCE_PROSPERO_SDK_DIR");
+        if (string.IsNullOrEmpty(sceSdkDir))
+            throw new BuildException("SCE_PROSPERO_SDK_DIR environment variable needed.");
+
+        EnsureDirectoryExists(libFile);
+        var sysRoot = Path.Combine(sceSdkDir, @"target");
+        var clangPath = Path.Combine(sceSdkDir, @"host_tools/bin/prospero-clang.exe");
+        var clangPlusPlusPath = Path.Combine(sceSdkDir, @"host_tools/bin/prospero-clang.exe");
+        var arPath = Path.Combine(sceSdkDir, @"host_tools/bin/prospero-llvm-ar.exe");
+        var args = new Dictionary<string, string>
+        {
+            { "CMAKE_TOOLCHAIN_FILE", Path.Combine(sceRootDir, @"Prospero\Tools\CMake\PS5.cmake") },
+            { "PS5", "1"}
+        };
+        var buildDir = CMake(args);
+        var buildFile = Path.Combine(buildDir, m_Config, m_LibName);
+        File.Copy(buildFile, libFile, true);
     }
 
     #endregion
@@ -283,7 +316,7 @@ public class Lua : ModuleRules
                 foreach (var arg in extraArgs)
                     writer.Write(" -D{0}={1}", arg.Key, arg.Value);
                 writer.WriteLine();
-                writer.WriteLine("cd ../.."); 
+                writer.WriteLine("cd ../..");
                 writer.WriteLine("cmake --build {0}/build --config {1}", m_LuaDirName, m_Config);
             }
 
@@ -390,6 +423,7 @@ public class Lua : ModuleRules
                 return "Xcode";
             return "Unix Makefiles";
         }
+
         return null;
     }
 
