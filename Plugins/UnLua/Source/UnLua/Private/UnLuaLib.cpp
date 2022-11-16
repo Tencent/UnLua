@@ -50,7 +50,10 @@ namespace UnLua
 
         static int HotReload(lua_State* L)
         {
-            luaL_dostring(L, "require('UnLua.HotReload').reload()");
+            if (luaL_dostring(L, "require('UnLua.HotReload').reload()") != 0)
+            {
+                LogError(L);
+            }
             return 0;
         }
 
