@@ -72,9 +72,11 @@ static int32 TArray_Pairs(lua_State* L)
     if (NumParams != 1)
         return luaL_error(L, "invalid parameters");
 
-    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)GetCppInstanceFast(L, 1);
     if (!Array)
         return 0;
+
+    TArray_Guard(L, Array);
 
     lua_pushcfunction(L, TArray_Enumerable);
     FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)lua_newuserdata(L, sizeof(FLuaArray::FLuaArrayEnumerator*));

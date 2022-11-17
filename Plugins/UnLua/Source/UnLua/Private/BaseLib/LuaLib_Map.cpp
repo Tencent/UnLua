@@ -85,7 +85,10 @@ static int32 TMap_Pairs(lua_State* L)
     if (NumParams != 1)
         return luaL_error(L, "invalid parameters");
 
-    FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
+    FLuaMap* Map = (FLuaMap*)GetCppInstanceFast(L, 1);
+    if (!Map)
+        return 0;
+
     TMap_Guard(L, Map);
 
     lua_pushcfunction(L, TMap_Enumerable);

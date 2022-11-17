@@ -70,12 +70,12 @@ public class UnLua : ModuleRules
         var configFileReference = new FileReference(configFilePath);
         var configFile = FileReference.Exists(configFileReference) ? new ConfigFile(configFileReference) : new ConfigFile();
         var config = new ConfigHierarchy(new[] { configFile });
-        const string Section = "/Script/UnLuaEditor.UnLuaEditorSettings";
+        const string section = "/Script/UnLuaEditor.UnLuaEditorSettings";
 
         Action<string, string, bool> loadBoolConfig = (key, macro, defaultValue) =>
         {
             bool flag;
-            if (!config.GetBool(Section, key, out flag))
+            if (!config.GetBool(section, key, out flag))
                 flag = defaultValue;
             PublicDefinitions.Add(string.Format("{0}={1}", macro, (flag ? "1" : "0")));
         };
@@ -91,5 +91,12 @@ public class UnLua : ModuleRules
         loadBoolConfig("bLegacyReturnOrder", "UNLUA_LEGACY_RETURN_ORDER", false);
         loadBoolConfig("bLegacyBlueprintPath", "UNLUA_LEGACY_BLUEPRINT_PATH", false);
         loadBoolConfig("bLegacyAllowUTF8WithBOM", "UNLUA_LEGACY_ALLOW_BOM", false);
+
+        string hotReloadMode;
+        if (!config.GetString(section, "HotReloadMode", out hotReloadMode))
+            hotReloadMode = "Manual";
+
+        var withHotReload = hotReloadMode != "Never";
+        PublicDefinitions.Add("UNLUA_WITH_HOT_RELOAD=" + (withHotReload ? "1" : "0"));
     }
 }
