@@ -38,8 +38,8 @@ struct FUnLuaTest_Issue554 : FUnLuaTestBase
         lua_setglobal(L, "World");
 
         const auto Chunk = R"(
-            local Test = NewObject(UE.UTestClass)
-	        local Element = Test.Param[1]
+            local Test = NewObject(UE.UIssue554Class)
+	        local Element = Test.Struct[1]
             return Element.Pitch
         )";
         UnLua::RunChunk(L, Chunk);
