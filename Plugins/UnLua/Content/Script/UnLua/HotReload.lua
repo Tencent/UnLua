@@ -338,7 +338,7 @@ local function match_upvalues(value_info_map, old_upvalues)
                         if not ret[id] then
                             local replaced_upvalue = nil
                             if old_upvalues[name] ~= nil then
-                                replaced_upvalue = old_upvalues[name]
+                                replaced_upvalue = new_upvalue
                             else
                                 -- 新增的upvalue
                                 print("ADD NEW UPVALUE : ", tostring(new), name, tostring(new_upvalue))
@@ -556,9 +556,9 @@ local function reload_modules(module_names)
     end
 
     local tmp_modules = {}
-    for k, v in pairs(loaded_modules) do
-        if module_names[k] ~= nil then
-            tmp_modules[k] = v
+    for _, module_name in ipairs(module_names) do
+        if loaded_modules[module_name] then
+            tmp_modules[module_name] = loaded_modules[module_name]
         end
     end
 
