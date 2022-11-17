@@ -34,5 +34,5 @@ class UIssue554Class : public UObject
     GENERATED_BODY()
 public:
     UPROPERTY()
-    FIssue554Struct Struct;
+    FIssue554Struct Struct[2];
 };
