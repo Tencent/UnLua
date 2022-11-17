@@ -90,4 +90,6 @@ namespace UnLua
      */
     UNLUA_API FString GetLuaCallStack(lua_State *L);
 
+    /* 在IDE断点调试窗口中直接运行UnLua::PrintCallStack(L)来打印当前堆栈 */
+    void PrintCallStack(lua_State* L);
 } // namespace UnLua
