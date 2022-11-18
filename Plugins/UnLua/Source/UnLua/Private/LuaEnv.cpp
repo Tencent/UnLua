@@ -77,6 +77,7 @@ namespace UnLua
         FunctionRegistry = new FFunctionRegistry(this);
         DelegateRegistry = new FDelegateRegistry(this);
         ContainerRegistry = new FContainerRegistry(this);
+        PropertyRegistry = new FPropertyRegistry(this);
         EnumRegistry = new FEnumRegistry(this);
         DanglingCheck = new FDanglingCheck(this);
         DeadLoopCheck = new FDeadLoopCheck(this);
@@ -142,6 +143,7 @@ namespace UnLua
         delete FunctionRegistry;
         delete ContainerRegistry;
         delete EnumRegistry;
+        delete PropertyRegistry;
         delete DanglingCheck;
         delete DeadLoopCheck;
 
@@ -223,6 +225,7 @@ namespace UnLua
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
+        PropertyRegistry->NotifyUObjectDeleted(Object);
         FunctionRegistry->NotifyUObjectDeleted(Object);
         if (Manager)
             Manager->NotifyUObjectDeleted(Object);

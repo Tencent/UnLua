@@ -137,7 +137,6 @@ namespace UnLua
                 EnvLocator = nullptr;
                 FClassRegistry::Cleanup();
                 FEnumRegistry::Cleanup();
-                GPropertyCreator.Cleanup();
 
                 for (const auto Class : TObjectRange<UClass>())
                 {

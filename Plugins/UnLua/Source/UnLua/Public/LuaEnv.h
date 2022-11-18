@@ -20,6 +20,7 @@
 #include "Registries/DelegateRegistry.h"
 #include "Registries/FunctionRegistry.h"
 #include "Registries/ContainerRegistry.h"
+#include "Registries/PropertyRegistry.h"
 #include "Registries/EnumRegistry.h"
 #include "UnLuaManager.h"
 #include "lua.hpp"
@@ -105,6 +106,8 @@ namespace UnLua
 
         FORCEINLINE FEnumRegistry* GetEnumRegistry() const { return EnumRegistry; }
 
+        FORCEINLINE FPropertyRegistry* GetPropertyRegistry() const { return PropertyRegistry; }
+
         FORCEINLINE FDanglingCheck* GetDanglingCheck() const { return DanglingCheck; }
 
         FORCEINLINE FDeadLoopCheck* GetDeadLoopCheck() const { return DeadLoopCheck; }
@@ -169,6 +172,7 @@ namespace UnLua
         FDelegateRegistry* DelegateRegistry;
         FFunctionRegistry* FunctionRegistry;
         FContainerRegistry* ContainerRegistry;
+        FPropertyRegistry* PropertyRegistry;
         FEnumRegistry* EnumRegistry;
         FDanglingCheck* DanglingCheck;
         FDeadLoopCheck* DeadLoopCheck;

@@ -21,7 +21,6 @@
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
 #include "ReflectionUtils/FieldDesc.h"
-#include "ReflectionUtils/PropertyCreator.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
 #ifdef __cplusplus
@@ -1773,108 +1772,4 @@ int32 ScriptStruct_Compare(lua_State *L)
     bool bResult = A && B ? ScriptStruct->CompareScriptStruct(A, B, /*PPF_None*/0) : false;
     lua_pushboolean(L, bResult);
     return 1;
-}
-
-/**
- * Create a type interface according to Lua parameter's type
- */
-TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index)
-{
-    if (Index < 0 && Index > LUA_REGISTRYINDEX)
-    {
-        int32 Top = lua_gettop(L);
-        Index = Top + Index + 1;
-    }
-
-    TSharedPtr<UnLua::ITypeInterface> TypeInterface;
-    int32 Type = lua_type(L, Index);
-    switch (Type)
-    {
-    case LUA_TBOOLEAN:
-        TypeInterface = GPropertyCreator.CreateBoolProperty();
-        break;
-    case LUA_TNUMBER:
-        TypeInterface = lua_isinteger(L, Index) > 0 ? GPropertyCreator.CreateIntProperty() : GPropertyCreator.CreateFloatProperty();
-        break;
-    case LUA_TSTRING:
-        TypeInterface = GPropertyCreator.CreateStringProperty();
-        break;
-    case LUA_TTABLE:
-        {
-            lua_pushstring(L, "__name");
-            Type = lua_rawget(L, Index);
-            if (Type == LUA_TSTRING)
-            {   
-                const char* Name = lua_tostring(L, -1);
-                FClassDesc *ClassDesc = UnLua::FClassRegistry::Find(Name);
-                if (ClassDesc)
-                {
-                    if (ClassDesc->IsClass())
-                    {
-                        UClass *Class = ClassDesc->AsClass();
-                        TypeInterface = GPropertyCreator.CreateObjectProperty(Class);
-                    }
-                    else
-                    {
-                        UScriptStruct *ScriptStruct = ClassDesc->AsScriptStruct();
-                        TypeInterface = GPropertyCreator.CreateStructProperty(ScriptStruct);
-                    }
-                }
-                else
-                {
-                    FEnumDesc *EnumDesc = UnLua::FEnumRegistry::Find(Name);
-                    if (EnumDesc)
-                    {
-                        TypeInterface = GPropertyCreator.CreateEnumProperty(EnumDesc->GetEnum());
-                    }
-                    else
-                    {
-                        TypeInterface = UnLua::FindTypeInterface(lua_tostring(L, -1));
-                    }
-                }
-            }
-            lua_pop(L, 1);
-        }
-        break;
-    case LUA_TUSERDATA:
-        {
-            // mt/nil
-            lua_getmetatable(L, Index);
-
-            if (lua_istable(L, -1))
-            {
-                // mt,mt.__name/nil
-                lua_getfield(L, -1, "__name");
-
-                if (lua_isstring(L, -1))
-                {
-                    const char* Name = lua_tostring(L, -1);
-
-                    FClassDesc* ClassDesc = UnLua::FClassRegistry::Find(Name);
-
-                    if (ClassDesc)
-                    {
-                        if (ClassDesc->IsClass())
-                        {
-                            UClass* Class = ClassDesc->AsClass();
-                            TypeInterface = GPropertyCreator.CreateObjectProperty(Class);
-                        }
-                        else
-                        {
-                            UScriptStruct* ScriptStruct = ClassDesc->AsScriptStruct();
-                            TypeInterface = GPropertyCreator.CreateStructProperty(ScriptStruct);
-                        }
-                    }
-                }
-
-                // mt
-                lua_pop(L, 1);
-            }
-
-            lua_pop(L, 1);
-        }
-        break;
-    }
-
-    return TypeInterface;
 }

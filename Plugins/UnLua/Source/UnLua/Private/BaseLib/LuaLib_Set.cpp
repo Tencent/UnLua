@@ -31,12 +31,13 @@ static int32 TSet_New(lua_State* L)
     if (NumParams != 2)
         return luaL_error(L, "invalid parameters");
 
-    TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
-    if (!TypeInterface)
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto ElementType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 2);
+    if (!ElementType)
         return luaL_error(L, "invalid element type");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
-    Registry->NewSet(L, TypeInterface, FLuaSet::OwnedBySelf);
+    Registry->NewSet(L, ElementType, FLuaSet::OwnedBySelf);
 
     return 1;
 }
@@ -159,7 +160,8 @@ static int32 TSet_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaSet* Set = (FLuaSet*)(GetCppInstanceFast(L, 1));
-    TSet_Guard(L, Set);
+    if (!Set)
+        return 0;
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Set);
