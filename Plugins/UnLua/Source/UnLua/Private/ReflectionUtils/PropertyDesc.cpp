@@ -1373,7 +1373,8 @@ public:
         }
 
         void* ValuePtr = (void*)Property->ContainerPtrToValuePtr<void>(ContainerPtr);
-        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ValuePtr, DelegateProperty, (UObject*)ContainerPtr);
+        UObject* Owner = Property->GetOwnerStruct()->IsA<UClass>() ? (UObject*)ContainerPtr : nullptr;
+        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ValuePtr, DelegateProperty, Owner);
         GetValueInternal(L, ValuePtr, bCreateCopy);
     }
 
@@ -1392,7 +1393,8 @@ public:
         }
 
         void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
-        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ValuePtr, DelegateProperty, (UObject*)ContainerPtr);
+        UObject* Owner = Property->GetOwnerStruct()->IsA<UClass>() ? (UObject*)ContainerPtr : nullptr;
+        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ValuePtr, DelegateProperty, Owner);
         return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
     }
     

@@ -34,16 +34,17 @@ static int32 TMap_New(lua_State* L)
     if (NumParams != 3)
         return luaL_error(L, "invalid parameters");
 
-    TSharedPtr<UnLua::ITypeInterface> KeyInterface(CreateTypeInterface(L, 2));
-    if (!KeyInterface)
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto KeyType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 2);
+    if (!KeyType)
         return luaL_error(L, "invalid key type");
 
-    TSharedPtr<UnLua::ITypeInterface> ValueInterface(CreateTypeInterface(L, 3));
-    if (!ValueInterface)
+    auto ValueType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 3);
+    if (!ValueType)
         return luaL_error(L, "invalid value type");
 
-    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
-    Registry->NewMap(L, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+    auto Registry = Env.GetContainerRegistry();
+    Registry->NewMap(L, KeyType, ValueType, FLuaMap::OwnedBySelf);
 
     return 1;
 }
@@ -281,7 +282,8 @@ static int32 TMap_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    TMap_Guard(L, Map);
+    if (!Map)
+        return 0;
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Map);

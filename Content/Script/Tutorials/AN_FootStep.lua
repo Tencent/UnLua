@@ -1,9 +1,9 @@
-local Screen = require "Tutorials.Screen"
-
+---@type AN_FootStep_C : UAnimNotify
 local M = UnLua.Class()
 
 function M:Received_Notify(MeshComp, Animation)
-    Screen.Print("FootStep")
+    print("foot step")
+    return true
 end
 
 return M

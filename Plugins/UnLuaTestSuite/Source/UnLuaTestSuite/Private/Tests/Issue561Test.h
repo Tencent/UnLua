@@ -13,26 +13,15 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #pragma once
+#include "Issue561Test.generated.h"
 
-#include "Issue554Test.generated.h"
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FIssue561Event);
 
 USTRUCT(BlueprintType)
-struct FIssue554Struct
+struct FIssue561Struct
 {
     GENERATED_BODY()
-    
-    UPROPERTY()
-    float Pitch{-34.0f};
 
-    UPROPERTY()
-    float Yaw{270.0f};
-};
-
-UCLASS()
-class UIssue554Class : public UObject
-{
-    GENERATED_BODY()
-public:
-    UPROPERTY()
-    FIssue554Struct Struct[2];
+    UPROPERTY(BlueprintAssignable)
+    FIssue561Event OnMouseEvent;
 };

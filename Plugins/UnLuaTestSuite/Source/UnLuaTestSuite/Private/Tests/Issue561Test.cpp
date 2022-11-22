@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 
-#include "Issue554Test.h"
+#include "Issue561Test.h"
 #include "LowLevel.h"
 #include "UnLuaSettings.h"
 #include "UnLuaTestCommon.h"
@@ -22,7 +22,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-struct FUnLuaTest_Issue554 : FUnLuaTestBase
+struct FUnLuaTest_Issue561 : FUnLuaTestBase
 {
     virtual bool InstantTest() override
     {
@@ -33,23 +33,17 @@ struct FUnLuaTest_Issue554 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto World = GetWorld();
-        UnLua::PushUObject(L, World);
-        lua_setglobal(L, "World");
-
         const auto Chunk = R"(
-            local Test = NewObject(UE.UIssue554Class)
-	        local Element = Test.Struct[1]
-            return Element.Pitch
+            local Struct1 = UE.FIssue561Struct()
+            local Struct2 = UE.FIssue561Struct()
+            Struct1.OnMouseEvent = Struct2.OnMouseEvent
         )";
         UnLua::RunChunk(L, Chunk);
-        const auto Result = lua_tonumber(L, -1);
-        RUNNER_TEST_EQUAL(Result, -34.0);
 
         return true;
     }
 };
 
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue554, TEXT("UnLua.Regression.Issue554 访问非TArray的结构体数组报错"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue561, TEXT("UnLua.Regression.Issue561 访问UStruct内部的委托会check"))
 
 #endif

@@ -15,7 +15,6 @@
 #pragma once
 
 #include "LuaArray.h"
-#include "ReflectionUtils/PropertyCreator.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 class FLuaMap
@@ -339,7 +338,7 @@ public:
         {
             FScriptArray *ScriptArray = new FScriptArray;
             //ArrayProperty->InitializeValue(ScriptArray);        // do nothing...
-            FLuaArray *LuaArray = new(OutArray) FLuaArray(ScriptArray, GPropertyCreator.CreateProperty(ValueInterface->GetUProperty()), FLuaArray::OwnedBySelf);
+            FLuaArray *LuaArray = new(OutArray) FLuaArray(ScriptArray, ValueInterface, FLuaArray::OwnedBySelf);
             int32 i = -1, Size = Map->Num();
             while (Size > 0)
             {

@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 
-#include "Issue554Test.h"
 #include "LowLevel.h"
 #include "UnLuaSettings.h"
 #include "UnLuaTestCommon.h"
@@ -22,7 +21,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-struct FUnLuaTest_Issue554 : FUnLuaTestBase
+struct FUnLuaTest_Issue562 : FUnLuaTestBase
 {
     virtual bool InstantTest() override
     {
@@ -33,23 +32,30 @@ struct FUnLuaTest_Issue554 : FUnLuaTestBase
     {
         FUnLuaTestBase::SetUp();
 
-        const auto World = GetWorld();
-        UnLua::PushUObject(L, World);
-        lua_setglobal(L, "World");
+        // 使用-binnedmalloc2来提高复现概率
 
-        const auto Chunk = R"(
-            local Test = NewObject(UE.UIssue554Class)
-	        local Element = Test.Struct[1]
-            return Element.Pitch
+        const auto Chunk1 = R"(
+            local InterfaceClass = UE.UClass.Load('/UnLuaTestSuite/Tests/Regression/Issue562/BPI_Issue562.BPI_Issue562_C')
+            local Array = UE.TArray(InterfaceClass)
         )";
-        UnLua::RunChunk(L, Chunk);
-        const auto Result = lua_tonumber(L, -1);
-        RUNNER_TEST_EQUAL(Result, -34.0);
+        UnLua::RunChunk(L, Chunk1);
+
+        const auto Before = FindObject<UClass>(ANY_PACKAGE, TEXT("BPI_Issue562_C"));
+        RUNNER_TEST_NOT_NULL(Before);
+
+        CollectGarbage(RF_NoFlags, true);
+        const auto After = FindObject<UClass>(ANY_PACKAGE, TEXT("BPI_Issue562_C"));
+        RUNNER_TEST_NULL(After);
+
+        lua_gc(L, LUA_GCCOLLECT);
+        lua_gc(L, LUA_GCCOLLECT);
+
+        // LogUObjectBase: Error: Object flags are invalid or either Class or Outer is misaligned
 
         return true;
     }
 };
 
-IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue554, TEXT("UnLua.Regression.Issue554 访问非TArray的结构体数组报错"))
+IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue562, TEXT("UnLua.Regression.Issue562 容器元素为蓝图类型时，在蓝图Class被提前UE回收后，会导致容器在luagc时报错"))
 
 #endif

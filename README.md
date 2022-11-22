@@ -51,6 +51,7 @@
   * [10_Replications](Content/Script/Tutorials/10_Replications.lua) 覆盖网络复制事件
   * [11_ReleaseUMG](Content/Script/Tutorials/11_ReleaseUMG.lua) 释放UMG相关对象
   * [12_CustomLoader](Content/Script/Tutorials/12_CustomLoader.lua) 自定义加载器
+  * [13_AnimNotify](Content/Script/Tutorials/AN_FootStep.lua) 动画通知
 
 # 最佳实践示例
 

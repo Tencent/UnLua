@@ -40,6 +40,10 @@ public:
     UPROPERTY(Config, EditAnywhere, Category="Runtime")
     bool DanglingCheck = false;
 
+    /** Whether to print all Lua env stacks on crash. */
+    UPROPERTY(Config, EditAnywhere, Category="Runtime")
+    bool bPrintLuaStackOnSystemError = true;
+
     /** Class of LuaEnvLocator, which handles lua env locating for each UObject. */
     UPROPERTY(Config, EditAnywhere, Category="Runtime", Meta=(AllowAbstract="false"))
     TSubclassOf<ULuaEnvLocator> EnvLocatorClass = ULuaEnvLocator::StaticClass();

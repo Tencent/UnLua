@@ -31,12 +31,13 @@ static int32 TArray_New(lua_State* L)
     if (NumParams != 2)
         return luaL_error(L, "invalid parameters");
 
-    TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
-    if (!TypeInterface)
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto ElementType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 2);
+    if (!ElementType)
         return luaL_error(L, "failed to create TArray");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
-    Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
+    Registry->NewArray(L, ElementType, FLuaArray::OwnedBySelf);
     return 1;
 }
 
@@ -502,7 +503,8 @@ static int32 TArray_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
-    TArray_Guard(L, Array);
+    if (!Array)
+        return 0;
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Array);
