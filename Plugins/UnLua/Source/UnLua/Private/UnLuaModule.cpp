@@ -25,6 +25,7 @@
 
 #include "Engine/World.h"
 #include "UnLuaModule.h"
+#include "ClassConstructorHook.h"
 #include "DefaultParamCollection.h"
 #include "GameDelegates.h"
 #include "LuaEnvLocator.h"
@@ -179,6 +180,8 @@ namespace UnLua
 
         virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
         {
+            FClassConstructorHook::Get().NotifyUObjectDeleted(Object);
+
             // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectDeleted : %p"), Object);
             if (!bIsActive)
                 return;

@@ -18,10 +18,10 @@
 #include "Animation/AnimInstance.h"
 #include "Engine/LevelScriptActor.h"
 #include "UnLuaManager.h"
+#include "ClassConstructorHook.h"
 #include "LowLevel.h"
 #include "LuaEnv.h"
 #include "UnLuaLegacy.h"
-#include "UnLuaInterface.h"
 #include "LuaCore.h"
 #include "LuaFunction.h"
 #include "ObjectReferencer.h"
@@ -48,6 +48,21 @@ UUnLuaManager::UUnLuaManager()
     InputVectorAxisFunc = Class->FindFunctionByName(FName("InputVectorAxis"));
     InputGestureFunc = Class->FindFunctionByName(FName("InputGesture"));
     AnimNotifyFunc = Class->FindFunctionByName(FName("TriggerAnimNotify"));
+}
+
+void UUnLuaManager::ConstructObject(const FObjectInitializer& Initializer)
+{
+    if (!IsInGameThread())
+        return;
+    const auto Class = Initializer.GetClass();
+    const auto BindInfo = Classes.Find(Class);
+    if (!BindInfo || BindInfo->ConstructorRef == LUA_NOREF)
+        return;
+
+    const auto L = Env->GetMainState();
+    if (!PushFunction(L, Initializer.GetObj(), BindInfo->ConstructorRef))
+        return;
+    ::CallFunction(L, 1, 0);
 }
 
 /**
@@ -125,6 +140,7 @@ void UUnLuaManager::NotifyUObjectDeleted(const UObjectBase* Object)
 
     const auto L = Env->GetMainState();
     luaL_unref(L, LUA_REGISTRYINDEX, BindInfo->TableRef);
+    luaL_unref(L, LUA_REGISTRYINDEX, BindInfo->ConstructorRef);
     Classes.Remove(Class);
 }
 
@@ -284,6 +300,16 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
     }
 
     lua_pushvalue(L, -1);
+    int ConstructorRef;
+    if (lua_getfield(L, -1, "Construct") == LUA_TFUNCTION)
+    {
+        ConstructorRef = luaL_ref(L, LUA_REGISTRYINDEX);
+    }
+    else
+    {
+        ConstructorRef = LUA_NOREF;
+        lua_pop(L, 1);
+    }
     const auto Ref = luaL_ref(L, LUA_REGISTRYINDEX);
     lua_settop(L, Top);
 
@@ -291,6 +317,8 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
     BindInfo.Class = Class;
     BindInfo.ModuleName = InModuleName;
     BindInfo.TableRef = Ref;
+    BindInfo.ConstructorRef = ConstructorRef;
+    FClassConstructorHook::Get().Hook(Class);
 
     UnLua::LowLevel::GetFunctionNames(Env->GetMainState(), Ref, BindInfo.LuaFunctions);
     ULuaFunction::GetOverridableFunctions(Class, BindInfo.UEFunctions);

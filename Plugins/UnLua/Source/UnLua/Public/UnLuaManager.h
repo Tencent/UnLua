@@ -36,6 +36,8 @@ public:
 
     UUnLuaManager();
 
+    void ConstructObject(const FObjectInitializer& Initializer);
+
     bool Bind(UObject *Object, const TCHAR *InModuleName, int32 InitializerTableRef = LUA_NOREF);
 
     void NotifyUObjectDeleted(const UObjectBase *Object);
@@ -96,6 +98,7 @@ private:
         UClass* Class;
         FString ModuleName;
         int TableRef;
+        int ConstructorRef;
         TSet<FName> LuaFunctions;
         TMap<FName, UFunction*> UEFunctions;
     };
