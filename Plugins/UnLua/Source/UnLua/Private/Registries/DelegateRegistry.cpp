@@ -56,6 +56,8 @@ namespace UnLua
             else
                 Unbind(Pair.Key);
             Delegates.Remove(Pair.Key);
+            if (Pair.Value.bDeleteOnRemove)
+                delete (FScriptDelegate*)Pair.Key;
         }
 
         TArray<FLuaDelegatePair> ToRemove;
@@ -78,6 +80,21 @@ namespace UnLua
                 Handler->Reset();
             }
         }
+    }
+
+    FScriptDelegate* FDelegateRegistry::Register(FScriptDelegate* Delegate, FDelegateProperty* Property)
+    {
+        auto Cloned = new FScriptDelegate();
+        *Cloned = *Delegate;
+        FDelegateInfo NewInfo;
+        NewInfo.Property = Property;
+        NewInfo.Desc = nullptr;
+        NewInfo.SignatureFunction = CastField<FDelegateProperty>(Property)->SignatureFunction;
+        NewInfo.bDeleteOnRemove = true;
+        NewInfo.bIsMulticast = false;
+        NewInfo.Owner = nullptr;
+        Delegates.Add(Cloned, NewInfo);
+        return Cloned;
     }
 
     void FDelegateRegistry::NotifyHandlerBeginDestroy(ULuaDelegateHandler* Handler)
@@ -103,6 +120,7 @@ namespace UnLua
             FDelegateInfo NewInfo;
             NewInfo.Property = Property;
             NewInfo.Desc = nullptr;
+            NewInfo.bDeleteOnRemove = false;
             if (const auto MulticastProperty = CastField<FMulticastDelegateProperty>(Property))
             {
                 NewInfo.SignatureFunction = MulticastProperty->SignatureFunction;

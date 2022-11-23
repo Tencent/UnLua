@@ -1276,9 +1276,20 @@ public:
             return false;
         }
 
+        auto DelegateRegistry = UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry();
         void* ValuePtr = Property->ContainerPtrToValuePtr<void>(ContainerPtr);
         FScriptDelegate* ScriptDelegate = DelegateProperty->GetPropertyValuePtr(ValuePtr);
-        UnLua::FLuaEnv::FindEnvChecked(L).GetDelegateRegistry()->Register(ScriptDelegate, DelegateProperty, ScriptDelegate->GetUObject());
+
+        // https://github.com/Tencent/UnLua/issues/566
+        if (Property->GetOwner<UFunction>())
+        {
+            ValuePtr = DelegateRegistry->Register(ScriptDelegate, DelegateProperty);
+            const auto Ret = SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
+            *ScriptDelegate = *(FScriptDelegate*)ValuePtr;
+            return Ret;
+        }
+
+        DelegateRegistry->Register(ScriptDelegate, DelegateProperty, ScriptDelegate->GetUObject());
         return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
     }
     

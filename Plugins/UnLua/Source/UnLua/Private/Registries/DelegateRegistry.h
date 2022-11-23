@@ -59,6 +59,8 @@ namespace UnLua
 
         void OnPostGarbageCollect();
 
+        FScriptDelegate* Register(FScriptDelegate* Delegate, FDelegateProperty* Property);
+
         void Register(void* Delegate, FProperty* Property, UObject* Owner);
 
         void Execute(const ULuaDelegateHandler* Handler, void* Params);
@@ -98,6 +100,7 @@ namespace UnLua
             TWeakObjectPtr<UObject> Owner;
             TSet<TWeakObjectPtr<ULuaDelegateHandler>> Handlers;
             bool bIsMulticast;
+            bool bDeleteOnRemove;
         };
 
         TMap<void*, FDelegateInfo> Delegates;
