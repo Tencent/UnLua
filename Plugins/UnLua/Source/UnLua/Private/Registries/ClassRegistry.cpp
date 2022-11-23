@@ -25,20 +25,21 @@ extern int32 UObject_Delete(lua_State* L);
 
 namespace UnLua
 {
-    TMap<UStruct*, FClassDesc*> FClassRegistry::Classes;
-    TMap<FName, FClassDesc*> FClassRegistry::Name2Classes;
-
     FClassRegistry::FClassRegistry(FLuaEnv* Env)
         : Env(Env)
     {
     }
 
-    FClassRegistry* FClassRegistry::Find(const lua_State* L)
+    FClassRegistry::~FClassRegistry()
     {
-        const auto Env = FLuaEnv::FindEnv(L);
-        if (Env == nullptr)
-            return nullptr;
-        return Env->GetClassRegistry();
+        for (const auto Pair : Name2Classes)
+            delete Pair.Value;
+    }
+
+    void FClassRegistry::Initialize()
+    {
+        Register("UObject");
+        Register("UClass");
     }
 
     FClassDesc* FClassRegistry::Find(const char* TypeName)
@@ -101,20 +102,6 @@ namespace UnLua
 
         const auto Ret = RegisterInternal(Type, MetatableName);
         return Ret;
-    }
-
-    bool FClassRegistry::StaticUnregister(const UObjectBase* Type)
-    {
-        FClassDesc* ClassDesc;
-        if (!Classes.RemoveAndCopyValue((UStruct*)Type, ClassDesc))
-            return false;
-        ClassDesc->UnLoad();
-        for (auto Pair : FLuaEnv::AllEnvs)
-        {
-            auto Registry = Pair.Value->GetClassRegistry();
-            Registry->Unregister(ClassDesc, true);
-        }
-        return true;
     }
 
     bool FClassRegistry::PushMetatable(lua_State* L, const char* MetatableName)
@@ -225,7 +212,14 @@ namespace UnLua
         lua_setmetatable(L, -2);
 
         TArray<FClassDesc*> ClassDescChain;
-        ClassDesc->GetInheritanceChain(ClassDescChain);
+        ClassDescChain.Add(ClassDesc);
+
+        UStruct* SuperStruct = ClassDesc->AsStruct()->GetInheritanceSuper();
+        while (SuperStruct)
+        {
+            ClassDescChain.Add(RegisterReflectedType(SuperStruct));
+            SuperStruct = SuperStruct->GetInheritanceSuper();
+        }
 
         TArray<IExportedClass*> ExportedClasses;
         for (int32 i = ClassDescChain.Num() - 1; i > -1; --i)
@@ -274,14 +268,6 @@ namespace UnLua
             return;
         Desc->UnLoad();
         Unregister(Desc, true);
-    }
-
-    void FClassRegistry::Cleanup()
-    {
-        for (const auto Pair : Name2Classes)
-            delete Pair.Value;
-        Name2Classes.Empty();
-        Classes.Empty();
     }
 
     void FClassRegistry::NotifyUObjectDeleted(UObject* Object)

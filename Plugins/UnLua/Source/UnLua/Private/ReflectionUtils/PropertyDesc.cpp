@@ -1113,20 +1113,8 @@ public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
     {
-        FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
-        StructSize = ClassDesc->GetSize();
-        UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
-
-        //ClassDesc->AddRef();
-    }
-
-    FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
-        : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
-    {
-        FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
-        StructSize = ClassDesc->GetSize();
-        UserdataPadding = ClassDesc->GetUserdataPadding();
-        bFirstPropOfScriptStruct = false;
+        StructSize = FClassDesc::CalculateSize(StructProperty->Struct);
+        UserdataPadding = FClassDesc::CalculateUserdataPadding(StructProperty->Struct);
     }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
@@ -1219,7 +1207,7 @@ public:
                 return false;
             }
 
-            FClassDesc* CurrentClassDesc = UnLua::FClassRegistry::Find(MetatableName);
+            FClassDesc* CurrentClassDesc = UnLua::FLuaEnv::FindEnvChecked(L).GetClassRegistry()->Find(MetatableName);
             if (!CurrentClassDesc)
             {
                 ErrorMsg = FString::Printf(TEXT("metatable of userdata needed in registry but got no found"));

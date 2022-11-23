@@ -96,9 +96,6 @@ namespace UnLua
             EnvLocator->RemoveFromRoot();
             EnvLocator = nullptr;
 
-            FClassRegistry::Cleanup();
-            FEnumRegistry::Cleanup();
-
             GUObjectArray.RemoveUObjectCreateListener(this);
             GUObjectArray.RemoveUObjectDeleteListener(this);
         }
@@ -203,11 +200,6 @@ namespace UnLua
         virtual void NotifyUObjectDeleted(const UObjectBase* Object, int32 Index) override
         {
             // UE_LOG(LogTemp, Log, TEXT("NotifyUObjectDeleted : %p"), Object);
-
-            if (FClassRegistry::StaticUnregister(Object))
-                return;
-
-            FEnumRegistry::StaticUnregister(Object);
         }
 
         virtual void OnUObjectArrayShutdown() override

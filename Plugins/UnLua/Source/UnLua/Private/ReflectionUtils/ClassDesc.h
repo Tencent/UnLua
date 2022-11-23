@@ -16,6 +16,11 @@
 
 #include "CoreUObject.h"
 
+namespace UnLua
+{
+    class FLuaEnv;
+}
+
 class FPropertyDesc;
 class FFunctionDesc;
 class FFieldDesc;
@@ -72,13 +77,15 @@ public:
 
     FORCEINLINE TSharedPtr<FFunctionDesc> GetFunction(int32 Index) { return Index > INDEX_NONE && Index < Functions.Num() ? Functions[Index] : nullptr; }
 
-    TSharedPtr<FFieldDesc> RegisterField(FName FieldName, FClassDesc *QueryClass = nullptr);
-
-    void GetInheritanceChain(TArray<FClassDesc*>& Chain);
+    TSharedPtr<FFieldDesc> RegisterField(UnLua::FLuaEnv* Env, FName FieldName, FClassDesc* QueryClass = nullptr);
 
     void Load();
     
     void UnLoad();
+
+    static int32 CalculateSize(UStruct* Struct);
+
+    static uint8 CalculateUserdataPadding(UStruct* Struct);
 
 private:
     UStruct* RawStructPtr; // TODO:refactor
@@ -97,7 +104,6 @@ private:
     TMap<FName, TSharedPtr<FFieldDesc>> Fields;
     TArray<TSharedPtr<FPropertyDesc>> Properties;
     TArray<TSharedPtr<FFunctionDesc>> Functions;
-    TArray<FClassDesc*> SuperClasses;
 
     struct FFunctionCollection *FunctionCollection;
 };

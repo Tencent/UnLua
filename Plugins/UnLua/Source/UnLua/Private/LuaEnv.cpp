@@ -71,14 +71,15 @@ namespace UnLua
 
         ObjectRegistry = new FObjectRegistry(this);
         ClassRegistry = new FClassRegistry(this);
-        ClassRegistry->Register("UObject");
-        ClassRegistry->Register("UClass");
+        ClassRegistry->Initialize();
 
         FunctionRegistry = new FFunctionRegistry(this);
         DelegateRegistry = new FDelegateRegistry(this);
         ContainerRegistry = new FContainerRegistry(this);
         PropertyRegistry = new FPropertyRegistry(this);
         EnumRegistry = new FEnumRegistry(this);
+        EnumRegistry->Initialize();
+
         DanglingCheck = new FDanglingCheck(this);
         DeadLoopCheck = new FDeadLoopCheck(this);
 

@@ -20,11 +20,18 @@
 
 namespace UnLua
 {
-    TMap<UEnum*, FEnumDesc*> FEnumRegistry::Enums;
-    TMap<FName, FEnumDesc*> FEnumRegistry::Name2Enums;
-
     FEnumRegistry::FEnumRegistry(FLuaEnv* Env)
         : Env(Env)
+    {
+    }
+
+    FEnumRegistry::~FEnumRegistry()
+    {
+        for (const auto Pair : Name2Enums)
+            delete Pair.Value;
+    }
+
+    void FEnumRegistry::Initialize()
     {
         const auto L = Env->GetMainState();
         FCollisionHelper::Initialize();
@@ -46,7 +53,12 @@ namespace UnLua
         return Ret ? *Ret : nullptr;
     }
 
-    FEnumDesc* FEnumRegistry::StaticRegister(const char* MetatableName)
+    void FEnumRegistry::NotifyUObjectDeleted(UObject* Object)
+    {
+        Unregister((UEnum*)Object);
+    }
+
+    FEnumDesc* FEnumRegistry::Register(const char* MetatableName)
     {
         FEnumDesc* Ret = Find(MetatableName);
         if (Ret)
@@ -64,45 +76,8 @@ namespace UnLua
         Ret = new FEnumDesc(Enum);
         Enums.Add(Enum, Ret);
         Name2Enums.Add(MetatableName, Ret);
-        return Ret;
-    }
-
-    bool FEnumRegistry::StaticUnregister(const UObjectBase* Enum)
-    {
-        FEnumDesc* EnumDesc;
-        if (!Enums.RemoveAndCopyValue((UEnum*)Enum, EnumDesc))
-            return false;
-        EnumDesc->UnLoad();
-        return true;
-    }
-
-    void FEnumRegistry::Cleanup()
-    {
-        for (const auto Pair : Name2Enums)
-            delete Pair.Value;
-        Name2Enums.Empty();
-        Enums.Empty();
-    }
-
-    void FEnumRegistry::NotifyUObjectDeleted(UObject* Object)
-    {
-        Unregister((UEnum*)Object);
-    }
-
-    FEnumDesc* FEnumRegistry::Register(const char* MetatableName)
-    {
-        FEnumDesc* EnumDesc = StaticRegister(MetatableName);
-        if (!EnumDesc)
-            return nullptr;
 
         const auto L = Env->GetMainState();
-        if (luaL_getmetatable(L, MetatableName) == LUA_TTABLE)
-        {
-            lua_pop(L, 1);
-            return EnumDesc;
-        }
-        lua_pop(L, 1);
-
         luaL_newmetatable(L, MetatableName);
 
         lua_pushstring(L, "__index");
@@ -138,7 +113,7 @@ namespace UnLua
         lua_setmetatable(L, -2);
 
         SetTableForClass(L, MetatableName);
-        return EnumDesc;
+        return Ret;
     }
 
     FEnumDesc* FEnumRegistry::Register(const UEnum* Enum)

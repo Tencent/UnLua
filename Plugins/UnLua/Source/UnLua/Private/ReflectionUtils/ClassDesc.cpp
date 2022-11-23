@@ -35,15 +35,7 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
 
     if (bIsClass)
     {
-        UClass* Class = AsClass();
         Size = Struct->GetStructureSize();
-
-        // register implemented interfaces
-        for (FImplementedInterface& Interface : Class->Interfaces)
-        {
-            UnLua::FClassRegistry::RegisterReflectedType(Interface.Class);
-        }
-
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
     }
     else if (bIsScriptStruct)
@@ -54,21 +46,12 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
         Size = CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
         UserdataPadding = CalcUserdataPadding(Alignment); // calculate padding size for userdata
     }
-
-    UStruct* SuperStruct = Struct->GetInheritanceSuper();
-    while (SuperStruct)
-    {
-        FString SuperName = UnLua::LowLevel::GetMetatableName(InStruct);
-        FClassDesc* ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(SuperStruct);
-        SuperClasses.Add(ClassDesc);
-        SuperStruct = SuperStruct->GetInheritanceSuper();
-    }
 }
 
 /**
  * Register a field of this class
  */
-TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* QueryClass)
+TSharedPtr<FFieldDesc> FClassDesc::RegisterField(UnLua::FLuaEnv* Env, FName FieldName, FClassDesc* QueryClass)
 {
     Load();
 
@@ -121,9 +104,9 @@ TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* Qu
         {
             if (OuterStruct != Struct)
             {
-                FClassDesc* OuterClass = UnLua::FClassRegistry::RegisterReflectedType(OuterStruct);
+                FClassDesc* OuterClass = Env->GetClassRegistry()->RegisterReflectedType(OuterStruct);
                 check(OuterClass);
-                return OuterClass->RegisterField(FieldName, QueryClass);
+                return OuterClass->RegisterField(Env, FieldName, QueryClass);
             }
 
             // create new Field descriptor
@@ -148,12 +131,6 @@ TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* Qu
         }
     }
     return FieldDesc;
-}
-
-void FClassDesc::GetInheritanceChain(TArray<FClassDesc*>& DescChain)
-{
-    DescChain.Add(this);
-    DescChain.Append(SuperClasses);
 }
 
 void FClassDesc::Load()
@@ -183,4 +160,28 @@ void FClassDesc::UnLoad()
 
     Struct.Reset();
     RawStructPtr = nullptr;
+}
+
+int32 FClassDesc::CalculateSize(UStruct* Struct)
+{
+    if (Struct->IsA(UScriptStruct::StaticClass()))
+        return Struct->GetStructureSize();
+
+    const auto ScriptStruct = Cast<UScriptStruct>(Struct);
+    if (!ScriptStruct)
+        return 0;
+
+    const auto CppStructOps = ScriptStruct->GetCppStructOps();
+    return CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
+}
+
+uint8 FClassDesc::CalculateUserdataPadding(UStruct* Struct)
+{
+    const auto ScriptStruct = Cast<UScriptStruct>(Struct);
+    if (!ScriptStruct)
+        return 0;
+
+    const auto CppStructOps = ScriptStruct->GetCppStructOps();
+    const auto Alignment = CppStructOps ? CppStructOps->GetAlignment() : ScriptStruct->GetMinAlignment();
+    return CalcUserdataPadding(Alignment);
 }
