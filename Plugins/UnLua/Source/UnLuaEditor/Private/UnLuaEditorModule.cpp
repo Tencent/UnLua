@@ -257,11 +257,11 @@ namespace UnLua
         {
             ObservingBlueprints.Remove(Blueprint);
             auto Class = Blueprint->GeneratedClass;
+            Env->NotifyUObjectDeleted(Blueprint->GeneratedClass, -1);
             if (!Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
                 return;
             if (!IUnLuaInterface::Execute_RunInEditor(Class->GetDefaultObject()))
                 return;
-            Env->NotifyUObjectDeleted(Blueprint->GeneratedClass, -1);
             Env->TryBind(Blueprint->GeneratedClass);
         }
 
