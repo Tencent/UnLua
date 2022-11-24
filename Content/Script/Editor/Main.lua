@@ -1,3 +1,9 @@
+UnLua.ConsoleCommand.Add("unlua.test", "this is a test command", function(Args)
+    print("unlua.test executed Args=", table.unpack(Args))
+end)
+
+-- UnLua.ConsoleCommand.Remove("unlua.test")
+
 -- 解除以下注释，会在编辑器启动时扩展对应的菜单
 
 -- UnLua.Editor.ExtendMenu("ContentBrowser.AssetContextMenu", {

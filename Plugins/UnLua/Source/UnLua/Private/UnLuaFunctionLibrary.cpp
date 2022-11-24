@@ -17,6 +17,10 @@
 #include "UnLuaDelegates.h"
 #include "UnLuaModule.h"
 
+#if ALLOW_CONSOLE
+TMap<FString, FAutoConsoleCommand*> UUnLuaFunctionLibrary::ConsoleCommands;
+#endif
+
 FString UUnLuaFunctionLibrary::GetScriptRootPath()
 {
     return FPaths::ConvertRelativePathToFull(FPaths::ProjectContentDir() + TEXT("Script/"));
@@ -31,4 +35,28 @@ int64 UUnLuaFunctionLibrary::GetFileLastModifiedTimestamp(FString Path)
 void UUnLuaFunctionLibrary::HotReload()
 {
     IUnLuaModule::Get().HotReload();
+}
+
+void UUnLuaFunctionLibrary::AddConsoleCommand(const FString& Name, const FString& Help, FExecuteWithArgs Execute)
+{
+#if ALLOW_CONSOLE
+    if (ConsoleCommands.Contains(Name))
+        RemoveConsoleCommand(Name);
+
+    const auto Run = FConsoleCommandWithArgsDelegate::CreateLambda([Execute](const TArray<FString>& Args)
+    {
+        Execute.ExecuteIfBound(Args);
+    });
+    const auto Command = new FAutoConsoleCommand(*Name, *Help, Run);
+    ConsoleCommands.Add(Name, Command);
+#endif
+}
+
+void UUnLuaFunctionLibrary::RemoveConsoleCommand(const FString& Name)
+{
+#if ALLOW_CONSOLE
+    FAutoConsoleCommand* Cmd;
+    if (ConsoleCommands.RemoveAndCopyValue(Name, Cmd))
+        delete Cmd;
+#endif
 }

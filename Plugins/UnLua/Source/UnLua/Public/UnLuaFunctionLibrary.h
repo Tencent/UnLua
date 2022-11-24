@@ -18,6 +18,8 @@
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "UnLuaFunctionLibrary.generated.h"
 
+DECLARE_DYNAMIC_DELEGATE_OneParam(FExecuteWithArgs, const TArray<FString>&, Args);
+
 UCLASS()
 class UNLUA_API UUnLuaFunctionLibrary : public UBlueprintFunctionLibrary
 {
@@ -32,4 +34,15 @@ public:
 
     UFUNCTION(BlueprintCallable)
     static void HotReload();
+
+    UFUNCTION(BlueprintCallable)
+    static void AddConsoleCommand(const FString& Name, const FString& Help, FExecuteWithArgs Execute);
+
+    UFUNCTION(BlueprintCallable)
+    static void RemoveConsoleCommand(const FString& Name);
+
+private:
+#if ALLOW_CONSOLE
+    static TMap<FString, FAutoConsoleCommand*> ConsoleCommands;
+#endif
 };
