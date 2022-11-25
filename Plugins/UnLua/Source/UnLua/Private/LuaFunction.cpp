@@ -165,9 +165,16 @@ void ULuaFunction::RestoreOverrides(UClass* Class)
 
 void ULuaFunction::SuspendOverrides(UClass* Class)
 {
-    check(!SuspendedOverrides.Contains(Class));
-    auto OrphanedClass = MakeOrphanedClass(Class);
-    SuspendedOverrides.Add(Class, OrphanedClass);
+    UClass* OrphanedClass;
+    if (const auto Exists = SuspendedOverrides.Find(Class))
+    {
+        OrphanedClass = *Exists;
+    }
+    else
+    {
+        OrphanedClass = MakeOrphanedClass(Class);
+        SuspendedOverrides.Add(Class, OrphanedClass);
+    }
 
     auto Current = &Class->Children;
     while (*Current)
