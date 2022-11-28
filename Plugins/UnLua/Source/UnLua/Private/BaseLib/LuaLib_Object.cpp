@@ -62,7 +62,6 @@ int32 UObject_Load(lua_State* L)
     }
     else
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Failed to load object %s!"), ANSI_TO_TCHAR(__FUNCTION__), ANSI_TO_TCHAR(ObjectName));
         lua_pushnil(L);
     }
 
