@@ -32,6 +32,14 @@ namespace UnLua
 #endif
         }
 
+        int EmptyIterator(lua_State* L);
+
+        FORCEINLINE int PushEmptyIterator(lua_State* L)
+        {
+            lua_pushcfunction(L, EmptyIterator);
+            return 1;
+        }
+
         const static UObject* ReleasedPtr = (UObject*)0xDEAD;
 
         FORCEINLINE bool IsReleasedPtr(const void* Ptr) { return Ptr == ReleasedPtr; }

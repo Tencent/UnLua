@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "UnLuaEx.h"
 #include "LuaCore.h"
 #include "Containers/LuaArray.h"
@@ -75,7 +76,7 @@ static int32 TArray_Pairs(lua_State* L)
 
     FLuaArray* Array = (FLuaArray*)GetCppInstanceFast(L, 1);
     if (!Array)
-        return 0;
+        return UnLua::LowLevel::PushEmptyIterator(L);
 
     TArray_Guard(L, Array);
 

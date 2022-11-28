@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "UnLuaEx.h"
 #include "LuaCore.h"
 #include "Containers/LuaMap.h"
@@ -88,7 +89,7 @@ static int32 TMap_Pairs(lua_State* L)
 
     FLuaMap* Map = (FLuaMap*)GetCppInstanceFast(L, 1);
     if (!Map)
-        return 0;
+        return UnLua::LowLevel::PushEmptyIterator(L);
 
     TMap_Guard(L, Map);
 
