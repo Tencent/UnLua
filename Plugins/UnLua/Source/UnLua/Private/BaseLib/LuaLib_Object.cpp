@@ -30,7 +30,8 @@ int32 UObject_Load(lua_State* L)
     if (!ObjectName)
         return luaL_error(L, "invalid class name");
 
-    FString ObjectPath(ObjectName);
+    FString ObjectPath = UTF8_TO_TCHAR(ObjectName);
+
     int32 Index = INDEX_NONE;
     ObjectPath.FindChar(TCHAR('.'), Index);
     if (Index == INDEX_NONE)
