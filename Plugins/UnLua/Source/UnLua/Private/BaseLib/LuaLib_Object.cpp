@@ -196,12 +196,30 @@ static int32 UObject_Release(lua_State* L)
  */
 int32 UObject_Identical(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int NumParams = lua_gettop(L);
     if (NumParams != 2)
         return luaL_error(L, "invalid parameters");
 
-    UObject* A = UnLua::GetUObject(L, 1);
-    UObject* B = UnLua::GetUObject(L, 2);
+    if (lua_rawequal(L, 1, 2))
+    {
+        lua_pushboolean(L, true);
+        return 1;
+    }
+
+    const auto A = UnLua::GetUObject(L, 1);
+    if (!A)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const auto B = UnLua::GetUObject(L, 2);
+    if (!B)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
     lua_pushboolean(L, A == B);
     return 1;
 }
