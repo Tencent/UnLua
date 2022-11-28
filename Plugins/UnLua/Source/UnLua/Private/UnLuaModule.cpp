@@ -47,6 +47,8 @@ namespace UnLua
     public:
         virtual void StartupModule() override
         {
+            LoadLuaLibrary();
+
 #if WITH_EDITOR
             FModuleManager::Get().LoadModule(TEXT("UnLuaEditor"));
 #endif
@@ -87,6 +89,8 @@ namespace UnLua
 
         virtual void ShutdownModule() override
         {
+            UnloadLuaLibrary();
+
             if (!UObjectInitialized())
                 return;
 
@@ -256,6 +260,35 @@ namespace UnLua
             SetActive(false);
         }
 
+#endif
+
+
+#if PLATFORM_WINDOWS
+        
+        void LoadLuaLibrary()
+        {
+            const auto LuaDllDir = LUA_DLL_DIR; // defined in Lua.Build.cs
+            const auto Dir = FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / LuaDllDir);
+            FPlatformProcess::PushDllDirectory(*Dir);
+            LuaDllHandle = FPlatformProcess::GetDllHandle(TEXT("Lua.dll"));
+            FPlatformProcess::PopDllDirectory(*Dir);
+            if (!LuaDllHandle)
+                UE_LOG(LogUnLua, Error, TEXT("Failed to load Lua.dll"));
+        }
+
+        void UnloadLuaLibrary()
+        {
+            if (!LuaDllHandle)
+                return;
+            FPlatformProcess::FreeDllHandle(LuaDllHandle);
+            LuaDllHandle = nullptr;
+        }
+
+        void* LuaDllHandle = nullptr;
+
+#else
+        void LoadLuaLibrary() {}
+        void UnloadLuaLibrary() {}
 #endif
 
         void RegisterSettings()

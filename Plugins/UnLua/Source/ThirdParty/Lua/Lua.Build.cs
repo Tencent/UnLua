@@ -77,9 +77,23 @@ public class Lua : ModuleRules
         PublicDelayLoadDLLs.Add(m_LibName);
         PublicAdditionalLibraries.Add(libPath);
 
-        SetupForRuntimeDependency(dllPath, "Win64");
-        if (isDebug)
-            SetupForRuntimeDependency(pdbPath, "Win64");
+        var luaDllRelativeDir = "Binaries/Win64";
+        if (Target.bBuildEditor)
+        {
+            luaDllRelativeDir = string.Format("Plugins/UnLua/Source/ThirdParty/Lua/{0}/{1}/Win64/{2}", m_LuaDirName, m_LibDirName, m_Config);
+        }
+        else
+        {
+            var dstPath = Path.Combine("$(ProjectDir)", luaDllRelativeDir, m_LibName);
+            RuntimeDependencies.Add(dstPath, dllPath);
+            if (isDebug)
+            {
+                dstPath = Path.ChangeExtension(dstPath, ".pdb");
+                RuntimeDependencies.Add(dstPath, pdbPath);
+            }
+        }
+
+        PublicDefinitions.Add(string.Format("LUA_DLL_DIR=\"{0}\"", luaDllRelativeDir));
     }
 
     private void BuildForAndroid()
@@ -237,7 +251,7 @@ public class Lua : ModuleRules
         var args = new Dictionary<string, string>
         {
             { "CMAKE_TOOLCHAIN_FILE", Path.Combine(sceRootDir, @"Prospero\Tools\CMake\PS5.cmake") },
-            { "PS5", "1"}
+            { "PS5", "1" }
         };
         var buildDir = CMake(args);
         var buildFile = Path.Combine(buildDir, m_Config, m_LibName);
@@ -425,15 +439,6 @@ public class Lua : ModuleRules
         }
 
         return null;
-    }
-
-    private void SetupForRuntimeDependency(string fullPath, string platform)
-    {
-        if (!File.Exists(fullPath))
-            return;
-        var fileName = Path.GetFileName(fullPath);
-        var dstPath = Path.Combine("$(ProjectDir)", "Binaries", platform, fileName);
-        RuntimeDependencies.Add(dstPath, fullPath);
     }
 
     private readonly string m_LuaVersion;
