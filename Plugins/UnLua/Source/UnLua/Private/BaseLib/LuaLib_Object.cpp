@@ -124,7 +124,7 @@ static int32 UObject_GetOuter(lua_State* L)
  */
 static int32 UObject_GetClass(lua_State* L)
 {
-    UClass* Class = nullptr;
+    UClass* Class;
     int32 NumParams = lua_gettop(L);
     if (NumParams > 0)
     {
@@ -156,7 +156,7 @@ static int32 UObject_GetWorld(lua_State* L)
         return luaL_error(L, "invalid object");
 
     UWorld* World = Object->GetWorld();
-    UnLua::PushUObject(L, (UObject*)World, false); // GWorld will be added to Root, so we don't collect it...
+    UnLua::PushUObject(L, World);
     return 1;
 }
 
