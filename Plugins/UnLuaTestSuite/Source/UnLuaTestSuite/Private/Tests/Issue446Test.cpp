@@ -38,9 +38,7 @@ BEGIN_TESTSUITE(FIssue446Test, TEXT("UnLua.Regression.Issue446 实现了FTickabl
             const auto Result = (bool)lua_toboolean(L, -1);
             TestTrue("Issue446_Result", Result);
             Stub->RemoveFromRoot();
-            Stub->MarkPendingKill();
-            Stub->GetClass()->GetDefaultObject()->MarkPendingKill();
-            GEngine->ForceGarbageCollection(true);
+            CollectGarbage(RF_NoFlags, true);
             return true;
             }));
         ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
