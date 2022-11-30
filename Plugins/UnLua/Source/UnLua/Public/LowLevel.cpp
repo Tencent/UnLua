@@ -19,6 +19,12 @@ namespace UnLua
 {
     namespace LowLevel
     {
+        int EmptyIterator(lua_State* L)
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+
         /**
          * Create weak key table
          */
