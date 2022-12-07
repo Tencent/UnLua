@@ -1,5 +1,4 @@
 ﻿#include "Misc/EngineVersionComparison.h"
-#include "Engine/BlueprintGeneratedClass.h"
 #include "LuaOverrides.h"
 #include "LuaFunction.h"
 #include "LuaOverridesClass.h"
@@ -11,6 +10,11 @@ namespace UnLua
     {
         static FLuaOverrides Override;
         return Override;
+    }
+
+    FLuaOverrides::FLuaOverrides()
+    {
+        GUObjectArray.AddUObjectDeleteListener(this);
     }
 
     void FLuaOverrides::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
@@ -88,22 +92,7 @@ namespace UnLua
         if (Exists)
             return *Exists;
 
-        auto ClassName = FString::Printf(TEXT("LUA_OVERRIDES_%s"), *Class->GetName());
-        auto OverridesClass = NewObject<ULuaOverridesClass>(GetTransientPackage(), *ClassName, RF_Public | RF_Transient);
-        OverridesClass->AddToRoot();
-        OverridesClass->Owner = Class;
-        OverridesClass->Next = nullptr;
-
-#if UE_VERSION_OLDER_THAN(5, 1, 0)
-        OverridesClass->ClassAddReferencedObjects = Class->AddReferencedObjects;
-#else
-        OverridesClass->CppClassStaticFunctions = Class->CppClassStaticFunctions;
-#endif
-        OverridesClass->ClassFlags |= CLASS_CompiledFromBlueprint;
-#if WITH_EDITOR
-        OverridesClass->ClassGeneratedBy = Class->ClassGeneratedBy;
-#endif
-
+        const auto OverridesClass = ULuaOverridesClass::Create(Class);
         Overrides.Add(Class, OverridesClass);
         return OverridesClass;
     }

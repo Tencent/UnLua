@@ -17,12 +17,15 @@
 #include "CoreMinimal.h"
 #include "LuaOverridesClass.generated.h"
 
-UCLASS()
-class UNLUA_API ULuaOverridesClass : public UBlueprintGeneratedClass
+/** 用于承载所有运行时覆写创建的ULuaFunction */
+UCLASS(Transient)
+class UNLUA_API ULuaOverridesClass : public UClass
 {
     GENERATED_BODY()
 
 public:
+    static ULuaOverridesClass* Create(UClass* Class);
+
     void Restore();
 
     TWeakObjectPtr<UClass> Owner;
