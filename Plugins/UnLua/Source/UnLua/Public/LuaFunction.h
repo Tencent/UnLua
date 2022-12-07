@@ -37,6 +37,8 @@ public:
 
     static bool Override(UFunction* Function, UClass* Outer, FName NewName);
 
+    static ULuaFunction* Get(UFunction* Function);
+
     /**
      * 还原指定UClass上所有覆写的UFunction。
      * 在退出PIE时使用。
@@ -66,7 +68,13 @@ public:
      */
     DECLARE_FUNCTION(execCallLua);
 
+    DECLARE_FUNCTION(execScriptCallLua);
+
     void Initialize();
+
+    void Override(UFunction* Function, UClass* Class, bool bAddNew);
+
+    void Restore();
 
     UFunction* GetOverridden() const;
 
@@ -76,6 +84,9 @@ public:
 
 private:
     TWeakObjectPtr<UFunction> Overridden;
+    FNativeFuncPtr OverriddenNativeFunc;
+    EFunctionFlags OverriddenFlags;
+    bool bAdded;
     TSharedPtr<FFunctionDesc> Desc;
     static TMap<UClass*, UClass*> SuspendedOverrides;
 };
