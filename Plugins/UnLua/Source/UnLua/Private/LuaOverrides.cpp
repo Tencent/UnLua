@@ -20,9 +20,8 @@ namespace UnLua
     void FLuaOverrides::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
     {
         ULuaOverridesClass* OverridesClass;
-        if (!Overrides.RemoveAndCopyValue((UClass*)Object, OverridesClass))
-            return;
-        OverridesClass->RemoveFromRoot();
+        if (Overrides.RemoveAndCopyValue((UClass*)Object, OverridesClass))
+            OverridesClass->Restore();
     }
 
     void FLuaOverrides::OnUObjectArrayShutdown()
@@ -64,6 +63,11 @@ namespace UnLua
         LuaFunction->StaticLink(true);
         LuaFunction->Initialize();
         LuaFunction->Override(Function, Class, bAddNew);
+
+        if (Class->IsRooted() || GUObjectArray.IsDisregardForGC(Class))
+            LuaFunction->AddToRoot();
+        else
+            LuaFunction->AddToCluster(Class);
     }
 
     void FLuaOverrides::Restore(UClass* Class)
@@ -74,7 +78,6 @@ namespace UnLua
 
         const auto OverridesClass = *Exists;
         OverridesClass->Restore();
-        OverridesClass->RemoveFromRoot();
         Overrides.Remove(Class);
     }
 
