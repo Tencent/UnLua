@@ -82,6 +82,8 @@ public:
 
     void SetActive(const bool bActive);
 
+    virtual void FinishDestroy() override;
+
 private:
     TWeakObjectPtr<UFunction> Overridden;
     FNativeFuncPtr OverriddenNativeFunc;
