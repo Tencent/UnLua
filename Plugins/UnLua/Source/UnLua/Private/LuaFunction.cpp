@@ -47,7 +47,35 @@ DEFINE_FUNCTION(ULuaFunction::execScriptCallLua)
         // PIE 结束时可能已经没有Lua环境了
         return;
     }
+
+    // 当UFunction被以Script方式替换后，这里进来的Out参数信息还是原来的，把新的ULuaFunction上的加进去，用完再清理掉
+    FOutParmRec* OldOutParms = Stack.OutParms;
+    if (OldOutParms)
+    {
+        FOutParmRec* FirstCreated = nullptr;
+        FOutParmRec* LastCreated = nullptr;
+        auto Current = OldOutParms;
+        while (Current && !Current->Property->HasAnyPropertyFlags(CPF_ReturnParm))
+        {
+            auto Property = LuaFunction->FindPropertyByName(Current->Property->GetFName());
+            check(Property);
+            CA_SUPPRESS(6263)
+            FOutParmRec* Out = (FOutParmRec*)FMemory_Alloca(sizeof(FOutParmRec));
+            Out->PropAddr = Current->PropAddr;
+            Out->Property = Property;
+            if (!FirstCreated)
+                FirstCreated = Out;
+            if (LastCreated)
+                LastCreated->NextOutParm = Out;
+            LastCreated = Out;
+            Current = Current->NextOutParm;
+        }
+        Stack.OutParms = FirstCreated;
+    }
+    
     Env->GetFunctionRegistry()->Invoke(LuaFunction, Context, Stack, RESULT_PARAM);
+
+    Stack.OutParms = OldOutParms;
 }
 
 ULuaFunction* ULuaFunction::Get(UFunction* Function)
@@ -253,16 +281,17 @@ UFunction* ULuaFunction::GetOverridden() const
     return Overridden.Get();
 }
 
-#if WITH_EDITOR
 void ULuaFunction::Bind()
 {
-    const auto Outer = GetOuter();
-    if (Outer && Outer->GetName().StartsWith("REINST_"))
+    if (Overridden.IsValid())
     {
-        FunctionFlags &= ~FUNC_Native;
-        return;
+        if (bAdded)
+            SetNativeFunc(execCallLua);
+        else
+            SetNativeFunc(OverriddenNativeFunc);
     }
-    Super::Bind();
+    else
+    {
+        SetNativeFunc(ProcessInternal);
+    }
 }
-
-#endif

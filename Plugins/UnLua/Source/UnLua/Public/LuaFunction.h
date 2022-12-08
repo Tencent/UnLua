@@ -78,9 +78,7 @@ public:
 
     UFunction* GetOverridden() const;
 
-#if WITH_EDITOR
     virtual void Bind() override;
-#endif
 
 private:
     TWeakObjectPtr<UFunction> Overridden;
