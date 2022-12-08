@@ -80,11 +80,13 @@ public:
 
     virtual void Bind() override;
 
+    void SetActive(const bool bActive);
+
 private:
     TWeakObjectPtr<UFunction> Overridden;
     FNativeFuncPtr OverriddenNativeFunc;
     EFunctionFlags OverriddenFlags;
-    bool bAdded;
+    uint8 bAdded : 1;
+    uint8 bActivated : 1;
     TSharedPtr<FFunctionDesc> Desc;
-    static TMap<UClass*, UClass*> SuspendedOverrides;
 };

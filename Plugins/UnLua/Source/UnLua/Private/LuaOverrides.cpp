@@ -88,6 +88,18 @@ namespace UnLua
             Restore(Class);
     }
 
+    void FLuaOverrides::Suspend(UClass* Class)
+    {
+        if (const auto Exists = Overrides.Find(Class))
+            (*Exists)->SetActive(false);
+    }
+
+    void FLuaOverrides::Resume(UClass* Class)
+    {
+        if (const auto Exists = Overrides.Find(Class))
+            (*Exists)->SetActive(true);
+    }
+
     UClass* FLuaOverrides::GetOrAddOverridesClass(UClass* Class)
     {
         const auto Exists = Overrides.Find(Class);

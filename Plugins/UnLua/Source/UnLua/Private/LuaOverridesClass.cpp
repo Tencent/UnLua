@@ -30,7 +30,12 @@ ULuaOverridesClass* ULuaOverridesClass::Create(UClass* Class)
 
 void ULuaOverridesClass::Restore()
 {
+    SetActive(false);
     RemoveFromRoot();
+}
+
+void ULuaOverridesClass::SetActive(const bool bActive)
+{
     const auto Class = Owner.Get();
     if (!Class)
         return;
@@ -38,7 +43,8 @@ void ULuaOverridesClass::Restore()
     for (TFieldIterator<ULuaFunction> It(this, EFieldIteratorFlags::ExcludeSuper); It; ++It)
     {
         auto LuaFunction = *It;
-        LuaFunction->Restore();
+        LuaFunction->SetActive(bActive);
     }
+
     Class->ClearFunctionMapsCaches();
 }

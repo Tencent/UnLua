@@ -28,5 +28,7 @@ public:
 
     void Restore();
 
+    void SetActive(const bool bActive);
+
     TWeakObjectPtr<UClass> Owner;
 };

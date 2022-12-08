@@ -43,6 +43,18 @@ namespace UnLua
         /** 还原所有已覆写的UClass */
         void RestoreAll();
 
+        /**
+         * 临时挂起指定UClass上所有覆写的ULuaFunction，用于后续恢复。
+         * 在PIE保存UPackage时使用，避免ULuaFunction随着UClass被序列化到本地。
+         */
+        void Suspend(UClass* Class);
+
+        /**
+         * 恢复指定UClass临时挂起的ULuaFunction。
+         * 在PIE保存UPackage完成后使用。
+         */
+        void Resume(UClass* Class);
+
     private:
         /**
          * 获取指定Class所对应的LuaOverridesClass，用于承载所有运行时创建的ULuaFunction
