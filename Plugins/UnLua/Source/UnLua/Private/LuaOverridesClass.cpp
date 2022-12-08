@@ -19,6 +19,9 @@ ULuaOverridesClass* ULuaOverridesClass::Create(UClass* Class)
 {
     auto ClassName = FString::Printf(TEXT("LUA_OVERRIDES_%s"), *Class->GetName());
     auto Ret = NewObject<ULuaOverridesClass>(GetTransientPackage(), *ClassName, RF_Public | RF_Transient);
+    Ret->ClassDefaultObject = StaticClass()->GetDefaultObject();
+    Ret->SetSuperStruct(StaticClass());
+    Ret->Bind();
     Ret->AddToRoot();
     Ret->Owner = Class;
     return Ret;

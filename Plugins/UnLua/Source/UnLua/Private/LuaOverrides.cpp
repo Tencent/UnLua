@@ -1,5 +1,4 @@
-﻿#include "Misc/EngineVersionComparison.h"
-#include "LuaOverrides.h"
+﻿#include "LuaOverrides.h"
 #include "LuaFunction.h"
 #include "LuaOverridesClass.h"
 #include "UObject/MetaData.h"

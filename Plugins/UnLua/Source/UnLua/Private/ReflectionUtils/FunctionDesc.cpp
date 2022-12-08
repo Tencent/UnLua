@@ -317,10 +317,16 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     {
         if (!Function->HasAnyFunctionFlags(FUNC_Net))
         {
-            const auto LuaFunction = Cast<ULuaFunction>(Function);
-            const auto Overridden = LuaFunction == nullptr ? nullptr : LuaFunction->GetOverridden();
-            if (Overridden)
-                FinalFunction = Overridden;
+            if (Function->GetNativeFunc() == &ULuaFunction::execScriptCallLua)
+            {
+                FinalFunction = ULuaFunction::Get(Function.Get());
+            }
+            else if (const auto LuaFunction = Cast<ULuaFunction>(Function))
+            {
+                const auto Overridden = LuaFunction->GetOverridden();
+                if (Overridden)
+                    FinalFunction = Overridden;
+            }
         }
     }
 #endif
