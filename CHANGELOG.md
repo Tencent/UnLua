@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.4.0] - 2022-12-9
+
+### Added
+- 基于2.3.2的BETA版本，支持使用Lua来扩展编辑器[示例场景](Content/Tutorials/14_EditorExtension/)
+- `UnLuaInterface` 增加 `Run in Editor`，允许编辑器非PIE（不运行游戏）状态下绑定到Lua
+- 支持Lua扩展自定义菜单、工具栏、控制台命令等
+
+### Fixed
+- 打包时提示`Binaries/Lua.dll`被占用
+
 ## [2.3.2] - 2022-12-9
 
 ### Added
