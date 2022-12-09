@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.2] - 2022-12-9
+
+### Added
+- 增加配置选项[崩溃时输出Lua堆栈到日志](./Docs/CN/Settings.md#崩溃时输出lua堆栈到日志)
+- 针对自`2.2.0`版本以来调整的垃圾回收机制的[说明文档](./Docs/CN/UnLua_Programming_Guide.md#五垃圾回收)
+
+### Fixed
+- UObject绑定后的元表和其他表相等判断时结果错误 [#281](https://github.com/Tencent/UnLua/issues/281) [#567](https://github.com/Tencent/UnLua/issues/567)
+- 访问UStruct内部的委托会check [#561](https://github.com/Tencent/UnLua/issues/561)
+- 多次传递委托类型的参数到同一函数时，可能因为Owner失效而无法回调 [#566](https://github.com/Tencent/UnLua/issues/566)
+- UE5.1之后构造`FProperty`报deprecated [#569](https://github.com/Tencent/UnLua/issues/569)
+- pairs在参数异常时返回空迭代器，避免lua调试时访问报错
+- 热重载upvalue没有生效
+- `UObject.Load`传入中文路径时乱码
+
+### Changed
+- 在[热重载模式](./Docs/CN/Settings.md#热重载模式)为禁用时，不再加载`HotReload.lua`，不会替换全局的`require`
+- 在使用`LoadObject`加载不到对象时不再输出加载失败的日志，而是直接返回`nil`
+
 ## [2.3.1] - 2022-11-11
 
 ### Added
