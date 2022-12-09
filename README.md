@@ -52,6 +52,7 @@
   * [11_ReleaseUMG](Content/Script/Tutorials/11_ReleaseUMG.lua) 释放UMG相关对象
   * [12_CustomLoader](Content/Script/Tutorials/12_CustomLoader.lua) 自定义加载器
   * [13_AnimNotify](Content/Script/Tutorials/AN_FootStep.lua) 动画通知
+  * [14_EditorExtension](Content/Script/Tutorials/14_EditorExtension.lua) 编辑器扩展
 
 # 最佳实践示例
 
