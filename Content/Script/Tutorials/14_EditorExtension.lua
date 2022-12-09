@@ -1,13 +1,11 @@
 --[[
-    说明：通过绑定 FUnLuaDelegates::CustomLoadLuaFile 可以实现自定义Lua加载器
+    说明：当勾选了 UnLuaInterface 接口上的 Run in Editor 选项后，Lua绑定会在编辑器非运行游戏时（Play in Editor）也会生效
 
-    演示两种常见的实现供参考：
+    利用这点，我们可以非常方便地使用Lua来扩展编辑器功能
 
-    方式1：查找路径固定，性能更好
-    方式2：通过package.path查找，更加灵活
-
-    本示例C++源码：
-    Source\TPSProject\TutorialBlueprintFunctionLibrary.cpp
+    小提示：
+    1. 放在 Content/Editor 目录下的资源，会默认勾选 Run in Editor 选项
+    2. 编辑器启动时会自动执行 Content/Script/Editor/Main.lua （若文件存在）
 ]]
 
 local Screen = require "Tutorials.Screen"
