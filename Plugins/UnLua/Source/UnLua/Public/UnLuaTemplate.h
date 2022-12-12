@@ -21,9 +21,25 @@ namespace UnLua
 {
 
     /**
+     * Reference
+     * 1.https://gcc.gnu.org/bugzilla/show_bug.cgi?id=94003
+     * 2.https://codereview.stackexchange.com/questions/273221/an-rough-implementation-of-stdis-constructible
+     */
+    template<class, class T, class... Args>
+    struct is_constructible_impl : std::false_type {};
+
+    template<class T, class... Args>
+    struct is_constructible_impl<decltype((
+        new T(std::declval<Args>()...)
+    ), void()), T, Args...> : std::true_type {};
+
+    template<class T, class... Args>
+    struct is_constructible : is_constructible_impl<void, T, Args...> {};
+    
+    /**
      * Traits class which tests if a type is constructible
      */
-    template <class T, class... Args> struct TIsConstructible { enum { Value = std::is_constructible<T, Args...>::value }; };
+    template <class T, class... Args> struct TIsConstructible { enum { Value = is_constructible<T, Args...>::value }; };
     template <class T> struct TIsCopyConstructible { enum { Value = std::is_copy_constructible<T>::value }; };
     template <class T> struct TIsDestructible { enum { Value = std::is_destructible<T>::value }; };
 
