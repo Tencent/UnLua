@@ -62,6 +62,18 @@ public:
     void OnLatentActionCompleted(int32 LinkID);
 
     UFUNCTION(BlueprintImplementableEvent)
+    void EnhancedInputActionDigital(bool ActionValue, float ElapsedSeconds, float TriggeredSeconds);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void EnhancedInputActionAxis1D(float ActionValue, float ElapsedSeconds, float TriggeredSeconds);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void EnhancedInputActionAxis2D(const FVector2D& ActionValue, float ElapsedSeconds, float TriggeredSeconds);
+
+    UFUNCTION(BlueprintImplementableEvent)
+    void EnhancedInputActionAxis3D(const FVector& ActionValue, float ElapsedSeconds, float TriggeredSeconds);
+    
+    UFUNCTION(BlueprintImplementableEvent)
     void InputAction(FKey Key);
 
     UFUNCTION(BlueprintImplementableEvent)
