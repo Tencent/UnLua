@@ -17,6 +17,10 @@
 #define MIME_COPYRIGHT  "Copyright (C) 2004-2013 Diego Nehab"
 #define MIME_AUTHORS    "Diego Nehab"
 
+EXTENSION_NAMESPACE_BEGIN
+
 LUASOCKET_API int luaopen_mime_core(lua_State *L);
+
+EXTENSION_NAMESPACE_END
 
 #endif /* MIME_H */

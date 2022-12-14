@@ -15,6 +15,7 @@
 #include "LuaSocketModule.h"
 #include "LuaEnv.h"
 #include "luasocket.h"
+#include "mime.h"
 
 void FLuaSocketModule::StartupModule()
 {
@@ -31,8 +32,10 @@ void FLuaSocketModule::ShutdownModule()
 
 void FLuaSocketModule::OnLuaEnvCreated(UnLua::FLuaEnv& Env)
 {
+    using namespace UnLuaExtensions::LuaSocket;
     Env.AddBuiltInLoader(TEXT("socket"), luaopen_socket_core);
     Env.AddBuiltInLoader(TEXT("socket.core"), luaopen_socket_core);
+    Env.AddBuiltInLoader(TEXT("mime.core"), luaopen_mime_core);
     Env.DoString("UnLua.PackagePath = UnLua.PackagePath .. ';/Plugins/UnLuaExtensions/LuaSocket/Content/Script/?.lua'");
 }
 
