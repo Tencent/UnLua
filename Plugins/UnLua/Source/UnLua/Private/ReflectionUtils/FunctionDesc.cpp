@@ -155,6 +155,10 @@ FFunctionDesc::~FFunctionDesc()
 
 void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer SelfRef, FFrame& Stack, RESULT_DECL)
 {
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+    TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FuncName);
+#endif
+    
     lua_pushcfunction(L, UnLua::ReportLuaCallError);
     check(Function.IsValid());
     lua_rawgeti(L, LUA_REGISTRYINDEX, FunctionRef);
@@ -231,6 +235,10 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
 
 bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self)
 {
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+    TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FuncName);
+#endif
+    
     bool bOk = PushFunction(L, Self, LuaRef);
     if (!bOk)
         return false;
@@ -246,6 +254,10 @@ bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* S
  */
 int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 {
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+    TRACE_CPUPROFILER_EVENT_SCOPE_TEXT(*FuncName);
+#endif
+
     check(Function.IsValid());
 
     UObject* Object;
