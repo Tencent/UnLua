@@ -273,7 +273,7 @@ namespace UnLua
             LuaDllHandle = FPlatformProcess::GetDllHandle(TEXT("Lua.dll"));
             FPlatformProcess::PopDllDirectory(*Dir);
             if (!LuaDllHandle)
-                UE_LOG(LogUnLua, Error, TEXT("Failed to load Lua.dll"));
+                UE_LOG(LogUnLua, Fatal, TEXT("Failed to load Lua.dll. DllDirectory=%s"), *Dir);
         }
 
         void UnloadLuaLibrary()
