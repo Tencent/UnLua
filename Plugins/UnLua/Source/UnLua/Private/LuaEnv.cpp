@@ -39,6 +39,38 @@ namespace UnLua
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
     FLuaEnv::FOnCreated FLuaEnv::OnDestroyed;
 
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+    void Hook(lua_State* L, lua_Debug* ar)
+    {
+        static TSet<FName> IgnoreNames{FName("Class"), FName("index"), FName("newindex")};
+
+        lua_getinfo(L, "nSl", ar);
+
+        if (ar->what == FName("Lua"))
+        {
+            if (ar->name == nullptr || IgnoreNames.Contains(ar->name))
+            {
+                return;
+            }
+
+            const auto EventName = FString::Printf(TEXT(
+                "%s [%s:%d]"),
+                                                   *FString(ar->name),
+                                                   *FPaths::GetBaseFilename(FString(ar->source)),
+                                                   ar->linedefined);
+
+            if (ar->event == 0)
+            {
+                FCpuProfilerTrace::OutputBeginDynamicEvent(*EventName);
+            }
+            else
+            {
+                FCpuProfilerTrace::OutputEndEvent();
+            }
+        }
+    }
+#endif
+
     FLuaEnv::FLuaEnv()
         : bStarted(false)
     {
@@ -129,6 +161,10 @@ namespace UnLua
 
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
+
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+        lua_sethook(L, Hook, LUA_MASKCALL | LUA_MASKRET, 0);
+#endif
     }
 
     FLuaEnv::~FLuaEnv()
