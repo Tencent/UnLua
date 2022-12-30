@@ -58,6 +58,10 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableDebug = false;
 
+    /** Enable Unreal Insights to profile call performance. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
+    bool bEnableUnrealInsights = true;
+
     /** Enable persistent buffer for UFunction's parameters. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnablePersistentParamBuffer = true;
