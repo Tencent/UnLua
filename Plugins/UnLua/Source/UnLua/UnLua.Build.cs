@@ -56,7 +56,10 @@ public class UnLua : ModuleRules
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 
         if (Target.bBuildEditor)
+        {
+            OptimizeCode = CodeOptimization.Never;
             PrivateDependencyModuleNames.Add("UnrealEd");
+        }
 
         var projectDir = Target.ProjectFile.Directory;
         var configFilePath = projectDir + "/Config/DefaultUnLuaEditor.ini";
