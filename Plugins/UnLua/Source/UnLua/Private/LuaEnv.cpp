@@ -48,14 +48,14 @@ namespace UnLua
 
         if (ar->what == FName("Lua"))
         {
-            if (ar->name == nullptr || IgnoreNames.Contains(ar->name))
+            if (IgnoreNames.Contains(ar->name))
             {
                 return;
             }
 
             const auto EventName = FString::Printf(TEXT(
                 "%s [%s:%d]"),
-                                                   *FString(ar->name),
+                                                   *FString(ar->name ? ar->name : "N/A"),
                                                    *FPaths::GetBaseFilename(FString(ar->source)),
                                                    ar->linedefined);
 
