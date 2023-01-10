@@ -226,15 +226,26 @@ namespace UnLua
 
         virtual void ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override
         {
-            bool V = !!(*((uint8*)ContainerPtr + Offset) & Mask);
+            ReadValue(L, (uint8*)ContainerPtr + Offset, bCreateCopy);
+        }
+
+        virtual void ReadValue(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override
+        {
+            bool V = !!(*((uint8*)ValuePtr) & Mask);
             UnLua::Push(L, V);
         }
 
-        virtual void WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override
+        virtual bool WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy) const override
+        {
+            return WriteValue(L, (uint8*)ContainerPtr + Offset, IndexInStack, bCreateCopy);
+        }
+
+        virtual bool WriteValue(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCreateCopy) const override
         {
             bool V = UnLua::Get(L, IndexInStack, TType<bool>());
-            uint8 *ValuePtr = (uint8*)ContainerPtr + Offset;
-            *ValuePtr = ((*ValuePtr) & ~Mask) | (V ? Mask : 0);
+            uint8 *ValuePtrToWrite = (uint8*)ValuePtr;
+            *ValuePtrToWrite = ((*ValuePtrToWrite) & ~Mask) | (V ? Mask : 0);
+            return false;
         }
 
 #if WITH_EDITOR
@@ -254,7 +265,9 @@ namespace UnLua
         TExportedProperty(const FString &InName, uint32 InOffset);
 
         virtual void ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override;
-        virtual void WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override;
+        virtual void ReadValue(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override;
+        virtual bool WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy) const override;
+        virtual bool WriteValue(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCreateCopy) const override;
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;
@@ -275,9 +288,14 @@ namespace UnLua
             lua_rawset(L, -3);
         }
 
-        virtual void ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override;
-        virtual void WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override;
-        
+        virtual void ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override {}
+
+        virtual void ReadValue(lua_State* L, const void* ValuePtr, bool bCreateCopy) const override {}
+
+        virtual bool WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy) const override { return false; }
+
+        virtual bool WriteValue(lua_State* L, void* ValuePtr, int32 IndexInStack, bool bCreateCopy) const override { return false; }
+
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;
 #endif

@@ -651,9 +651,24 @@ namespace UnLua
     }
 
     template <typename T>
-    void TExportedProperty<T>::WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const
+    void TExportedProperty<T>::ReadValue(lua_State *L, const void *ValuePtr, bool bCreateCopy) const
+    {
+        T &V = *((T*)((uint8*)ValuePtr));
+        UnLua::Push(L, V, bCreateCopy || (TIsClass<T>::Value && (Offset == 0)));
+    }
+    
+    template <typename T>
+    bool TExportedProperty<T>::WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy) const
     {
         *((T*)((uint8*)ContainerPtr + Offset)) = UnLua::Get(L, IndexInStack, TType<typename TArgTypeTraits<T>::Type>());
+        return false;
+    }
+
+    template <typename T>
+    bool TExportedProperty<T>::WriteValue(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCreateCopy) const
+    {
+        *((T*)((uint8*)ValuePtr)) = UnLua::Get(L, IndexInStack, TType<typename TArgTypeTraits<T>::Type>());
+        return false;
     }
 
 #if WITH_EDITOR
@@ -682,18 +697,6 @@ namespace UnLua
     }
 #endif
 
-    template <typename T>
-    void TExportedStaticProperty<T>::ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const
-    {
-        
-    }
-
-    template <typename T>
-    void TExportedStaticProperty<T>::WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const
-    {
-        
-    }
-    
     template <typename T>
     TExportedArrayProperty<T>::TExportedArrayProperty(const FString &InName, uint32 InOffset, int32 InArrayDim)
         : FExportedProperty(InName, InOffset), ArrayDim(InArrayDim)
