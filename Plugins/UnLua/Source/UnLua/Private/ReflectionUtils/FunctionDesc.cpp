@@ -645,7 +645,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             else
             {
                 // copy it from stack
-                OutProperty->SetValueInternal(L, OutParam->PropAddr, OutPropertyIndex, true); // set value for out property
+                OutProperty->WriteValue(L, OutParam->PropAddr, OutPropertyIndex, true); // set value for out property
             }
             OutParam = OutParam->NextOutParm;
         }
@@ -677,7 +677,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 
             // set value for return property
             check(RetValueAddress);
-            ReturnProperty->SetValueInternal(L, RetValueAddress, IndexInStack, true);
+            ReturnProperty->WriteValue(L, RetValueAddress, IndexInStack, true);
         }
     }
 
