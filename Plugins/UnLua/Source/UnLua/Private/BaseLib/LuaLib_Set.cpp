@@ -71,7 +71,7 @@ static int32 TSet_Add(lua_State* L)
     TSet_Guard(L, Set);
 
     Set->ElementInterface->Initialize(Set->ElementCache);
-    Set->ElementInterface->Write(L, Set->ElementCache, 2);
+    Set->ElementInterface->WriteValue_InContainer(L, Set->ElementCache, 2);
     Set->Add(Set->ElementCache);
     Set->ElementInterface->Destruct(Set->ElementCache);
     return 0;
@@ -90,7 +90,7 @@ static int32 TSet_Remove(lua_State* L)
     TSet_Guard(L, Set);
 
     Set->ElementInterface->Initialize(Set->ElementCache);
-    Set->ElementInterface->Write(L, Set->ElementCache, 2);
+    Set->ElementInterface->WriteValue_InContainer(L, Set->ElementCache, 2);
     bool bSuccess = Set->Remove(Set->ElementCache);
     Set->ElementInterface->Destruct(Set->ElementCache);
     lua_pushboolean(L, bSuccess);
@@ -110,7 +110,7 @@ static int32 TSet_Contains(lua_State* L)
     TSet_Guard(L, Set);
 
     Set->ElementInterface->Initialize(Set->ElementCache);
-    Set->ElementInterface->Write(L, Set->ElementCache, 2);
+    Set->ElementInterface->WriteValue_InContainer(L, Set->ElementCache, 2);
     bool bSuccess = Set->Contains(Set->ElementCache);
     Set->ElementInterface->Destruct(Set->ElementCache);
     lua_pushboolean(L, bSuccess);
@@ -190,7 +190,7 @@ static int32 TSet_ToTable(lua_State* L)
     {
         lua_pushinteger(L, i + 1);
         Array->Get(i, Array->ElementCache);
-        Array->Inner->Read(L, Array->ElementCache, true);
+        Array->Inner->ReadValue_InContainer(L, Array->ElementCache, true);
         lua_rawset(L, -3);
     }
     Array->Inner->Destruct(Array->ElementCache);

@@ -854,7 +854,7 @@ public:
         FLuaArray *Array = (FLuaArray*)Userdata;
         int32 Index = Array->AddDefaulted();
         uint8 *Data = Array->GetData(Index);
-        Array->Inner->Write(L, Data, -1);
+        Array->Inner->WriteValue_InContainer(L, Data, -1);
         return true;
     }
 
@@ -990,8 +990,8 @@ public:
         void *ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
         Map->KeyInterface->Initialize(Map->ElementCache);
         Map->ValueInterface->Initialize(ValueCache);
-        Map->KeyInterface->Write(L, Map->ElementCache, -2);
-        Map->ValueInterface->Write(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, -1);
+        Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, -2);
+        Map->ValueInterface->WriteValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, -1);
         Map->Add(Map->ElementCache, ValueCache);
         return true;
     }
@@ -1126,7 +1126,7 @@ public:
     {
         FLuaSet *Set = (FLuaSet*)Userdata;
         Set->ElementInterface->Initialize(Set->ElementCache);
-        Set->ElementInterface->Write(L, Set->ElementCache, -1);
+        Set->ElementInterface->WriteValue_InContainer(L, Set->ElementCache, -1);
         Set->Add(Set->ElementCache);
         return true;
     }

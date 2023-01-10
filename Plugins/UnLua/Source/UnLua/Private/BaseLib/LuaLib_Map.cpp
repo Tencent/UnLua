@@ -71,8 +71,8 @@ static int TMap_Enumerable(lua_State* L)
         }
         else
         {
-            Map->KeyInterface->Read(L, Map->GetData((*Enumerator)->Index), false);
-            Map->ValueInterface->Read(L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset - Map->ValueInterface->GetOffset(), false);
+            Map->KeyInterface->ReadValue_InContainer(L, Map->GetData((*Enumerator)->Index), false);
+            Map->ValueInterface->ReadValue_InContainer(L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset - Map->ValueInterface->GetOffset(), false);
             ++(*Enumerator)->Index;
             return 2;
         }
@@ -137,8 +137,8 @@ static int32 TMap_Add(lua_State* L)
     void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
     Map->KeyInterface->Initialize(Map->ElementCache);
     Map->ValueInterface->Initialize(ValueCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
-    Map->ValueInterface->Write(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, 3);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
+    Map->ValueInterface->WriteValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, 3);
     Map->Add(Map->ElementCache, ValueCache);
     Map->KeyInterface->Destruct(Map->ElementCache);
     Map->ValueInterface->Destruct(ValueCache);
@@ -158,7 +158,7 @@ static int32 TMap_Remove(lua_State* L)
     TMap_Guard(L, Map);
 
     Map->KeyInterface->Initialize(Map->ElementCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
     bool bSuccess = Map->Remove(Map->ElementCache);
     Map->KeyInterface->Destruct(Map->ElementCache);
     lua_pushboolean(L, bSuccess);
@@ -180,11 +180,11 @@ static int32 TMap_Find(lua_State* L)
     void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
     Map->KeyInterface->Initialize(Map->ElementCache);
     Map->ValueInterface->Initialize(ValueCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
     bool bSuccess = Map->Find(Map->ElementCache, ValueCache);
     if (bSuccess)
     {
-        Map->ValueInterface->Read(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
+        Map->ValueInterface->ReadValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
     }
     else
     {
@@ -208,12 +208,12 @@ static int32 TMap_FindRef(lua_State* L)
     TMap_Guard(L, Map);
 
     Map->KeyInterface->Initialize(Map->ElementCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
     void* Value = Map->Find(Map->ElementCache);
     if (Value)
     {
         const void* Key = (uint8*)Value - Map->ValueInterface->GetOffset();
-        Map->ValueInterface->Read(L, Key, false);
+        Map->ValueInterface->ReadValue_InContainer(L, Key, false);
     }
     else
     {
@@ -312,14 +312,14 @@ static int32 TMap_ToTable(lua_State* L)
     for (int32 i = 0; i < Keys->Num(); ++i)
     {
         Keys->Get(i, Keys->ElementCache);
-        Keys->Inner->Read(L, Keys->ElementCache, true);
+        Keys->Inner->ReadValue_InContainer(L, Keys->ElementCache, true);
 
         void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
         Map->ValueInterface->Initialize(ValueCache);
         bool bSuccess = Map->Find(Keys->ElementCache, ValueCache);
         if (bSuccess)
         {
-            Map->ValueInterface->Read(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
+            Map->ValueInterface->ReadValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
         }
         else
         {

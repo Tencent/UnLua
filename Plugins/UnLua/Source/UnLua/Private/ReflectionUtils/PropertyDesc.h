@@ -183,11 +183,11 @@ public:
     virtual FString GetName() const override { return Name; }
     virtual FProperty* GetUProperty() const override { return Property; }
 
-    virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override 
+    virtual void ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override 
     {
         GetValue(L, ContainerPtr, bCreateCopy);
     }
-    virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override 
+    virtual void WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override 
     {
         SetValue(L, ContainerPtr, IndexInStack, true); 
     }
