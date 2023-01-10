@@ -110,7 +110,7 @@ namespace UnLua
             if (!LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
                 return 0;
 
-            (*Property)->Read(L, Self, false);
+            (*Property)->ReadValue_InContainer(L, Self, false);
             return 1;
         }
 
@@ -131,7 +131,7 @@ namespace UnLua
             if (!LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
                 return 0;
 
-            (*Property)->Write(L, Self, 3);
+            (*Property)->WriteValue_InContainer(L, Self, 3);
             return 0;
         }
 

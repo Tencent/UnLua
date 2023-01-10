@@ -860,12 +860,12 @@ namespace UnLua
         virtual FProperty* GetUProperty() const override { return nullptr; }
 
         // interfaces of ITypeOps
-        virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
+        virtual void ReadValue_InContainer(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
         {
             UnLua::Push(L, *((T*)ContainerPtr), bCreateCopy);
         }
 
-        virtual void Write(lua_State* L, void* ContainerPtr, int32 IndexInStack) const override
+        virtual void WriteValue_InContainer(lua_State* L, void* ContainerPtr, int32 IndexInStack) const override
         {
             static_assert(TIsCopyConstructible<T>::Value, "type must be copy constructible!");
             T V = UnLua::Get(L, IndexInStack, TType<T>());
@@ -900,12 +900,12 @@ namespace UnLua
         virtual FProperty* GetUProperty() const override { return nullptr; }
 
         // interfaces of ITypeOps
-        virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
+        virtual void ReadValue_InContainer(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const override
         {
             UnLua::Push(L, *((T**)ContainerPtr), bCreateCopy);
         }
 
-        virtual void Write(lua_State* L, void* ContainerPtr, int32 IndexInStack) const override
+        virtual void WriteValue_InContainer(lua_State* L, void* ContainerPtr, int32 IndexInStack) const override
         {
             T* V = UnLua::Get(L, IndexInStack, TType<T*>());
             *((T**)ContainerPtr) = V;

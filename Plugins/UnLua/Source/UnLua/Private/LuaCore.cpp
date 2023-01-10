@@ -1450,7 +1450,7 @@ int32 Class_Index(lua_State *L)
     if (!UnLua::LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
         return 0;
 
-    (*Property)->Read(L, Self, false);
+    (*Property)->ReadValue_InContainer(L, Self, false);
     lua_remove(L, -2);
     return 1;
 }
@@ -1477,7 +1477,7 @@ int32 Class_NewIndex(lua_State *L)
                 if (!UnLua::LowLevel::CheckPropertyOwner(L, (*Property).Get(), Self))
                     return 0;
 
-                (*Property)->Write(L, Self, 3);
+                (*Property)->WriteValue_InContainer(L, Self, 3);
             }
         }
     }
@@ -1624,7 +1624,7 @@ int32 ScriptStruct_Index(lua_State *L)
     if (!Self)
         return luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("attempt to read property '%s' on released struct"), *Property->GetName())));
 
-    Property->Read(L, Self, false);
+    Property->ReadValue_InContainer(L, Self, false);
     lua_remove(L, -2);
     return 1;
 }
