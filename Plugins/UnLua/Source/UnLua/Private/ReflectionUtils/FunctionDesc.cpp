@@ -452,7 +452,7 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
                 UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Invalid parameter type calling ufunction : %s,parameter : %d, error msg : %s"), *FuncName, ParamIndex, *ErrorMsg);
             }
 #endif
-            CleanupFlags[i] = Property->SetValue(L, Params, FirstParamIndex + ParamIndex, false);
+            CleanupFlags[i] = Property->WriteValue_InContainer(L, Params, FirstParamIndex + ParamIndex, false);
         }
         else if (!Property->IsOutParameter())
         {
@@ -508,7 +508,7 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
         const auto& Property = Properties[ReturnPropertyIndex];
         if (CleanupFlags[ReturnPropertyIndex])
         {
-            Property->GetValue(L, Params, true);
+            Property->ReadValue_InContainer(L, Params, true);
         }
         else
         {
@@ -530,7 +530,7 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
         const auto& Property = Properties[Index];
         if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
         {
-            Property->GetValue(L, Params, true);
+            Property->ReadValue_InContainer(L, Params, true);
             ++NumReturnValues;
         }
     }
@@ -593,7 +593,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
             continue;
         }
 
-        Property->GetValue(L, InParams, false);
+        Property->ReadValue_InContainer(L, InParams, false);
     }
 
     // object is also pushed, return is push when return
@@ -651,7 +651,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         }
         else
         {
-            OutProperty->SetValue(L, InParams, OutPropertyIndex, true);
+            OutProperty->WriteValue_InContainer(L, InParams, OutPropertyIndex, true);
         }
         OutPropertyIndex++;
     }
