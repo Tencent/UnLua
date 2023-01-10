@@ -497,7 +497,7 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
         const auto& Property = Properties[Index];
         if (Index >= NumParams || !Property->CopyBack(L, Params, FirstParamIndex + Index))
         {
-            Property->GetValue(L, Params, true);
+            Property->ReadValue_InContainer(L, Params, true);
             ++NumReturnValues;
         }
     }
