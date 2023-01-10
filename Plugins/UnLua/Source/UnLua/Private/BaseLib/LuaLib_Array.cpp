@@ -60,7 +60,7 @@ static int TArray_Enumerable(lua_State* L)
     if (Array->IsValidIndex((*Enumerator)->Index))
     {
         UnLua::Push(L, (*Enumerator)->Index + 1);
-        Array->Inner->ReadValue_InContainer(L, Array->GetData((*Enumerator)->Index), false);
+        Array->Inner->ReadValue(L, Array->GetData((*Enumerator)->Index), false);
         (*Enumerator)->Index += 1;
         return 2;
     }
@@ -324,7 +324,7 @@ static int32 TArray_Get(lua_State* L)
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Get(Index, Array->ElementCache);
-    Array->Inner->ReadValue_InContainer(L, Array->ElementCache, true);
+    Array->Inner->ReadValue(L, Array->ElementCache, true);
     Array->Inner->Destruct(Array->ElementCache);
     return 1;
 }
@@ -350,7 +350,7 @@ static int32 TArray_GetRef(lua_State* L)
     }
 
     const void* Element = Array->GetData(Index);
-    Array->Inner->ReadValue_InContainer(L, Element, false);
+    Array->Inner->ReadValue(L, Element, false);
     return 1;
 }
 
@@ -532,7 +532,7 @@ static int32 TArray_ToTable(lua_State* L)
     {
         lua_pushinteger(L, i + 1);
         Array->Get(i, Array->ElementCache);
-        Array->Inner->ReadValue_InContainer(L, Array->ElementCache, true);
+        Array->Inner->ReadValue(L, Array->ElementCache, true);
         lua_rawset(L, -3);
     }
     Array->Inner->Destruct(Array->ElementCache);

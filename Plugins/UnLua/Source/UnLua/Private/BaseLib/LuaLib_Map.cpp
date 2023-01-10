@@ -71,8 +71,8 @@ static int TMap_Enumerable(lua_State* L)
         }
         else
         {
-            Map->KeyInterface->ReadValue_InContainer(L, Map->GetData((*Enumerator)->Index), false);
-            Map->ValueInterface->ReadValue_InContainer(L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset - Map->ValueInterface->GetOffset(), false);
+            Map->KeyInterface->ReadValue(L, Map->GetData((*Enumerator)->Index), false);
+            Map->ValueInterface->ReadValue(L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset, false);
             ++(*Enumerator)->Index;
             return 2;
         }
@@ -212,8 +212,7 @@ static int32 TMap_FindRef(lua_State* L)
     void* Value = Map->Find(Map->ElementCache);
     if (Value)
     {
-        const void* Key = (uint8*)Value - Map->ValueInterface->GetOffset();
-        Map->ValueInterface->ReadValue_InContainer(L, Key, false);
+        Map->ValueInterface->ReadValue(L, Value, false);
     }
     else
     {
