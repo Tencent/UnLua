@@ -15,6 +15,7 @@
 #pragma once
 
 #include "lua.hpp"
+#include "LowLevel.h"
 #include "UnLuaBase.h"
 #include "UnLuaCompatibility.h"
 #include "UObject/WeakFieldPtr.h"
@@ -106,44 +107,6 @@ public:
     FORCEINLINE void CopyValue(void *ContainerPtr, const void *Src) const { Property->CopySingleValue(Property->ContainerPtrToValuePtr<void>(ContainerPtr), Src); }
 
     /**
-     * Get the value of this property
-     *
-     * @param ValuePtr - the address of the value for this property
-     * @param bCreateCopy (Optional) - whether to create a copy for the value
-     */
-    FORCEINLINE virtual void GetValue(lua_State *L, const void *ValuePtr, bool bCreateCopy) const 
-    {
-        if (UNLIKELY(!IsValid()))
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
-            lua_pushnil(L);
-            return;
-        }
-        GetValueInternal(L, ValuePtr, bCreateCopy);
-    }
-
-    /**
-     * Set the value of this property as an element at the given Lua index
-     *
-     * @param ValuePtr - the address of the value for this property
-     * @param IndexInStack - Lua index
-     * @param bCopyValue - whether to create a copy for the value
-     * @return - true if 'ContainerPtr' should be cleaned up by 'DestroyValue_InContainer', false otherwise
-     */
-    FORCEINLINE virtual bool SetValue(lua_State *L, void *ValuePtr, int32 IndexInStack = -1, bool bCopyValue = true) const
-    {
-        if (UNLIKELY(!IsValid()))
-        {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
-            return false;
-        }
-        return SetValueInternal(L, ValuePtr, IndexInStack, bCopyValue);
-    }
-
-    virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const = 0;
-    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack = -1, bool bCopyValue = true) const = 0;
-
-    /**
      * Copy an element at the given Lua index to the value of this property
      *
      * @param SrcIndexInStack - source Lua index
@@ -187,17 +150,38 @@ public:
     {
         if (UNLIKELY(!PropertyPtr.IsValid()))
         {
-            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property %s"), *Name);
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property '%s'"), *Name);
             lua_pushnil(L);
             return;
         }
 
-        GetValue(L, PropertyPtr->ContainerPtrToValuePtr<void*>(ContainerPtr), bCreateCopy);
+        if (UnLua::LowLevel::IsReleasedPtr(ContainerPtr))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Name);
+            lua_pushnil(L);
+            return;
+        }
+
+        GetValueInternal(L, PropertyPtr->ContainerPtrToValuePtr<void*>(ContainerPtr), bCreateCopy);
     }
 
     virtual void ReadValue(lua_State *L, const void *ValuePtr, bool bCreateCopy) const override 
     {
-        GetValue(L, ValuePtr, bCreateCopy);
+        if (UNLIKELY(!PropertyPtr.IsValid()))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read invalid property '%s'"), *Name);
+            lua_pushnil(L);
+            return;
+        }
+
+        if (UnLua::LowLevel::IsReleasedPtr(ValuePtr))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to read property '%s' on released object"), *Name);
+            lua_pushnil(L);
+            return;
+        }
+        
+        GetValueInternal(L, ValuePtr, bCreateCopy);
     }
 
     virtual bool WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy) const override 
@@ -209,12 +193,31 @@ public:
             return false;
         }
 
-        return SetValue(L, PropertyPtr->ContainerPtrToValuePtr<void*>(ContainerPtr), IndexInStack, bCreateCopy); 
+        if (UNLIKELY(UnLua::LowLevel::IsReleasedPtr(ContainerPtr)))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Name);
+            return false;
+        }
+
+        return SetValueInternal(L, PropertyPtr->ContainerPtrToValuePtr<void*>(ContainerPtr), IndexInStack, bCreateCopy); 
     }
 
     virtual bool WriteValue(lua_State *L, void *ValuePtr, int32 IndexInStack, bool bCreateCopy) const override 
     {
-        return SetValue(L, ValuePtr, IndexInStack, bCreateCopy); 
+        if (UNLIKELY(!PropertyPtr.IsValid()))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write invalid property %s"), *Name);
+            lua_pushnil(L);
+            return false;
+        }
+
+        if (UNLIKELY(UnLua::LowLevel::IsReleasedPtr(ValuePtr)))
+        {
+            UE_LOG(LogUnLua, Warning, TEXT("attempt to write property '%s' on released object"), *Name);
+            return false;
+        }
+        
+        return SetValueInternal(L, ValuePtr, IndexInStack, bCreateCopy); 
     }
 
 #if ENABLE_TYPE_CHECK == 1
@@ -226,6 +229,10 @@ public:
 	
 protected:
     explicit FPropertyDesc(FProperty *InProperty);
+
+    virtual void GetValueInternal(lua_State *L, const void *ValuePtr, bool bCreateCopy) const = 0;
+
+    virtual bool SetValueInternal(lua_State *L, void *ValuePtr, int32 IndexInStack = -1, bool bCopyValue = true) const = 0;
 
     union
     {
