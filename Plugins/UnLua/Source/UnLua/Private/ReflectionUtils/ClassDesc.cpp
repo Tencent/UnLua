@@ -41,7 +41,8 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
         // register implemented interfaces
         for (FImplementedInterface& Interface : Class->Interfaces)
         {
-            UnLua::FClassRegistry::RegisterReflectedType(Interface.Class);
+            if (Interface.Class)
+                UnLua::FClassRegistry::RegisterReflectedType(Interface.Class);
         }
 
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
