@@ -133,22 +133,22 @@ namespace UnLua
 
         virtual lua_Alloc GetLuaAllocator() const;
 
-        bool LoadString(const TArray<uint8>& Chunk, const FString& ChunkName = "chunk")
+        bool LoadString(lua_State* InL, const TArray<uint8>& Chunk, const FString& ChunkName = "chunk")
         {
             const char* Bytes = (char*)Chunk.GetData();
-            return LoadBuffer(Bytes, Chunk.Num(), TCHAR_TO_UTF8(*ChunkName));
+            return LoadBuffer(InL, Bytes, Chunk.Num(), TCHAR_TO_UTF8(*ChunkName));
         }
 
-        bool LoadString(const FString& Chunk, const FString& ChunkName = "chunk")
+        bool LoadString(lua_State* InL, const FString& Chunk, const FString& ChunkName = "chunk")
         {
             const FTCHARToUTF8 Bytes(*Chunk);
-            return LoadBuffer(Bytes.Get(), Bytes.Length(), TCHAR_TO_UTF8(*ChunkName));
+            return LoadBuffer(InL, Bytes.Get(), Bytes.Length(), TCHAR_TO_UTF8(*ChunkName));
         }
 
     private:
         void AddSearcher(lua_CFunction Searcher, int Index) const;
 
-        bool LoadBuffer(const char* Buffer, const size_t Size, const char* InName);
+        bool LoadBuffer(lua_State* InL, const char* Buffer, const size_t Size, const char* InName);
 
         void OnAsyncLoadingFlushUpdate();
 
