@@ -337,6 +337,14 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     }
 #endif
 
+#if ENABLE_TYPE_CHECK && WITH_EDITOR
+    if (!Object->IsA(FinalFunction->GetOuterUClass()))
+    {
+        return luaL_error(L, "attempt to call UFunction '%s' on invalid self type. '%s' required but got '%s'.",
+                          TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*FinalFunction->GetOuterUClass()->GetName()), TCHAR_TO_UTF8(*Object->GetClass()->GetName()));
+    }
+#endif
+
     // call the UFuncton...
 #if !SUPPORTS_RPC_CALL
     if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native) && NumCalls == 1)
