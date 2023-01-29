@@ -298,13 +298,16 @@ public:
 
     virtual bool CopyBack(lua_State *L, void *SrcContainerPtr, int32 DestIndexInStack) override
     {
-        void **Userdata = (void**)GetUserdata(L, DestIndexInStack);
-        if (Userdata && IsOutParameter())
-        {
-            *Userdata = ObjectBaseProperty->GetObjectPropertyValue(Property->ContainerPtrToValuePtr<void>(SrcContainerPtr));
-            return true;
-        }
-        return false;
+        if (!IsOutParameter())
+            return false;
+
+        bool bTwoLvlPtr;
+        void** Userdata = (void**)UnLua::LowLevel::GetUserdata(L, DestIndexInStack, &bTwoLvlPtr);
+        if (!bTwoLvlPtr || !Userdata)
+            return false;
+
+        *Userdata = ObjectBaseProperty->GetObjectPropertyValue(Property->ContainerPtrToValuePtr<void>(SrcContainerPtr));
+        return true;
     }
 
     virtual bool CopyBack(void *Dest, const void *Src) override

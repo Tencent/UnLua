@@ -311,57 +311,7 @@ void SetUserdataFlags(void* Userdata, uint8 Flags)
  */
 void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr, bool *OutClassMetatable)
 {
-    // Index < LUA_REGISTRYINDEX => upvalues
-    if (Index < 0 && Index > LUA_REGISTRYINDEX)
-    {
-        int32 Top = lua_gettop(L);
-        Index = Top + Index + 1;
-    }
-
-    void *Userdata = nullptr;
-    bool bTwoLvlPtr = false, bClassMetatable = false;
-
-    int32 Type = lua_type(L, Index);
-    switch (Type)
-    {
-    case LUA_TTABLE:
-        {
-            lua_pushstring(L, "Object");
-            Type = lua_rawget(L, Index);
-            if (Type == LUA_TUSERDATA)
-            {
-                Userdata = lua_touserdata(L, -1);           // get the raw UObject
-            }
-            else
-            {
-                lua_pop(L, 1);
-                lua_pushstring(L, "ClassDesc");
-                Type = lua_rawget(L, Index);
-                if (Type == LUA_TLIGHTUSERDATA)
-                {
-                    Userdata = lua_touserdata(L, -1);       // get the 'FClassDesc' pointer
-                    bClassMetatable = true;
-                }
-            }
-            bTwoLvlPtr = true;                              // set two level pointer flag
-            lua_pop(L, 1);
-        }
-        break;
-    case LUA_TUSERDATA:
-        Userdata = GetUserdataFast(L, Index, &bTwoLvlPtr);  // get the userdata pointer
-        break;
-    }
-
-    if (OutTwoLvlPtr)
-    {
-        *OutTwoLvlPtr = bTwoLvlPtr;
-    }
-    if (OutClassMetatable)
-    {
-        *OutClassMetatable = bClassMetatable;
-    }
-
-    return Userdata;
+    return UnLua::LowLevel::GetUserdata(L, Index, OutTwoLvlPtr);
 }
 
 /**
@@ -455,7 +405,7 @@ void* NewUserdataWithPadding(lua_State *L, int32 Size, const char *MetatableName
 void* GetCppInstance(lua_State *L, int32 Index)
 {
     bool bTwoLvlPtr = false;
-    void *Userdata = GetUserdata(L, Index, &bTwoLvlPtr);
+    void *Userdata = UnLua::LowLevel::GetUserdata(L, Index, &bTwoLvlPtr);
     if (Userdata)
     {
         return bTwoLvlPtr ? *((void**)Userdata) : Userdata;         // return instance's address
