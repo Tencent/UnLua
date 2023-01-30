@@ -31,50 +31,41 @@ public:
 
     FORCEINLINE const FString& GetName() const { return EnumName; }
 
-    template <typename CharType>
-    FORCEINLINE int64 GetValue(const CharType* EntryName) const
+    FORCEINLINE int64 GetValue(const FName EntryName)
     {
-        if (bUserDefined)
-            return GetUserDefinedEnumValue(Enum, FName(EntryName));
-        return GetEnumValue(Enum, FName(EntryName));
-    }
+        Load();
 
-    FORCEINLINE UEnum* GetEnum() const { return Enum.IsValid() ? Enum.Get() : nullptr; }
-
-    void Load();
-
-    void UnLoad();
-
-    static int64 GetEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
-    {
-        check(Enum.IsValid());
-        return Enum->GetValueByName(EntryName);
-    }
-
-    static int64 GetUserDefinedEnumValue(const TWeakObjectPtr<UEnum>& Enum, FName EntryName)
-    {
-        if (Enum.IsValid())
+        if (!IsValid())
         {
-			int32 NumEntries = Enum->NumEnums();
-			for (int32 i = 0; i < NumEntries; ++i)
-			{
-				FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
-				if (DisplayName == EntryName)
-				{
-					return Enum->GetValueByIndex(i);
-				}
-			}
+            UE_LOG(LogUnLua, Warning, TEXT("%s:Invalid enum[%s] descriptor"), ANSI_TO_TCHAR(__FUNCTION__), *EnumName);
+            return INDEX_NONE;
         }
-        else
+
+        if (!bUserDefined)
+            return Enum->GetValueByName(EntryName);
+
+        for (auto i = 0; i < Enum->NumEnums(); ++i)
         {
-			UE_LOG(LogUnLua, Warning, TEXT("%s:Invalid enum[%s] descriptor"), ANSI_TO_TCHAR(__FUNCTION__), *EntryName.ToString());
+            FName DisplayName(*Enum->GetDisplayNameTextByIndex(i).ToString());
+            if (DisplayName == EntryName)
+                return Enum->GetValueByIndex(i);
         }
 
         return INDEX_NONE;
     }
 
+    FORCEINLINE UEnum* GetEnum()
+    {
+        Load();
+        return Enum.Get();
+    }
+
+    void Load();
+
+    void UnLoad();
+
 private:
-	TWeakObjectPtr<UEnum> Enum;
+    TWeakObjectPtr<UEnum> Enum;
 
     FString EnumName;
     bool bUserDefined;

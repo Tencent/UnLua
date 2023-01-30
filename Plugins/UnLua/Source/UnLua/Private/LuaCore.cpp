@@ -1237,28 +1237,38 @@ int32 TraverseTable(lua_State *L, int32 Index, void *Userdata, bool(*TraverseWor
  */
 int32 Enum_Index(lua_State *L)
 {
+    const auto NumParams = lua_gettop(L);
+    if (NumParams < 2)
+        return 0;
+
     // 1: meta table of the Enum; 2: entry name in Enum
-    
+    if (lua_type(L, 1) != LUA_TTABLE)
+        return 0;
+
+    if (lua_type(L, 2) != LUA_TSTRING)
+        return 0;
+
+    lua_pushstring(L, "__name");
+    lua_rawget(L, 1);
     check(lua_isstring(L, -1));
-    lua_pushstring(L, "__name");        // 3
-    lua_rawget(L, 1);                   // 3
-    check(lua_isstring(L, -1));
-    
-    const FEnumDesc *Enum = UnLua::FEnumRegistry::Find(lua_tostring(L, -1));
-	if ((!Enum) 
-        || (!Enum->IsValid()))
-	{
-		lua_pop(L, 1);
-		return 0;
-	}
-    int64 Value = Enum->GetValue(lua_tostring(L, 2));
-    
+
+    const auto Enum = UnLua::FEnumRegistry::Find(lua_tostring(L, -1));
+    if (!Enum)
+    {
+        lua_pop(L, 1);
+        return 0;
+    }
+
+    Enum->Load();
+
+    const auto Value = Enum->GetValue(lua_tostring(L, 2));
+
     lua_pop(L, 1);
     lua_pushvalue(L, 2);
     lua_pushinteger(L, Value);
     lua_rawset(L, 1);
     lua_pushinteger(L, Value);
-    
+
     return 1;
 }
 
@@ -1279,7 +1289,7 @@ int32 Enum_GetMaxValue(lua_State* L)
 		if (Type == LUA_TSTRING)
 		{
 			const char* EnumName = lua_tostring(L, -1);
-			const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
+            const auto EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
 			if (EnumDesc)
 			{
 				UEnum* Enum = EnumDesc->GetEnum();
@@ -1317,7 +1327,7 @@ int32 Enum_GetNameStringByValue(lua_State* L)
         if (Type == LUA_TSTRING)
         {
             const char* EnumName = lua_tostring(L, -1);
-            const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
+            const auto EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
             if (EnumDesc)
             {
                 UEnum* Enum = EnumDesc->GetEnum();
@@ -1356,7 +1366,7 @@ int32 Enum_GetDisplayNameTextByValue(lua_State* L)
         if (Type == LUA_TSTRING)
         {
             const char* EnumName = lua_tostring(L, -1);
-            const FEnumDesc* EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
+            const auto EnumDesc = UnLua::FEnumRegistry::Find(EnumName);
             if (EnumDesc)
             {
                 UEnum* Enum = EnumDesc->GetEnum();
