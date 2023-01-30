@@ -21,6 +21,12 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 BEGIN_DEFINE_SPEC(FLuaDeadLoopCheckSpec, "UnLua.Settings", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+
+virtual bool SuppressLogWarnings() override
+{
+    return true;
+}
+
 END_DEFINE_SPEC(FLuaDeadLoopCheckSpec)
 
 void FLuaDeadLoopCheckSpec::Define()

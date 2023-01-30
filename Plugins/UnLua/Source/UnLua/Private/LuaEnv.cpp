@@ -163,7 +163,10 @@ namespace UnLua
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
 
 #if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
-        lua_sethook(L, Hook, LUA_MASKCALL | LUA_MASKRET, 0);
+        if (FDeadLoopCheck::Timeout)
+            UE_LOG(LogUnLua, Warning, TEXT("Profiling will not working when DeadLoopCheck enabled."))
+        else
+            lua_sethook(L, Hook, LUA_MASKCALL | LUA_MASKRET, 0);
 #endif
     }
 
