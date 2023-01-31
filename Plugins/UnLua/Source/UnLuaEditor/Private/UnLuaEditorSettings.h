@@ -98,6 +98,10 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bLegacyAllowUTF8WithBOM = false;
 
+    /** Arguments are passed to lua by pointer when called from UE. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Legacy")
+    bool bLegacyArgsPassing = true;
+
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (defaultValue = 0))
     EUpdateMode UpdateMode;
 };

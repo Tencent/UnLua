@@ -599,7 +599,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
         if (Property->IsReturnParameter())
             continue;
 
-        Property->ReadValue_InContainer(L, InParams, false);
+        Property->ReadValue_InContainer(L, InParams, !UNLUA_LEGACY_ARGS_PASSING);
     }
 
     // object is also pushed, return is push when return
