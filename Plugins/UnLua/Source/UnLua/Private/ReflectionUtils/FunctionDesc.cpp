@@ -597,24 +597,15 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     for (const auto& Property : Properties)
     {
         if (Property->IsReturnParameter())
-        {
             continue;
-        }
 
         Property->ReadValue_InContainer(L, InParams, false);
     }
 
     // object is also pushed, return is push when return
     int32 NumParams = Properties.Num();
-    int32 NumResult = OutPropertyIndices.Num();
     if (ReturnPropertyIndex == INDEX_NONE)
-    {
         NumParams++;
-    }
-    else
-    {
-        NumResult++;
-    }
 
     const auto Guard = Env.GetDeadLoopCheck()->MakeGuard();
     if (lua_pcall(L, NumParams, LUA_MULTRET, -(NumParams + 2)) != LUA_OK)
@@ -626,7 +617,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     // out value
     // suppose out param is also pushed on stack? this is assumed done by user... so we can not trust it
     int32 NumResultOnStack = lua_gettop(L) - ErrorHandlerIndex;
-    int32 OutPropertyIndex = -NumResult;
+    int32 OutPropertyIndex = ErrorHandlerIndex + 1;
 #if !UNLUA_LEGACY_RETURN_ORDER
     if (ReturnPropertyIndex > INDEX_NONE)
         OutPropertyIndex++;
@@ -637,15 +628,13 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     {
         const auto& OutProperty = Properties[OutPropertyIndices[i]];
         if (OutProperty->IsReferenceParameter())
-        {
-            OutPropertyIndex++;
             continue;
-        }
+
         OutParam = FindOutParmRec(OutParam, OutProperty->GetProperty());
         if (OutParam)
         {
             // user do push it on stack?
-            if (-OutPropertyIndex > NumResultOnStack)
+            if (OutPropertyIndex - ErrorHandlerIndex > NumResultOnStack)
             {
                 // so we need copy it back from input parameter
                 OutProperty->CopyBack(OutParam->PropAddr, OutProperty->GetProperty()->ContainerPtrToValuePtr<void>(InParams)); // copy back value to out property
@@ -680,7 +669,7 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
 #if UNLUA_LEGACY_RETURN_ORDER
             constexpr auto IndexInStack = -1;
 #else
-            const auto IndexInStack = -NumResult;
+            const auto IndexInStack = -NumResultOnStack;
 #endif
 
             // set value for return property
