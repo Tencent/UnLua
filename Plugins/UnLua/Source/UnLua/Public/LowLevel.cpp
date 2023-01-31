@@ -163,12 +163,12 @@ namespace UnLua
 #endif
         }
 
-        void* GetUserdata(lua_State* L, int32 Index, bool* OutTwoLvlPtr)
+        void* GetUserdata(lua_State* L, int32 Index, bool* OutTwoLvlPtr, bool *OutClassMetatable)
         {
             Index = AbsIndex(L, Index);
 
             void* Userdata = nullptr;
-            bool bTwoLvlPtr = false;
+            bool bTwoLvlPtr = false, bClassMetatable = false;
 
             int32 Type = lua_type(L, Index);
             switch (Type)
@@ -187,7 +187,10 @@ namespace UnLua
                         lua_pushstring(L, "ClassDesc");
                         Type = lua_rawget(L, Index);
                         if (Type == LUA_TLIGHTUSERDATA)
+                        {
                             Userdata = lua_touserdata(L, -1); // get the 'FClassDesc' pointer
+                            bClassMetatable = true;
+                        }
                     }
                     bTwoLvlPtr = true; // set two level pointer flag
                     lua_pop(L, 1);
@@ -202,6 +205,9 @@ namespace UnLua
 
             if (OutTwoLvlPtr)
                 *OutTwoLvlPtr = bTwoLvlPtr;
+
+            if (OutClassMetatable)
+                *OutClassMetatable = bClassMetatable;
 
             return Userdata;
         }

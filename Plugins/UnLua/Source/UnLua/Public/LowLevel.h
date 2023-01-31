@@ -66,6 +66,6 @@ namespace UnLua
 
         bool CheckPropertyOwner(lua_State* L, UnLua::ITypeOps* InProperty, void* InContainerPtr);
 
-        void* GetUserdata(lua_State* L, int32 Index, bool* OutTwoLvlPtr = nullptr);
+        void* GetUserdata(lua_State* L, int32 Index, bool* OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
     }
 }

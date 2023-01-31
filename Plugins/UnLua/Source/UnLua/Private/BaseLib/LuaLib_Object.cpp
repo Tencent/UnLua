@@ -234,8 +234,20 @@ int32 UObject_Delete(lua_State* L)
     if (NumParams != 1)
         return luaL_error(L, "invalid parameters");
 
-    const auto Object = UnLua::GetUObject(L, 1);
-    if (!Object)
+    bool bTwoLvlPtr = false;
+    bool bClassMetatable = false;
+    void* Userdata = GetUserdata(L, 1, &bTwoLvlPtr, &bClassMetatable);
+    if (!Userdata)
+        return 0;
+
+    if (bClassMetatable)
+        return 0;
+
+    if (!bTwoLvlPtr)
+        return 0;
+
+    UObject* Object = (UObject*)*(void**)Userdata;
+    if (UnLua::LowLevel::IsReleasedPtr(Object))
         return 0;
 
     UnLua::FLuaEnv::FindEnvChecked(L).GetObjectRegistry()->NotifyUObjectLuaGC(Object);

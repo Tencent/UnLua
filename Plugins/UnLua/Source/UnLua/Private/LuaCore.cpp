@@ -311,7 +311,7 @@ void SetUserdataFlags(void* Userdata, uint8 Flags)
  */
 void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr, bool *OutClassMetatable)
 {
-    return UnLua::LowLevel::GetUserdata(L, Index, OutTwoLvlPtr);
+    return UnLua::LowLevel::GetUserdata(L, Index, OutTwoLvlPtr, OutClassMetatable);
 }
 
 /**
