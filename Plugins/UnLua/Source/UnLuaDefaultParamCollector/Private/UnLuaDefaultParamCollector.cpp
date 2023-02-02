@@ -343,10 +343,10 @@ public:
                     else if (Property->IsA(FBoolProperty::StaticClass())) // boolean
                     {
                         PreAddProperty(Class, Function);
-						if(ValueStr.IsEmpty())
-							GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedBool_FALSE);\r\n"), *Property->GetName());
-						else
-							GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedBool_%s);\r\n"), *Property->GetName(), *ValueStr.ToUpper());
+                        if (ValueStr.IsEmpty())
+                            GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedBool_FALSE);\r\n"), *Property->GetName());
+                        else
+                            GeneratedFileContent += FString::Printf(TEXT("PC->Parameters.Add(TEXT(\"%s\"), SharedBool_%s);\r\n"), *Property->GetName(), *ValueStr.ToUpper());
                     }
                     else if (Property->IsA(FNameProperty::StaticClass())) // FName
                     {
