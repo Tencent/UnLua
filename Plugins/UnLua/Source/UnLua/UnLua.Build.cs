@@ -81,7 +81,7 @@ public class UnLua : ModuleRules
         loadBoolConfig("bEnablePersistentParamBuffer", "ENABLE_PERSISTENT_PARAM_BUFFER", true);
         loadBoolConfig("bEnableTypeChecking", "ENABLE_TYPE_CHECK", true);
         loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
-        loadBoolConfig("bEnableUnrealInsights", "ENABLE_UNREAL_INSIGHTS", true);
+        loadBoolConfig("bEnableUnrealInsights", "ENABLE_UNREAL_INSIGHTS", false);
         loadBoolConfig("bEnableCallOverriddenFunction", "ENABLE_CALL_OVERRIDDEN_FUNCTION", true);
         loadBoolConfig("bLuaCompileAsCpp", "LUA_COMPILE_AS_CPP", false);
         loadBoolConfig("bWithUE4Namespace", "WITH_UE4_NAMESPACE", true);
