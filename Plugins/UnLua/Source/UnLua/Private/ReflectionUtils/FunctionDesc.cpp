@@ -455,12 +455,13 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
         {   
 #if ENABLE_TYPE_CHECK == 1
             FString ErrorMsg = "";
-            if (!Property->CheckPropertyType(L, FirstParamIndex + ParamIndex, ErrorMsg))
-            {
-                UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("Invalid parameter type calling ufunction : %s,parameter : %d, error msg : %s"), *FuncName, ParamIndex, *ErrorMsg);
-            }
-#endif
+            if (Property->CheckPropertyType(L, FirstParamIndex + ParamIndex, ErrorMsg))
+                CleanupFlags[i] = Property->WriteValue_InContainer(L, Params, FirstParamIndex + ParamIndex, false);
+            else
+                UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("Invalid parameter type calling ufunction : %s,parameter : %d, error msg : %s"), *FuncName, ParamIndex, *ErrorMsg);
+#else
             CleanupFlags[i] = Property->WriteValue_InContainer(L, Params, FirstParamIndex + ParamIndex, false);
+#endif
         }
         else if (!Property->IsOutParameter())
         {
