@@ -198,6 +198,9 @@ private:
                 continue;
 
             auto ScriptPath = ContentDir / "Script";
+            if (!FPaths::DirectoryExists(ScriptPath))
+                continue;
+
             if (FPaths::MakePathRelativeTo(ScriptPath, *FPaths::ProjectContentDir()))
                 ScriptPaths.Add(ScriptPath);
         }
