@@ -20,9 +20,6 @@
 void FLuaSocketModule::StartupModule()
 {
     UnLua::FLuaEnv::OnCreated.AddStatic(&FLuaSocketModule::OnLuaEnvCreated);
-
-    for (const auto& Pair : UnLua::FLuaEnv::GetAll())
-        OnLuaEnvCreated(*Pair.Value);
 }
 
 void FLuaSocketModule::ShutdownModule()
