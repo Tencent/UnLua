@@ -721,7 +721,7 @@ namespace UnLua
     }
 
     template <typename T>
-    void TExportedArrayProperty<T>::WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const
+    bool TExportedArrayProperty<T>::WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy) const
     {
         if (IndexInStack < 0 && IndexInStack > LUA_REGISTRYINDEX)
         {
@@ -735,6 +735,7 @@ namespace UnLua
             V[i] = UnLua::Get(L, -1, TType<typename TArgTypeTraits<T>::Type>());
         }
         lua_pop(L, ArrayDim);
+        return false;
     }
 
 #if WITH_EDITOR

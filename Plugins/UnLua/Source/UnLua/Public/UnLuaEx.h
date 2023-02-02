@@ -310,7 +310,7 @@ namespace UnLua
         TExportedArrayProperty(const FString &InName, uint32 InOffset, int32 InArrayDim);
 
         virtual void ReadValue_InContainer(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const override;
-        virtual void WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack) const override;
+        virtual bool WriteValue_InContainer(lua_State *L, void *ContainerPtr, int32 IndexInStack, bool bCreateCopy = true) const override;
 
 #if WITH_EDITOR
         virtual void GenerateIntelliSense(FString &Buffer) const override;
