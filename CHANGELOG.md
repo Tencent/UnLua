@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.3] - 2023-2-2
+### Added
+- 增加对`EnhancedInput`输入绑定的支持
+- 增加 [启用Insights分析支持](./Docs/CN/Settings.md#启用Insights分析支持) 和 [传参方式](./Docs/CN/Settings.md#默认传参)  配置选项
+- 热重载失败时输出错误日志 [#581](https://github.com/Tencent/UnLua/pull/581)
+- 自动将启用的`UnLuaExtensions`的脚本加入打包设置
+- 支持按需重新加载蓝图枚举，也支持用UnLua.Ref来保持引用 [#585](https://github.com/Tencent/UnLua/issues/585)
+
+### Fixed
+- 编辑器使用`Development`环境启动后，加载Lua脚本报错时代码优化导致longjmp崩溃的问题
+- 在Lua中遍历TMap字段的Values接口返回值时引起的崩溃 [#583](https://github.com/Tencent/UnLua/issues/583)
+- 协程里require脚本加载异常 [#551](https://github.com/Tencent/UnLua/issues/551)
+- 加载`socket.http`模块时报错
+
+### Changed
+- 在启用类型检查时，非法参数不写入实际参数内存块，避免报错后又在使用时崩溃
+- 将`UnLuaExtensions`的启动时间提前，避免在入口脚本里直接访问的时候这些模块还没启动
+
 ## [2.3.2] - 2022-12-9
 
 ### Added
