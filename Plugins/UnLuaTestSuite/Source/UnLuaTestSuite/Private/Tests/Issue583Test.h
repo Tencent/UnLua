@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include "Engine/DataTable.h"
 #include "Issue583Test.generated.h"
 
 USTRUCT(BlueprintType)
