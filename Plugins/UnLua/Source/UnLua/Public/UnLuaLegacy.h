@@ -921,12 +921,12 @@ namespace UnLua
             UnLua::Push(L, *((T**)ValuePtr), bCreateCopy);
         }
 
-        virtual bool WriteValue_InContainer(lua_State* L, void* ContainerPtr, int32 IndexInStack) const override
+        virtual bool WriteValue_InContainer(lua_State* L, void* ContainerPtr, int32 IndexInStack, bool bCreateCopy = true) const override
         {
             return WriteValue(L, ContainerPtr, IndexInStack);
         }
 
-        virtual bool WriteValue(lua_State* L, void* ValuePtr, int32 IndexInStack) const override
+        virtual bool WriteValue(lua_State* L, void* ValuePtr, int32 IndexInStack, bool bCreateCopy) const override
         {
             T* V = UnLua::Get(L, IndexInStack, TType<T*>());
             *((T**)ValuePtr) = V;
