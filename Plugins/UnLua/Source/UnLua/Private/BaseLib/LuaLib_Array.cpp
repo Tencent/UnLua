@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "UnLuaEx.h"
 #include "LuaCore.h"
 #include "Containers/LuaArray.h"
@@ -31,12 +32,13 @@ static int32 TArray_New(lua_State* L)
     if (NumParams != 2)
         return luaL_error(L, "invalid parameters");
 
-    TSharedPtr<UnLua::ITypeInterface> TypeInterface(CreateTypeInterface(L, 2));
-    if (!TypeInterface)
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto ElementType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 2);
+    if (!ElementType)
         return luaL_error(L, "failed to create TArray");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
-    Registry->NewArray(L, TypeInterface, FLuaArray::OwnedBySelf);
+    Registry->NewArray(L, ElementType, FLuaArray::OwnedBySelf);
     return 1;
 }
 
@@ -58,7 +60,7 @@ static int TArray_Enumerable(lua_State* L)
     if (Array->IsValidIndex((*Enumerator)->Index))
     {
         UnLua::Push(L, (*Enumerator)->Index + 1);
-        Array->Inner->Read(L, Array->GetData((*Enumerator)->Index), false);
+        Array->Inner->ReadValue(L, Array->GetData((*Enumerator)->Index), false);
         (*Enumerator)->Index += 1;
         return 2;
     }
@@ -72,9 +74,11 @@ static int32 TArray_Pairs(lua_State* L)
     if (NumParams != 1)
         return luaL_error(L, "invalid parameters");
 
-    FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
+    FLuaArray* Array = (FLuaArray*)GetCppInstanceFast(L, 1);
     if (!Array)
-        return 0;
+        return UnLua::LowLevel::PushEmptyIterator(L);
+
+    TArray_Guard(L, Array);
 
     lua_pushcfunction(L, TArray_Enumerable);
     FLuaArray::FLuaArrayEnumerator** Enumerator = (FLuaArray::FLuaArrayEnumerator**)lua_newuserdata(L, sizeof(FLuaArray::FLuaArrayEnumerator*));
@@ -119,7 +123,7 @@ static int32 TArray_Add(lua_State* L)
 
     int32 Index = Array->AddDefaulted();
     uint8* Data = Array->GetData(Index);
-    Array->Inner->Write(L, Data, 2);
+    Array->Inner->WriteValue_InContainer(L, Data, 2);
     ++Index;
     lua_pushinteger(L, Index);
     return 1;
@@ -138,7 +142,7 @@ static int32 TArray_AddUnique(lua_State* L)
     TArray_Guard(L, Array);
 
     Array->Inner->Initialize(Array->ElementCache);
-    Array->Inner->Write(L, Array->ElementCache, 2);
+    Array->Inner->WriteValue_InContainer(L, Array->ElementCache, 2);
     int32 Index = Array->AddUnique(Array->ElementCache);
     Array->Inner->Destruct(Array->ElementCache);
     ++Index;
@@ -159,7 +163,7 @@ static int32 TArray_Find(lua_State* L)
     TArray_Guard(L, Array);
 
     Array->Inner->Initialize(Array->ElementCache);
-    Array->Inner->Write(L, Array->ElementCache, 2);
+    Array->Inner->WriteValue_InContainer(L, Array->ElementCache, 2);
     int32 Index = Array->Find(Array->ElementCache);
     Array->Inner->Destruct(Array->ElementCache);
     ++Index;
@@ -180,7 +184,7 @@ static int32 TArray_Insert(lua_State* L)
     TArray_Guard(L, Array);
 
     Array->Inner->Initialize(Array->ElementCache);
-    Array->Inner->Write(L, Array->ElementCache, 2);
+    Array->Inner->WriteValue_InContainer(L, Array->ElementCache, 2);
     int32 Index = lua_tointeger(L, 3);
     --Index;
     Array->Insert(Array->ElementCache, Index);
@@ -219,7 +223,7 @@ static int32 TArray_RemoveItem(lua_State* L)
     TArray_Guard(L, Array);
 
     Array->Inner->Initialize(Array->ElementCache);
-    Array->Inner->Write(L, Array->ElementCache, 2);
+    Array->Inner->WriteValue_InContainer(L, Array->ElementCache, 2);
     int32 N = Array->RemoveItem(Array->ElementCache);
     Array->Inner->Destruct(Array->ElementCache);
     lua_pushinteger(L, N);
@@ -320,7 +324,7 @@ static int32 TArray_Get(lua_State* L)
 
     Array->Inner->Initialize(Array->ElementCache);
     Array->Get(Index, Array->ElementCache);
-    Array->Inner->Read(L, Array->ElementCache, true);
+    Array->Inner->ReadValue(L, Array->ElementCache, true);
     Array->Inner->Destruct(Array->ElementCache);
     return 1;
 }
@@ -346,7 +350,7 @@ static int32 TArray_GetRef(lua_State* L)
     }
 
     const void* Element = Array->GetData(Index);
-    Array->Inner->Read(L, Element, false);
+    Array->Inner->ReadValue(L, Element, false);
     return 1;
 }
 
@@ -371,7 +375,7 @@ static int32 TArray_Set(lua_State* L)
     }
 
     Array->Inner->Initialize(Array->ElementCache);
-    Array->Inner->Write(L, Array->ElementCache, 3);
+    Array->Inner->WriteValue_InContainer(L, Array->ElementCache, 3);
     Array->Set(Index, Array->ElementCache);
     Array->Inner->Destruct(Array->ElementCache);
     return 0;
@@ -462,7 +466,7 @@ static int32 TArray_Contains(lua_State* L)
     TArray_Guard(L, Array);
 
     Array->Inner->Initialize(Array->ElementCache);
-    Array->Inner->Write(L, Array->ElementCache, 2);
+    Array->Inner->WriteValue_InContainer(L, Array->ElementCache, 2);
     int32 N = Array->Num();
     int32 Index = Array->Find(Array->ElementCache);
     Array->Inner->Destruct(Array->ElementCache);
@@ -500,7 +504,8 @@ static int32 TArray_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaArray* Array = (FLuaArray*)(GetCppInstanceFast(L, 1));
-    TArray_Guard(L, Array);
+    if (!Array)
+        return 0;
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Array);
@@ -527,7 +532,7 @@ static int32 TArray_ToTable(lua_State* L)
     {
         lua_pushinteger(L, i + 1);
         Array->Get(i, Array->ElementCache);
-        Array->Inner->Read(L, Array->ElementCache, true);
+        Array->Inner->ReadValue(L, Array->ElementCache, true);
         lua_rawset(L, -3);
     }
     Array->Inner->Destruct(Array->ElementCache);

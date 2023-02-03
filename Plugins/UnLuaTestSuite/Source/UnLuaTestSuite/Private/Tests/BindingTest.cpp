@@ -33,7 +33,7 @@ static void Run(TFunction<void(lua_State*, UWorld*)> Test)
     World->BeginPlay();
     World->bBegunPlay = true;
 
-    UnLua::PushUObject(L, World, false);
+    UnLua::PushUObject(L, World);
     lua_setglobal(L, "World");
 
     // Perform Test

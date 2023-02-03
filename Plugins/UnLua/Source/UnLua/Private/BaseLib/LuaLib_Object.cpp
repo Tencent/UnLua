@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Engine/World.h"
 #include "LowLevel.h"
 #include "UnLuaEx.h"
 #include "LuaCore.h"
@@ -30,7 +31,8 @@ int32 UObject_Load(lua_State* L)
     if (!ObjectName)
         return luaL_error(L, "invalid class name");
 
-    FString ObjectPath(ObjectName);
+    FString ObjectPath = UTF8_TO_TCHAR(ObjectName);
+
     int32 Index = INDEX_NONE;
     ObjectPath.FindChar(TCHAR('.'), Index);
     if (Index == INDEX_NONE)
@@ -61,7 +63,6 @@ int32 UObject_Load(lua_State* L)
     }
     else
     {
-        UE_LOG(LogUnLua, Log, TEXT("%s: Failed to load object %s!"), ANSI_TO_TCHAR(__FUNCTION__), ANSI_TO_TCHAR(ObjectName));
         lua_pushnil(L);
     }
 
@@ -124,7 +125,7 @@ static int32 UObject_GetOuter(lua_State* L)
  */
 static int32 UObject_GetClass(lua_State* L)
 {
-    UClass* Class = nullptr;
+    UClass* Class;
     int32 NumParams = lua_gettop(L);
     if (NumParams > 0)
     {
@@ -156,7 +157,7 @@ static int32 UObject_GetWorld(lua_State* L)
         return luaL_error(L, "invalid object");
 
     UWorld* World = Object->GetWorld();
-    UnLua::PushUObject(L, (UObject*)World, false); // GWorld will be added to Root, so we don't collect it...
+    UnLua::PushUObject(L, World);
     return 1;
 }
 
@@ -196,12 +197,30 @@ static int32 UObject_Release(lua_State* L)
  */
 int32 UObject_Identical(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const int NumParams = lua_gettop(L);
     if (NumParams != 2)
         return luaL_error(L, "invalid parameters");
 
-    UObject* A = UnLua::GetUObject(L, 1);
-    UObject* B = UnLua::GetUObject(L, 2);
+    if (lua_rawequal(L, 1, 2))
+    {
+        lua_pushboolean(L, true);
+        return 1;
+    }
+
+    const auto A = UnLua::GetUObject(L, 1);
+    if (!A)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
+    const auto B = UnLua::GetUObject(L, 2);
+    if (!B)
+    {
+        lua_pushboolean(L, false);
+        return 1;
+    }
+
     lua_pushboolean(L, A == B);
     return 1;
 }
@@ -212,7 +231,7 @@ int32 UObject_Identical(lua_State* L)
  */
 int32 UObject_Delete(lua_State* L)
 {
-    int32 NumParams = lua_gettop(L);
+    const auto NumParams = lua_gettop(L);
     if (NumParams != 1)
         return luaL_error(L, "invalid parameters");
 

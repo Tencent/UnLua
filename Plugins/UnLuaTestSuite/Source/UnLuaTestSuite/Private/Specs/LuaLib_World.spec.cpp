@@ -41,7 +41,7 @@ void FUnLuaLibWorldSpec::Define()
         World->InitializeActorsForPlay(URL);
         World->BeginPlay();
 
-        UnLua::PushUObject(L, World, false);
+        UnLua::PushUObject(L, World);
         lua_setglobal(L, "World");
     });
 

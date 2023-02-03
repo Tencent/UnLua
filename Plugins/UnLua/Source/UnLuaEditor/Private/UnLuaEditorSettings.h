@@ -58,6 +58,10 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableDebug = false;
 
+    /** Enable Unreal Insights to profile call performance. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
+    bool bEnableUnrealInsights = false;
+
     /** Enable persistent buffer for UFunction's parameters. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnablePersistentParamBuffer = true;
@@ -93,6 +97,10 @@ public:
     /** Allow lua file with UTF-8 BOM header. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bLegacyAllowUTF8WithBOM = false;
+
+    /** Arguments are passed to lua by pointer when called from UE. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Legacy")
+    bool bLegacyArgsPassing = true;
 
     UPROPERTY(config, EditAnywhere, Category = "System", meta = (defaultValue = 0))
     EUpdateMode UpdateMode;

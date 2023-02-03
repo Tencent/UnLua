@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Misc/EngineVersionComparison.h"
 #include "UnLuaIntelliSenseGenerator.h"
 #include "AssetRegistryModule.h"
 #include "CoreUObject.h"
@@ -55,8 +56,13 @@ void FUnLuaIntelliSenseGenerator::UpdateAll()
     const FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
 
     FARFilter Filter;
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
     Filter.ClassNames.Add(UBlueprint::StaticClass()->GetFName());
     Filter.ClassNames.Add(UWidgetBlueprint::StaticClass()->GetFName());
+#else
+    Filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+    Filter.ClassPaths.Add(UWidgetBlueprint::StaticClass()->GetClassPathName());
+#endif
 
     TArray<FAssetData> BlueprintAssets;
     TArray<const UField*> NativeTypes;

@@ -22,9 +22,6 @@ extern "C" int luaopen_pb_unsafe(lua_State *L);
 void FLuaProtobufModule::StartupModule()
 {
     UnLua::FLuaEnv::OnCreated.AddStatic(&FLuaProtobufModule::OnLuaEnvCreated);
-
-    for (const auto& Pair : UnLua::FLuaEnv::GetAll())
-        OnLuaEnvCreated(*Pair.Value);
 }
 
 void FLuaProtobufModule::ShutdownModule()

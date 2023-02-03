@@ -185,7 +185,26 @@ private:
 
     void SetupPackagingSettings()
     {
-        static auto ScriptPaths = {TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
+        auto ScriptPaths = TArray<FString>{TEXT("Script"), TEXT("../Plugins/UnLua/Content/Script")};
+
+        const auto Plugins = IPluginManager::Get().GetEnabledPlugins();
+        for (const auto Plugin : Plugins)
+        {
+            if (!Plugin->CanContainContent())
+                continue;
+
+            const auto ContentDir = Plugin->GetContentDir();
+            if (!ContentDir.Contains("UnLuaExtensions"))
+                continue;
+
+            auto ScriptPath = ContentDir / "Script";
+            if (!FPaths::DirectoryExists(ScriptPath))
+                continue;
+
+            if (FPaths::MakePathRelativeTo(ScriptPath, *FPaths::ProjectContentDir()))
+                ScriptPaths.Add(ScriptPath);
+        }
+
         const auto PackagingSettings = GetMutableDefault<UProjectPackagingSettings>();
         bool bModified = false;
         auto Exists = [&](const auto Path)

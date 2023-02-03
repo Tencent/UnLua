@@ -19,6 +19,12 @@ namespace UnLua
 {
     namespace LowLevel
     {
+        int EmptyIterator(lua_State* L)
+        {
+            lua_pushnil(L);
+            return 1;
+        }
+
         /**
          * Create weak key table
          */
@@ -94,13 +100,13 @@ namespace UnLua
 #else
                 Names->Add(FName(lua_tostring(L, -2)));
 #endif
-                
+
                 return true;
-            }; 
-            
+            };
+
             auto N = 1;
             bool bNext;
-            do 
+            do
             {
                 bNext = TraverseTable(L, -1, &FunctionNames, GetFunctionName) > INDEX_NONE;
                 if (bNext)
@@ -110,7 +116,8 @@ namespace UnLua
                     ++N;
                     bNext = lua_istable(L, -1);
                 }
-            } while (bNext);
+            }
+            while (bNext);
             lua_pop(L, N);
         }
 
@@ -154,6 +161,55 @@ namespace UnLua
 #else
             return true;
 #endif
+        }
+
+        void* GetUserdata(lua_State* L, int32 Index, bool* OutTwoLvlPtr, bool *OutClassMetatable)
+        {
+            Index = AbsIndex(L, Index);
+
+            void* Userdata = nullptr;
+            bool bTwoLvlPtr = false, bClassMetatable = false;
+
+            int32 Type = lua_type(L, Index);
+            switch (Type)
+            {
+            case LUA_TTABLE:
+                {
+                    lua_pushstring(L, "Object");
+                    Type = lua_rawget(L, Index);
+                    if (Type == LUA_TUSERDATA)
+                    {
+                        Userdata = lua_touserdata(L, -1); // get the raw UObject
+                    }
+                    else
+                    {
+                        lua_pop(L, 1);
+                        lua_pushstring(L, "ClassDesc");
+                        Type = lua_rawget(L, Index);
+                        if (Type == LUA_TLIGHTUSERDATA)
+                        {
+                            Userdata = lua_touserdata(L, -1); // get the 'FClassDesc' pointer
+                            bClassMetatable = true;
+                        }
+                    }
+                    bTwoLvlPtr = true; // set two level pointer flag
+                    lua_pop(L, 1);
+                }
+                break;
+            case LUA_TUSERDATA:
+                Userdata = GetUserdataFast(L, Index, &bTwoLvlPtr); // get the userdata pointer
+                break;
+            default:
+                break;
+            }
+
+            if (OutTwoLvlPtr)
+                *OutTwoLvlPtr = bTwoLvlPtr;
+
+            if (OutClassMetatable)
+                *OutClassMetatable = bClassMetatable;
+
+            return Userdata;
         }
     }
 }

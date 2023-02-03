@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "LowLevel.h"
 #include "UnLuaEx.h"
 #include "LuaCore.h"
 #include "Containers/LuaMap.h"
@@ -34,16 +35,17 @@ static int32 TMap_New(lua_State* L)
     if (NumParams != 3)
         return luaL_error(L, "invalid parameters");
 
-    TSharedPtr<UnLua::ITypeInterface> KeyInterface(CreateTypeInterface(L, 2));
-    if (!KeyInterface)
+    auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
+    auto KeyType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 2);
+    if (!KeyType)
         return luaL_error(L, "invalid key type");
 
-    TSharedPtr<UnLua::ITypeInterface> ValueInterface(CreateTypeInterface(L, 3));
-    if (!ValueInterface)
+    auto ValueType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 3);
+    if (!ValueType)
         return luaL_error(L, "invalid value type");
 
-    auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
-    Registry->NewMap(L, KeyInterface, ValueInterface, FLuaMap::OwnedBySelf);
+    auto Registry = Env.GetContainerRegistry();
+    Registry->NewMap(L, KeyType, ValueType, FLuaMap::OwnedBySelf);
 
     return 1;
 }
@@ -69,8 +71,8 @@ static int TMap_Enumerable(lua_State* L)
         }
         else
         {
-            Map->KeyInterface->Read(L, Map->GetData((*Enumerator)->Index), false);
-            Map->ValueInterface->Read(L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset - Map->ValueInterface->GetOffset(), false);
+            Map->KeyInterface->ReadValue(L, Map->GetData((*Enumerator)->Index), false);
+            Map->ValueInterface->ReadValue(L, Map->GetData((*Enumerator)->Index) + Map->MapLayout.ValueOffset, false);
             ++(*Enumerator)->Index;
             return 2;
         }
@@ -85,7 +87,10 @@ static int32 TMap_Pairs(lua_State* L)
     if (NumParams != 1)
         return luaL_error(L, "invalid parameters");
 
-    FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
+    FLuaMap* Map = (FLuaMap*)GetCppInstanceFast(L, 1);
+    if (!Map)
+        return UnLua::LowLevel::PushEmptyIterator(L);
+
     TMap_Guard(L, Map);
 
     lua_pushcfunction(L, TMap_Enumerable);
@@ -132,8 +137,8 @@ static int32 TMap_Add(lua_State* L)
     void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
     Map->KeyInterface->Initialize(Map->ElementCache);
     Map->ValueInterface->Initialize(ValueCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
-    Map->ValueInterface->Write(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, 3);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
+    Map->ValueInterface->WriteValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, 3);
     Map->Add(Map->ElementCache, ValueCache);
     Map->KeyInterface->Destruct(Map->ElementCache);
     Map->ValueInterface->Destruct(ValueCache);
@@ -153,7 +158,7 @@ static int32 TMap_Remove(lua_State* L)
     TMap_Guard(L, Map);
 
     Map->KeyInterface->Initialize(Map->ElementCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
     bool bSuccess = Map->Remove(Map->ElementCache);
     Map->KeyInterface->Destruct(Map->ElementCache);
     lua_pushboolean(L, bSuccess);
@@ -175,11 +180,11 @@ static int32 TMap_Find(lua_State* L)
     void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
     Map->KeyInterface->Initialize(Map->ElementCache);
     Map->ValueInterface->Initialize(ValueCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
     bool bSuccess = Map->Find(Map->ElementCache, ValueCache);
     if (bSuccess)
     {
-        Map->ValueInterface->Read(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
+        Map->ValueInterface->ReadValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
     }
     else
     {
@@ -203,12 +208,11 @@ static int32 TMap_FindRef(lua_State* L)
     TMap_Guard(L, Map);
 
     Map->KeyInterface->Initialize(Map->ElementCache);
-    Map->KeyInterface->Write(L, Map->ElementCache, 2);
+    Map->KeyInterface->WriteValue_InContainer(L, Map->ElementCache, 2);
     void* Value = Map->Find(Map->ElementCache);
     if (Value)
     {
-        const void* Key = (uint8*)Value - Map->ValueInterface->GetOffset();
-        Map->ValueInterface->Read(L, Key, false);
+        Map->ValueInterface->ReadValue(L, Value, false);
     }
     else
     {
@@ -278,7 +282,8 @@ static int32 TMap_Delete(lua_State* L)
         return luaL_error(L, "invalid parameters");
 
     FLuaMap* Map = (FLuaMap*)(GetCppInstanceFast(L, 1));
-    TMap_Guard(L, Map);
+    if (!Map)
+        return 0;
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->Remove(Map);
@@ -306,14 +311,14 @@ static int32 TMap_ToTable(lua_State* L)
     for (int32 i = 0; i < Keys->Num(); ++i)
     {
         Keys->Get(i, Keys->ElementCache);
-        Keys->Inner->Read(L, Keys->ElementCache, true);
+        Keys->Inner->ReadValue_InContainer(L, Keys->ElementCache, true);
 
         void* ValueCache = (uint8*)Map->ElementCache + Map->MapLayout.ValueOffset;
         Map->ValueInterface->Initialize(ValueCache);
         bool bSuccess = Map->Find(Keys->ElementCache, ValueCache);
         if (bSuccess)
         {
-            Map->ValueInterface->Read(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
+            Map->ValueInterface->ReadValue_InContainer(L, Map->ValueInterface->GetOffset() > 0 ? Map->ElementCache : ValueCache, true);
         }
         else
         {

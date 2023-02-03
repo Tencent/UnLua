@@ -20,9 +20,6 @@ extern "C" int luaopen_rapidjson(lua_State* L);
 void FLuaRapidjsonModule::StartupModule()
 {
     UnLua::FLuaEnv::OnCreated.AddStatic(&FLuaRapidjsonModule::OnLuaEnvCreated);
-
-    for (const auto& Pair : UnLua::FLuaEnv::GetAll())
-        OnLuaEnvCreated(*Pair.Value);
 }
 
 void FLuaRapidjsonModule::ShutdownModule()

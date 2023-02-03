@@ -31,7 +31,7 @@ struct FUnLuaTest_Issue292 : FUnLuaTestBase
 
         const auto World = GetWorld();
         AActor* Actor = World->SpawnActor(AActor::StaticClass());
-        UnLua::PushUObject(L, Actor, false);
+        UnLua::PushUObject(L, Actor);
         lua_setglobal(L, "G_Actor");
         Actor->K2_DestroyActor();
 

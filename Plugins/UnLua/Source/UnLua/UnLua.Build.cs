@@ -56,19 +56,22 @@ public class UnLua : ModuleRules
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 
         if (Target.bBuildEditor)
+        {
+            OptimizeCode = CodeOptimization.Never;
             PrivateDependencyModuleNames.Add("UnrealEd");
+        }
 
         var projectDir = Target.ProjectFile.Directory;
         var configFilePath = projectDir + "/Config/DefaultUnLuaEditor.ini";
         var configFileReference = new FileReference(configFilePath); 
         var configFile = FileReference.Exists(configFileReference) ? new ConfigFile(configFileReference) : new ConfigFile();
         var config = new ConfigHierarchy(new[] { configFile });
-        const string Section = "/Script/UnLuaEditor.UnLuaEditorSettings";
+        const string section = "/Script/UnLuaEditor.UnLuaEditorSettings";
 
         Action<string, string, bool> loadBoolConfig = (key, macro, defaultValue) =>
         {
             bool flag;
-            if (!config.GetBool(Section, key, out flag))
+            if (!config.GetBool(section, key, out flag))
                 flag = defaultValue;
             PublicDefinitions.Add(string.Format("{0}={1}", macro, (flag ? "1" : "0")));
         };
@@ -78,11 +81,20 @@ public class UnLua : ModuleRules
         loadBoolConfig("bEnablePersistentParamBuffer", "ENABLE_PERSISTENT_PARAM_BUFFER", true);
         loadBoolConfig("bEnableTypeChecking", "ENABLE_TYPE_CHECK", true);
         loadBoolConfig("bEnableRPCCall", "SUPPORTS_RPC_CALL", true);
+        loadBoolConfig("bEnableUnrealInsights", "ENABLE_UNREAL_INSIGHTS", false);
         loadBoolConfig("bEnableCallOverriddenFunction", "ENABLE_CALL_OVERRIDDEN_FUNCTION", true);
         loadBoolConfig("bLuaCompileAsCpp", "LUA_COMPILE_AS_CPP", false);
         loadBoolConfig("bWithUE4Namespace", "WITH_UE4_NAMESPACE", true);
         loadBoolConfig("bLegacyReturnOrder", "UNLUA_LEGACY_RETURN_ORDER", false);
         loadBoolConfig("bLegacyBlueprintPath", "UNLUA_LEGACY_BLUEPRINT_PATH", false);
         loadBoolConfig("bLegacyAllowUTF8WithBOM", "UNLUA_LEGACY_ALLOW_BOM", false);
+        loadBoolConfig("bLegacyArgsPassing", "UNLUA_LEGACY_ARGS_PASSING", true);
+
+        string hotReloadMode;
+        if (!config.GetString(section, "HotReloadMode", out hotReloadMode))
+            hotReloadMode = "Manual";
+
+        var withHotReload = hotReloadMode != "Never";
+        PublicDefinitions.Add("UNLUA_WITH_HOT_RELOAD=" + (withHotReload ? "1" : "0"));
     }
 }

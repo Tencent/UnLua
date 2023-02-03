@@ -39,6 +39,38 @@ namespace UnLua
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
     FLuaEnv::FOnCreated FLuaEnv::OnDestroyed;
 
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+    void Hook(lua_State* L, lua_Debug* ar)
+    {
+        static TSet<FName> IgnoreNames{FName("Class"), FName("index"), FName("newindex")};
+
+        lua_getinfo(L, "nSl", ar);
+
+        if (ar->what == FName("Lua"))
+        {
+            if (IgnoreNames.Contains(ar->name))
+            {
+                return;
+            }
+
+            const auto EventName = FString::Printf(TEXT(
+                "%s [%s:%d]"),
+                                                   *FString(ar->name ? ar->name : "N/A"),
+                                                   *FPaths::GetBaseFilename(FString(ar->source)),
+                                                   ar->linedefined);
+
+            if (ar->event == 0)
+            {
+                FCpuProfilerTrace::OutputBeginDynamicEvent(*EventName);
+            }
+            else
+            {
+                FCpuProfilerTrace::OutputEndEvent();
+            }
+        }
+    }
+#endif
+
     FLuaEnv::FLuaEnv()
         : bStarted(false)
     {
@@ -77,6 +109,7 @@ namespace UnLua
         FunctionRegistry = new FFunctionRegistry(this);
         DelegateRegistry = new FDelegateRegistry(this);
         ContainerRegistry = new FContainerRegistry(this);
+        PropertyRegistry = new FPropertyRegistry(this);
         EnumRegistry = new FEnumRegistry(this);
         DanglingCheck = new FDanglingCheck(this);
         DeadLoopCheck = new FDeadLoopCheck(this);
@@ -128,6 +161,13 @@ namespace UnLua
 
         OnCreated.Broadcast(*this);
         FUnLuaDelegates::OnLuaStateCreated.Broadcast(L);
+
+#if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
+        if (FDeadLoopCheck::Timeout)
+            UE_LOG(LogUnLua, Warning, TEXT("Profiling will not working when DeadLoopCheck enabled."))
+        else
+            lua_sethook(L, Hook, LUA_MASKCALL | LUA_MASKRET, 0);
+#endif
     }
 
     FLuaEnv::~FLuaEnv()
@@ -142,6 +182,7 @@ namespace UnLua
         delete FunctionRegistry;
         delete ContainerRegistry;
         delete EnumRegistry;
+        delete PropertyRegistry;
         delete DanglingCheck;
         delete DeadLoopCheck;
 
@@ -223,6 +264,7 @@ namespace UnLua
     void FLuaEnv::NotifyUObjectDeleted(const UObjectBase* ObjectBase, int32 Index)
     {
         UObject* Object = (UObject*)ObjectBase;
+        PropertyRegistry->NotifyUObjectDeleted(Object);
         FunctionRegistry->NotifyUObjectDeleted(Object);
         if (Manager)
             Manager->NotifyUObjectDeleted(Object);
@@ -349,7 +391,7 @@ namespace UnLua
         const auto DanglingGuard = GetDanglingCheck()->MakeGuard();
         lua_pushcfunction(L, ReportLuaCallError);
         const auto MsgHandlerIdx = lua_gettop(L);
-        if (!LoadBuffer(ChunkUTF8.Get(), ChunkUTF8.Length(), ChunkNameUTF8.Get()))
+        if (!LoadBuffer(L, ChunkUTF8.Get(), ChunkUTF8.Length(), ChunkNameUTF8.Get()))
         {
             lua_pop(L, 1);
             return false;
@@ -365,7 +407,7 @@ namespace UnLua
         return false;
     }
 
-    bool FLuaEnv::LoadBuffer(const char* Buffer, const size_t Size, const char* InName)
+    bool FLuaEnv::LoadBuffer(lua_State* InL, const char* Buffer, const size_t Size, const char* InName)
     {
         // TODO: env support
         // TODO: return value support
@@ -376,18 +418,18 @@ namespace UnLua
 #if !UNLUA_LEGACY_ALLOW_BOM
             UE_LOG(LogUnLua, Warning, TEXT("Lua chunk with utf-8 BOM:%s"), UTF8_TO_TCHAR(InName));
 #endif
-            return LoadBuffer(Buffer + 3, Size - 3, InName);
+            return LoadBuffer(InL, Buffer + 3, Size - 3, InName);
         }
 #endif
 
         // loads the buffer as a Lua chunk
-        const int32 Code = luaL_loadbufferx(L, Buffer, Size, InName, nullptr);
+        const int32 Code = luaL_loadbufferx(InL, Buffer, Size, InName, nullptr);
         if (Code != LUA_OK)
         {
             UE_LOG(LogUnLua, Warning, TEXT("Failed to call luaL_loadbufferx, error code: %d"), Code);
-            ReportLuaCallError(L); // report pcall error
-            lua_pushnil(L); /* error (message is on top of the stack) */
-            lua_insert(L, -2); /* put before error message */
+            ReportLuaCallError(InL); // report pcall error
+            lua_pushnil(InL); /* error (message is on top of the stack) */
+            lua_insert(InL, -2); /* put before error message */
             return false;
         }
 
@@ -520,7 +562,7 @@ namespace UnLua
             FString ChunkName(TEXT("chunk"));
             if (FUnLuaDelegates::CustomLoadLuaFile.Execute(Env, FileName, Data, ChunkName))
             {
-                if (Env.LoadString(Data, ChunkName))
+                if (Env.LoadString(L, Data, ChunkName))
                     return 1;
 
                 return luaL_error(L, "file loading from custom loader error");
@@ -540,7 +582,7 @@ namespace UnLua
             if (!Loader.Execute(Env, FileName, Data, ChunkName))
                 continue;
 
-            if (Env.LoadString(Data, ChunkName))
+            if (Env.LoadString(L, Data, ChunkName))
                 break;
 
             return luaL_error(L, "file loading from custom loader error");
@@ -560,7 +602,7 @@ namespace UnLua
 
         auto LoadIt = [&]
         {
-            if (Env.LoadString(Data, TCHAR_TO_UTF8(*FullPath)))
+            if (Env.LoadString(L, Data, TCHAR_TO_UTF8(*FullPath)))
                 return 1;
             return luaL_error(L, "file loading from file system error");
         };

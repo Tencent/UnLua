@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.3] - 2023-2-2
+### Added
+- 增加对`EnhancedInput`输入绑定的支持
+- 增加 [启用Insights分析支持](./Docs/CN/Settings.md#启用Insights分析支持) 和 [传参方式](./Docs/CN/Settings.md#默认传参)  配置选项
+- 热重载失败时输出错误日志 [#581](https://github.com/Tencent/UnLua/pull/581)
+- 自动将启用的`UnLuaExtensions`的脚本加入打包设置
+- 支持按需重新加载蓝图枚举，也支持用UnLua.Ref来保持引用 [#585](https://github.com/Tencent/UnLua/issues/585)
+
+### Fixed
+- 编辑器使用`Development`环境启动后，加载Lua脚本报错时代码优化导致longjmp崩溃的问题
+- 在Lua中遍历TMap字段的Values接口返回值时引起的崩溃 [#583](https://github.com/Tencent/UnLua/issues/583)
+- 协程里require脚本加载异常 [#551](https://github.com/Tencent/UnLua/issues/551)
+- 加载`socket.http`模块时报错
+
+### Changed
+- 在启用类型检查时，非法参数不写入实际参数内存块，避免报错后又在使用时崩溃
+- 将`UnLuaExtensions`的启动时间提前，避免在入口脚本里直接访问的时候这些模块还没启动
+
+## [2.3.2] - 2022-12-9
+
+### Added
+- 增加配置选项[崩溃时输出Lua堆栈到日志](./Docs/CN/Settings.md#崩溃时输出lua堆栈到日志)
+- 针对自`2.2.0`版本以来调整的垃圾回收机制的[说明文档](./Docs/CN/UnLua_Programming_Guide.md#五垃圾回收)
+
+### Fixed
+- UObject绑定后的元表和其他表相等判断时结果错误 [#281](https://github.com/Tencent/UnLua/issues/281) [#567](https://github.com/Tencent/UnLua/issues/567)
+- 访问UStruct内部的委托会check [#561](https://github.com/Tencent/UnLua/issues/561)
+- 多次传递委托类型的参数到同一函数时，可能因为Owner失效而无法回调 [#566](https://github.com/Tencent/UnLua/issues/566)
+- UE5.1之后构造`FProperty`报deprecated [#569](https://github.com/Tencent/UnLua/issues/569)
+- pairs在参数异常时返回空迭代器，避免lua调试时访问报错
+- 热重载upvalue没有生效
+- `UObject.Load`传入中文路径时乱码
+
+### Changed
+- 在[热重载模式](./Docs/CN/Settings.md#热重载模式)为禁用时，不再加载`HotReload.lua`，不会替换全局的`require`
+- 在使用`LoadObject`加载不到对象时不再输出加载失败的日志，而是直接返回`nil`
+
 ## [2.3.1] - 2022-11-11
 
 ### Added

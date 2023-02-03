@@ -21,12 +21,24 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 BEGIN_DEFINE_SPEC(FLuaDeadLoopCheckSpec, "UnLua.Settings", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+
+    virtual bool SuppressLogWarnings() override
+    {
+        return true;
+    }
+
 END_DEFINE_SPEC(FLuaDeadLoopCheckSpec)
 
 void FLuaDeadLoopCheckSpec::Define()
 {
     Describe(TEXT("DeadLoopCheck"), [this]()
     {
+        AfterEach(EAsyncExecution::TaskGraphMainThread, [this]()
+        {
+            auto& Settings = *GetMutableDefault<UUnLuaSettings>();
+            Settings.DeadLoopCheck = 0;
+        });
+
         It(TEXT("设置防止无限循环的超时时间"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             auto& Settings = *GetMutableDefault<UUnLuaSettings>();

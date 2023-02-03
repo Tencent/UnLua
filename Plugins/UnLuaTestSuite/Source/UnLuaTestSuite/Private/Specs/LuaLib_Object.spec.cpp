@@ -40,7 +40,7 @@ void FUnLuaLibObjectSpec::Define()
         World->InitializeActorsForPlay(URL);
         World->BeginPlay();
 
-        UnLua::PushUObject(L, World, false);
+        UnLua::PushUObject(L, World);
         lua_setglobal(L, "World");
     });
 
@@ -64,7 +64,7 @@ void FUnLuaLibObjectSpec::Define()
         It(TEXT("获取对象的有效状态"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             AActor* Actor = World->SpawnActor(AActor::StaticClass());
-            UnLua::PushUObject(L, Actor, false);
+            UnLua::PushUObject(L, Actor);
             lua_setglobal(L, "G_Actor");
             Actor->K2_DestroyActor();
 

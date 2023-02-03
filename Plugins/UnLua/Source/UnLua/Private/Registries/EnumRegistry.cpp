@@ -87,12 +87,19 @@ namespace UnLua
         const auto L = Env->GetMainState();
         if (luaL_getmetatable(L, MetatableName) == LUA_TTABLE)
         {
-            lua_pop(L, 1);
-            return EnumDesc;
+            if (EnumDesc->IsValid())
+            {
+                lua_pop(L, 1);
+                return EnumDesc;    
+            }
         }
         lua_pop(L, 1);
 
         luaL_newmetatable(L, MetatableName);
+
+        lua_pushstring(L, "Object");
+        Env->GetObjectRegistry()->Push(L, EnumDesc->GetEnum());
+        lua_rawset(L, -3);
 
         lua_pushstring(L, "__index");
         lua_pushcfunction(L, Enum_Index);

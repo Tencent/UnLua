@@ -35,12 +35,24 @@ namespace UnLua
      * Interface to manage Lua stack for a C++ type
      */
     struct ITypeOps
-    {   
+    {
         ITypeOps() { StaticExported = false; };
 
         virtual FString GetName() const = 0;
-        virtual void Read(lua_State *L, const void *ContainerPtr, bool bCreateCopy) const = 0;
-        virtual void Write(lua_State *L, void *ContainerPtr, int32 IndexInStack) const = 0;
+
+        // Deprecated, replaced with ReadValue_InContainer.
+        virtual void Read(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const { ReadValue_InContainer(L, ContainerPtr, bCreateCopy); }
+
+        virtual void ReadValue_InContainer(lua_State* L, const void* ContainerPtr, bool bCreateCopy) const = 0;
+
+        virtual void ReadValue(lua_State* L, const void* ValuePtr, bool bCreateCopy) const = 0;
+
+        // Deprecated, replaced with WriteValue_InContainer.
+        virtual void Write(lua_State* L, void* ContainerPtr, int32 IndexInStack) const { WriteValue_InContainer(L, ContainerPtr, IndexInStack); }
+
+        virtual bool WriteValue_InContainer(lua_State* L, void* ContainerPtr, int32 IndexInStack, bool bCreateCopy = true) const = 0;
+
+        virtual bool WriteValue(lua_State* L, void* ValuePtr, int32 IndexInStack, bool bCreateCopy) const = 0;
 
         bool StaticExported;
     };

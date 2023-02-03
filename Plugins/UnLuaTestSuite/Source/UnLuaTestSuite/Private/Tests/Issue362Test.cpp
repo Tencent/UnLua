@@ -16,6 +16,7 @@
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#if UNLUA_LEGACY_ARGS_PASSING
 
 struct FUnLuaTest_Issue362 : FUnLuaTestBase
 {
@@ -48,4 +49,5 @@ struct FUnLuaTest_Issue362 : FUnLuaTestBase
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue362, TEXT("UnLua.Regression.Issue362 TArray引用做委托参数在lua中修改不生效"))
 
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif
+#endif

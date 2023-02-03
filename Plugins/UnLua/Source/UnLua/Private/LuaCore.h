@@ -151,8 +151,3 @@ int32 ScriptStruct_Delete(lua_State *L);
 int32 ScriptStruct_Copy(lua_State *L);
 int32 ScriptStruct_CopyFrom(lua_State *L);
 int32 ScriptStruct_Compare(lua_State *L);
-
-/**
- * Create a type interface
- */
-TSharedPtr<UnLua::ITypeInterface> CreateTypeInterface(lua_State *L, int32 Index);
