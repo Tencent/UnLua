@@ -279,14 +279,9 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         FirstParamIndex = 1;
     }
 
-    if (Object == UnLua::LowLevel::ReleasedPtr)
-        return luaL_error(L, "attempt to call UFunction '%s' on released object.", TCHAR_TO_UTF8(*FuncName));
-
-    if (Object == nullptr)
-        return luaL_error(L, "attempt to call UFunction '%s' on NULL object. (check the usage of ':' and '.')", TCHAR_TO_UTF8(*FuncName));
-
-    if (Object->IsUnreachable())
-        return luaL_error(L, "attempt to call UFunction '%s' on Unreachable object '%s'.", TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*Object->GetName()));
+    FString Error;
+    if (UNLIKELY(!CheckObject(Object, Error)))
+        return luaL_error(L, TCHAR_TO_UTF8(*Error));
 
 #if SUPPORTS_RPC_CALL
     int32 Callspace = Object->GetFunctionCallspace(Function.Get(), nullptr);
@@ -340,14 +335,6 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
                     FinalFunction = Overridden;
             }
         }
-    }
-#endif
-
-#if ENABLE_TYPE_CHECK && WITH_EDITOR
-    if (!Object->IsA(FinalFunction->GetOuterUClass()))
-    {
-        return luaL_error(L, "attempt to call UFunction '%s' on invalid self type. '%s' required but got '%s'.",
-                          TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*FinalFunction->GetOuterUClass()->GetName()), TCHAR_TO_UTF8(*Object->GetClass()->GetName()));
     }
 #endif
 
@@ -688,4 +675,48 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     lua_settop(L, ErrorHandlerIndex - 1);
     return true;
 }
+
+bool FFunctionDesc::CheckObject(UObject* Object, FString& Error) const
+{
+    if (Object == UnLua::LowLevel::ReleasedPtr)
+    {
+        Error = FString::Printf(TEXT("attempt to call UFunction '%s' on released object."), *FuncName);
+        return false;
+    }
+
+    if (Object == nullptr)
+    {
+        Error = FString::Printf(TEXT("attempt to call UFunction '%s' on NULL object. (check the usage of ':' and '.')"), *FuncName);
+        return false;
+    }
+
+    if (Object->IsUnreachable())
+    {
+        Error = FString::Printf(TEXT("attempt to call UFunction '%s' on Unreachable object '%s'."), *FuncName, *Object->GetName());
+        return false;
+    }
+
+#if ENABLE_TYPE_CHECK && WITH_EDITOR
+    if (Object->IsA(Function->GetOuterUClass()))
+        return true;
+
+    const auto LuaFunction = Cast<ULuaFunction>(Function);
+    if (!LuaFunction)
+        return true;
+
+    const auto Overridden = LuaFunction->GetOverridden();
+    if (!Overridden)
+        return true;
+
+    if (Object->IsA(Overridden->GetOuterUClass()))
+        return true;
+
+    Error = FString::Printf(TEXT("attempt to call UFunction '%s' on invalid self type. '%s' required but got '%s'."),
+                            *FuncName, *Overridden->GetOuterUClass()->GetName(), *Object->GetClass()->GetName());
+    return false;
+#else
+    return true;
+#endif
+}
+
 
