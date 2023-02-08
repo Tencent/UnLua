@@ -657,24 +657,21 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     // return value
     if (ReturnPropertyIndex > INDEX_NONE)
     {
-#if ENABLE_TYPE_CHECK == 1
+        const auto& ReturnProperty = Properties[ReturnPropertyIndex];
         if (NumResultOnStack < 1)
         {
+            ReturnProperty->InitializeValue(RetValueAddress);
+#if ENABLE_TYPE_CHECK == 1
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("FuncName %s has return value, but no value found on stack!"),*FuncName);
+#endif
         }
         else
-#endif
         {
-            const auto& ReturnProperty = Properties[ReturnPropertyIndex];
-
 #if UNLUA_LEGACY_RETURN_ORDER
             constexpr auto IndexInStack = -1;
 #else
             const auto IndexInStack = -NumResultOnStack;
 #endif
-
-            // set value for return property
-            check(RetValueAddress);
             ReturnProperty->WriteValue(L, RetValueAddress, IndexInStack, true);
         }
     }
