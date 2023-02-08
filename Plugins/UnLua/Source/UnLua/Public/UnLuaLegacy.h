@@ -174,19 +174,32 @@ namespace UnLua
 
     FORCEINLINE int32 Push(lua_State* L, FText& V, bool bCopy = false)
     {
+#if UNLUA_ENABLE_FTEXT
+        const auto Userdata = NewTypedUserdata(L, FText);
+        new(Userdata) FText(V);
+#else
         lua_pushstring(L, TCHAR_TO_UTF8(*V.ToString()));
+#endif
         return 1;
     }
 
     FORCEINLINE int32 Push(lua_State* L, const FText& V, bool bCopy = false)
     {
+#if UNLUA_ENABLE_FTEXT
+        const auto Userdata = NewTypedUserdata(L, FText);
+#else
         lua_pushstring(L, TCHAR_TO_UTF8(*V.ToString()));
+#endif
         return 1;
     }
 
     FORCEINLINE int32 Push(lua_State* L, FText&& V, bool bCopy = false)
     {
+#if UNLUA_ENABLE_FTEXT
+        const auto Userdata = NewTypedUserdata(L, FText);
+#else
         lua_pushstring(L, TCHAR_TO_UTF8(*V.ToString()));
+#endif
         return 1;
     }
 
@@ -436,10 +449,12 @@ namespace UnLua
         return lua_isstring(L, Index) != 0;
     }
 
+#if !UNLUA_ENABLE_FTEXT
     FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<FText>)
     {
         return lua_isstring(L, Index) != 0;
     }
+#endif
 
     FORCEINLINE bool IsType(lua_State* L, int32 Index, TType<UObject*>)
     {
@@ -570,10 +585,12 @@ namespace UnLua
         return FName(lua_tostring(L, Index));
     }
 
+#if !UNLUA_ENABLE_FTEXT
     FORCEINLINE FText Get(lua_State* L, int32 Index, TType<FText>)
     {
         return FText::FromString(UTF8_TO_TCHAR(lua_tostring(L, Index)));
     }
+#endif
 
     FORCEINLINE UObject* Get(lua_State* L, int32 Index, TType<UObject*>)
     {
@@ -852,7 +869,6 @@ namespace UnLua
 
         virtual bool Identical(const void* A, const void* B) const override
         {
-            static_assert(THasEqualityOperator<T>::Value, "type must support operator==()!");
             return IdenticalInternal((const T*)A, (const T*)B, typename TChooseClass<THasEqualityOperator<T>::Value, FTrue, FFalse>::Result());
         }
 
@@ -923,7 +939,7 @@ namespace UnLua
 
         virtual bool WriteValue_InContainer(lua_State* L, void* ContainerPtr, int32 IndexInStack, bool bCreateCopy = true) const override
         {
-            return WriteValue(L, ContainerPtr, IndexInStack);
+            return WriteValue(L, ContainerPtr, IndexInStack, bCreateCopy);
         }
 
         virtual bool WriteValue(lua_State* L, void* ValuePtr, int32 IndexInStack, bool bCreateCopy) const override
