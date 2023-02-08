@@ -256,6 +256,12 @@ namespace UnLua
                 })
             )");
 
+#if UNLUA_ENABLE_FTEXT
+            luaL_dostring(L, "UnLua.FTextEnabled = true");
+#else
+            luaL_dostring(L, "UnLua.FTextEnabled = false");
+#endif
+
 #if UNLUA_WITH_HOT_RELOAD
             luaL_dostring(L, R"(
                 pcall(function() _G.require = require('UnLua.HotReload').require end)
