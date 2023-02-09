@@ -34,13 +34,13 @@ public class Lua : ModuleRules
         bEnableUndefinedIdentifierWarnings = false;
         ShadowVariableWarningLevel = WarningLevel.Off;
 
-        m_LuaVersion = "5.4.3";
+        m_LuaVersion = "lua-5.4.4";
         m_Config = GetConfigName();
         m_LibName = GetLibraryName();
         m_BuildSystem = GetBuildSystem();
         m_CompileAsCpp = ShouldCompileAsCpp();
         m_LibDirName = string.Format("lib-{0}", m_CompileAsCpp ? "cpp" : "c");
-        m_LuaDirName = string.Format("lua-{0}", m_LuaVersion);
+        m_LuaDirName = m_LuaVersion;
 
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, m_LuaDirName, "src"));
 
