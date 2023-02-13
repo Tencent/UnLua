@@ -57,7 +57,7 @@ public:
      * 在PIE保存UPackage完成后使用。
      */
     static void ResumeOverrides(UClass* Class);
-    
+
     /*
      * Get all UFUNCTION that can be overrode
      */
@@ -76,6 +76,8 @@ public:
 
     void Restore();
 
+    UClass* GetOverriddenUClass() const;
+
     UFunction* GetOverridden() const;
 
     virtual void Bind() override;
@@ -85,9 +87,11 @@ public:
     virtual void FinishDestroy() override;
 
 private:
-    TWeakObjectPtr<UFunction> Overridden;
-    FNativeFuncPtr OverriddenNativeFunc;
-    EFunctionFlags OverriddenFlags;
+    TWeakObjectPtr<UFunction> From;
+
+    UPROPERTY()
+    UFunction* Overridden;
+
     uint8 bAdded : 1;
     uint8 bActivated : 1;
     TSharedPtr<FFunctionDesc> Desc;

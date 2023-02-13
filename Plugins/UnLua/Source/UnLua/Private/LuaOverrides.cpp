@@ -62,6 +62,7 @@ namespace UnLua
         LuaFunction->StaticLink(true);
         LuaFunction->Initialize();
         LuaFunction->Override(Function, Class, bAddNew);
+        LuaFunction->Bind();
 
         if (Class->IsRooted() || GUObjectArray.IsDisregardForGC(Class))
             LuaFunction->AddToRoot();

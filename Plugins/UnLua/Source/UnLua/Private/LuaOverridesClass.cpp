@@ -43,7 +43,7 @@ void ULuaOverridesClass::SetActive(const bool bActive)
 
     for (TFieldIterator<ULuaFunction> It(this, EFieldIteratorFlags::ExcludeSuper); It; ++It)
     {
-        auto LuaFunction = *It;
+        const auto LuaFunction = *It;
         LuaFunction->SetActive(bActive);
     }
 

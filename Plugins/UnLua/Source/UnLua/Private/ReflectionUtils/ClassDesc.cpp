@@ -125,7 +125,7 @@ TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* Qu
     {
         OuterStruct = Cast<UStruct>(Function->GetOuter());
         if (const auto OverridesClass = Cast<ULuaOverridesClass>(OuterStruct))
-            OuterStruct = OverridesClass->Owner.Get();
+            OuterStruct = OverridesClass->GetOwner();
     }
 
     if (!OuterStruct)

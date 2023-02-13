@@ -30,5 +30,8 @@ public:
 
     void SetActive(const bool bActive);
 
+    FORCEINLINE UClass* GetOwner() const { return Owner.Get(); }
+
+private:
     TWeakObjectPtr<UClass> Owner;
 };

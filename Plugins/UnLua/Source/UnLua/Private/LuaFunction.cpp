@@ -137,7 +137,7 @@ void ULuaFunction::Initialize()
 
 void ULuaFunction::Override(UFunction* Function, UClass* Class, bool bAddNew)
 {
-    check(Function && Class && !Overridden.IsValid());
+    check(Function && Class && !From.IsValid());
 
 #if WITH_METADATA
     UMetaData::CopyMetadata(Function, this);
@@ -145,9 +145,25 @@ void ULuaFunction::Override(UFunction* Function, UClass* Class, bool bAddNew)
 
     bActivated = false;
     bAdded = bAddNew;
-    Overridden = Function;
-    OverriddenNativeFunc = Function->GetNativeFunc();
-    OverriddenFlags = Function->FunctionFlags;
+    From = Function;
+
+    if (Function->GetNativeFunc() == execScriptCallLua)
+    {
+        // 目标UFunction可能已经被覆写过了
+        const auto LuaFunction = Get(Function);
+        Overridden = LuaFunction->GetOverridden();
+        check(Overridden);
+    }
+    else
+    {
+        const auto DestName = FString::Printf(TEXT("%s__Overridden"), *Function->GetName());
+        const auto FromFunctionFlags = Function->FunctionFlags;
+        Function->FunctionFlags &= ~FUNC_Native;
+        Overridden = static_cast<UFunction*>(StaticDuplicateObject(Function, GetOuter(), *DestName));
+        Overridden->StaticLink(true);
+        Overridden->SetNativeFunc(Function->GetNativeFunc());
+        Function->FunctionFlags = FromFunctionFlags;
+    }
 
     SetActive(true);
 }
@@ -156,19 +172,25 @@ void ULuaFunction::Restore()
 {
     if (bAdded)
     {
-        const auto OverriddenClass = Cast<ULuaOverridesClass>(GetOuter())->Owner;
-        OverriddenClass->RemoveFunctionFromFunctionMap(this);
+        if (const auto OverriddenClass = Cast<ULuaOverridesClass>(GetOuter())->GetOwner())
+            OverriddenClass->RemoveFunctionFromFunctionMap(this);
     }
     else
     {
-        const auto Old = Overridden.Get();
+        const auto Old = From.Get();
         if (!Old)
             return;
         Old->Script = Script;
-        Old->SetNativeFunc(OverriddenNativeFunc);
-        Old->GetOuterUClass()->AddNativeFunction(*Old->GetName(), OverriddenNativeFunc);
-        Old->FunctionFlags = OverriddenFlags;
+        Old->SetNativeFunc(Overridden->GetNativeFunc());
+        Old->GetOuterUClass()->AddNativeFunction(*Old->GetName(), Overridden->GetNativeFunc());
+        Old->FunctionFlags = Overridden->FunctionFlags;
     }
+}
+
+UClass* ULuaFunction::GetOverriddenUClass() const
+{
+    const auto OverridesClass = Cast<ULuaOverridesClass>(GetOuter());
+    return OverridesClass ? OverridesClass->GetOwner() : nullptr;
 }
 
 void ULuaFunction::SetActive(const bool bActive)
@@ -176,11 +198,11 @@ void ULuaFunction::SetActive(const bool bActive)
     if (bActivated == bActive)
         return;
 
-    const auto Function = Overridden.Get();
+    const auto Function = From.Get();
     if (!Function)
         return;
 
-    const auto Class = Cast<ULuaOverridesClass>(GetOuter())->Owner.Get();
+    const auto Class = Cast<ULuaOverridesClass>(GetOuter())->GetOwner();
     if (!Class)
         return;
     
@@ -228,9 +250,9 @@ void ULuaFunction::SetActive(const bool bActive)
             ChildProperties = nullptr;
 
             Function->Script = Script;
-            Function->SetNativeFunc(OverriddenNativeFunc);
-            Function->GetOuterUClass()->AddNativeFunction(*Function->GetName(), OverriddenNativeFunc);
-            Function->FunctionFlags = OverriddenFlags;
+            Function->SetNativeFunc(Overridden->GetNativeFunc());
+            Function->GetOuterUClass()->AddNativeFunction(*Function->GetName(), Overridden->GetNativeFunc());
+            Function->FunctionFlags = Overridden->FunctionFlags;
         }
     }
     
@@ -249,17 +271,17 @@ void ULuaFunction::FinishDestroy()
 
 UFunction* ULuaFunction::GetOverridden() const
 {
-    return Overridden.Get();
+    return Overridden;
 }
 
 void ULuaFunction::Bind()
 {
-    if (Overridden.IsValid())
+    if (From.IsValid())
     {
         if (bAdded)
             SetNativeFunc(execCallLua);
         else
-            SetNativeFunc(OverriddenNativeFunc);
+            SetNativeFunc(Overridden->GetNativeFunc());
     }
     else
     {
