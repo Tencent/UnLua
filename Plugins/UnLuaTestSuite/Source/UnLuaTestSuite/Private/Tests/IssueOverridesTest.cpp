@@ -34,6 +34,21 @@ BEGIN_TESTSUITE(FIssueOverridesTest, TEXT("UnLua.Regression.IssueOverrides è¦†å†
             lua_getglobal(L, "Counter");
             const auto Result = (int)lua_tointeger(L, -1);
             TestEqual(TEXT("Counter"), Result, 4);
+
+            const auto Obj = NewObject<UIssueOverridesObject>();
+            Obj->AddToRoot();
+
+            UnLua::PushUObject(L, Obj);
+            lua_setglobal(L, "G_IssueObject");
+            
+            UnLua::RunChunk(L, "return G_IssueObject:CollectInfo()");
+            const auto Result1 = (int32)lua_tointeger(L, -1);
+            TestEqual(TEXT("Result1"), Result1, 2);
+            
+            UnLua::RunChunk(L, "return G_IssueObject:GetConfig()");
+            const auto Result2 = (int32)lua_tointeger(L, -1);
+            TestEqual(TEXT("Result2"), Result2, 1);
+
             return true;
             }));
         ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());

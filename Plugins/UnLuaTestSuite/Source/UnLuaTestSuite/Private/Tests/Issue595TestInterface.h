@@ -14,26 +14,19 @@
 
 #pragma once
 
-#include "UnLuaInterface.h"
-#include "Issue595TestInterface.h"
-#include "Issue595Test.generated.h"
+#include "Issue595TestInterface.generated.h"
 
-UCLASS()
-class UIssue595Object
-    : public UObject,
-      public IIssue595Interface,
-      public IUnLuaInterface
+UINTERFACE(Blueprintable)
+class UNLUATESTSUITE_API UIssue595Interface : public UInterface
+{
+    GENERATED_BODY()
+};
+
+class UNLUATESTSUITE_API IIssue595Interface
 {
     GENERATED_BODY()
 
 public:
-    virtual int32 Test_Implementation() const override
-    {
-        return 1;
-    }
-
-    virtual FString GetModuleName_Implementation() const override
-    {
-        return TEXT("Tests.Regression.Issue595.Issue595Object");
-    }
+    UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+    int32 Test() const;
 };
