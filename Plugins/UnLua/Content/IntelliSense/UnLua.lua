@@ -4,6 +4,9 @@ local UnLua = {}
 ---Similar to "package.path" for lua module searching with UnLua loader. Used by FLuaEnv::LoadFromFileSystem.
 UnLua.PackagePath = "Content/Script/?.lua;Plugins/UnLua/Content/Script/?.lua"
 
+---Whether or not enable FText support at lua runtime which will no longer be treated as a string.
+UnLua.FTextEnabled = false
+
 ---Define a lua class for binding.
 ---@param SuperClass string @[opt]
 function UnLua.Class(SuperClass)

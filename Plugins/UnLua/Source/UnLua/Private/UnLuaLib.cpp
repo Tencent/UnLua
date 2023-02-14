@@ -15,8 +15,8 @@ namespace UnLua
             FString Message;
             if (!lua_checkstack(L, ArgCount))
             {
-            	luaL_error(L, "too many arguments, stack overflow");
-            	return Message;
+                luaL_error(L, "too many arguments, stack overflow");
+                return Message;
             }
             for (int ArgIndex = 1; ArgIndex <= ArgCount; ArgIndex++)
             {
@@ -88,6 +88,7 @@ namespace UnLua
             {"HotReload", HotReload},
             {"Ref", Ref},
             {"Unref", Unref},
+            {"FTextEnabled", nullptr},
             {NULL, NULL}
         };
 
