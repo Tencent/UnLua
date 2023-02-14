@@ -20,7 +20,7 @@
 #include "UnLuaSettings.generated.h"
 
 
-UCLASS(Config=UnLua, DefaultConfig, Meta=(DisplayName="UnLua"))
+UCLASS(Config=UnLuaSettings, DefaultConfig, Meta=(DisplayName="UnLua"))
 class UNLUA_API UUnLuaSettings : public UObject
 {
     GENERATED_BODY()
