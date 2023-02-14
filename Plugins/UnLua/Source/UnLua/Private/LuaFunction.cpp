@@ -157,12 +157,11 @@ void ULuaFunction::Override(UFunction* Function, UClass* Class, bool bAddNew)
     else
     {
         const auto DestName = FString::Printf(TEXT("%s__Overridden"), *Function->GetName());
-        const auto FromFunctionFlags = Function->FunctionFlags;
-        Function->FunctionFlags &= ~FUNC_Native;
+        if (Function->HasAnyFunctionFlags(FUNC_Native))
+            GetOuterUClass()->AddNativeFunction(*DestName, *Function->GetNativeFunc());
         Overridden = static_cast<UFunction*>(StaticDuplicateObject(Function, GetOuter(), *DestName));
         Overridden->StaticLink(true);
         Overridden->SetNativeFunc(Function->GetNativeFunc());
-        Function->FunctionFlags = FromFunctionFlags;
     }
 
     SetActive(true);
