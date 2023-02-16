@@ -295,16 +295,16 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     FFlagArray CleanupFlags;
     void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
 
-    UFunction *FinalFunction = Function.Get();
+    auto FinalFunction = bInterfaceFunc
+                             ? Object->GetClass()->FindFunctionByName(Function->GetFName())
+                             : Function.Get();
 
 #if ENABLE_CALL_OVERRIDDEN_FUNCTION
+    if (!Function->HasAnyFunctionFlags(FUNC_Net))
     {
-        if (!Function->HasAnyFunctionFlags(FUNC_Net))
-        {
-            const auto LuaFunction = ULuaFunction::Get(Function.Get());
-            if (LuaFunction && LuaFunction->GetOverridden())
-                FinalFunction = LuaFunction->GetOverridden();
-        }
+        const auto LuaFunction = ULuaFunction::Get(Function.Get());
+        if (LuaFunction && LuaFunction->GetOverridden())
+            FinalFunction = LuaFunction->GetOverridden();
     }
 #endif
 
