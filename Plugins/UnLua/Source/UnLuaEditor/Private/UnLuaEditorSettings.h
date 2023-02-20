@@ -82,6 +82,10 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bLuaCompileAsCpp = false;
 
+    /** Use the specified lua version. (Requires restart to take effect) */
+    UPROPERTY(config, EditAnywhere, Category = "Build")
+    FString LuaVersion = TEXT("lua-5.4.3");
+
     /** Create UE4 global table on lua env. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Legacy")
     bool bWithUE4Namespace = true;
