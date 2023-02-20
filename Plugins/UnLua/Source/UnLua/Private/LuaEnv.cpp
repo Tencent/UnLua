@@ -640,11 +640,16 @@ namespace UnLua
     void FLuaEnv::AddSearcher(lua_CFunction Searcher, int Index) const
     {
         lua_getglobal(L, "package");
+#if LUA_VERSION_NUM == 501
+        lua_getfield(L, -1, "loaders");
+#else
         lua_getfield(L, -1, "searchers");
+#endif
         lua_remove(L, -2);
         if (!lua_istable(L, -1))
         {
             UE_LOG(LogUnLua, Warning, TEXT("Invalid package.serachers!"));
+            lua_pop(L, 1);
             return;
         }
 
