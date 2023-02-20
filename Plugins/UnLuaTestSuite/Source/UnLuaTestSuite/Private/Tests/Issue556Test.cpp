@@ -21,6 +21,7 @@
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#if LUA_VERSION_NUM > 501
 
 struct FUnLuaTest_Issue556 : FUnLuaTestBase
 {
@@ -56,4 +57,5 @@ struct FUnLuaTest_Issue556 : FUnLuaTestBase
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue556, TEXT("UnLua.Regression.Issue556 Lua覆写的函数接收数组参数时可能无效"))
 
+#endif
 #endif

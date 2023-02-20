@@ -47,8 +47,8 @@ struct FUnLuaTest_Issue562 : FUnLuaTestBase
         const auto After = FindObject<UClass>(ANY_PACKAGE, TEXT("BPI_Issue562_C"));
         RUNNER_TEST_NULL(After);
 
-        lua_gc(L, LUA_GCCOLLECT);
-        lua_gc(L, LUA_GCCOLLECT);
+        lua_gc(L, LUA_GCCOLLECT, 0);
+        lua_gc(L, LUA_GCCOLLECT, 0);
 
         // LogUObjectBase: Error: Object flags are invalid or either Class or Outer is misaligned
 

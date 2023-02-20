@@ -645,6 +645,8 @@ void FUnLuaLibArraySpec::Define()
         });
     });
 
+#if LUA_VERSION_NUM > 501
+
     Describe(TEXT("pairs"), [this]
     {
         It(TEXT("迭代获取数组索引与元素"), EAsyncExecution::TaskGraphMainThread, [this]
@@ -725,6 +727,8 @@ void FUnLuaLibArraySpec::Define()
             TEST_EQUAL(Result2, 2);
         });
     });
+
+#endif
 }
 
 #endif

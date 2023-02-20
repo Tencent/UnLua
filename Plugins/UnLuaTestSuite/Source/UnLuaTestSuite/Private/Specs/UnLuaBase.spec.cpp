@@ -54,12 +54,16 @@ void FUnLuaBaseSpec::Define()
             TEST_EQUAL(lua_tointeger(L, -1), 0x7FFFFFFFLL);
         });
 
+#if LUA_VERSION_NUM > 501
+
         It(TEXT("正确传入int64到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::Push(L, static_cast<int64>(0x7FFFFFFFFFFFFFFF));
             TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<int64>()));
             TEST_EQUAL(lua_tointeger(L, -1), 0x7FFFFFFFFFFFFFFF);
         });
+
+#endif
 
         It(TEXT("正确传入uint8到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
@@ -82,12 +86,16 @@ void FUnLuaBaseSpec::Define()
             TEST_EQUAL(lua_tointeger(L, -1), 0xFFFFFFFFLL);
         });
 
+#if LUA_VERSION_NUM > 501
+
         It(TEXT("正确传入uint64到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::Push(L, static_cast<uint64>(0xFFFFFFFFFFFFFFFF));
             TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<uint64>()));
             TEST_EQUAL((int64)lua_tointeger(L, -1), (int64)0xFFFFFFFFFFFFFFFFLL);
         });
+
+#endif
 
         It(TEXT("正确传入float到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
@@ -124,12 +132,16 @@ void FUnLuaBaseSpec::Define()
             TEST_EQUAL(lua_tostring(L, -1), "Hello");
         });
 
+#if LUA_VERSION_NUM > 501
+        
         It(TEXT("正确传入中文FString到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::Push(L, FString(TEXT("虚幻引擎")));
             TEST_TRUE(UnLua::IsType(L, -1, UnLua::TType<FString>()));
             TEST_EQUAL(lua_tostring(L, -1), "虚幻引擎");
         });
+
+#endif
 
         It(TEXT("正确传入FName到Lua堆栈"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
