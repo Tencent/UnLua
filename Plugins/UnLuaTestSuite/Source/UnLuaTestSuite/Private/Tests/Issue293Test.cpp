@@ -18,6 +18,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 #if ENABLE_TYPE_CHECK
+#if LUA_VERSION_NUM > 501
 
 struct FUnLuaTest_Issue293 : FUnLuaTestBase
 {
@@ -31,14 +32,14 @@ struct FUnLuaTest_Issue293 : FUnLuaTestBase
         FUnLuaTestBase::SetUp();
 
         GetTestRunner().AddExpectedError(TEXT("Invalid parameter"), EAutomationExpectedErrorFlags::Contains);
-        const char* Chunk1 = "\
-            return UE.UUnLuaTestFunctionLibrary.TestForIssue293('A', 1)\
-            ";
+        const char* Chunk1 = R"(
+            return UE.UUnLuaTestFunctionLibrary.TestForIssue293('A', 1)
+            )";
         UnLua::RunChunk(L, Chunk1);
 
-        const char* Chunk2 = "\
-            return UE.UUnLuaTestFunctionLibrary.TestForIssue293('A', 1, UE.TArray(UE.FColor))\
-            ";
+        const char* Chunk2 = R"(
+            return UE.UUnLuaTestFunctionLibrary.TestForIssue293('A', 1, UE.TArray(UE.FColor))
+            )";
         UnLua::RunChunk(L, Chunk2);
         const auto Actual = (int32)lua_tointeger(L, -1);
         RUNNER_TEST_EQUAL(Actual, 0);
@@ -50,4 +51,5 @@ struct FUnLuaTest_Issue293 : FUnLuaTestBase
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue293, TEXT("UnLua.Regression.Issue293 关闭RPC会导致部分函数在非Editor模式下crash"))
 
 #endif
-#endif //WITH_DEV_AUTOMATION_TESTS
+#endif
+#endif

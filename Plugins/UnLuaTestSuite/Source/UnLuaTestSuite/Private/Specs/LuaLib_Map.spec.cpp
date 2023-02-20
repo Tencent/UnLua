@@ -306,6 +306,8 @@ void FUnLuaLibMapSpec::Define()
         });
     });
 
+#if LUA_VERSION_NUM > 501
+    
     Describe(TEXT("pairs"), [this]
     {
         It(TEXT("迭代获取Key与Value"), EAsyncExecution::TaskGraphMainThread, [this]
@@ -386,6 +388,7 @@ void FUnLuaLibMapSpec::Define()
             TEST_EQUAL(Result2, 2);
         });
     });
+#endif
 }
 
 #endif

@@ -48,6 +48,8 @@ void FLuaEnvSpec::Define()
             TEST_EQUAL(B, 2);
         });
 
+#if LUA_VERSION_NUM > 501
+
         It(TEXT("支持启动脚本和参数"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
             UnLua::FLuaEnv Env1;
@@ -60,6 +62,9 @@ void FLuaEnvSpec::Define()
             const auto Expected = (UWorld*)GWorld;
             TEST_EQUAL(Actual, Expected);
         });
+
+#endif
+
     });
 
     AfterEach([this]

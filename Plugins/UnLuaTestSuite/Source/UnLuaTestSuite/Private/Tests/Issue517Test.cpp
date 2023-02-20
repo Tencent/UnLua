@@ -22,6 +22,7 @@
 #include "Misc/AutomationTest.h"
 
 #if WITH_DEV_AUTOMATION_TESTS
+#if LUA_VERSION_NUM > 501
 
 struct FUnLuaTest_Issue517 : FUnLuaTestBase
 {
@@ -79,4 +80,5 @@ struct FUnLuaTest_Issue517 : FUnLuaTestBase
 
 IMPLEMENT_UNLUA_INSTANT_TEST(FUnLuaTest_Issue517, TEXT("UnLua.Regression.Issue517 Actor的Struct成员变量在Lua里引用，释放后仍旧可以访问"))
 
+#endif
 #endif
