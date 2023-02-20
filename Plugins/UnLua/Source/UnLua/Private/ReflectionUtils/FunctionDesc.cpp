@@ -475,13 +475,16 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     const auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     const auto DanglingGuard = Env.GetDanglingCheck()->MakeGuard();
 
-    // prepare parameters for Lua function
-    for (const auto& Property : Properties)
+    if (InParams)
     {
-        if (Property->IsReturnParameter())
-            continue;
+        // prepare parameters for Lua function
+        for (const auto& Property : Properties)
+        {
+            if (Property->IsReturnParameter())
+                continue;
 
-        Property->ReadValue_InContainer(L, InParams, !UNLUA_LEGACY_ARGS_PASSING);
+            Property->ReadValue_InContainer(L, InParams, !UNLUA_LEGACY_ARGS_PASSING);
+        }
     }
 
     // object is also pushed, return is push when return
