@@ -34,7 +34,7 @@ public class Lua : ModuleRules
         bEnableUndefinedIdentifierWarnings = false;
         ShadowVariableWarningLevel = WarningLevel.Off;
 
-        m_LuaVersion = "lua-5.4.4";
+        m_LuaVersion = GetLuaVersion();
         m_Config = GetConfigName();
         m_LibName = GetLibraryName();
         m_BuildSystem = GetBuildSystem();
@@ -366,6 +366,22 @@ public class Lua : ModuleRules
         return false;
     }
 
+    private string GetLuaVersion()
+    {
+        var projectDir = Target.ProjectFile.Directory;
+        var configFilePath = projectDir + "/Config/DefaultUnLuaEditor.ini";
+        var configFileReference = new FileReference(configFilePath);
+        var configFile = FileReference.Exists(configFileReference)
+            ? new ConfigFile(configFileReference)
+            : new ConfigFile();
+        var config = new ConfigHierarchy(new[] { configFile });
+        const string section = "/Script/UnLuaEditor.UnLuaEditorSettings";
+        string version;
+        if (config.GetString(section, "LuaVersion", out version))
+            return version;
+        return "lua-5.4.3";
+    }
+    
     private void EnsureDirectoryExists(string fileName)
     {
         var dirName = Path.GetDirectoryName(fileName);
