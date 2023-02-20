@@ -23,13 +23,7 @@ namespace UnLua
     {
         FORCEINLINE int AbsIndex(lua_State* L, int Index)
         {
-#if LUA_VERSION_NUM >= 502
             return lua_absindex(L, Index);
-#else
-            if (idx < 0 && idx > LUA_REGISTRYINDEX)
-                idx += lua_gettop(L) + 1;
-            return idx;
-#endif
         }
 
         int EmptyIterator(lua_State* L);

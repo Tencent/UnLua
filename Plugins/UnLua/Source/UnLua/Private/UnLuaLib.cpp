@@ -216,12 +216,20 @@ namespace UnLua
             )";
 
             lua_register(L, "UEPrint", LogInfo);
+
+#if LUA_VERSION_NUM > 501
             luaL_loadstring(L, Chunk);
             lua_newtable(L);
             lua_getglobal(L, LUA_GNAME);
             lua_setfield(L, -2, LUA_GNAME);
             luaL_setfuncs(L, UnLua_LegacyFunctions, 0);
             lua_setupvalue(L, -2, 1);
+#else
+            lua_register(L, "GetUProperty", GetUProperty);
+            lua_register(L, "SetUProperty", SetUProperty);
+            luaL_loadstring(L, Chunk);
+#endif
+
             lua_pcall(L, 0, LUA_MULTRET, 0);
             lua_getglobal(L, "Class");
             lua_setfield(L, -2, "Class");

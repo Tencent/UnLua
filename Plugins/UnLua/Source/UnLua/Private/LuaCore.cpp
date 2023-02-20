@@ -99,126 +99,13 @@ struct FUserdataDesc
 };
 #pragma  pack(pop)
 
-/**
- * Get 'TValue' from Lua stack
- */
-static TValue* GetTValue(lua_State* L, int32 Index)
-{
-#if 504 == LUA_VERSION_NUM
-    CallInfo* ci = L->ci;
-    if (Index > 0)
-    {
-        StkId o = ci->func + Index;
-        check(Index <= L->ci->top - (ci->func + 1));
-        if (o >= L->top)
-        {
-            return &G(L)->nilvalue;
-        }
-        else
-        {
-            return s2v(o);
-        }
-    }
-    else if (LUA_REGISTRYINDEX < Index)
-    {  /* negative index */
-        check(Index != 0 && -Index <= L->top - (ci->func + 1));
-        return s2v(L->top + Index);
-    }
-    else if (Index == LUA_REGISTRYINDEX)
-    {
-        return &G(L)->l_registry;
-    }
-    else
-    {  /* upvalues */
-        Index = LUA_REGISTRYINDEX - Index;
-        check(Index <= MAXUPVAL + 1);
-        if (ttislcf(s2v(ci->func)))
-        {
-            /* light C function? */
-            return &G(L)->nilvalue;  /* it has no upvalues */
-        }
-        else
-        {
-            CClosure* func = clCvalue(s2v(ci->func));
-            return (Index <= func->nupvalues) ? &func->upvalue[Index - 1] : &G(L)->nilvalue;
-        }
-    }
-#else
-    CallInfo* ci = L->ci;
-    if (Index > 0)
-    {
-        TValue* V = ci->func + Index;
-        check(Index <= ci->top - (ci->func + 1));
-        return V >= L->top ? (TValue*)NULL : V;
-    }
-    else if (Index > LUA_REGISTRYINDEX)             // negative
-    {
-        check(Index != 0 && -Index <= L->top - (ci->func + 1));
-        return L->top + Index;
-    }
-    else if (Index == LUA_REGISTRYINDEX)
-    {
-        return &G(L)->l_registry;
-    }
-    else                                            // upvalues
-    {
-        Index = LUA_REGISTRYINDEX - Index;
-        check(Index <= MAXUPVAL + 1);
-        if (ttislcf(ci->func))
-        {
-            return (TValue*)NULL;                   // light C function has no upvalues
-        }
-        else
-        {
-            CClosure* Closure = clCvalue(ci->func);
-            return (Index <= Closure->nupvalues) ? &Closure->upvalue[Index - 1] : (TValue*)NULL;
-        }
-    }
-#endif
-}
-
-static int32 GetTValueType(TValue* Value)
-{
-#if 504 == LUA_VERSION_NUM
-    return ttype(Value);
-#else
-    return ttnov(Value);
-#endif
-}
-
-static Udata* GetUdata(TValue* Value)
-{
-    return uvalue(Value);
-}
-
-static void* GetUdataMem(Udata* U)
-{
-    return getudatamem(U);
-}
-
-static int32 GetUdataMemSize(Udata* U)
-{
-    return U->len;
-}
-
 static uint8 GetUdataHeaderSize()
 {
-    static uint8 HeaderSize = 0;
-    if (0 == HeaderSize)
-    {
-        lua_State* L = luaL_newstate();
-#if 504 == LUA_VERSION_NUM
-        uint8* Userdata = (uint8*)lua_newuserdatauv(L, 0, 0);
+#if LUA_VERSION_NUM == 501
+    return sizeof(Udata);
 #else
-        uint8* Userdata = (uint8*)lua_newuserdata(L, 0);
+    return udatamemoffset(0);
 #endif
-        TValue* Value = GetTValue(L, -1);
-        Udata* U = GetUdata(Value);
-        HeaderSize = Userdata - (uint8*)U;
-        lua_close(L);
-    }
-
-    return HeaderSize;
 }
 
 /**
@@ -233,20 +120,26 @@ uint8 CalcUserdataPadding(int32 Alignment)
 
 static FUserdataDesc* GetUserdataDesc(Udata* U)
 {
-    FUserdataDesc* UserdataDesc = NULL;
+    constexpr auto DescSize = sizeof(FUserdataDesc);
 
-    uint8 DescSize = sizeof(FUserdataDesc);
-    int32 UdataMemSize = GetUdataMemSize(U);
-    if (DescSize <= UdataMemSize)
-    {
-        UserdataDesc = (FUserdataDesc*)((uint8*)GetUdataMem(U) + UdataMemSize - DescSize);
-        if (USERDATA_MAGIC != UserdataDesc->magic)
-        {
-            UserdataDesc = NULL;
-        }
-    }
+#if LUA_VERSION_NUM == 504
+    const auto UdataMemSize = U->len;
+    if (DescSize > UdataMemSize)
+        return nullptr;
 
-    return UserdataDesc;
+    const auto Ret = (FUserdataDesc*)((uint8*)getudatamem(U) + UdataMemSize - DescSize);
+    if (Ret->magic != USERDATA_MAGIC)
+        return nullptr;
+    
+    return Ret;
+#else
+    const auto UdataMemSize = U->uv.len;
+    if (DescSize > UdataMemSize)
+        return nullptr;
+
+    const auto Ret = (FUserdataDesc*)((uint8*)U + sizeof(Udata));
+    return Ret;
+#endif
 }
 
 static void* NewUserdataWithDesc(lua_State* L, int Size, uint8 Tag, uint8 Padding)
@@ -314,44 +207,52 @@ void* GetUserdata(lua_State *L, int32 Index, bool *OutTwoLvlPtr, bool *OutClassM
     return UnLua::LowLevel::GetUserdata(L, Index, OutTwoLvlPtr, OutClassMetatable);
 }
 
+FUserdataDesc* GetDescAndUserdata(lua_State* L, int32 Index, void*& Userdata)
+{
+    const auto UserdataOnStack = (uint8*)lua_touserdata(L, Index);
+    if (!UserdataOnStack)
+    {
+        Userdata = nullptr;
+        return nullptr;
+    }
+
+    const auto UdataHeader = (Udata*)(UserdataOnStack - GetUdataHeaderSize());
+#if LUA_VERSION_NUM==501
+    const auto UserdataMemSize = UdataHeader->uv.len;
+#else
+    const auto UserdataMemSize = UdataHeader->len;
+#endif
+    const auto Desc = (FUserdataDesc*)(UserdataOnStack + UserdataMemSize - sizeof(FUserdataDesc));
+    if (!Desc || Desc->magic != USERDATA_MAGIC)
+    {
+        Userdata = nullptr;
+        return nullptr;
+    }
+
+    Userdata = UserdataOnStack;
+    return Desc;
+}
+
 /**
  * Get the address of userdata, fast path
  */
-void* GetUserdataFast(lua_State *L, int32 Index, bool *OutTwoLvlPtr)
+void* GetUserdataFast(lua_State* L, int32 Index, bool* OutTwoLvlPtr)
 {
     bool bTwoLvlPtr = false;
     void* Userdata = nullptr;
 
-    TValue* Value = GetTValue(L, Index);
-    int32 Type = GetTValueType(Value);
-    if (Type == LUA_TUSERDATA)
+    const auto Desc = GetDescAndUserdata(L, Index, Userdata);
+    if (LIKELY(Desc && Desc->tag & BIT_VARIANT_TAG))
     {
-        Udata* U = GetUdata(Value);
-        uint8* Buffer = (uint8*)GetUdataMem(U);
-        FUserdataDesc* UserdataDesc = GetUserdataDesc(U);
-        if ((UserdataDesc)
-            && (UserdataDesc->tag & BIT_VARIANT_TAG))// if the userdata has a variant tag
-        {
-            bTwoLvlPtr = (UserdataDesc->tag & BIT_TWOLEVEL_PTR) != 0;        // test if the userdata is a two level pointer
-            if (UserdataDesc->tag & BIT_RELEASED_TAG)
-                Userdata = nullptr;
-            else
-                Userdata = bTwoLvlPtr ? Buffer : Buffer + UserdataDesc->padding;    // add padding to userdata if it's not a two level pointer
-        }
+        bTwoLvlPtr = Desc->tag & BIT_TWOLEVEL_PTR;
+        if (Desc->tag & BIT_RELEASED_TAG)
+            Userdata = nullptr;
         else
-        {
-            Userdata = Buffer;
-        }
-    }
-    else if (Type == LUA_TLIGHTUSERDATA)
-    {
-        Userdata = pvalue(Value);                                 // get the light userdata
+            Userdata = bTwoLvlPtr ? Userdata : (uint8*)Userdata + Desc->padding;
     }
 
     if (OutTwoLvlPtr)
-    {
-        *OutTwoLvlPtr = bTwoLvlPtr;                                 // set two level pointer flag
-    }
+        *OutTwoLvlPtr = bTwoLvlPtr;
 
     return Userdata;
 }
@@ -480,21 +381,18 @@ void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &
 /**
  * Get a script container at the given stack index
  */
-void* GetScriptContainer(lua_State *L, int32 Index)
+void* GetScriptContainer(lua_State* L, int32 Index)
 {
-    TValue* Value = GetTValue(L, Index);
-    if ((Value->tt_ & 0x0F) == LUA_TUSERDATA)
-    {
-        uint8 Flag = (BIT_VARIANT_TAG | BIT_SCRIPT_CONTAINER);              // variant tags
+    void* Ret;
+    const auto Desc = GetDescAndUserdata(L, Index, Ret);
+    if (!Desc)
+        return nullptr;
 
-        Udata* U = GetUdata(Value);
-        FUserdataDesc* UserdataDesc = GetUserdataDesc(U);
-        if (UserdataDesc)
-        {
-            return (UserdataDesc->tag & Flag) == Flag ? *((void**)GetUdataMem(U)) : nullptr;
-        }
-    }
-    return nullptr;
+    constexpr auto Flag = BIT_VARIANT_TAG | BIT_SCRIPT_CONTAINER;
+    if (!(Desc->magic & Flag))
+        return nullptr;
+
+    return *static_cast<void**>(Ret);
 }
 
 /**

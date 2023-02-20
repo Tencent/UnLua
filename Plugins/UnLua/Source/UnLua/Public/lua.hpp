@@ -24,6 +24,19 @@ extern "C" {
 #include "lualib.h"
 #include "lauxlib.h"
 
+#if LUA_VERSION_NUM==501
+#include "compat-5.3.h"
+
+#ifndef LUA_GNAME
+#define LUA_GNAME "_G"
+#endif
+
+#ifndef MAXUPVAL
+#define MAXUPVAL 255
+#endif
+
+#endif
+
 #ifdef __cplusplus
 #if !LUA_COMPILE_AS_CPP
 }
