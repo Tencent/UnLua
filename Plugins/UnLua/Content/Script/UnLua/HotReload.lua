@@ -10,6 +10,7 @@
 -- local M = { HOT_RELOAD = true }
 
 local HOT_RELOAD_MARK = "HOT_RELOAD"
+local searchers = package.searchers or package.loaders
 local loaded_modules = setmetatable({}, { __mode = "v" })
 local ignore_modules = {}
 local config = {
@@ -126,7 +127,7 @@ local function make_sandbox()
 
     local function load(module_name)
         local found, chunk
-        for i, searcher in ipairs(package.searchers) do
+        for i, searcher in ipairs(searchers) do
             chunk = searcher(module_name)
             if type(chunk) == "function" then
                 found = true
