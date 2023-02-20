@@ -33,72 +33,72 @@ static int lpb_relindex(int idx, int offset) {
     return idx < 0 && idx > LUA_REGISTRYINDEX ? idx - offset : idx;
 }
 
-#if LUA_VERSION_NUM < 502
-#include <assert.h>
-
-# define LUA_OK        0
-# define lua_rawlen    lua_objlen
-# define luaL_setfuncs(L,l,n) (assert(n==0), luaL_register(L,NULL,l))
-# define luaL_setmetatable(L, name) \
-    (luaL_getmetatable((L), (name)), lua_setmetatable(L, -2))
-
-static void lua_rawgetp(lua_State *L, int idx, const void *p) {
-    lua_pushlightuserdata(L, (void*)p);
-    lua_rawget(L, lpb_relindex(idx, 1));
-}
-
-static void lua_rawsetp(lua_State *L, int idx, const void *p) {
-    lua_pushlightuserdata(L, (void*)p);
-    lua_insert(L, -2);
-    lua_rawset(L, lpb_relindex(idx, 1));
-}
-
-#ifndef luaL_newlib /* not LuaJIT 2.1 */
-#define luaL_newlib(L,l) (lua_newtable(L), luaL_register(L,NULL,l))
-
-static lua_Integer lua_tointegerx(lua_State *L, int idx, int *isint) {
-    lua_Integer i = lua_tointeger(L, idx);
-    if (isint) *isint = (i != 0 || lua_type(L, idx) == LUA_TNUMBER);
-    return i;
-}
-
-static lua_Number lua_tonumberx(lua_State *L, int idx, int *isnum) {
-    lua_Number i = lua_tonumber(L, idx);
-    if (isnum) *isnum = (i != 0 || lua_type(L, idx) == LUA_TNUMBER);
-    return i;
-}
-
-static void *luaL_testudata(lua_State *L, int idx, const char *type) {
-    void *p = lua_touserdata(L, idx);
-    if (p != NULL && lua_getmetatable(L, idx)) {
-        lua_getfield(L, LUA_REGISTRYINDEX, type);
-        if (!lua_rawequal(L, -2, -1))
-            p = NULL;
-        lua_pop(L, 2);
-        return p;
-    }
-    return NULL;
-}
-
-#endif
-
-#ifdef LUAI_BITSINT /* not LuaJIT */
-#include <errno.h>
-
-static int luaL_fileresult(lua_State *L, int stat, const char *fname) {
-    int en = errno;
-    if (stat) return lua_pushboolean(L, 1), 1;
-    lua_pushnil(L);
-    lua_pushfstring(L, "%s: %s", fname, strerror(en));
-    /*if (fname) lua_pushfstring(L, "%s: %s", fname, strerror(en));
-      else       lua_pushstring(L, strerror(en));*//* NOT USED */
-    lua_pushinteger(L, en);
-    return 3;
-}
-
-#endif /* not LuaJIT */
-
-#endif
+// #if LUA_VERSION_NUM < 502
+// #include <assert.h>
+//
+// # define LUA_OK        0
+// # define lua_rawlen    lua_objlen
+// # define luaL_setfuncs(L,l,n) (assert(n==0), luaL_register(L,NULL,l))
+// # define luaL_setmetatable(L, name) \
+//     (luaL_getmetatable((L), (name)), lua_setmetatable(L, -2))
+//
+// static void lua_rawgetp(lua_State *L, int idx, const void *p) {
+//     lua_pushlightuserdata(L, (void*)p);
+//     lua_rawget(L, lpb_relindex(idx, 1));
+// }
+//
+// static void lua_rawsetp(lua_State *L, int idx, const void *p) {
+//     lua_pushlightuserdata(L, (void*)p);
+//     lua_insert(L, -2);
+//     lua_rawset(L, lpb_relindex(idx, 1));
+// }
+//
+// #ifndef luaL_newlib /* not LuaJIT 2.1 */
+// #define luaL_newlib(L,l) (lua_newtable(L), luaL_register(L,NULL,l))
+//
+// static lua_Integer lua_tointegerx(lua_State *L, int idx, int *isint) {
+//     lua_Integer i = lua_tointeger(L, idx);
+//     if (isint) *isint = (i != 0 || lua_type(L, idx) == LUA_TNUMBER);
+//     return i;
+// }
+//
+// static lua_Number lua_tonumberx(lua_State *L, int idx, int *isnum) {
+//     lua_Number i = lua_tonumber(L, idx);
+//     if (isnum) *isnum = (i != 0 || lua_type(L, idx) == LUA_TNUMBER);
+//     return i;
+// }
+//
+// static void *luaL_testudata(lua_State *L, int idx, const char *type) {
+//     void *p = lua_touserdata(L, idx);
+//     if (p != NULL && lua_getmetatable(L, idx)) {
+//         lua_getfield(L, LUA_REGISTRYINDEX, type);
+//         if (!lua_rawequal(L, -2, -1))
+//             p = NULL;
+//         lua_pop(L, 2);
+//         return p;
+//     }
+//     return NULL;
+// }
+//
+// #endif
+//
+// #ifdef LUAI_BITSINT /* not LuaJIT */
+// #include <errno.h>
+//
+// static int luaL_fileresult(lua_State *L, int stat, const char *fname) {
+//     int en = errno;
+//     if (stat) return lua_pushboolean(L, 1), 1;
+//     lua_pushnil(L);
+//     lua_pushfstring(L, "%s: %s", fname, strerror(en));
+//     /*if (fname) lua_pushfstring(L, "%s: %s", fname, strerror(en));
+//       else       lua_pushstring(L, strerror(en));*//* NOT USED */
+//     lua_pushinteger(L, en);
+//     return 3;
+// }
+//
+// #endif /* not LuaJIT */
+//
+// #endif
 
 #if LUA_VERSION_NUM >= 503
 # define lua53_getfield lua_getfield

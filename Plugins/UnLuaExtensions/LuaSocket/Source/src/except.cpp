@@ -6,10 +6,10 @@
 #include "except.h"
 #include <stdio.h>
 
-#if LUA_VERSION_NUM < 502
-#define lua_pcallk(L, na, nr, err, ctx, cont) \
-    (((void)ctx),((void)cont),lua_pcall(L, na, nr, err))
-#endif
+// #if LUA_VERSION_NUM < 502
+// #define lua_pcallk(L, na, nr, err, ctx, cont) \
+//     (((void)ctx),((void)cont),lua_pcall(L, na, nr, err))
+// #endif
 
 #if LUA_VERSION_NUM < 503
 typedef int lua_KContext;
@@ -102,11 +102,16 @@ static int protected_cont(lua_State *L) {
 #endif
 
 static int protected_(lua_State *L) {
+#if LUA_VERSION_NUM == 501
+    check(false)
+    return 0;
+#else
     int status;
     lua_pushvalue(L, lua_upvalueindex(2));
     lua_insert(L, 1);
     status = lua_pcallk(L, lua_gettop(L) - 1, LUA_MULTRET, 0, 0, protected_cont);
     return protected_finish(L, status, 0);
+#endif
 }
 
 static int global_protect(lua_State *L) {
