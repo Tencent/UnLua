@@ -1,0 +1,47 @@
+language: c
+compiler: gcc
+
+sudo: false
+
+env:
+  - LUA="lua=5.1"
+  - LUA="lua=5.1" EXTERNAL=true
+  - LUA="lua=5.1" COMPILER="g++"
+  - LUA="lua=5.1" EXTERNAL=true COMPILER="g++"
+  - LUA="luajit=@v2.1 --compat=none"
+  - LUA="luajit=@v2.1 --compat=none" EXTERNAL=true
+  - LUA="luajit=@v2.1 --compat=all"
+  - LUA="luajit=@v2.1 --compat=all" EXTERNAL=true
+  - LUA="lua=5.2"
+  - LUA="lua=5.2" EXTERNAL=true
+  - LUA="lua=5.2" COMPILER="g++"
+  - LUA="lua=5.2" EXTERNAL=true COMPILER="g++"
+
+branches:
+  only:
+    - master
+
+git:
+  depth: 3
+
+notifications:
+  email: false
+
+before_install:
+  - pip install --user hererocks
+  - hererocks old --$LUA
+  - test -e old/bin/lua || (cd old/bin && ln -s luajit* lua)
+  - hererocks new --lua=5.3
+
+install:
+  - export CC="${COMPILER:-gcc}" DEF="" SRC="" CFLAGS="-Wall -Wextra -Ic-api -O2 -fPIC"
+  - if [ "x${EXTERNAL:-}" = xtrue ]; then DEF="-DCOMPAT53_PREFIX=compat53" SRC="c-api/compat-5.3.c"; fi
+  - ${CC} ${CFLAGS} -Iold/include ${DEF} -shared -o old/testmod.so tests/testmod.c ${SRC}
+  - ${CC} ${CFLAGS} -Inew/include ${DEF} -shared -o new/testmod.so tests/testmod.c ${SRC}
+  - gcc ${CFLAGS} -Iold/include ${DEF} -shared -o old/compat53.so ltablib.c lutf8lib.c lstrlib.c ${SRC}
+
+script:
+  - (cd old && bin/lua ../tests/test.lua) > old.txt
+  - (cd new && bin/lua ../tests/test.lua) > new.txt
+  - diff old.txt new.txt || true
+
