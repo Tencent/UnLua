@@ -279,14 +279,17 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         FirstParamIndex = 1;
     }
 
-    if (Object == UnLua::LowLevel::ReleasedPtr)
+    if (UNLIKELY(Object == UnLua::LowLevel::ReleasedPtr))
         return luaL_error(L, "attempt to call UFunction '%s' on released object.", TCHAR_TO_UTF8(*FuncName));
 
-    if (Object == nullptr)
+    if (UNLIKELY(Object == nullptr))
         return luaL_error(L, "attempt to call UFunction '%s' on NULL object. (check the usage of ':' and '.')", TCHAR_TO_UTF8(*FuncName));
 
-    if (Object->IsUnreachable())
+    if (UNLIKELY(Object->IsUnreachable()))
         return luaL_error(L, "attempt to call UFunction '%s' on Unreachable object '%s'.", TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*Object->GetName()));
+
+    if (UNLIKELY(Object->HasAnyFlags(RF_NeedInitialization)))
+        return luaL_error(L, "attempt to call UFunction '%s' in lua Initialize function.", TCHAR_TO_UTF8(*FuncName));
 
 #if SUPPORTS_RPC_CALL
     int32 Callspace = Object->GetFunctionCallspace(Function.Get(), nullptr);
