@@ -102,7 +102,9 @@
 
 /* Note: changing the following defines breaks the Lua 5.1 ABI. */
 #define LUA_INTEGER	ptrdiff_t
-#define LUA_IDSIZE	60	/* Size of lua_Debug.short_src. */
+#ifndef LUA_IDSIZE
+  #define LUA_IDSIZE	256	/* Size of lua_Debug.short_src. */
+#endif
 /*
 ** Size of lauxlib and io.* on-stack buffers. Weird workaround to avoid using
 ** unreasonable amounts of stack space, but still retain ABI compatibility.
