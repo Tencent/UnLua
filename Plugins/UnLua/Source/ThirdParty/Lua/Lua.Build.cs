@@ -35,6 +35,7 @@ public class Lua : ModuleRules
         ShadowVariableWarningLevel = WarningLevel.Off;
 
         m_LuaVersion = GetLuaVersion();
+        m_UsingLuaJit = m_LuaVersion.ToLower().Contains("jit");
         m_Config = GetConfigName();
         m_LibName = GetLibraryName();
         m_BuildSystem = GetBuildSystem();
@@ -42,6 +43,7 @@ public class Lua : ModuleRules
         m_LibDirName = string.Format("lib-{0}", m_CompileAsCpp ? "cpp" : "c");
         m_LuaDirName = m_LuaVersion;
 
+        PublicDefinitions.Add("USING_LUAJIT=" + (m_UsingLuaJit ? 1 : 0));
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, m_LuaDirName, "src"));
 
         var buildMethodName = "BuildFor" + Target.Platform;
@@ -69,10 +71,19 @@ public class Lua : ModuleRules
 
         if (!dstFiles.All(File.Exists))
         {
-            var buildDir = CMake();
-            CopyDirectory(Path.Combine(buildDir, m_Config), dirPath);
+            if (m_UsingLuaJit)
+            {
+                RunScript();
+            }
+            else
+            {
+                var buildDir = CMake();
+                CopyDirectory(Path.Combine(buildDir, m_Config), dirPath);    
+            }
         }
 
+        if (m_UsingLuaJit)
+            PublicDefinitions.Add("LUAJIT_ENABLE_GC64=1");
         PublicDefinitions.Add("LUA_BUILD_AS_DLL");
         PublicDelayLoadDLLs.Add(m_LibName);
         PublicAdditionalLibraries.Add(libPath);
@@ -328,6 +339,37 @@ public class Lua : ModuleRules
         throw new NotSupportedException();
     }
 
+    private void RunScript()
+    {
+        
+        Console.WriteLine("generating {0} library with script...", m_LuaDirName);
+        var osPlatform = Environment.OSVersion.Platform;
+        if (osPlatform == PlatformID.Win32NT)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "cmd.exe",
+                WorkingDirectory = ModuleDirectory,
+                RedirectStandardInput = true,
+                UseShellExecute = false
+            };
+            var process = Process.Start(startInfo);
+            using (var writer = process.StandardInput)
+            {
+                var scriptName = "build_" + Target.Platform.ToString().ToLower() + (m_UsingLuaJit ? "_jit.bat" : ".bat"); 
+                writer.WriteLine("cd script");
+                writer.Write(scriptName);
+                writer.Write(" ");
+                writer.WriteLine(m_Config);
+            }
+
+            process.WaitForExit();
+            return;
+        }
+
+        throw new NotSupportedException();
+    }
+    
     private static void CopyDirectory(string srcDir, string dstDir)
     {
         var dir = new DirectoryInfo(srcDir);
@@ -453,6 +495,7 @@ public class Lua : ModuleRules
     }
 
     private readonly string m_LuaVersion;
+    private readonly bool m_UsingLuaJit;
     private readonly string m_Config;
     private readonly string m_LibName;
     private readonly string m_LibDirName;
