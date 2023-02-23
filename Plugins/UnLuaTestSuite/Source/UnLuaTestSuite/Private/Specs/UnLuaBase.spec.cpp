@@ -182,7 +182,7 @@ void FUnLuaBaseSpec::Define()
 
         It(TEXT("执行失败返回false"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            AddExpectedError(TEXT("syntax error"), EAutomationExpectedErrorFlags::Contains);
+            AddExpectedError(TEXT("Lua error"), EAutomationExpectedErrorFlags::Contains);
             TEST_FALSE(UnLua::RunChunk(L, "invalid chunk"));
         });
     });

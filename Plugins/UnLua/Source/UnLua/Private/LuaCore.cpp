@@ -23,20 +23,22 @@
 #include "ReflectionUtils/FieldDesc.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
-#ifdef __cplusplus
-#if !LUA_COMPILE_AS_CPP
+#if defined(__cplusplus) && !LUA_COMPILE_AS_CPP
 extern "C" {
 #endif
+
+#if USING_LUAJIT
+    #include "lj_func.h"
+    #include "lj_state.h"
+    #include "lj_obj.h"
+#else
+    #include "lfunc.h"
+    #include "lstate.h"
+    #include "lobject.h"
 #endif
 
-#include "lfunc.h"
-#include "lstate.h"
-#include "lobject.h"
-
-#ifdef __cplusplus
-#if !LUA_COMPILE_AS_CPP
+#if defined(__cplusplus) && !LUA_COMPILE_AS_CPP
 }
-#endif
 #endif
 
 const FScriptContainerDesc FScriptContainerDesc::Array(sizeof(FLuaArray), "TArray");
@@ -101,7 +103,9 @@ struct FUserdataDesc
 
 static uint8 GetUdataHeaderSize()
 {
-#if LUA_VERSION_NUM == 501
+#if USING_LUAJIT
+    return sizeof(GCudata);
+#elif LUA_VERSION_NUM == 501
     return sizeof(Udata);
 #else
     return udatamemoffset(0);
@@ -118,6 +122,18 @@ uint8 CalcUserdataPadding(int32 Alignment)
     return (uint8)(Align(HeaderSize, Alignment) - HeaderSize);      // sizeof(UUdata) == 40
 }
 
+#if USING_LUAJIT
+static FUserdataDesc* GetUserdataDesc(GCudata* U)
+{
+    constexpr auto DescSize = sizeof(FUserdataDesc);
+    const auto UdataMemSize = U->len;
+    if (DescSize > UdataMemSize)
+        return nullptr;
+
+    const auto Ret = (FUserdataDesc*)((uint8*)U + sizeof(GCudata));
+    return Ret;
+}
+#else
 static FUserdataDesc* GetUserdataDesc(Udata* U)
 {
     constexpr auto DescSize = sizeof(FUserdataDesc);
@@ -141,6 +157,7 @@ static FUserdataDesc* GetUserdataDesc(Udata* U)
     return Ret;
 #endif
 }
+#endif
 
 static void* NewUserdataWithDesc(lua_State* L, int Size, uint8 Tag, uint8 Padding)
 {
@@ -176,7 +193,11 @@ void* NewUserdataWithPaddingTag(lua_State* L, int Size, uint8 Padding)
 
 void MarkUserdataTwoLvPtrTag(void* Userdata)
 {
-    Udata* U = (Udata*)((uint8*)Userdata - GetUdataHeaderSize());
+#if USING_LUAJIT
+    auto U = (GCudata*)((uint8*)Userdata - GetUdataHeaderSize());
+#else
+    auto U = (Udata*)((uint8*)Userdata - GetUdataHeaderSize());
+#endif
     FUserdataDesc* UserdataDesc = GetUserdataDesc(U);
     if (UserdataDesc)
     {
@@ -186,7 +207,11 @@ void MarkUserdataTwoLvPtrTag(void* Userdata)
 
 void SetUserdataFlags(void* Userdata, uint8 Flags)
 {
+#if USING_LUAJIT
+    GCudata* U = (GCudata*)((uint8*)Userdata - GetUdataHeaderSize());
+#else
     Udata* U = (Udata*)((uint8*)Userdata - GetUdataHeaderSize());
+#endif
     FUserdataDesc* UserdataDesc = GetUserdataDesc(U);
     if (UserdataDesc)
     {
@@ -216,11 +241,16 @@ FUserdataDesc* GetDescAndUserdata(lua_State* L, int32 Index, void*& Userdata)
         return nullptr;
     }
 
-    const auto UdataHeader = (Udata*)(UserdataOnStack - GetUdataHeaderSize());
-#if LUA_VERSION_NUM==501
-    const auto UserdataMemSize = UdataHeader->uv.len;
-#else
+#if USING_LUAJIT
+    const auto UdataHeader = (GCudata*)(UserdataOnStack - GetUdataHeaderSize());
     const auto UserdataMemSize = UdataHeader->len;
+#else
+    const auto UdataHeader = (Udata*)(UserdataOnStack - GetUdataHeaderSize());
+    #if LUA_VERSION_NUM == 501 && !USING_LUAJIT 
+        const auto UserdataMemSize = UdataHeader->uv.len;
+    #else
+        const auto UserdataMemSize = UdataHeader->len;
+    #endif
 #endif
     const auto Desc = (FUserdataDesc*)(UserdataOnStack + UserdataMemSize - sizeof(FUserdataDesc));
     if (!Desc || Desc->magic != USERDATA_MAGIC)

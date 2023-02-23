@@ -14,10 +14,8 @@
 
 #pragma once
 
-#ifdef __cplusplus
-#if !LUA_COMPILE_AS_CPP
+#if defined(__cplusplus) && !LUA_COMPILE_AS_CPP
 extern "C" {
-#endif
 #endif
 
 #include "lua.h"
@@ -37,8 +35,6 @@ extern "C" {
 
 #endif
 
-#ifdef __cplusplus
-#if !LUA_COMPILE_AS_CPP
+#if defined(__cplusplus) && !LUA_COMPILE_AS_CPP
 }
-#endif
 #endif
