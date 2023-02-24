@@ -67,7 +67,7 @@ namespace UnLua
         lua_pushcfunction(L, ReleaseManualRef);
         lua_rawset(L, -3);
 
-        lua_pop(L, 1);
+        lua_pop(L, 2);
     }
 
     void FObjectRegistry::NotifyUObjectDeleted(UObject* Object)
