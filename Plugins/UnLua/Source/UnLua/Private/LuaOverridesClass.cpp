@@ -24,15 +24,15 @@ ULuaOverridesClass* ULuaOverridesClass::Create(UClass* Class)
     Ret->ClassDefaultObject = StaticClass()->GetDefaultObject();
     Ret->SetSuperStruct(StaticClass());
     Ret->Bind();
-    Ret->AddToRoot();
     Ret->Owner = Class;
+    Ret->AddToOwner();
     return Ret;
 }
 
 void ULuaOverridesClass::Restore()
 {
     SetActive(false);
-    RemoveFromRoot();
+    RemoveFromOwner();
 }
 
 void ULuaOverridesClass::SetActive(const bool bActive)
@@ -48,4 +48,34 @@ void ULuaOverridesClass::SetActive(const bool bActive)
     }
 
     Class->ClearFunctionMapsCaches();
+}
+
+void ULuaOverridesClass::AddToOwner()
+{
+    const auto Class = Owner.Get();
+    if (!Class)
+        return;
+
+    auto Field = &Class->Children;
+    while (*Field)
+        Field = &(*Field)->Next;
+    *Field = this;
+}
+
+void ULuaOverridesClass::RemoveFromOwner()
+{
+    const auto Class = Owner.Get();
+    if (!Class)
+        return;
+
+    auto Field = &Class->Children;
+    while (*Field)
+    {
+        if (*Field == Class)
+        {
+            *Field = nullptr;
+            break;
+        }
+        Field = &(*Field)->Next;
+    }
 }

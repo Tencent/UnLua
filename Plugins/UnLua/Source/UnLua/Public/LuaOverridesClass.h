@@ -33,5 +33,9 @@ public:
     FORCEINLINE UClass* GetOwner() const { return Owner.Get(); }
 
 private:
+    void AddToOwner();
+
+    void RemoveFromOwner();
+
     TWeakObjectPtr<UClass> Owner;
 };
