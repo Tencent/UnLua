@@ -602,9 +602,10 @@ namespace UnLua
 
         auto LoadIt = [&]
         {
-            if (Env.LoadString(L, Data, TCHAR_TO_UTF8(*FullPath)))
+            if (Env.LoadString(L, Data, FullPath))
                 return 1;
-            return luaL_error(L, "file loading from file system error");
+            const auto Msg = FString::Printf(TEXT("file loading from file system error.\nfull path:%s"), *FullPath);
+            return luaL_error(L, TCHAR_TO_UTF8(*Msg));
         };
 
         const auto PackagePath = UnLuaLib::GetPackagePath(L);
