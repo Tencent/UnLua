@@ -60,6 +60,9 @@ void ULuaOverridesClass::AddToOwner()
     while (*Field)
         Field = &(*Field)->Next;
     *Field = this;
+
+    if (Class->IsRooted() || GUObjectArray.IsDisregardForGC(Class))
+        AddToRoot();
 }
 
 void ULuaOverridesClass::RemoveFromOwner()
@@ -78,4 +81,7 @@ void ULuaOverridesClass::RemoveFromOwner()
         }
         Field = &(*Field)->Next;
     }
+
+    if (Class->IsRooted() || GUObjectArray.IsDisregardForGC(Class))
+        RemoveFromRoot();
 }
