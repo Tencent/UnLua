@@ -160,6 +160,7 @@ void ULuaFunction::Override(UFunction* Function, UClass* Class, bool bAddNew)
         if (Function->HasAnyFunctionFlags(FUNC_Native))
             GetOuterUClass()->AddNativeFunction(*DestName, *Function->GetNativeFunc());
         Overridden = static_cast<UFunction*>(StaticDuplicateObject(Function, GetOuter(), *DestName));
+        Overridden->ClearInternalFlags(EInternalObjectFlags::Native);
         Overridden->StaticLink(true);
         Overridden->SetNativeFunc(Function->GetNativeFunc());
     }
