@@ -82,6 +82,6 @@ void ULuaOverridesClass::RemoveFromOwner()
         Field = &(*Field)->Next;
     }
 
-    if (Class->IsRooted() || GUObjectArray.IsDisregardForGC(Class))
+    if (!Class->IsRooted() && !GUObjectArray.IsDisregardForGC(Class))
         RemoveFromRoot();
 }
