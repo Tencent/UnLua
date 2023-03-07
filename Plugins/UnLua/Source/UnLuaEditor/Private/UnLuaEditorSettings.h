@@ -70,10 +70,6 @@ public:
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableTypeChecking = true;
 
-    /** Enable RPC support (Deprecated). (Requires restart to take effect) */
-    UPROPERTY(config, EditAnywhere, Category = "Build")
-    bool bEnableRPCCall = true;
-
     /** Enable 'Overridden' support at lua runtime. (Requires restart to take effect) */
     UPROPERTY(config, EditAnywhere, Category = "Build")
     bool bEnableCallOverriddenFunction = true;
