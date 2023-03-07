@@ -30,7 +30,7 @@
  */
 FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams)
     : DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
-    , NumRefProperties(0), bStaticFunc(false), bInterfaceFunc(false)
+    , bStaticFunc(false), bInterfaceFunc(false)
 {
     check(InFunction);
 
@@ -76,8 +76,6 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         }
         else if (Property->HasAnyPropertyFlags(CPF_OutParm | CPF_ReferenceParm))
         {
-            ++NumRefProperties;
-
             if (!Property->HasAnyPropertyFlags(CPF_ConstParm))
             {
                 OutPropertyIndices.Add(Index);                          // non-const reference property

@@ -60,13 +60,6 @@ public:
     FORCEINLINE uint8 GetNumOutProperties() const { return ReturnPropertyIndex > INDEX_NONE ? OutPropertyIndices.Num() + 1 : OutPropertyIndices.Num(); }
 
     /**
-     * Get the number of reference properties
-     *
-     * @return - the number of reference properties.
-     */
-    FORCEINLINE uint8 GetNumRefProperties() const { return NumRefProperties; }
-
-    /**
      * Get the number of non-const reference properties
      *
      * @return - the number of non-const reference properties.
@@ -131,7 +124,6 @@ private:
     FParameterCollection *DefaultParams;
     int32 ReturnPropertyIndex;
     int32 LatentPropertyIndex;
-    uint8 NumRefProperties;
     uint8 bStaticFunc : 1;
     uint8 bInterfaceFunc : 1;
     int32 ParmsSize;
