@@ -15,6 +15,7 @@
 #pragma once
 
 #include "lua.hpp"
+#include "ParamBufferAllocator.h"
 #include "Registries/FunctionRegistry.h"
 #include "Containers/StaticBitArray.h"
 
@@ -29,7 +30,6 @@ class FFunctionDesc
 {
 public:
     FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams);
-    ~FFunctionDesc();
 
     /**
      * Check the validity of this function
@@ -109,16 +109,14 @@ public:
 
 private:
     typedef TStaticBitArray<64U> FFlagArray;
-    void* PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Userdata = nullptr);
+    void PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Params, void* Userdata = nullptr);
     int32 PostCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, void* Params, const FFlagArray& CleanupFlags);
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 
     TWeakObjectPtr<UFunction> Function;
     FString FuncName;
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    void *Buffer;
-#endif
+    TSharedPtr<FParamBufferAllocator> Buffer;
     TArray<TUniquePtr<FPropertyDesc>> Properties;
     TArray<int32> OutPropertyIndices;
     FParameterCollection *DefaultParams;

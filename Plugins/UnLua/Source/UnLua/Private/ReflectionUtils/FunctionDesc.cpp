@@ -48,16 +48,7 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     const auto OuterClass = Cast<UClass>(InFunction->GetOuter());
     bInterfaceFunc = OuterClass && OuterClass->HasAnyClassFlags(CLASS_Interface) && OuterClass != UInterface::StaticClass();
 
-    // create persistent parameter buffer. memory for speed
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    Buffer = nullptr;
-    if (InFunction->ParmsSize > 0)
-    {
-        Buffer = FMemory::Malloc(InFunction->ParmsSize, 16);
-        FMemory::Memzero(Buffer, InFunction->ParmsSize);
-        UNLUA_STAT_MEMORY_ALLOC(Buffer, Lua)
-    }
-#endif
+    Buffer = FParamBufferFactory::Get(*InFunction);
 
     static const FName NAME_LatentInfo = TEXT("LatentInfo");
     Properties.Reserve(InFunction->NumParms);
@@ -84,26 +75,6 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     }
 }
 
-/**
- * Function descriptor destructor
- */
-FFunctionDesc::~FFunctionDesc()
-{
-#if UNLUA_ENABLE_DEBUG != 0
-    UE_LOG(LogUnLua, Log, TEXT("~FFunctionDesc : %s,%p"), *FuncName, this);
-#endif
-
-    // free persistent parameter buffer
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    if (Buffer)
-    {
-        UNLUA_STAT_MEMORY_FREE(Buffer, PersistentParamBuffer);
-        FMemory::Free(Buffer);
-    }
-#endif
-}
-
-
 void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer SelfRef, FFrame& Stack, RESULT_DECL)
 {
 #if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
@@ -117,16 +88,12 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     lua_rawgeti(L, LUA_REGISTRYINDEX, SelfRef);
     check(lua_istable(L, -1));
 
-    void* InParms = nullptr;
+    void* InParms;
     FOutParmRec* OutParms = Stack.OutParms;
     const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
     if (bUnpackParams)
     {
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-        InParms = Buffer;
-#endif
-        if (!InParms)
-            InParms = ParmsSize > 0 ? FMemory::Malloc(ParmsSize, 16) : nullptr;
+        InParms = Buffer->Get();
 
         FOutParmRec* FirstOut = nullptr;
         FOutParmRec* LastOut = nullptr;
@@ -178,10 +145,8 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
 
     CallLuaInternal(L, InParms , OutParms, RESULT_PARAM);
 
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
     if (bUnpackParams && InParms)
-        FMemory::Free(InParms);
-#endif
+        Buffer->Pop(InParms);
 }
 
 bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self)
@@ -247,7 +212,8 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     bool bLocal = Callspace & FunctionCallspace::Local;
 
     FFlagArray CleanupFlags;
-    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
+    const auto Params = Buffer->Get(); 
+    PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params, Userdata);      // prepare values of properties
 
     UFunction *FinalFunction = Function.Get();
     if (bInterfaceFunc)
@@ -258,12 +224,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         if (!FinalFunction)
         {
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("ERROR! Can't find UFunction '%s' in target object!"), *FuncName);
-
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
-            if (Params)
-                FMemory::Free(Params);
-#endif
-
+            Buffer->Pop(Params);
             return 0;
         }
 #if UE_BUILD_DEBUG
@@ -289,6 +250,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #if ENABLE_TYPE_CHECK && WITH_EDITOR
     if (!Object->IsA(FinalFunction->GetOuterUClass()))
     {
+        Buffer->Pop(Params);
         return luaL_error(L, "attempt to call UFunction '%s' on invalid self type. '%s' required but got '%s'.",
                           TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*FinalFunction->GetOuterUClass()->GetName()), TCHAR_TO_UTF8(*Object->GetClass()->GetName()));
     }
@@ -307,6 +269,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     }
 
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // push 'out' properties to Lua stack
+    Buffer->Pop(Params);
     return NumReturnValues;
 }
 
@@ -321,9 +284,11 @@ int32 FFunctionDesc::ExecuteDelegate(lua_State *L, int32 NumParams, int32 FirstP
     }
 
     FFlagArray CleanupFlags;
-    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
+    const auto Params = Buffer->Get();
+    PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params);
     ScriptDelegate->ProcessDelegate<UObject>(Params);
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);
+    Buffer->Pop(Params);
     return NumReturnValues;
 }
 
@@ -338,22 +303,18 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
     }
 
     FFlagArray CleanupFlags;
-    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
+    const auto Params = Buffer->Get();
+    PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params);
     ScriptDelegate->ProcessMulticastDelegate<UObject>(Params);
+    Buffer->Pop(Params);
     PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // !!! have no return values for multi-cast delegates
 }
 
 /**
  * Prepare values of properties for the UFunction
  */
-void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Userdata)
+void FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Params, void* Userdata)
 {
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    void* Params = Buffer;
-#else
-    void* Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
-#endif
-
     int32 ParamIndex = 0;
     for (int32 i = 0; i < Properties.Num(); ++i)
     {
@@ -420,8 +381,6 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
         }
         ++ParamIndex;
     }
-
-    return Params;
 }
 
 /**
