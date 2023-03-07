@@ -306,8 +306,8 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
     const auto Params = Buffer->Get();
     PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params);
     ScriptDelegate->ProcessMulticastDelegate<UObject>(Params);
-    Buffer->Pop(Params);
     PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // !!! have no return values for multi-cast delegates
+    Buffer->Pop(Params);
 }
 
 /**
@@ -442,11 +442,6 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
             Properties[i]->DestroyValue(Params);
         }
     }
-
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
-    if (Params)
-        FMemory::Free(Params);
-#endif	
 
     return NumReturnValues;
 }
