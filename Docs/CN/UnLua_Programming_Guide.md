@@ -37,7 +37,7 @@ local ProxyObj = NewObject(ObjClass, nil, nil, "Objects.ProxyObject")
 `Objects.ProxyObject` 是一个 [Lua模块路径](#Lua模块路径)。
 
 ## Lua模块路径
-无论是静态绑定还是动态绑定，他们都需要指定Lua模块路径。它是一个相对于 **{工程目录}/Content/Script** 下Lua文件的 **相对路径**，使用逗号分隔。
+无论是静态绑定还是动态绑定，他们都需要指定Lua模块路径。它是一个相对于 **{工程目录}/Content/Script** 下Lua文件的 **相对路径**，使用半角点号 **.** 分隔。
 
 ---
 
