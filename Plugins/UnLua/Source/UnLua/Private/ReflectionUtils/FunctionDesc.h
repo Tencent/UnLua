@@ -126,10 +126,6 @@ private:
 #if ENABLE_PERSISTENT_PARAM_BUFFER
     void *Buffer;
 #endif
-#if !SUPPORTS_RPC_CALL
-    FOutParmRec *OutParmRec;
-    uint8 NumCalls;                 // RECURSE_LIMIT is 120 or 250 which is less than 256, so use a byte...
-#endif
     TArray<TUniquePtr<FPropertyDesc>> Properties;
     TArray<int32> OutPropertyIndices;
     FParameterCollection *DefaultParams;

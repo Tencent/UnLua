@@ -38,16 +38,11 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     FuncName = InFunction->GetName();
     ParmsSize = InFunction->ParmsSize;
 
-#if SUPPORTS_RPC_CALL
     if (InFunction->HasAnyFunctionFlags(FUNC_Net))
         LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FString::Printf(TEXT("%s_RPC"), *FuncName));
     else
         LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
-#else
-    NumCalls = 0;
-    LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
-#endif
-    
+
     bStaticFunc = InFunction->HasAnyFunctionFlags(FUNC_Static);         // a static function?
 
     const auto OuterClass = Cast<UClass>(InFunction->GetOuter());
@@ -62,12 +57,6 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         FMemory::Memzero(Buffer, InFunction->ParmsSize);
         UNLUA_STAT_MEMORY_ALLOC(Buffer, Lua)
     }
-#endif
-
-    // pre-create OutParmRec. memory for speed
-#if !SUPPORTS_RPC_CALL
-    OutParmRec = nullptr;
-    FOutParmRec *CurrentOutParmRec = nullptr;
 #endif
 
     static const FName NAME_LatentInfo = TEXT("LatentInfo");
@@ -89,37 +78,12 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         {
             ++NumRefProperties;
 
-            // pre-create OutParmRec for 'out' property
-#if !SUPPORTS_RPC_CALL
-            FOutParmRec *Out = (FOutParmRec*)FMemory::Malloc(sizeof(FOutParmRec), alignof(FOutParmRec));
-            UNLUA_STAT_MEMORY_ALLOC(Out, OutParmRec);
-            Out->PropAddr = Property->ContainerPtrToValuePtr<uint8>(Buffer);
-            Out->Property = Property;
-            if (CurrentOutParmRec)
-            {
-                CurrentOutParmRec->NextOutParm = Out;
-                CurrentOutParmRec = Out;
-            }
-            else
-            {
-                OutParmRec = Out;
-                CurrentOutParmRec = Out;
-            }
-#endif
-
             if (!Property->HasAnyPropertyFlags(CPF_ConstParm))
             {
                 OutPropertyIndices.Add(Index);                          // non-const reference property
             }
         }
     }
-
-#if !SUPPORTS_RPC_CALL
-    if (CurrentOutParmRec)
-    {
-        CurrentOutParmRec->NextOutParm = nullptr;
-    }
-#endif
 }
 
 /**
@@ -137,17 +101,6 @@ FFunctionDesc::~FFunctionDesc()
     {
         UNLUA_STAT_MEMORY_FREE(Buffer, PersistentParamBuffer);
         FMemory::Free(Buffer);
-    }
-#endif
-
-    // free pre-created OutParmRec
-#if !SUPPORTS_RPC_CALL
-    while (OutParmRec)
-    {
-        FOutParmRec *NextOut = OutParmRec->NextOutParm;
-        UNLUA_STAT_MEMORY_FREE(OutParmRec, OutParmRec);
-        FMemory::Free(OutParmRec);
-        OutParmRec = NextOut;
     }
 #endif
 }
@@ -291,14 +244,9 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
     if (UNLIKELY(Object->HasAnyFlags(RF_NeedInitialization)))
         return luaL_error(L, "attempt to call UFunction '%s' in lua Initialize function.", TCHAR_TO_UTF8(*FuncName));
 
-#if SUPPORTS_RPC_CALL
     int32 Callspace = Object->GetFunctionCallspace(Function.Get(), nullptr);
     bool bRemote = Callspace & FunctionCallspace::Remote;
     bool bLocal = Callspace & FunctionCallspace::Local;
-#else
-    bool bRemote = false;
-    bool bLocal = true;
-#endif
 
     FFlagArray CleanupFlags;
     void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
@@ -349,29 +297,15 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #endif
 
     // call the UFuncton...
-#if !SUPPORTS_RPC_CALL
-    if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native) && NumCalls == 1)
-    {
-        //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
-        uint8* ReturnValueAddress = FinalFunction->ReturnValueOffset != MAX_uint16 ? (uint8*)Params + FinalFunction->ReturnValueOffset : nullptr;
-        FMemory::Memcpy(Buffer, Params, Function->ParmsSize);
-        FFrame NewStack(Object, FinalFunction, Params, nullptr, GetChildProperties(Function));
-        NewStack.OutParms = OutParmRec;
-        FinalFunction->Invoke(Object, NewStack, ReturnValueAddress);
-    }
-    else
-#endif
+    // Func_NetMuticast both remote and local
+    // local automatic checked remote and local,so local first
+    if (bLocal)
     {   
-        // Func_NetMuticast both remote and local
-        // local automatic checked remote and local,so local first
-        if (bLocal)
-        {   
-            Object->UObject::ProcessEvent(FinalFunction, Params);
-        }
-        if (bRemote && !bLocal)
-        {
-            Object->CallRemoteFunction(FinalFunction, Params, nullptr, nullptr);
-        }
+        Object->UObject::ProcessEvent(FinalFunction, Params);
+    }
+    if (bRemote && !bLocal)
+    {
+        Object->CallRemoteFunction(FinalFunction, Params, nullptr, nullptr);
     }
 
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // push 'out' properties to Lua stack
@@ -420,10 +354,6 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
     void* Params = Buffer;
 #else
     void* Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
-#endif
-
-#if !SUPPORTS_RPC_CALL
-    ++NumCalls;
 #endif
 
     int32 ParamIndex = 0;
@@ -555,10 +485,6 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
             Properties[i]->DestroyValue(Params);
         }
     }
-
-#if !SUPPORTS_RPC_CALL
-    --NumCalls;
-#endif
 
 #if !ENABLE_PERSISTENT_PARAM_BUFFER
     if (Params)

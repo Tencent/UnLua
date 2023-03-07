@@ -92,15 +92,10 @@ namespace UnLua
                     return true;
 
                 auto Names = (TSet<FName>*)Userdata;
-#if SUPPORTS_RPC_CALL
                 FString FuncName(lua_tostring(L, -2));
                 if (FuncName.EndsWith(TEXT("_RPC")))
                     FuncName = FuncName.Left(FuncName.Len() - 4);
                 Names->Add(FName(*FuncName));
-#else
-                Names->Add(FName(lua_tostring(L, -2)));
-#endif
-
                 return true;
             };
 
