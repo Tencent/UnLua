@@ -74,7 +74,7 @@ void ULuaOverridesClass::RemoveFromOwner()
     auto Field = &Class->Children;
     while (*Field)
     {
-        if (*Field == Class)
+        if (*Field == this)
         {
             *Field = nullptr;
             break;
