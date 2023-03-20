@@ -28,6 +28,7 @@
 #include "DefaultParamCollection.h"
 #include "GameDelegates.h"
 #include "LuaEnvLocator.h"
+#include "LuaOverrides.h"
 #include "UnLuaDebugBase.h"
 #include "UnLuaInterface.h"
 #include "UnLuaSettings.h"
@@ -137,12 +138,7 @@ namespace UnLua
                 EnvLocator = nullptr;
                 FClassRegistry::Cleanup();
                 FEnumRegistry::Cleanup();
-
-                for (const auto Class : TObjectRange<UClass>())
-                {
-                    if (Class->ImplementsInterface(UUnLuaInterface::StaticClass()))
-                        ULuaFunction::RestoreOverrides(Class);
-                }
+                FLuaOverrides::Get().RestoreAll();
             }
 
             bIsActive = bActive;
