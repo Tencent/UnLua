@@ -30,7 +30,7 @@
  */
 FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefaultParams)
     : DefaultParams(InDefaultParams), ReturnPropertyIndex(INDEX_NONE), LatentPropertyIndex(INDEX_NONE)
-    , NumRefProperties(0), bStaticFunc(false), bInterfaceFunc(false)
+    , bStaticFunc(false), bInterfaceFunc(false)
 {
     check(InFunction);
 
@@ -38,37 +38,17 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
     FuncName = InFunction->GetName();
     ParmsSize = InFunction->ParmsSize;
 
-#if SUPPORTS_RPC_CALL
     if (InFunction->HasAnyFunctionFlags(FUNC_Net))
         LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FString::Printf(TEXT("%s_RPC"), *FuncName));
     else
         LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
-#else
-    NumCalls = 0;
-    LuaFunctionName = MakeUnique<FTCHARToUTF8>(*FuncName);
-#endif
-    
+
     bStaticFunc = InFunction->HasAnyFunctionFlags(FUNC_Static);         // a static function?
 
     const auto OuterClass = Cast<UClass>(InFunction->GetOuter());
     bInterfaceFunc = OuterClass && OuterClass->HasAnyClassFlags(CLASS_Interface) && OuterClass != UInterface::StaticClass();
 
-    // create persistent parameter buffer. memory for speed
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    Buffer = nullptr;
-    if (InFunction->ParmsSize > 0)
-    {
-        Buffer = FMemory::Malloc(InFunction->ParmsSize, 16);
-        FMemory::Memzero(Buffer, InFunction->ParmsSize);
-        UNLUA_STAT_MEMORY_ALLOC(Buffer, Lua)
-    }
-#endif
-
-    // pre-create OutParmRec. memory for speed
-#if !SUPPORTS_RPC_CALL
-    OutParmRec = nullptr;
-    FOutParmRec *CurrentOutParmRec = nullptr;
-#endif
+    Buffer = FParamBufferFactory::Get(*InFunction);
 
     static const FName NAME_LatentInfo = TEXT("LatentInfo");
     Properties.Reserve(InFunction->NumParms);
@@ -87,71 +67,13 @@ FFunctionDesc::FFunctionDesc(UFunction *InFunction, FParameterCollection *InDefa
         }
         else if (Property->HasAnyPropertyFlags(CPF_OutParm | CPF_ReferenceParm))
         {
-            ++NumRefProperties;
-
-            // pre-create OutParmRec for 'out' property
-#if !SUPPORTS_RPC_CALL
-            FOutParmRec *Out = (FOutParmRec*)FMemory::Malloc(sizeof(FOutParmRec), alignof(FOutParmRec));
-            UNLUA_STAT_MEMORY_ALLOC(Out, OutParmRec);
-            Out->PropAddr = Property->ContainerPtrToValuePtr<uint8>(Buffer);
-            Out->Property = Property;
-            if (CurrentOutParmRec)
-            {
-                CurrentOutParmRec->NextOutParm = Out;
-                CurrentOutParmRec = Out;
-            }
-            else
-            {
-                OutParmRec = Out;
-                CurrentOutParmRec = Out;
-            }
-#endif
-
             if (!Property->HasAnyPropertyFlags(CPF_ConstParm))
             {
                 OutPropertyIndices.Add(Index);                          // non-const reference property
             }
         }
     }
-
-#if !SUPPORTS_RPC_CALL
-    if (CurrentOutParmRec)
-    {
-        CurrentOutParmRec->NextOutParm = nullptr;
-    }
-#endif
 }
-
-/**
- * Function descriptor destructor
- */
-FFunctionDesc::~FFunctionDesc()
-{
-#if UNLUA_ENABLE_DEBUG != 0
-    UE_LOG(LogUnLua, Log, TEXT("~FFunctionDesc : %s,%p"), *FuncName, this);
-#endif
-
-    // free persistent parameter buffer
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    if (Buffer)
-    {
-        UNLUA_STAT_MEMORY_FREE(Buffer, PersistentParamBuffer);
-        FMemory::Free(Buffer);
-    }
-#endif
-
-    // free pre-created OutParmRec
-#if !SUPPORTS_RPC_CALL
-    while (OutParmRec)
-    {
-        FOutParmRec *NextOut = OutParmRec->NextOutParm;
-        UNLUA_STAT_MEMORY_FREE(OutParmRec, OutParmRec);
-        FMemory::Free(OutParmRec);
-        OutParmRec = NextOut;
-    }
-#endif
-}
-
 
 void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer SelfRef, FFrame& Stack, RESULT_DECL)
 {
@@ -166,16 +88,12 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
     lua_rawgeti(L, LUA_REGISTRYINDEX, SelfRef);
     check(lua_istable(L, -1));
 
-    void* InParms = nullptr;
+    void* InParms;
     FOutParmRec* OutParms = Stack.OutParms;
     const bool bUnpackParams = Stack.CurrentNativeFunction && Stack.Node != Stack.CurrentNativeFunction;
     if (bUnpackParams)
     {
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-        InParms = Buffer;
-#endif
-        if (!InParms)
-            InParms = ParmsSize > 0 ? FMemory::Malloc(ParmsSize, 16) : nullptr;
+        InParms = Buffer->Get();
 
         FOutParmRec* FirstOut = nullptr;
         FOutParmRec* LastOut = nullptr;
@@ -227,10 +145,8 @@ void FFunctionDesc::CallLua(lua_State* L, lua_Integer FunctionRef, lua_Integer S
 
     CallLuaInternal(L, InParms , OutParms, RESULT_PARAM);
 
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
     if (bUnpackParams && InParms)
-        FMemory::Free(InParms);
-#endif
+        Buffer->Pop(InParms);
 }
 
 bool FFunctionDesc::CallLua(lua_State* L, int32 LuaRef, void* Params, UObject* Self)
@@ -279,26 +195,25 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         FirstParamIndex = 1;
     }
 
-    if (Object == UnLua::LowLevel::ReleasedPtr)
+    if (UNLIKELY(Object == UnLua::LowLevel::ReleasedPtr))
         return luaL_error(L, "attempt to call UFunction '%s' on released object.", TCHAR_TO_UTF8(*FuncName));
 
-    if (Object == nullptr)
+    if (UNLIKELY(Object == nullptr))
         return luaL_error(L, "attempt to call UFunction '%s' on NULL object. (check the usage of ':' and '.')", TCHAR_TO_UTF8(*FuncName));
 
-    if (Object->IsUnreachable())
+    if (UNLIKELY(Object->IsUnreachable()))
         return luaL_error(L, "attempt to call UFunction '%s' on Unreachable object '%s'.", TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*Object->GetName()));
 
-#if SUPPORTS_RPC_CALL
+    if (UNLIKELY(Object->HasAnyFlags(RF_NeedInitialization)))
+        return luaL_error(L, "attempt to call UFunction '%s' in lua Initialize function.", TCHAR_TO_UTF8(*FuncName));
+
     int32 Callspace = Object->GetFunctionCallspace(Function.Get(), nullptr);
     bool bRemote = Callspace & FunctionCallspace::Remote;
     bool bLocal = Callspace & FunctionCallspace::Local;
-#else
-    bool bRemote = false;
-    bool bLocal = true;
-#endif
 
     FFlagArray CleanupFlags;
-    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Userdata);      // prepare values of properties
+    const auto Params = Buffer->Get(); 
+    PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params, Userdata);      // prepare values of properties
 
     UFunction *FinalFunction = Function.Get();
     if (bInterfaceFunc)
@@ -309,12 +224,7 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
         if (!FinalFunction)
         {
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("ERROR! Can't find UFunction '%s' in target object!"), *FuncName);
-
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
-            if (Params)
-                FMemory::Free(Params);
-#endif
-
+            Buffer->Pop(Params);
             return 0;
         }
 #if UE_BUILD_DEBUG
@@ -340,42 +250,26 @@ int32 FFunctionDesc::CallUE(lua_State *L, int32 NumParams, void *Userdata)
 #if ENABLE_TYPE_CHECK && WITH_EDITOR
     if (!Object->IsA(FinalFunction->GetOuterUClass()))
     {
-        if(!Object->GetClass()->ImplementsInterface(FinalFunction->GetOuterUClass()))
-        {
-            return luaL_error(L, "attempt to call UFunction '%s' on invalid self type. '%s' required but got '%s'.",
-                              TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*FinalFunction->GetOuterUClass()->GetName()), TCHAR_TO_UTF8(*Object->GetClass()->GetName()));
-
-        }
+        Buffer->Pop(Params);
+        return luaL_error(L, "attempt to call UFunction '%s' on invalid self type. '%s' required but got '%s'.",
+                          TCHAR_TO_UTF8(*FuncName), TCHAR_TO_UTF8(*FinalFunction->GetOuterUClass()->GetName()), TCHAR_TO_UTF8(*Object->GetClass()->GetName()));
     }
 #endif
 
     // call the UFuncton...
-#if !SUPPORTS_RPC_CALL
-    if (FinalFunction == Function && FinalFunction->HasAnyFunctionFlags(FUNC_Native) && NumCalls == 1)
-    {
-        //FMemory::Memzero((uint8*)Params + FinalFunction->ParmsSize, FinalFunction->PropertiesSize - FinalFunction->ParmsSize);
-        uint8* ReturnValueAddress = FinalFunction->ReturnValueOffset != MAX_uint16 ? (uint8*)Params + FinalFunction->ReturnValueOffset : nullptr;
-        FMemory::Memcpy(Buffer, Params, Function->ParmsSize);
-        FFrame NewStack(Object, FinalFunction, Params, nullptr, GetChildProperties(Function));
-        NewStack.OutParms = OutParmRec;
-        FinalFunction->Invoke(Object, NewStack, ReturnValueAddress);
-    }
-    else
-#endif
+    // Func_NetMuticast both remote and local
+    // local automatic checked remote and local,so local first
+    if (bLocal)
     {   
-        // Func_NetMuticast both remote and local
-        // local automatic checked remote and local,so local first
-        if (bLocal)
-        {   
-            Object->UObject::ProcessEvent(FinalFunction, Params);
-        }
-        if (bRemote && !bLocal)
-        {
-            Object->CallRemoteFunction(FinalFunction, Params, nullptr, nullptr);
-        }
+        Object->UObject::ProcessEvent(FinalFunction, Params);
+    }
+    if (bRemote && !bLocal)
+    {
+        Object->CallRemoteFunction(FinalFunction, Params, nullptr, nullptr);
     }
 
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // push 'out' properties to Lua stack
+    Buffer->Pop(Params);
     return NumReturnValues;
 }
 
@@ -390,9 +284,11 @@ int32 FFunctionDesc::ExecuteDelegate(lua_State *L, int32 NumParams, int32 FirstP
     }
 
     FFlagArray CleanupFlags;
-    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
+    const auto Params = Buffer->Get();
+    PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params);
     ScriptDelegate->ProcessDelegate<UObject>(Params);
     int32 NumReturnValues = PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);
+    Buffer->Pop(Params);
     return NumReturnValues;
 }
 
@@ -407,26 +303,18 @@ void FFunctionDesc::BroadcastMulticastDelegate(lua_State *L, int32 NumParams, in
     }
 
     FFlagArray CleanupFlags;
-    void *Params = PreCall(L, NumParams, FirstParamIndex, CleanupFlags);
+    const auto Params = Buffer->Get();
+    PreCall(L, NumParams, FirstParamIndex, CleanupFlags, Params);
     ScriptDelegate->ProcessMulticastDelegate<UObject>(Params);
     PostCall(L, NumParams, FirstParamIndex, Params, CleanupFlags);      // !!! have no return values for multi-cast delegates
+    Buffer->Pop(Params);
 }
 
 /**
  * Prepare values of properties for the UFunction
  */
-void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Userdata)
+void FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamIndex, FFlagArray& CleanupFlags, void* Params, void* Userdata)
 {
-#if ENABLE_PERSISTENT_PARAM_BUFFER
-    void* Params = Buffer;
-#else
-    void* Params = Function->ParmsSize > 0 ? FMemory::Malloc(Function->ParmsSize, 16) : nullptr;
-#endif
-
-#if !SUPPORTS_RPC_CALL
-    ++NumCalls;
-#endif
-
     int32 ParamIndex = 0;
     for (int32 i = 0; i < Properties.Num(); ++i)
     {
@@ -493,8 +381,6 @@ void* FFunctionDesc::PreCall(lua_State* L, int32 NumParams, int32 FirstParamInde
         }
         ++ParamIndex;
     }
-
-    return Params;
 }
 
 /**
@@ -556,15 +442,6 @@ int32 FFunctionDesc::PostCall(lua_State * L, int32 NumParams, int32 FirstParamIn
             Properties[i]->DestroyValue(Params);
         }
     }
-
-#if !SUPPORTS_RPC_CALL
-    --NumCalls;
-#endif
-
-#if !ENABLE_PERSISTENT_PARAM_BUFFER
-    if (Params)
-        FMemory::Free(Params);
-#endif	
 
     return NumReturnValues;
 }
@@ -661,24 +538,21 @@ bool FFunctionDesc::CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *O
     // return value
     if (ReturnPropertyIndex > INDEX_NONE)
     {
-#if ENABLE_TYPE_CHECK == 1
+        const auto& ReturnProperty = Properties[ReturnPropertyIndex];
         if (NumResultOnStack < 1)
         {
+            ReturnProperty->GetProperty()->InitializeValue(RetValueAddress);
+#if ENABLE_TYPE_CHECK == 1
             UNLUA_LOGERROR(L, LogUnLua, Error, TEXT("FuncName %s has return value, but no value found on stack!"),*FuncName);
+#endif
         }
         else
-#endif
         {
-            const auto& ReturnProperty = Properties[ReturnPropertyIndex];
-
 #if UNLUA_LEGACY_RETURN_ORDER
             constexpr auto IndexInStack = -1;
 #else
             const auto IndexInStack = -NumResultOnStack;
 #endif
-
-            // set value for return property
-            check(RetValueAddress);
             ReturnProperty->WriteValue(L, RetValueAddress, IndexInStack, true);
         }
     }
