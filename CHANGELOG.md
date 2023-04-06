@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.4] - 2023-4-7
+### Added
+- 增加配置选项[启用FText支持](./Docs/CN/Settings.md#启用FText支持)
+- 适配UE5.1的UHT [#600](https://github.com/Tencent/UnLua/issue/600) [#607](https://github.com/Tencent/UnLua/pull/607)
+- 禁止在Lua的`Initialize`函数中访问当前`UObject`上的`UFunction`
+- 在Lua中`loadstring`失败时的全路径错误信息输出
+
+### Fixed
+- ENABLE_PERSISTENT_PARAM_BUFFER模式下 Buffer被递归调用的覆盖 [#563](https://github.com/Tencent/UnLua/issue/563)
+
+### Changed
+- 调整配置文件名称为`UnLuaSettings.ini` [#596](https://github.com/Tencent/UnLua/pull/596)
+- 在Lua中`NewObject`时，Outer传nil时使用`TransientPackage` [#604](https://github.com/Tencent/UnLua/pull/604)
+- 当不启用类型检查时，若函数要求有返回值但Lua里不返回，则用默认值作为返回值
+
+### Removed
+- 移除 `SUPPORTS_RPC_CALL` 宏
+
 ## [2.3.3] - 2023-2-2
 ### Added
 - 增加对`EnhancedInput`输入绑定的支持
