@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [2.3.4] - 2023-4-7
 ### Added
+- 增加配置选项[自定义Lua版本](./Docs/CN/Settings.md#自定义Lua版本)
 - 增加配置选项[启用FText支持](./Docs/CN/Settings.md#启用FText支持)
 - 适配UE5.1的UHT [#600](https://github.com/Tencent/UnLua/issue/600) [#607](https://github.com/Tencent/UnLua/pull/607)
 - 禁止在Lua的`Initialize`函数中访问当前`UObject`上的`UFunction`
