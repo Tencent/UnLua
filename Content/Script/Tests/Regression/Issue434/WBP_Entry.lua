@@ -6,7 +6,11 @@ function M:InitState(Parent, Name)
 end
 
 function M:OnTestDelegate(Count)
-    self.Text:SetText(tostring(Count))
+    local text = tostring(Count)
+    if UnLua.FTextEnabled then
+        text = UE.FText.FromString(text)
+    end
+    self.Text:SetText(text)
     _G[self.Name] = Count
 end
 

@@ -51,7 +51,7 @@ function M:RunTest()
         test("FloatProperty", 4.5)
         test("FNameProperty", "TestName")
         test("FStringProperty", "TestString")
-        test("FTextProperty", "TestText")
+        test("FTextProperty", "TestText", function(v) return tostring(v) end)
         test("FVectorProperty", UE.FVector(1,2,3))
         test("FRotatorProperty", UE.FRotator(2,3,1))
 
