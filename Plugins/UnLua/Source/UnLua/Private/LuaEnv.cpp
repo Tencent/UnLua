@@ -37,7 +37,7 @@ namespace UnLua
 
     TMap<lua_State*, FLuaEnv*> FLuaEnv::AllEnvs;
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
-    FLuaEnv::FOnCreated FLuaEnv::OnDestroyed;
+    FLuaEnv::FOnDestroyed FLuaEnv::OnDestroyed;
 
 #if ENABLE_UNREAL_INSIGHTS && CPUPROFILERTRACE_ENABLED
     void Hook(lua_State* L, lua_Debug* ar)
