@@ -57,6 +57,30 @@ self["function name with space"](self) -- “实例函数”
 
 参考文档：[智能提示](IntelliSense.md)
 
+## 怎么支持热更新Lua文件？
+
+简单点可以利用UnLua默认的加载机制，会优先加载`FPaths::ProjectPersistentDownloadDir()`目录下的脚本。
+
+以Windows平台举例，打包后工程里的Lua文件`require "A.B.C"`，会依次尝试加载：
+1. WindowsNoEditor/项目名/Saved/PersistentDownloadDir/Content/Script/A/B/C.lua
+2. WindowsNoEditor/项目名/Content/Script/A/B/C.lua
+
+移动平台的下载目录则是：
+- Android：/storage/emulated/0/Android/data/com.game.xxx/files/Content/Script/A/B.lua
+- iOS：App的Document目录/PersistentDownloadDir/Content/Script/A/B.lua
+
+也可以参考自定义加载器的示例来实现完全定制的加载策略。
+
+## 为什么改了`package.path`没有效果，可以自定义`require`查找目录吗？
+
+UE有自己的文件系统，如果有自定义查找目录的需求，可以修改`UnLua.PackagePath`来实现，比如：
+
+```lua
+UnLua.PackagePath = UnLua.PackagePath .. ';Plugins/UnLuaExtensions/LuaProtobuf/Content/Script/?.lua'
+```
+
+PS：默认值是`Content/Script/?.lua;Plugins/UnLua/Content/Script/?.lua`。
+
 ## 有哪些产品正在使用UnLua？
 
 腾讯内部已知的有四十款左右项目在使用UnLua，外部项目暂时无法统计。
