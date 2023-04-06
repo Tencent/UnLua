@@ -14,14 +14,13 @@
 
 #pragma once
 
+#include "Containers/StaticBitArray.h"
 #include "lua.hpp"
 #include "ParamBufferAllocator.h"
 #include "Registries/FunctionRegistry.h"
-#include "Containers/StaticBitArray.h"
+#include "ReflectionUtils/PropertyDesc.h"
 
-struct lua_State;
 struct FParameterCollection;
-class FPropertyDesc;
 
 /**
  * Function descriptor
