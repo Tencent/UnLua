@@ -13,33 +13,14 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 
-#include "Misc/EngineVersionComparison.h"
-#include "Engine/BlueprintGeneratedClass.h"
 #include "LuaFunction.h"
+#include "LuaOverrides.h"
+#include "LuaOverridesClass.h"
 #include "UnLuaModule.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
-static constexpr auto RenameFlags = REN_DontCreateRedirectors | REN_DoNotDirty | REN_ForceNoResetLoaders | REN_NonTransactional;
-static auto OverriddenSuffix = FUTF8ToTCHAR("__Overridden");
-
-TMap<UClass*, UClass*> ULuaFunction::SuspendedOverrides;
-
-static UClass* MakeOrphanedClass(const UClass* Class)
-{
-    FString OrphanedClassString = FString::Printf(TEXT("ORPHANED_DATA_ONLY_%s"), *Class->GetName());
-    FName OrphanedClassName = MakeUniqueObjectName(GetTransientPackage(), UBlueprintGeneratedClass::StaticClass(), FName(*OrphanedClassString));
-    UClass* OrphanedClass = NewObject<UBlueprintGeneratedClass>(GetTransientPackage(), OrphanedClassName, RF_Public | RF_Transient);
-#if UE_VERSION_OLDER_THAN(5, 1, 0)
-    OrphanedClass->ClassAddReferencedObjects = Class->AddReferencedObjects;
-#else
-    OrphanedClass->CppClassStaticFunctions = Class->CppClassStaticFunctions;
-#endif
-    OrphanedClass->ClassFlags |= CLASS_CompiledFromBlueprint;
-#if WITH_EDITOR
-    OrphanedClass->ClassGeneratedBy = Class->ClassGeneratedBy;
-#endif
-    return OrphanedClass;
-}
+static constexpr uint8 ScriptMagicHeader[] = {EX_StringConst, 'L', 'U', 'A', '\0', EX_UInt64Const};
+static constexpr size_t ScriptMagicHeaderSize = sizeof ScriptMagicHeader;
 
 DEFINE_FUNCTION(ULuaFunction::execCallLua)
 {
@@ -53,6 +34,42 @@ DEFINE_FUNCTION(ULuaFunction::execCallLua)
     Env->GetFunctionRegistry()->Invoke(LuaFunction, Context, Stack, RESULT_PARAM);
 }
 
+DEFINE_FUNCTION(ULuaFunction::execScriptCallLua)
+{
+    const auto LuaFunction = Get(Stack.CurrentNativeFunction);
+    if (!LuaFunction)
+        return;
+    const auto Env = IUnLuaModule::Get().GetEnv(Context);
+    if (!Env)
+    {
+        // PIE 结束时可能已经没有Lua环境了
+        return;
+    }
+    Env->GetFunctionRegistry()->Invoke(LuaFunction, Context, Stack, RESULT_PARAM);
+}
+
+ULuaFunction* ULuaFunction::Get(UFunction* Function)
+{
+    if (!Function)
+        return nullptr;
+
+    const auto LuaFunction = Cast<ULuaFunction>(Function);
+    if (LuaFunction)
+        return LuaFunction;
+
+    if (Function->Script.Num() < ScriptMagicHeaderSize + sizeof(ULuaFunction*))
+        return nullptr;
+
+    const auto Data = Function->Script.GetData();
+    if (!Data)
+        return nullptr;
+
+    if (FPlatformMemory::Memcmp(Data, ScriptMagicHeader, ScriptMagicHeaderSize) != 0)
+        return nullptr;
+
+    return FPlatformMemory::ReadUnaligned<ULuaFunction*>(Data + ScriptMagicHeaderSize);
+}
+
 bool ULuaFunction::IsOverridable(const UFunction* Function)
 {
     static constexpr uint32 FlagMask = FUNC_Native | FUNC_Event | FUNC_Net;
@@ -62,159 +79,23 @@ bool ULuaFunction::IsOverridable(const UFunction* Function)
 
 bool ULuaFunction::Override(UFunction* Function, UClass* Outer, FName NewName)
 {
-    ULuaFunction* LuaFunction;
-    const auto bReplace = Function->GetOuter() == Outer;
-    if (bReplace)
-    {
-        // ReplaceFunction
-        LuaFunction = Cast<ULuaFunction>(Function);
-        if (LuaFunction)
-        {
-            LuaFunction->Initialize();
-            return true;
-        }
-
-        const auto OverriddenName = FString::Printf(TEXT("%s%s"), *Function->GetName(), OverriddenSuffix.Get());
-        Function->Rename(*OverriddenName, nullptr, RenameFlags);
-        Outer->AddFunctionToFunctionMap(Function, Function->GetFName());
-    }
-    else
-    {
-        // AddFunction
-        if (Outer->FindFunctionByName(NewName, EIncludeSuperFlag::ExcludeSuper))
-            return false;
-
-        if (Function->HasAnyFunctionFlags(FUNC_Native))
-        {
-            // Need to do this before the call to DuplicateObject in the case that the super-function already has FUNC_Native
-            Outer->AddNativeFunction(*NewName.ToString(), &execCallLua);
-        }
-    }
-
-    FObjectDuplicationParameters DuplicationParams(Function, Outer);
-    DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
-    DuplicationParams.DestName = NewName;
-    DuplicationParams.DestClass = StaticClass();
-    LuaFunction = static_cast<ULuaFunction*>(StaticDuplicateObjectEx(DuplicationParams));
-    LuaFunction->FunctionFlags |= FUNC_Native;
-    LuaFunction->Overridden = Function->IsA<ULuaFunction>() ? static_cast<ULuaFunction*>(Function)->GetOverridden() : Function;
-    LuaFunction->ClearInternalFlags(EInternalObjectFlags::Native);
-    LuaFunction->SetNativeFunc(execCallLua);
-
-    if (bReplace)
-        LuaFunction->SetSuperStruct(Function->GetSuperStruct());
-    else
-        LuaFunction->SetSuperStruct(Function);
-
-    if (!FPlatformProperties::RequiresCookedData())
-        UMetaData::CopyMetadata(Function, LuaFunction);
-
-    LuaFunction->StaticLink(true);
-    LuaFunction->Initialize();
-
-    Outer->AddFunctionToFunctionMap(LuaFunction, NewName);
-
-    LuaFunction->Next = Outer->Children;
-    Outer->Children = LuaFunction;
-
-    if (Outer->IsRooted() || GUObjectArray.IsDisregardForGC(Outer))
-        LuaFunction->AddToRoot();
-    else
-        LuaFunction->AddToCluster(Outer);
-
+    UnLua::FLuaOverrides::Get().Override(Function, Outer, NewName);
     return true;
 }
 
 void ULuaFunction::RestoreOverrides(UClass* Class)
 {
-    auto OrphanedClass = MakeOrphanedClass(Class);
-    auto Current = &Class->Children;
-    while (*Current)
-    {
-        auto LuaFunction = Cast<ULuaFunction>(*Current);
-        if (!LuaFunction)
-        {
-            Current = &(*Current)->Next;
-            continue;
-        }
-
-        *Current = LuaFunction->Next;
-        const auto Overridden = LuaFunction->GetOverridden();
-        if (Overridden && Overridden->GetOuter() == Class)
-        {
-            check(Overridden->GetName().EndsWith(OverriddenSuffix.Get()));
-            Class->RemoveFunctionFromFunctionMap(Overridden);
-            LuaFunction->Rename(nullptr, OrphanedClass, RenameFlags);
-            FLinkerLoad::InvalidateExport(LuaFunction);
-            Overridden->Rename(*Overridden->GetName().LeftChop(OverriddenSuffix.Length()), nullptr, RenameFlags);
-            Class->AddFunctionToFunctionMap(Overridden, Overridden->GetFName());
-        }
-        else
-        {
-            Class->RemoveFunctionFromFunctionMap(LuaFunction);
-        }
-    }
-    Class->ClearFunctionMapsCaches();
+    UnLua::FLuaOverrides::Get().Restore(Class);
 }
 
 void ULuaFunction::SuspendOverrides(UClass* Class)
 {
-    check(!SuspendedOverrides.Contains(Class));
-    auto OrphanedClass = MakeOrphanedClass(Class);
-    SuspendedOverrides.Add(Class, OrphanedClass);
-
-    auto Current = &Class->Children;
-    while (*Current)
-    {
-        auto LuaFunction = Cast<ULuaFunction>(*Current);
-        if (!LuaFunction)
-        {
-            Current = &(*Current)->Next;
-            continue;
-        }
-
-        *Current = LuaFunction->Next;
-        const auto Overridden = LuaFunction->GetOverridden();
-        if (!Overridden || Overridden->GetOuter() != Class)
-            continue;
-
-        LuaFunction->Rename(nullptr, OrphanedClass, RenameFlags);
-        Overridden->Rename(*Overridden->GetName().LeftChop(OverriddenSuffix.Length()), nullptr, RenameFlags);
-
-        const auto OrphanedNext = OrphanedClass->Children;
-        OrphanedClass->Children = LuaFunction;
-        LuaFunction->Next = OrphanedNext;
-    }
+    UnLua::FLuaOverrides::Get().Suspend(Class);
 }
 
 void ULuaFunction::ResumeOverrides(UClass* Class)
 {
-    auto& Origin = *Class;
-    auto& Orphaned = *SuspendedOverrides.FindAndRemoveChecked(Class);
-
-    auto Current = Orphaned.Children;
-    while (Current)
-    {
-        auto LuaFunction = Cast<ULuaFunction>(Current);
-        if (!LuaFunction)
-        {
-            Current = Current->Next;
-            continue;
-        }
-
-        const auto Next = Current->Next;
-        Current->Next = Origin.Children;
-        Origin.Children = Current;
-        Current = Next;
-
-        const auto Overridden = LuaFunction->GetOverridden();
-        if (!Overridden)
-            continue;
-
-        const auto Name = Overridden->GetName();
-        Overridden->Rename(*(Name + OverriddenSuffix.Get()), nullptr, RenameFlags);
-        LuaFunction->Rename(nullptr, Overridden->GetOuter(), RenameFlags);
-    }
+    UnLua::FLuaOverrides::Get().Resume(Class);
 }
 
 void ULuaFunction::GetOverridableFunctions(UClass* Class, TMap<FName, UFunction*>& Functions)
@@ -254,21 +135,156 @@ void ULuaFunction::Initialize()
     Desc = MakeShared<FFunctionDesc>(this, nullptr);
 }
 
+void ULuaFunction::Override(UFunction* Function, UClass* Class, bool bAddNew)
+{
+    check(Function && Class && !From.IsValid());
+
+#if WITH_METADATA
+    UMetaData::CopyMetadata(Function, this);
+#endif
+
+    bActivated = false;
+    bAdded = bAddNew;
+    From = Function;
+
+    if (Function->GetNativeFunc() == execScriptCallLua)
+    {
+        // 目标UFunction可能已经被覆写过了
+        const auto LuaFunction = Get(Function);
+        Overridden = LuaFunction->GetOverridden();
+        check(Overridden);
+    }
+    else
+    {
+        const auto DestName = FString::Printf(TEXT("%s__Overridden"), *Function->GetName());
+        if (Function->HasAnyFunctionFlags(FUNC_Native))
+            GetOuterUClass()->AddNativeFunction(*DestName, *Function->GetNativeFunc());
+        Overridden = static_cast<UFunction*>(StaticDuplicateObject(Function, GetOuter(), *DestName));
+        Overridden->ClearInternalFlags(EInternalObjectFlags::Native);
+        Overridden->StaticLink(true);
+        Overridden->SetNativeFunc(Function->GetNativeFunc());
+    }
+
+    SetActive(true);
+}
+
+void ULuaFunction::Restore()
+{
+    if (bAdded)
+    {
+        if (const auto OverriddenClass = Cast<ULuaOverridesClass>(GetOuter())->GetOwner())
+            OverriddenClass->RemoveFunctionFromFunctionMap(this);
+    }
+    else
+    {
+        const auto Old = From.Get();
+        if (!Old)
+            return;
+        Old->Script = Script;
+        Old->SetNativeFunc(Overridden->GetNativeFunc());
+        Old->GetOuterUClass()->AddNativeFunction(*Old->GetName(), Overridden->GetNativeFunc());
+        Old->FunctionFlags = Overridden->FunctionFlags;
+    }
+}
+
+UClass* ULuaFunction::GetOverriddenUClass() const
+{
+    const auto OverridesClass = Cast<ULuaOverridesClass>(GetOuter());
+    return OverridesClass ? OverridesClass->GetOwner() : nullptr;
+}
+
+void ULuaFunction::SetActive(const bool bActive)
+{
+    if (bActivated == bActive)
+        return;
+
+    const auto Function = From.Get();
+    if (!Function)
+        return;
+
+    const auto Class = Cast<ULuaOverridesClass>(GetOuter())->GetOwner();
+    if (!Class)
+        return;
+    
+    if (bActive)
+    {
+        if (bAdded)
+        {
+            check(!Class->FindFunctionByName(GetFName(), EIncludeSuperFlag::ExcludeSuper));
+            SetSuperStruct(Function);
+            FunctionFlags |= FUNC_Native;
+            ClearInternalFlags(EInternalObjectFlags::Native);
+            SetNativeFunc(execCallLua);
+
+            Class->AddFunctionToFunctionMap(this, *GetName());
+            if (Function->HasAnyFunctionFlags(FUNC_Native))
+                Class->AddNativeFunction(*GetName(), &ULuaFunction::execCallLua);
+        }
+        else
+        {
+            SetSuperStruct(Function->GetSuperStruct());
+            Script = Function->Script;
+            Children = Function->Children;
+            ChildProperties = Function->ChildProperties;
+            PropertyLink = Function->PropertyLink;
+
+            Function->FunctionFlags |= FUNC_Native;
+            Function->SetNativeFunc(&execScriptCallLua);
+            Function->GetOuterUClass()->AddNativeFunction(*Function->GetName(), &execScriptCallLua);
+            Function->Script.Empty();
+            Function->Script.AddUninitialized(ScriptMagicHeaderSize + sizeof(ULuaFunction*));
+            const auto Data = Function->Script.GetData();
+            FPlatformMemory::Memcpy(Data, ScriptMagicHeader, ScriptMagicHeaderSize);
+            FPlatformMemory::WriteUnaligned<ULuaFunction*>(Data + ScriptMagicHeaderSize, this);
+        }
+    }
+    else
+    {
+        if (bAdded)
+        {
+            Class->RemoveFunctionFromFunctionMap(this);
+        }
+        else
+        {
+            Children = nullptr;
+            ChildProperties = nullptr;
+
+            Function->Script = Script;
+            Function->SetNativeFunc(Overridden->GetNativeFunc());
+            Function->GetOuterUClass()->AddNativeFunction(*Function->GetName(), Overridden->GetNativeFunc());
+            Function->FunctionFlags = Overridden->FunctionFlags;
+        }
+    }
+    
+    bActivated = bActive;
+}
+
+void ULuaFunction::FinishDestroy()
+{
+    if (bActivated && !bAdded)
+    {
+        Children = nullptr;
+        ChildProperties = nullptr;
+    }
+    UFunction::FinishDestroy();
+}
+
 UFunction* ULuaFunction::GetOverridden() const
 {
-    return Overridden.Get();
+    return Overridden;
 }
 
-#if WITH_EDITOR
 void ULuaFunction::Bind()
 {
-    const auto Outer = GetOuter();
-    if (Outer && Outer->GetName().StartsWith("REINST_"))
+    if (From.IsValid())
     {
-        FunctionFlags &= ~FUNC_Native;
-        return;
+        if (bAdded)
+            SetNativeFunc(execCallLua);
+        else
+            SetNativeFunc(Overridden->GetNativeFunc());
     }
-    Super::Bind();
+    else
+    {
+        SetNativeFunc(ProcessInternal);
+    }
 }
-
-#endif

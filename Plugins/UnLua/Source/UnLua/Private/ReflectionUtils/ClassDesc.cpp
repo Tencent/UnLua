@@ -19,6 +19,7 @@
 #include "LuaCore.h"
 #include "DefaultParamCollection.h"
 #include "LowLevel.h"
+#include "LuaOverridesClass.h"
 #include "UnLuaModule.h"
 
 /**
@@ -78,75 +79,83 @@ TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* Qu
     if (FieldDescPtr)
     {
         FieldDesc = *FieldDescPtr;
+        return FieldDesc;
+    }
+
+    // a property or a function ?
+    FProperty* Property = Struct->FindPropertyByName(FieldName);
+    UFunction* Function = (!Property && bIsClass) ? AsClass()->FindFunctionByName(FieldName) : nullptr;
+    bool bValid = Property || Function;
+    if (!bValid && bIsScriptStruct && !Struct->IsNative())
+    {
+        FString FieldNameStr = FieldName.ToString();
+        const int32 GuidStrLen = 32;
+        const int32 MinimalPostfixlen = GuidStrLen + 3;
+        for (TFieldIterator<FProperty> PropertyIt(Struct.Get(), EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); PropertyIt; ++PropertyIt)
+        {
+            FString DisplayName = (*PropertyIt)->GetName();
+            if (DisplayName.Len() > MinimalPostfixlen)
+            {
+                DisplayName = DisplayName.LeftChop(GuidStrLen + 1);
+                int32 FirstCharToRemove = INDEX_NONE;
+                if (DisplayName.FindLastChar(TCHAR('_'), FirstCharToRemove))
+                {
+                    DisplayName = DisplayName.Mid(0, FirstCharToRemove);
+                }
+            }
+
+            if (DisplayName == FieldNameStr)
+            {
+                Property = *PropertyIt;
+                break;
+            }
+        }
+
+        bValid = Property != nullptr;
+    }
+    if (!bValid)
+        return nullptr;
+
+    UStruct* OuterStruct;
+    if (Property)
+    {
+        OuterStruct = Cast<UStruct>(GetPropertyOuter(Property));
     }
     else
     {
-        // a property or a function ?
-        FProperty* Property = Struct->FindPropertyByName(FieldName);
-        UFunction* Function = (!Property && bIsClass) ? AsClass()->FindFunctionByName(FieldName) : nullptr;
-        bool bValid = Property || Function;
-        if (!bValid && bIsScriptStruct && !Struct->IsNative())
-        {
-            FString FieldNameStr = FieldName.ToString();
-            const int32 GuidStrLen = 32;
-            const int32 MinimalPostfixlen = GuidStrLen + 3;
-            for (TFieldIterator<FProperty> PropertyIt(Struct.Get(), EFieldIteratorFlags::ExcludeSuper, EFieldIteratorFlags::ExcludeDeprecated); PropertyIt; ++PropertyIt)
-            {
-                FString DisplayName = (*PropertyIt)->GetName();
-                if (DisplayName.Len() > MinimalPostfixlen)
-                {
-                    DisplayName = DisplayName.LeftChop(GuidStrLen + 1);
-                    int32 FirstCharToRemove = INDEX_NONE;
-                    if (DisplayName.FindLastChar(TCHAR('_'), FirstCharToRemove))
-                    {
-                        DisplayName = DisplayName.Mid(0, FirstCharToRemove);
-                    }
-                }
+        OuterStruct = Cast<UStruct>(Function->GetOuter());
+        if (const auto OverridesClass = Cast<ULuaOverridesClass>(OuterStruct))
+            OuterStruct = OverridesClass->GetOwner();
+    }
 
-                if (DisplayName == FieldNameStr)
-                {
-                    Property = *PropertyIt;
-                    break;
-                }
-            }
+    if (!OuterStruct)
+        return nullptr;
 
-            bValid = Property != nullptr;
-        }
-        if (!bValid)
-        {
-            return nullptr;
-        }
+    if (OuterStruct != Struct)
+    {
+        FClassDesc* OuterClass = UnLua::FClassRegistry::RegisterReflectedType(OuterStruct);
+        check(OuterClass);
+        return OuterClass->RegisterField(FieldName, QueryClass);
+    }
 
-        UStruct* OuterStruct = Property ? Cast<UStruct>(GetPropertyOuter(Property)) : Cast<UStruct>(Function->GetOuter());
-        if (OuterStruct)
-        {
-            if (OuterStruct != Struct)
-            {
-                FClassDesc* OuterClass = UnLua::FClassRegistry::RegisterReflectedType(OuterStruct);
-                check(OuterClass);
-                return OuterClass->RegisterField(FieldName, QueryClass);
-            }
-
-            // create new Field descriptor
-            FieldDesc = MakeShared<FFieldDesc>();
-            FieldDesc->QueryClass = QueryClass;
-            FieldDesc->OuterClass = this;
-            Fields.Add(FieldName, FieldDesc);
-            if (Property)
-            {
-                TSharedPtr<FPropertyDesc> Ptr(FPropertyDesc::Create(Property));
-                FieldDesc->FieldIndex = Properties.Add(Ptr); // index of property descriptor
-                ++FieldDesc->FieldIndex;
-            }
-            else
-            {
-                check(Function);
-                FParameterCollection* DefaultParams = FunctionCollection ? FunctionCollection->Functions.Find(FieldName) : nullptr;
-                FieldDesc->FieldIndex = Functions.Add(MakeShared<FFunctionDesc>(Function, DefaultParams)); // index of function descriptor
-                ++FieldDesc->FieldIndex;
-                FieldDesc->FieldIndex = -FieldDesc->FieldIndex;
-            }
-        }
+    // create new Field descriptor
+    FieldDesc = MakeShared<FFieldDesc>();
+    FieldDesc->QueryClass = QueryClass;
+    FieldDesc->OuterClass = this;
+    Fields.Add(FieldName, FieldDesc);
+    if (Property)
+    {
+        TSharedPtr<FPropertyDesc> Ptr(FPropertyDesc::Create(Property));
+        FieldDesc->FieldIndex = Properties.Add(Ptr); // index of property descriptor
+        ++FieldDesc->FieldIndex;
+    }
+    else
+    {
+        check(Function);
+        FParameterCollection* DefaultParams = FunctionCollection ? FunctionCollection->Functions.Find(FieldName) : nullptr;
+        FieldDesc->FieldIndex = Functions.Add(MakeShared<FFunctionDesc>(Function, DefaultParams)); // index of function descriptor
+        ++FieldDesc->FieldIndex;
+        FieldDesc->FieldIndex = -FieldDesc->FieldIndex;
     }
     return FieldDesc;
 }

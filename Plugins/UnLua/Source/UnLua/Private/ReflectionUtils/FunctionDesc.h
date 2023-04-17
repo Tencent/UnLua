@@ -113,6 +113,8 @@ private:
 
     bool CallLuaInternal(lua_State *L, void *InParams, FOutParmRec *OutParams, void *RetValueAddress) const;
 
+    FORCEINLINE bool CheckObject(UObject* Object, FString& Error) const;
+
     TWeakObjectPtr<UFunction> Function;
     FString FuncName;
     TSharedPtr<FParamBufferAllocator> Buffer;
