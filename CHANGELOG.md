@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - ENABLE_PERSISTENT_PARAM_BUFFER模式下 Buffer被递归调用的覆盖 [#563](https://github.com/Tencent/UnLua/issue/563)
+- 在启用`AsyncLoadingThread`时，异步加载后触发绑定对象到Lua可能引起崩溃
 
 ### Changed
 - 调整配置文件名称为`UnLuaSettings.ini` [#596](https://github.com/Tencent/UnLua/pull/596)
