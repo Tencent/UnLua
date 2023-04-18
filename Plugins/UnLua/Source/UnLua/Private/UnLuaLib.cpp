@@ -270,6 +270,7 @@ namespace UnLua
 #endif
 
             LegacySupport(L);
+            lua_pop(L, 1);
             return 1;
         }
 
