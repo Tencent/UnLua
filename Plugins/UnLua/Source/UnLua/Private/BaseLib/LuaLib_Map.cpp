@@ -23,7 +23,7 @@ static FORCEINLINE void TMap_Guard(lua_State* L, FLuaMap* Map)
         luaL_error(L, "invalid TMap");
 
     if (!Map->KeyInterface->IsValid())
-        luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap key type:%s"), *Map->ValueInterface->GetName())));
+        luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap key type:%s"), *Map->KeyInterface->GetName())));
 
     if (!Map->ValueInterface->IsValid())
         luaL_error(L, TCHAR_TO_UTF8(*FString::Printf(TEXT("invalid TMap value type:%s"), *Map->ValueInterface->GetName())));
