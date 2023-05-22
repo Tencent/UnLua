@@ -65,6 +65,7 @@ UNLUA_API void* GetCppInstanceFast(lua_State *L, int32 Index);
  */
 void* NewScriptContainer(lua_State *L, const FScriptContainerDesc &Desc);
 void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &Desc);
+void* CacheScriptContainer(lua_State* L, void* Key, const FScriptContainerDesc& Desc, const TFunctionRef<bool (void*)>& Validator);
 void* GetScriptContainer(lua_State *L, int32 Index);
 void RemoveCachedScriptContainer(lua_State *L, void *Key);
 

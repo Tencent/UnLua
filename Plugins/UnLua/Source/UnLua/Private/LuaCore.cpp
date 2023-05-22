@@ -477,6 +477,36 @@ void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &
     return Userdata;            // return null if container is already cached, or the new created userdata otherwise
 }
 
+
+void* CacheScriptContainer(lua_State *L, void *Key, const FScriptContainerDesc &Desc, const TFunctionRef<bool (void*)>& Validator)
+{
+    if (!Key)
+    {
+        UNLUA_LOGERROR(L, LogUnLua, Warning, TEXT("%s, Invalid key!"), ANSI_TO_TCHAR(__FUNCTION__));
+        return nullptr;
+    }
+
+    // return null if container is already cached, or create/cache/return a new ud
+    void *Userdata = nullptr;
+    lua_getfield(L, LUA_REGISTRYINDEX, "ScriptContainerMap");
+    lua_pushlightuserdata(L, Key);
+    int32 Type = lua_rawget(L, -2);
+    if (Type == LUA_TNIL || !Validator(lua_touserdata(L, -1)))
+    {
+        lua_pop(L, 1);
+
+        Userdata = NewUserdataWithContainerTag(L, Desc.GetSize());      // create new userdata
+        luaL_setmetatable(L, Desc.GetName());               // set metatable
+        lua_pushlightuserdata(L, Key);
+        lua_pushvalue(L, -2);
+        lua_rawset(L, -4);                                  // cache it in 'ScriptContainerMap'
+        UnLua::FLuaEnv::FindEnv(L)->GetDanglingCheck()->CaptureContainer(L, Key);
+    }
+
+    lua_remove(L, -2);
+    return Userdata;            // return null if container is already cached, or the new created userdata otherwise
+}
+
 /**
  * Get a script container at the given stack index
  */
