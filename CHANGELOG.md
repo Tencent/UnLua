@@ -4,8 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [2.3.4] - 2023-4-7
+## [2.3.5] - 2023-5-29
 ### Added
+- 对UE5.2的支持
 - 增加配置选项[自定义Lua版本](./Docs/CN/Settings.md#自定义Lua版本)
 - 增加配置选项[启用FText支持](./Docs/CN/Settings.md#启用FText支持)
 - 适配UE5.1的UHT [#600](https://github.com/Tencent/UnLua/issue/600) [#607](https://github.com/Tencent/UnLua/pull/607)
