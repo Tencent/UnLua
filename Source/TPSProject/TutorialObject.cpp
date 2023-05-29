@@ -25,8 +25,7 @@ static int32 FTutorialObject_New(lua_State* L)
     }
 
     const auto UserData = NewUserdataWithPadding(L, sizeof(FTutorialObject), "FTutorialObject");
-    const auto Name = UTF8_TO_TCHAR(NameChars);
-	new(UserData) FTutorialObject(Name);
+	new(UserData) FTutorialObject(UTF8_TO_TCHAR(NameChars));
     return 1;
 }
 

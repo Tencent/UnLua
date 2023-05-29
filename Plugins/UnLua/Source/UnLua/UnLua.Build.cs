@@ -25,7 +25,11 @@ public class UnLua : ModuleRules
 {
     public UnLua(ReadOnlyTargetRules Target) : base(Target)
     {
+#if UE_5_2_OR_LATER
+        IWYUSupport = IWYUSupport.None;
+#else
         bEnforceIWYU = false;
+#endif
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
         PublicIncludePaths.AddRange(

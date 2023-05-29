@@ -38,8 +38,8 @@ struct FUnLuaTest_Issue473 : FUnLuaTestBase
         )";
         UnLua::RunChunk(L, Chunk);
 
-        const auto Actual = UTF8_TO_TCHAR(lua_tostring(L, -1));
-        RUNNER_TEST_EQUAL(Actual, TEXT("虚幻引擎"));
+        const auto Actual = lua_tostring(L, -1);
+        RUNNER_TEST_EQUAL(UTF8_TO_TCHAR(Actual), TEXT("虚幻引擎"));
         return true;
     }
 };

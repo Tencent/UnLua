@@ -20,7 +20,11 @@ public class LuaSocket : ModuleRules
 {
     public LuaSocket(ReadOnlyTargetRules Target) : base(Target)
     {
+#if UE_5_2_OR_LATER
+        IWYUSupport = IWYUSupport.None;
+#else
         bEnforceIWYU = false;
+#endif
         bUseUnity = false;
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
         bEnableUndefinedIdentifierWarnings = false;

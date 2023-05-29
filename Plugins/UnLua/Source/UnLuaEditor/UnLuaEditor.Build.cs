@@ -19,7 +19,11 @@ public class UnLuaEditor : ModuleRules
 {
     public UnLuaEditor(ReadOnlyTargetRules Target) : base(Target)
     {
+#if UE_5_2_OR_LATER
+        IWYUSupport = IWYUSupport.None;
+#else
         bEnforceIWYU = false;
+#endif
 
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
