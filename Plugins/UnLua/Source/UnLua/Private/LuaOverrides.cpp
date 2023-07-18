@@ -18,9 +18,14 @@ namespace UnLua
 
     void FLuaOverrides::NotifyUObjectDeleted(const UObjectBase* Object, int32 Index)
     {
-        ULuaOverridesClass* OverridesClass;
-        if (Overrides.RemoveAndCopyValue((UClass*)Object, OverridesClass))
-            OverridesClass->Restore();
+        TWeakObjectPtr<ULuaOverridesClass> OverridesClass;
+        if (Overrides.RemoveAndCopyValue((UClass*)Object, OverridesClass) )
+        {
+            if ( OverridesClass.IsValid( ) )
+            {
+                OverridesClass->Restore();
+             }
+         }
     }
 
     void FLuaOverrides::OnUObjectArrayShutdown()
@@ -72,13 +77,14 @@ namespace UnLua
 
     void FLuaOverrides::Restore(UClass* Class)
     {
-        const auto Exists = Overrides.Find(Class);
-        if (!Exists)
+        TWeakObjectPtr<ULuaOverridesClass> OverridesClass;
+        if ( !Overrides.RemoveAndCopyValue( Class, OverridesClass) )
+            return;
+            
+        if ( !OverridesClass.IsValid() )
             return;
 
-        const auto OverridesClass = *Exists;
         OverridesClass->Restore();
-        Overrides.Remove(Class);
     }
 
     void FLuaOverrides::RestoreAll()
@@ -92,20 +98,30 @@ namespace UnLua
     void FLuaOverrides::Suspend(UClass* Class)
     {
         if (const auto Exists = Overrides.Find(Class))
-            (*Exists)->SetActive(false);
+        {
+            if ( Exists != nullptr && Exists->IsValid() )
+            {
+                Exists->Get()->SetActive(false);
+            }
+        }
     }
 
     void FLuaOverrides::Resume(UClass* Class)
     {
         if (const auto Exists = Overrides.Find(Class))
-            (*Exists)->SetActive(true);
+        {
+            if ( Exists != nullptr && Exists->IsValid() )
+            {
+                Exists->Get()->SetActive(true);
+            }
+        }
     }
 
     UClass* FLuaOverrides::GetOrAddOverridesClass(UClass* Class)
     {
         const auto Exists = Overrides.Find(Class);
-        if (Exists)
-            return *Exists;
+        if ( Exists != nullptr && Exists->IsValid() )
+            return Exists->Get();
 
         const auto OverridesClass = ULuaOverridesClass::Create(Class);
         Overrides.Add(Class, OverridesClass);

@@ -31,6 +31,8 @@ public:
     void SetActive(const bool bActive);
 
     FORCEINLINE UClass* GetOwner() const { return Owner.Get(); }
+    
+    virtual void BeginDestroy() override;
 
 private:
     void AddToOwner();
