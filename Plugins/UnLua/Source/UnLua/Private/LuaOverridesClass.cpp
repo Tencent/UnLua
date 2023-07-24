@@ -50,6 +50,12 @@ void ULuaOverridesClass::SetActive(const bool bActive)
     Class->ClearFunctionMapsCaches();
 }
 
+void ULuaOverridesClass::BeginDestroy()
+{
+    Restore();
+    UClass::BeginDestroy();
+}
+
 void ULuaOverridesClass::AddToOwner()
 {
     const auto Class = Owner.Get();

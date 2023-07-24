@@ -61,6 +61,7 @@ namespace UnLua
          */
         UClass* GetOrAddOverridesClass(UClass* Class);
 
-        TMap<UClass*, ULuaOverridesClass*> Overrides;
+        TMap<UClass*, TWeakObjectPtr<ULuaOverridesClass>> Overrides;
+     
     };
 }
