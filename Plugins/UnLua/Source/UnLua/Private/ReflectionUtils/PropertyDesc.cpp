@@ -1215,8 +1215,7 @@ public:
     {
         if (Dest && Src && IsOutParameter())
         {
-            FMemory::Memcpy(Dest, Src, StructSize);        // shallow copy is enough
-            //StructProperty->CopySingleValue(Dest, Src);
+            StructProperty->CopySingleValue(Dest, Src);
             return true;
         }
         return false;
