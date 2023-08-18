@@ -42,6 +42,7 @@ namespace UnLua
     private:
         TSharedPtr<ITypeInterface> GetBoolProperty();
         TSharedPtr<ITypeInterface> GetIntProperty();
+        TSharedPtr<ITypeInterface> GetInt64Property();
         TSharedPtr<ITypeInterface> GetFloatProperty();
         TSharedPtr<ITypeInterface> GetStringProperty();
         TSharedPtr<ITypeInterface> GetNameProperty();
@@ -53,6 +54,7 @@ namespace UnLua
         TMap<UField*, TSharedPtr<ITypeInterface>> FieldProperties;
         TSharedPtr<ITypeInterface> BoolProperty;
         TSharedPtr<ITypeInterface> IntProperty;
+        TSharedPtr<ITypeInterface> Int64Property;
         TSharedPtr<ITypeInterface> FloatProperty;
         TSharedPtr<ITypeInterface> StringProperty;
         TSharedPtr<ITypeInterface> NameProperty;
