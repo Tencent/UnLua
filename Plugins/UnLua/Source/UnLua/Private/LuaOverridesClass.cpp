@@ -14,6 +14,7 @@
 
 #include "LuaOverridesClass.h"
 #include "LuaFunction.h"
+#include "Misc/EngineVersionComparison.h"
 
 ULuaOverridesClass* ULuaOverridesClass::Create(UClass* Class)
 {
@@ -62,7 +63,16 @@ void ULuaOverridesClass::AddToOwner()
     if (!Class)
         return;
 
-    auto Field = &Class->Children;
+#if UE_VERSION_NEWER_THAN(5, 2, 0)
+    UField** Field = nullptr;
+
+    if (auto ChildrenPtr = Class->Children.Get())
+    {
+        Field = &ChildrenPtr;
+    }
+#else
+    auto Field = &(Class->Children);
+#endif
     while (*Field)
         Field = &(*Field)->Next;
     *Field = this;
@@ -77,7 +87,16 @@ void ULuaOverridesClass::RemoveFromOwner()
     if (!Class)
         return;
 
+#if UE_VERSION_NEWER_THAN(5, 2, 0)
+    UField** Field = nullptr;
+
+    if (auto ChildrenPtr = Class->Children.Get())
+    {
+        Field = &ChildrenPtr;
+    }
+#else
     auto Field = &Class->Children;
+#endif
     while (*Field)
     {
         if (*Field == this)
