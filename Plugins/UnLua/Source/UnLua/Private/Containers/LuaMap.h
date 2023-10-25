@@ -292,7 +292,7 @@ public:
      */
     FORCEINLINE void Rehash()
     {
-        Map->Rehash(MapLayout, [=](const void* Src) { return KeyInterface->GetValueTypeHash(Src); });
+        Map->Rehash(MapLayout, [this](const void* Src) { return KeyInterface->GetValueTypeHash(Src); });
     }
 
     /**

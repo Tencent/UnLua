@@ -198,7 +198,7 @@ public:
      */
     FORCEINLINE void Rehash()
     {
-        Set->Rehash(SetLayout, [=](const void* Src) { return ElementInterface->GetValueTypeHash(Src); });
+        Set->Rehash(SetLayout, [this](const void* Src) { return ElementInterface->GetValueTypeHash(Src); });
     }
 
     /**
