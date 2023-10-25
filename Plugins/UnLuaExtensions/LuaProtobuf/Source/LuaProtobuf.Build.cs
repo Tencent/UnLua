@@ -26,7 +26,7 @@ public class LuaProtobuf : ModuleRules
         bEnforceIWYU = false;
 #endif
         bUseUnity = false;
-        PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        PCHUsage = PCHUsageMode.NoSharedPCHs;
         bEnableUndefinedIdentifierWarnings = false;
 
         PublicDependencyModuleNames.AddRange(

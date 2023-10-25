@@ -14,7 +14,11 @@
 
 #include "Misc/EngineVersionComparison.h"
 #include "UnLuaIntelliSenseGenerator.h"
+#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#include "AssetRegistry/AssetRegistryModule.h"
+#else
 #include "AssetRegistryModule.h"
+#endif
 #include "CoreUObject.h"
 #include "UnLua.h"
 #include "UnLuaEditorSettings.h"

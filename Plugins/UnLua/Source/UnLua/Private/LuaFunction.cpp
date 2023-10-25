@@ -18,6 +18,7 @@
 #include "LuaOverridesClass.h"
 #include "UnLuaModule.h"
 #include "ReflectionUtils/PropertyDesc.h"
+#include "Misc/EngineVersionComparison.h"
 
 static constexpr uint8 ScriptMagicHeader[] = {EX_StringConst, 'L', 'U', 'A', '\0', EX_UInt64Const};
 static constexpr size_t ScriptMagicHeaderSize = sizeof ScriptMagicHeader;
@@ -285,6 +286,10 @@ void ULuaFunction::Bind()
     }
     else
     {
+#if UE_VERSION_NEWER_THAN(5, 2, 0)
+        Super::Bind();
+#else
         SetNativeFunc(ProcessInternal);
+#endif
     }
 }
