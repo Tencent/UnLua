@@ -65,9 +65,9 @@ void FUnLuaEnumSpec::Define()
             const auto Expected = UEnum::GetDisplayValueAsText(ECR_Overlap);
             TEST_TRUE(Expected.EqualTo(Actual))
 #else
-            const auto Actual = UTF8_TO_TCHAR(lua_tostring(L, -1));
+            const auto Actual = FUTF8ToTCHAR(lua_tostring(L, -1));
             const auto Expected = UEnum::GetDisplayValueAsText(ECR_Overlap).ToString();
-            TEST_EQUAL(Actual, Expected);
+            TEST_EQUAL(Actual.Get(), Expected);
 #endif
         });
 
