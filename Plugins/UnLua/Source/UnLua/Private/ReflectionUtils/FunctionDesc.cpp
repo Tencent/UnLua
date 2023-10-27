@@ -549,7 +549,7 @@ bool FFunctionDesc::CheckObject(UObject* Object, FString& Error) const
 
     if (Object->HasAnyFlags(RF_NeedInitialization))
     {
-        Error = FString::Printf(TEXT("attempt to call UFunction '%s' in lua Initialize function on object '%s'."), *Object->GetName());
+        Error = FString::Printf(TEXT("attempt to call UFunction '%s' in lua Initialize function on object '%s'."), *FuncName, *Object->GetName());
         return false;
     }
 

@@ -1001,6 +1001,23 @@ static void GetFieldInternal(lua_State* L)
             lua_pushvalue(L, 2);
             Type = lua_rawget(L, -2);
             bCached = Type != LUA_TNIL;
+            // check cached property from non-native class
+            if (bCached && !Field->OuterClass->IsNative())
+            {
+                auto Ptr = lua_touserdata(L, -1);
+                if (Ptr)
+                {
+                    auto Property = static_cast<TSharedPtr<UnLua::ITypeOps>*>(Ptr);
+                    if (Property && Property->IsValid())
+                    {
+                        auto PropertyDesc = static_cast<FPropertyDesc*>((*Property).Get());
+                        if (!PropertyDesc->IsValid())
+                        {
+                            bCached = false;
+                        }
+                    }
+                }
+            }
             if (!bCached)
             {
                 lua_pop(L, 1);

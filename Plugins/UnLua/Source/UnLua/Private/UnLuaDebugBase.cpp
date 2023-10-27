@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "Misc/EngineVersionComparison.h"
 #include "UnLuaDebugBase.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
@@ -484,7 +485,11 @@ namespace UnLua
                     // UClass
                     FClassProperty *ClassProperty = (FClassProperty*)ObjectProperty;
                     UClass *Class = Cast<UClass>(ObjectProperty->GetPropertyValue(ValuePtr));
+#if UE_VERSION_OLDER_THAN(5, 3, 0)
                     UClass *MetaClass = Class ? Class : ClassProperty->MetaClass;
+#else
+                    UClass *MetaClass = Class ? Class : ClassProperty->MetaClass.Get();
+#endif
                     if (MetaClass == UClass::StaticClass())
                     {
                         ReadableValue = FString::Printf(TEXT("UClass*: 0x%p"), Class);
@@ -498,7 +503,11 @@ namespace UnLua
                 {
                     // UObject
                     UObject *Object = ObjectProperty->GetPropertyValue(ValuePtr);
+#if UE_VERSION_OLDER_THAN(5, 3, 0)
                     UClass *Class = Object ? Object->GetClass() : ObjectProperty->PropertyClass;
+#else
+                    UClass *Class = Object ? Object->GetClass() : ObjectProperty->PropertyClass.Get();
+#endif
                     ReadableValue = FString::Printf(TEXT("%s%s* (%s): 0x%p"), Class->GetPrefixCPP(), *Class->GetName(), Object ? *Object->GetName() : TEXT(""), Object);
                     BuildFromUStruct(Class, Object, Object);
                 }
