@@ -119,11 +119,11 @@ namespace UnLua
             return true;
 
         auto AInfo = Delegates.Find(ADelegate);
-        if (!AInfo || !AInfo->SignatureFunction)
-            return false;
-
         auto BInfo = Delegates.Find(BDelegate);
-        if (!BInfo|| !BInfo->SignatureFunction)
+        if (!AInfo || !BInfo)
+            return true;
+
+        if (!AInfo->SignatureFunction || !BInfo->SignatureFunction)
             return false;
 
         return AInfo->SignatureFunction->IsSignatureCompatibleWith(BInfo->SignatureFunction);
