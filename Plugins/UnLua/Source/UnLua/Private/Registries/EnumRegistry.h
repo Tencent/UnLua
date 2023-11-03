@@ -36,9 +36,7 @@ namespace UnLua
 
         void NotifyUObjectDeleted(UObject* Object);
 
-        FEnumDesc* Register(const char* MetatableName);
-
-        FEnumDesc* Register(const UEnum* Enum);
+        FEnumDesc* Register(UEnum* Enum, lua_CFunction IndexFunc = nullptr);
 
         void Unregister(const UEnum* Enum);
 
