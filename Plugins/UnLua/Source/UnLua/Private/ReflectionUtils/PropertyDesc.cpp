@@ -1303,7 +1303,7 @@ public:
 #endif
 
 private:
-    TStringConversion<TStringConvert<TCHAR, ANSICHAR>> StructName;
+    FTCHARToUTF8 StructName;
     int32 StructSize;
     uint8 UserdataPadding;
 };
