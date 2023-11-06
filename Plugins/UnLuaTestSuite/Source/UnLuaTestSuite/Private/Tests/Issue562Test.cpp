@@ -14,6 +14,7 @@
 
 
 #include "LowLevel.h"
+#include "UnLuaCompatibility.h"
 #include "UnLuaSettings.h"
 #include "UnLuaTestCommon.h"
 #include "UnLuaTestHelpers.h"
@@ -40,11 +41,11 @@ struct FUnLuaTest_Issue562 : FUnLuaTestBase
         )";
         UnLua::RunChunk(L, Chunk1);
 
-        const auto Before = FindObject<UClass>(ANY_PACKAGE, TEXT("BPI_Issue562_C"));
+        const auto Before = FindFirstObject<UClass>(TEXT("BPI_Issue562_C"));
         RUNNER_TEST_NOT_NULL(Before);
 
         CollectGarbage(RF_NoFlags, true);
-        const auto After = FindObject<UClass>(ANY_PACKAGE, TEXT("BPI_Issue562_C"));
+        const auto After = FindFirstObject<UClass>(TEXT("BPI_Issue562_C"));
         RUNNER_TEST_NULL(After);
 
         lua_gc(L, LUA_GCCOLLECT);

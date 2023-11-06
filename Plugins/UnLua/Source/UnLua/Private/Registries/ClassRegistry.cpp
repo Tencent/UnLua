@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "Registries/ClassRegistry.h"
+#include "UnLuaCompatibility.h"
 #include "LuaEnv.h"
 #include "Binding.h"
 #include "LowLevel.h"
@@ -280,11 +281,11 @@ namespace UnLua
         FString Name = UTF8_TO_TCHAR(InName);
 
         // find candidates in memory
-        UField* Ret = FindObject<UClass>(ANY_PACKAGE, *Name);
+        UField* Ret = FindFirstObject<UClass>(*Name);
         if (!Ret)
-            Ret = FindObject<UScriptStruct>(ANY_PACKAGE, *Name);
+            Ret = FindFirstObject<UScriptStruct>(*Name);
         if (!Ret)
-            Ret = FindObject<UEnum>(ANY_PACKAGE, *Name);
+            Ret = FindFirstObject<UEnum>(*Name);
 
         // load candidates if not found
         if (!Ret)

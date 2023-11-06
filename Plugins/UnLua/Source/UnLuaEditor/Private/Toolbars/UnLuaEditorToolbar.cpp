@@ -1,4 +1,5 @@
-﻿#include "UnLuaPrivate.h"
+﻿#include "Misc/EngineVersionComparison.h"
+#include "UnLuaPrivate.h"
 #include "UnLuaEditorCore.h"
 #include "UnLuaEditorToolbar.h"
 #include "UnLuaEditorCommands.h"
@@ -147,7 +148,11 @@ void FUnLuaEditorToolbar::BindToLua_Executed() const
     if (TargetClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
         return;
 
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
     const auto Ok = FBlueprintEditorUtils::ImplementNewInterface(Blueprint, FName("UnLuaInterface"));
+#else
+    const auto Ok = FBlueprintEditorUtils::ImplementNewInterface(Blueprint, FTopLevelAssetPath(UUnLuaInterface::StaticClass()));
+#endif
     if (!Ok)
         return;
 
@@ -178,7 +183,7 @@ void FUnLuaEditorToolbar::BindToLua_Executed() const
         InterfaceDesc.Graphs[0]->Nodes[1]->Pins[1]->DefaultValue = LuaModuleName;
     }
 
-#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
+#if !UE_VERSION_OLDER_THAN(4, 26, 0)
 
     const auto BlueprintEditors = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet").GetBlueprintEditors();
     for (auto BlueprintEditor : BlueprintEditors)
@@ -209,9 +214,13 @@ void FUnLuaEditorToolbar::UnbindFromLua_Executed() const
     if (!TargetClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
         return;
 
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
     FBlueprintEditorUtils::RemoveInterface(Blueprint, FName("UnLuaInterface"));
+#else
+    FBlueprintEditorUtils::RemoveInterface(Blueprint, FTopLevelAssetPath(UUnLuaInterface::StaticClass()));
+#endif
 
-#if ENGINE_MAJOR_VERSION > 4 || (ENGINE_MAJOR_VERSION == 4 && ENGINE_MINOR_VERSION >= 26)
+#if !UE_VERSION_OLDER_THAN(4, 26, 0)
 
     const auto BlueprintEditors = FModuleManager::LoadModuleChecked<FBlueprintEditorModule>("Kismet").GetBlueprintEditors();
     for (auto BlueprintEditor : BlueprintEditors)

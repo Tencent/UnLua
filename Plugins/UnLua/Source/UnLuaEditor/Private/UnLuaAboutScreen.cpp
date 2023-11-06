@@ -13,6 +13,7 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "UnLuaAboutScreen.h"
+#include "Misc/EngineVersionComparison.h"
 #include "Widgets/SBoxPanel.h"
 #include "Widgets/SOverlay.h"
 #include "Widgets/SWindow.h"
@@ -63,7 +64,11 @@ void SUnLuaAboutScreen::Construct(const FArguments& InArgs)
                   .Padding(FMargin(10.f, 10.f, 0.f, 0.f))
                 [
                     SAssignNew(LogoButton, SButton)
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
                     .ButtonStyle(FEditorStyle::Get(), "NoBorder")
+#else
+                    .ButtonStyle(FAppStyle::Get(), "NoBorder")
+#endif
                     .OnClicked(this, &SUnLuaAboutScreen::OnLogoButtonClicked)
                     [
                         SNew(SImage).Image(FUnLuaEditorStyle::GetInstance()->GetBrush("UnLuaEditor.UnLuaLogo"))

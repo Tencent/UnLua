@@ -13,11 +13,16 @@
 // See the License for the specific language governing permissions and limitations under the License.
 
 #include "DefaultParamCollection.h"
+#include "Misc/EngineVersionComparison.h"
 #include "CoreUObject.h"
 
 TMap<FName, FFunctionCollection> GDefaultParamCollection;
 
+#if UE_VERSION_OLDER_THAN(5, 2, 0)
 PRAGMA_DISABLE_OPTIMIZATION
+#else
+UE_DISABLE_OPTIMIZATION
+#endif
 
 void CreateDefaultParamCollection()
 {
@@ -30,4 +35,8 @@ void CreateDefaultParamCollection()
     }
 }
 
+#if UE_VERSION_OLDER_THAN(5, 2, 0)
 PRAGMA_ENABLE_OPTIMIZATION
+#else
+UE_ENABLE_OPTIMIZATION
+#endif

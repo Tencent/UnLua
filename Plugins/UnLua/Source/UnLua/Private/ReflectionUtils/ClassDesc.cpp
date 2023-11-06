@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "ClassDesc.h"
 #include "FieldDesc.h"
 #include "PropertyDesc.h"
@@ -163,7 +164,7 @@ void FClassDesc::Load()
     UnLoad();
 
     FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F') ? ClassName.RightChop(1) : ClassName;
-    UStruct* Found = FindObject<UStruct>(ANY_PACKAGE, *Name);
+    UStruct* Found = FindFirstObject<UStruct>(*Name);
     if (!Found)
         Found = LoadObject<UStruct>(nullptr, *Name);
 

@@ -1,4 +1,5 @@
 #include "Misc/EngineVersionComparison.h"
+#include "UnLuaCompatibility.h"
 #include "PropertyRegistry.h"
 #include "Binding.h"
 #include "ClassRegistry.h"
@@ -12,7 +13,7 @@ namespace UnLua
     FPropertyRegistry::FPropertyRegistry(FLuaEnv* Env)
         : Env(Env)
     {
-        PropertyCollector = FindObject<UScriptStruct>(ANY_PACKAGE, TEXT("PropertyCollector"));
+        PropertyCollector = FindFirstObject<UScriptStruct>(TEXT("PropertyCollector"));
         check(PropertyCollector);
     }
 

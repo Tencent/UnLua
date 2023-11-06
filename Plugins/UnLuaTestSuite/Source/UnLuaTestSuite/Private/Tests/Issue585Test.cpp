@@ -12,7 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-
+#include "UnLuaCompatibility.h"
 #include "UnLuaSettings.h"
 #include "UnLuaTestCommon.h"
 #include "UnLuaTestHelpers.h"
@@ -40,7 +40,7 @@ struct FUnLuaTest_Issue585 : FUnLuaTestBase
 
         // 无引用被GC回收
         CollectGarbage(RF_NoFlags, true);
-        RUNNER_TEST_NULL(FindObject<UEnum>(ANY_PACKAGE, TEXT("Enum_UserDefined")));
+        RUNNER_TEST_NULL(FindFirstObject<UEnum>(TEXT("Enum_UserDefined")));
 
         // 被回收后能够自动加载
         const auto Chunk2 = R"(
@@ -50,7 +50,7 @@ struct FUnLuaTest_Issue585 : FUnLuaTestBase
         
         // 无引用被GC回收
         CollectGarbage(RF_NoFlags, true);
-        RUNNER_TEST_NULL(FindObject<UEnum>(ANY_PACKAGE, TEXT("Enum_UserDefined")));
+        RUNNER_TEST_NULL(FindFirstObject<UEnum>(TEXT("Enum_UserDefined")));
 
         // 支持UnLua.Ref来持有
         const auto Chunk3 = R"(
