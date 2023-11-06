@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [2.3.6] - 2023-11-6
+### Added
+- 对UE5.3的支持 [#642](https://github.com/Tencent/UnLua/pull/642)
+
+### Fixed
+- lua在GC时偶现崩溃的问题 [#626](https://github.com/Tencent/UnLua/issue/626)
+- 覆写的函数的Out参数是C++结构体时，Lua不返回会导致崩溃 [#634](https://github.com/Tencent/UnLua/issue/634)
+- 日志参数不匹配的问题 [#642](https://github.com/Tencent/UnLua/issue/642)
+- 访问来自非native父类的property时检查有效性 [#661](https://github.com/Tencent/UnLua/pull/661)
+- 同一个Lua函数绑定多个不同签名的代理导致崩溃 [#660](https://github.com/Tencent/UnLua/pull/660)
+- 应该支持从L构造FLuaValue类型 [#666](https://github.com/Tencent/UnLua/issue/666)
+- 特定情况下在Lua中调用TArray的Add接口时内存对齐引起的问题 [#668](https://github.com/Tencent/UnLua/issue/668)
+- 清理一些UE5下的编译警告
+
+### Changed
+- FObjectRegistry::Push增加Valid检查 规避一些容器内野指针的情况 [#663](https://github.com/Tencent/UnLua/pull/663)
+- 每个FLuaEnv持有独立的ClassRegistry和EnumRegistry
+
 ## [2.3.5] - 2023-5-29
 ### Added
 - 对UE5.2的支持
