@@ -258,7 +258,13 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
         return false;
 
     if (Classes.Contains(Class))
-        return true;
+    {
+        // 兼容蓝图Recompile导致FuncMap被清空的情况
+        if (Class->FindFunctionByName("__UClassBindSucceeded", EIncludeSuperFlag::Type::ExcludeSuper))
+            return true;
+        
+        ULuaFunction::RestoreOverrides(Class);
+    }
 
     const auto  L = Env->GetMainState();
     const auto Top = lua_gettop(L);
@@ -316,6 +322,18 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
         {
             if (!BindInfo.UEFunctions.Find(LuaFuncName) && LuaFuncName.ToString().StartsWith(TEXT("AnimNotify_")))
                 ULuaFunction::Override(AnimNotifyFunc, Class, LuaFuncName);
+        }
+    }
+
+    // 兼容蓝图Recompile导致FuncMap被清空的情况
+    for (const auto& Iter : BindInfo.UEFunctions)
+    {
+        auto& FuncName = Iter.Key;
+        auto& Function = Iter.Value;
+        if (Class->FindFunctionByName(FuncName, EIncludeSuperFlag::Type::ExcludeSuper))
+        {
+            Class->AddFunctionToFunctionMap(Function, "__UClassBindSucceeded");
+            break;
         }
     }
 
