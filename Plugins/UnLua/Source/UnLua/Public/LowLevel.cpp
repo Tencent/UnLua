@@ -207,19 +207,6 @@ namespace UnLua
             return Userdata;
         }
 
-        int32 CalculateSize(UStruct* Struct)
-        {
-            if (Struct->IsA(UScriptStruct::StaticClass()))
-                return Struct->GetStructureSize();
-
-            const auto ScriptStruct = Cast<UScriptStruct>(Struct);
-            if (!ScriptStruct)
-                return 0;
-
-            const auto CppStructOps = ScriptStruct->GetCppStructOps();
-            return CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
-        }
-
         uint8 CalculateUserdataPadding(UStruct* Struct)
         {
             const auto ScriptStruct = Cast<UScriptStruct>(Struct);

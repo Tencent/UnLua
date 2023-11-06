@@ -1183,16 +1183,15 @@ public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
     {
-        StructSize = UnLua::LowLevel::CalculateSize(StructProperty->Struct);
+        const auto ScriptStruct = CastChecked<UScriptStruct>(StructProperty->Struct);
+        const auto CppStructOps = ScriptStruct->GetCppStructOps();
+        StructSize = CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
         UserdataPadding = UnLua::LowLevel::CalculateUserdataPadding(StructProperty->Struct);
     }
 
-    FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
-        : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
+    virtual int32 GetSize() const override
     {
-        StructSize = UnLua::LowLevel::CalculateSize(StructProperty->Struct);
-        UserdataPadding = UnLua::LowLevel::CalculateUserdataPadding(StructProperty->Struct);
-        bFirstPropOfScriptStruct = false;
+        return StructSize;
     }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override

@@ -68,8 +68,6 @@ namespace UnLua
 
         void* GetUserdata(lua_State* L, int32 Index, bool* OutTwoLvlPtr = nullptr, bool *OutClassMetatable = nullptr);
 
-        int32 CalculateSize(UStruct* Struct);
-
         uint8 CalculateUserdataPadding(UStruct* Struct);
     }
 }
