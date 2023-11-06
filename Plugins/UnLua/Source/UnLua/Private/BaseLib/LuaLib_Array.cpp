@@ -35,7 +35,7 @@ static int32 TArray_New(lua_State* L)
     auto& Env = UnLua::FLuaEnv::FindEnvChecked(L);
     auto ElementType = Env.GetPropertyRegistry()->CreateTypeInterface(L, 2);
     if (!ElementType)
-        return luaL_error(L, "failed to create TArray");
+        return luaL_error(L, "invalid element type");
 
     auto Registry = UnLua::FLuaEnv::FindEnvChecked(L).GetContainerRegistry();
     Registry->NewArray(L, ElementType, FLuaArray::OwnedBySelf);
