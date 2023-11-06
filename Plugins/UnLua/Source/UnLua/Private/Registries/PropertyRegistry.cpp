@@ -84,7 +84,7 @@ namespace UnLua
             }
             break;
         default:
-            check(false);
+            break;
         }
 
         return TypeInterface;
