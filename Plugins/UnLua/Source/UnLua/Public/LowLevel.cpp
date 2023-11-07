@@ -206,5 +206,16 @@ namespace UnLua
 
             return Userdata;
         }
+
+        uint8 CalculateUserdataPadding(UStruct* Struct)
+        {
+            const auto ScriptStruct = Cast<UScriptStruct>(Struct);
+            if (!ScriptStruct)
+                return 0;
+
+            const auto CppStructOps = ScriptStruct->GetCppStructOps();
+            const auto Alignment = CppStructOps ? CppStructOps->GetAlignment() : ScriptStruct->GetMinAlignment();
+            return CalcUserdataPadding(Alignment);
+        }
     }
 }

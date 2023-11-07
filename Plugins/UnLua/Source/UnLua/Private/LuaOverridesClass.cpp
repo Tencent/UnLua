@@ -49,6 +49,10 @@ void ULuaOverridesClass::SetActive(const bool bActive)
     }
 
     Class->ClearFunctionMapsCaches();
+    if (bActive)
+        AddToOwner();
+    else
+        RemoveFromOwner();
 }
 
 void ULuaOverridesClass::BeginDestroy()
@@ -71,8 +75,17 @@ void ULuaOverridesClass::AddToOwner()
     auto Field = &(Class->Children);
 #endif
     while (*Field)
+    {
+        if (*Field == this)
+        {
+            Field = nullptr;
+            break;
+        }
         Field = &(*Field)->Next;
-    *Field = this;
+    }
+
+    if (Field)
+        *Field = this;
 
     if (Class->IsRooted() || GUObjectArray.IsDisregardForGC(Class))
         AddToRoot();

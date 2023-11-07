@@ -59,6 +59,7 @@ namespace UnLua
                         UScriptStruct::ICppStructOps* TheCppStructOps = StructType->GetCppStructOps();
                         TheCppStructOps->Construct(Userdata);
                     }
+                    StructType->InitializeStruct(Userdata);
                     StructType->CopyScriptStruct(Userdata, RowPtr);
                 }
             }

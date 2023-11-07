@@ -14,7 +14,7 @@
 
 #include "Misc/EngineVersionComparison.h"
 #include "UnLuaIntelliSenseGenerator.h"
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 1, 0)
 #include "AssetRegistry/AssetRegistryModule.h"
 #else
 #include "AssetRegistryModule.h"
@@ -108,8 +108,13 @@ void FUnLuaIntelliSenseGenerator::UpdateAll()
 
 bool FUnLuaIntelliSenseGenerator::IsBlueprint(const FAssetData& AssetData)
 {
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
     const FName AssetClass = AssetData.AssetClass;
     return AssetClass == UBlueprint::StaticClass()->GetFName() || AssetClass == UWidgetBlueprint::StaticClass()->GetFName();
+#else
+    const auto AssetClassPath = AssetData.AssetClassPath.ToString();
+    return AssetClassPath == UBlueprint::StaticClass()->GetName() || AssetClassPath == UWidgetBlueprint::StaticClass()->GetName();
+#endif
 }
 
 bool FUnLuaIntelliSenseGenerator::ShouldExport(const FAssetData& AssetData, bool bLoad)

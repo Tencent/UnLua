@@ -20,18 +20,18 @@ namespace UnLua
 {
     class FLuaEnv;
 
-
     /**
      * Lua stack index wrapper
      */
     struct UNLUA_API FLuaIndex
     {
-        FLuaIndex(FLuaEnv* Env, int32 InIndex);
+        FLuaIndex(lua_State* L, int32 Index);
+        FLuaIndex(FLuaEnv* Env, int32 Index);
 
         FORCEINLINE int32 GetIndex() const { return Index; }
 
     protected:
-        FLuaEnv* Env;
+        lua_State* L;
         int32 Index;
     };
 
@@ -40,6 +40,8 @@ namespace UnLua
      */
     struct UNLUA_API FLuaValue : public FLuaIndex
     {
+        explicit FLuaValue(lua_State* L, int32 Index);
+        explicit FLuaValue(lua_State* L, int32 Index, int32 Type);
         explicit FLuaValue(FLuaEnv* Env, int32 Index);
         explicit FLuaValue(FLuaEnv* Env, int32 Index, int32 Type);
 
@@ -69,8 +71,9 @@ namespace UnLua
      */
     struct UNLUA_API FLuaRetValues
     {
+        explicit FLuaRetValues(lua_State* L, int32 NumResults);
         explicit FLuaRetValues(FLuaEnv* Env, int32 NumResults);
-        FLuaRetValues(FLuaRetValues &&Src);
+        FLuaRetValues(FLuaRetValues&& Src);
         ~FLuaRetValues();
 
         void Pop();
@@ -80,9 +83,9 @@ namespace UnLua
         const FLuaValue& operator[](int32 i) const;
 
     private:
-        FLuaRetValues(const FLuaRetValues &Src);
+        FLuaRetValues(const FLuaRetValues& Src);
 
-        FLuaEnv* Env;
+        lua_State* L;
         TArray<FLuaValue> Values;
         bool bValid;
     };
@@ -92,6 +95,8 @@ namespace UnLua
      */
     struct UNLUA_API FLuaTable : public FLuaIndex
     {
+        explicit FLuaTable(lua_State* L, int32 Index);
+        explicit FLuaTable(lua_State* L, FLuaValue Value);
         explicit FLuaTable(FLuaEnv* Env, int32 Index);
         explicit FLuaTable(FLuaEnv* Env, FLuaValue Value);
         ~FLuaTable();
@@ -102,13 +107,13 @@ namespace UnLua
         FLuaValue operator[](int32 i) const;
         FLuaValue operator[](int64 i) const;
         FLuaValue operator[](double d) const;
-        FLuaValue operator[](const char *s) const;
-        FLuaValue operator[](const void *p) const;
+        FLuaValue operator[](const char* s) const;
+        FLuaValue operator[](const void* p) const;
         FLuaValue operator[](FLuaIndex StackIndex) const;
         FLuaValue operator[](FLuaValue Key) const;
 
         template <typename... T>
-        FLuaRetValues Call(const char *FuncName, T&&... Args) const;
+        FLuaRetValues Call(const char* FuncName, T&&... Args) const;
 
     private:
         mutable int32 PushedValues;
@@ -119,9 +124,13 @@ namespace UnLua
      */
     struct UNLUA_API FLuaFunction
     {
-        explicit FLuaFunction(FLuaEnv* Env, const char *GlobalFuncName);
-        explicit FLuaFunction(FLuaEnv* Env, const char *GlobalTableName, const char *FuncName);
-        explicit FLuaFunction(FLuaEnv* Env, FLuaTable Table, const char *FuncName);
+        explicit FLuaFunction(lua_State* L, const char* GlobalFuncName);
+        explicit FLuaFunction(lua_State* L, const char* GlobalTableName, const char* FuncName);
+        explicit FLuaFunction(lua_State* L, FLuaTable Table, const char* FuncName);
+        explicit FLuaFunction(lua_State* L, FLuaValue Value);
+        explicit FLuaFunction(FLuaEnv* Env, const char* GlobalFuncName);
+        explicit FLuaFunction(FLuaEnv* Env, const char* GlobalTableName, const char* FuncName);
+        explicit FLuaFunction(FLuaEnv* Env, FLuaTable Table, const char* FuncName);
         explicit FLuaFunction(FLuaEnv* Env, FLuaValue Value);
         ~FLuaFunction();
 
@@ -131,7 +140,7 @@ namespace UnLua
         FLuaRetValues Call(T&&... Args) const;
 
     private:
-        FLuaEnv* Env;
+        lua_State* L;
         int32 FunctionRef;
     };
 }

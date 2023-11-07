@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "ClassDesc.h"
 #include "FieldDesc.h"
 #include "PropertyDesc.h"
@@ -25,8 +26,8 @@
 /**
  * Class descriptor constructor
  */
-FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
-    : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), FunctionCollection(nullptr)
+FClassDesc::FClassDesc(UnLua::FLuaEnv* Env, UStruct* InStruct, const FString& InName)
+    : Struct(InStruct), ClassName(InName), UserdataPadding(0), Size(0), Env(Env), FunctionCollection(nullptr)
 {
     RawStructPtr = InStruct;
     bIsScriptStruct = InStruct->IsA(UScriptStruct::StaticClass());
@@ -36,16 +37,7 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
 
     if (bIsClass)
     {
-        UClass* Class = AsClass();
         Size = Struct->GetStructureSize();
-
-        // register implemented interfaces
-        for (FImplementedInterface& Interface : Class->Interfaces)
-        {
-            if (Interface.Class)
-                UnLua::FClassRegistry::RegisterReflectedType(Interface.Class);
-        }
-
         FunctionCollection = GDefaultParamCollection.Find(*ClassName);
     }
     else if (bIsScriptStruct)
@@ -55,15 +47,6 @@ FClassDesc::FClassDesc(UStruct* InStruct, const FString& InName)
         int32 Alignment = CppStructOps ? CppStructOps->GetAlignment() : ScriptStruct->GetMinAlignment();
         Size = CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
         UserdataPadding = CalcUserdataPadding(Alignment); // calculate padding size for userdata
-    }
-
-    UStruct* SuperStruct = Struct->GetInheritanceSuper();
-    while (SuperStruct)
-    {
-        FString SuperName = UnLua::LowLevel::GetMetatableName(InStruct);
-        FClassDesc* ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(SuperStruct);
-        SuperClasses.Add(ClassDesc);
-        SuperStruct = SuperStruct->GetInheritanceSuper();
     }
 }
 
@@ -133,7 +116,7 @@ TSharedPtr<FFieldDesc> FClassDesc::RegisterField(FName FieldName, FClassDesc* Qu
 
     if (OuterStruct != Struct)
     {
-        FClassDesc* OuterClass = UnLua::FClassRegistry::RegisterReflectedType(OuterStruct);
+        FClassDesc* OuterClass = Env->GetClassRegistry()->RegisterReflectedType(OuterStruct);
         check(OuterClass);
         return OuterClass->RegisterField(FieldName, QueryClass);
     }
@@ -181,7 +164,7 @@ void FClassDesc::Load()
     UnLoad();
 
     FString Name = (ClassName[0] == 'U' || ClassName[0] == 'A' || ClassName[0] == 'F') ? ClassName.RightChop(1) : ClassName;
-    UStruct* Found = FindObject<UStruct>(ANY_PACKAGE, *Name);
+    UStruct* Found = FindFirstObject<UStruct>(*Name);
     if (!Found)
         Found = LoadObject<UStruct>(nullptr, *Name);
 

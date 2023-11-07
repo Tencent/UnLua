@@ -82,6 +82,10 @@ namespace UnLua
         void NotifyHandlerBeginDestroy(ULuaDelegateHandler* Handler);
 
     private:
+        void CheckSignatureCompatible(lua_State* L, ULuaDelegateHandler* Handler, void* OtherDelegate);
+
+        bool CheckSignatureCompatible(void* ADelegate, void* BDelegate);
+
         TSharedPtr<FFunctionDesc> GetSignatureDesc(const void* Delegate);
 
         ULuaDelegateHandler* CreateHandler(int LuaRef, UObject* Owner, UObject* SelfObject);

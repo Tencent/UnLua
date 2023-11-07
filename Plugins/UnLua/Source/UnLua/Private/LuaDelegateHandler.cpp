@@ -36,6 +36,8 @@ void ULuaDelegateHandler::BindTo(FScriptDelegate* InDelegate)
 
 void ULuaDelegateHandler::AddTo(FMulticastDelegateProperty* InProperty, void* InDelegate)
 {
+    check(InDelegate);
+
     Delegate = InDelegate;
     FScriptDelegate DynamicDelegate;
     DynamicDelegate.BindUFunction(this, NAME_Dummy);

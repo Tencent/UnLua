@@ -1,9 +1,11 @@
 #include "Misc/EngineVersionComparison.h"
+#include "UnLuaCompatibility.h"
 #include "PropertyRegistry.h"
 #include "Binding.h"
 #include "ClassRegistry.h"
 #include "EnumRegistry.h"
 #include "LowLevel.h"
+#include "LuaEnv.h"
 #include "ReflectionUtils/PropertyDesc.h"
 
 namespace UnLua
@@ -11,7 +13,7 @@ namespace UnLua
     FPropertyRegistry::FPropertyRegistry(FLuaEnv* Env)
         : Env(Env)
     {
-        PropertyCollector = FindObject<UScriptStruct>(ANY_PACKAGE, TEXT("PropertyCollector"));
+        PropertyCollector = FindFirstObject<UScriptStruct>(TEXT("PropertyCollector"));
         check(PropertyCollector);
     }
 
@@ -44,14 +46,14 @@ namespace UnLua
                 if (Type == LUA_TSTRING)
                 {
                     const char* Name = lua_tostring(L, -1);
-                    auto ClassDesc = FClassRegistry::Find(Name);
+                    auto ClassDesc = Env->GetClassRegistry()->Find(Name);
                     if (ClassDesc)
                     {
                         TypeInterface = GetFieldProperty(ClassDesc->AsStruct());
                     }
                     else
                     {
-                        auto EnumDesc = FEnumRegistry::Find(Name);
+                        auto EnumDesc = Env->GetEnumRegistry()->Find(Name);
                         if (EnumDesc)
                             TypeInterface = GetFieldProperty(EnumDesc->GetEnum());
                         else
@@ -72,7 +74,7 @@ namespace UnLua
                     if (lua_isstring(L, -1))
                     {
                         const char* Name = lua_tostring(L, -1);
-                        FClassDesc* ClassDesc = FClassRegistry::Find(Name);
+                        FClassDesc* ClassDesc = Env->GetClassRegistry()->Find(Name);
                         if (ClassDesc)
                             TypeInterface = GetFieldProperty(ClassDesc->AsStruct());
                     }
@@ -83,7 +85,7 @@ namespace UnLua
             }
             break;
         default:
-            check(false);
+            break;
         }
 
         return TypeInterface;

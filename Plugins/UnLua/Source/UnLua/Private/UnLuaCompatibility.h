@@ -16,6 +16,7 @@
 
 #include "CoreUObject.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "Misc/EngineVersionComparison.h"
 
 #if ENGINE_MAJOR_VERSION <= 4 && ENGINE_MINOR_VERSION < 19
 #define DEFINE_FUNCTION(func) void func( FFrame& Stack, RESULT_DECL )
@@ -152,3 +153,13 @@ struct TMulticastDelegateTraits<FMulticastScriptDelegate>
         return (FMulticastScriptDelegate*)PropertyValue;
     }
 };
+
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
+
+template< class T >
+inline T* FindFirstObject(const TCHAR* Name)
+{
+    return FindObject<T>(ANY_PACKAGE, Name);
+}
+
+#endif

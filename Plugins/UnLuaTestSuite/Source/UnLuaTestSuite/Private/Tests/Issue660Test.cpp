@@ -12,31 +12,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "DefaultParamCollection.h"
-#include "Misc/EngineVersionComparison.h"
-#include "CoreUObject.h"
+#include "TestCommands.h"
+#include "UnLuaTestCommon.h"
+#include "Misc/AutomationTest.h"
+#include "Tests/AutomationCommon.h"
 
-TMap<FName, FFunctionCollection> GDefaultParamCollection;
+#if WITH_DEV_AUTOMATION_TESTS
 
-#if UE_VERSION_OLDER_THAN(5, 2, 0)
-PRAGMA_DISABLE_OPTIMIZATION
-#else
-UE_DISABLE_OPTIMIZATION
-#endif
+BEGIN_TESTSUITE(FIssue660Test, TEXT("UnLua.Regression.Issue660 Unlua函数绑定多个代理导致崩溃"))
 
-void CreateDefaultParamCollection()
-{
-    static bool CollectionCreated = false;
-    if (!CollectionCreated)
+    bool FIssue660Test::RunTest(const FString& Parameters)
     {
-        CollectionCreated = true;
-
-#include "DefaultParamCollection.inl"
+        const auto MapName = TEXT("/UnLuaTestSuite/Tests/Regression/Issue660/Issue660");
+        ADD_LATENT_AUTOMATION_COMMAND(FOpenMapLatentCommand(MapName))
+        ADD_LATENT_AUTOMATION_COMMAND(FEngineWaitLatentCommand(1.0));
+        ADD_LATENT_AUTOMATION_COMMAND(FEndPlayMapCommand());
+        return true;
     }
-}
 
-#if UE_VERSION_OLDER_THAN(5, 2, 0)
-PRAGMA_ENABLE_OPTIMIZATION
-#else
-UE_ENABLE_OPTIMIZATION
+END_TESTSUITE(FRegression_Issue603)
+
 #endif

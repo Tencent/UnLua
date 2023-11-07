@@ -26,21 +26,21 @@ namespace UnLua
     public:
         explicit FClassRegistry(FLuaEnv* Env);
 
-        static FClassRegistry* Find(const lua_State* L);
+        ~FClassRegistry();
 
-        static FClassDesc* Find(const char* TypeName);
+        void Initialize();
 
-        static FClassDesc* Find(const UStruct* Type);
+        FClassDesc* Find(const char* TypeName);
 
-        static FClassDesc* RegisterReflectedType(const char* MetatableName);
+        FClassDesc* Find(const UStruct* Type);
 
-        static FClassDesc* RegisterReflectedType(UStruct* Type);
+        FClassDesc* RegisterReflectedType(const char* MetatableName);
 
-        static bool StaticUnregister(const UObjectBase* Type);
+        FClassDesc* RegisterReflectedType(UStruct* Type);
 
         static UField* LoadReflectedType(const char* InName);
 
-        static void Cleanup();
+        void NotifyUObjectDeleted(UObject* Object);
 
         bool PushMetatable(lua_State* L, const char* MetatableName);
 
@@ -50,13 +50,15 @@ namespace UnLua
 
         FClassDesc* Register(const UStruct* Class);
 
+        void Unregister(const UStruct* Class);
+
     private:
-        static FClassDesc* RegisterInternal(UStruct* Type, const FString& Name);
+        FClassDesc* RegisterInternal(UStruct* Type, const FString& Name);
 
-        void Unregister(const FClassDesc* ClassDesc);
+        void Unregister(const FClassDesc* ClassDesc, const bool bForce);
 
-        static TMap<UStruct*, FClassDesc*> Classes;
-        static TMap<FName, FClassDesc*> Name2Classes;
+        TMap<UStruct*, FClassDesc*> Classes;
+        TMap<FName, FClassDesc*> Name2Classes;
 
         FLuaEnv* Env;
     };

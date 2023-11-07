@@ -17,96 +17,81 @@
 #include "LowLevel.h"
 #include "LuaCore.h"
 #include "LuaEnv.h"
+#include "BaseLib/LuaLib_Enum.h"
 
 namespace UnLua
 {
-    TMap<UEnum*, FEnumDesc*> FEnumRegistry::Enums;
-    TMap<FName, FEnumDesc*> FEnumRegistry::Name2Enums;
-
     FEnumRegistry::FEnumRegistry(FLuaEnv* Env)
         : Env(Env)
     {
-        const auto L = Env->GetMainState();
+    }
+
+    FEnumRegistry::~FEnumRegistry()
+    {
+        for (const auto Pair : Name2Enums)
+            delete Pair.Value;
+    }
+
+    void FEnumRegistry::Initialize()
+    {
         FCollisionHelper::Initialize();
-        RegisterECollisionChannel(L);
-        RegisterEObjectTypeQuery(L);
-        RegisterETraceTypeQuery(L);
+
+        Register(StaticEnum<ECollisionChannel>(), &ECollisionChannel_Index);
+        Register(StaticEnum<EObjectTypeQuery>(), &EObjectTypeQuery_Index);
+        Register(StaticEnum<ETraceTypeQuery>(), &ETraceTypeQuery_Index);
     }
 
     FEnumDesc* FEnumRegistry::Find(const char* InName)
     {
-        const FName Key = InName;
-        FEnumDesc** Ret = Name2Enums.Find(Key);
+        FEnumDesc** Ret = Name2Enums.Find(UTF8_TO_TCHAR(InName));
         return Ret ? *Ret : nullptr;
     }
 
-    FEnumDesc* FEnumRegistry::StaticRegister(const char* MetatableName)
+    FEnumDesc* FEnumRegistry::Find(const UEnum* Enum)
     {
-        FEnumDesc* Ret = Find(MetatableName);
-        if (Ret)
-            return Ret;
+        FEnumDesc** Ret = Enums.Find(Enum);
+        return Ret ? *Ret : nullptr;
+    }
 
-        const FString EnumName = UTF8_TO_TCHAR(MetatableName);
-        UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, *EnumName);
-        if (!Enum)
-        {
-            Enum = LoadObject<UEnum>(nullptr, *EnumName);
-            if (!Enum)
-                return nullptr;
-        }
+    void FEnumRegistry::NotifyUObjectDeleted(UObject* Object)
+    {
+        Unregister((UEnum*)Object);
+    }
 
-        Ret = new FEnumDesc(Enum);
+    FEnumDesc* FEnumRegistry::Register(UEnum* Enum, lua_CFunction IndexFunc)
+    {
+        if (!IndexFunc)
+            IndexFunc = &Enum_Index;
+
+        const auto MetatableName = LowLevel::GetMetatableName(Enum);
+        const auto Found = Name2Enums.Find(MetatableName);
+        if (Found)
+            return *Found;
+
+        auto Ret = new FEnumDesc(Enum);
         Enums.Add(Enum, Ret);
         Name2Enums.Add(MetatableName, Ret);
-        return Ret;
-    }
-
-    bool FEnumRegistry::StaticUnregister(const UObjectBase* Enum)
-    {
-        FEnumDesc* EnumDesc;
-        if (!Enums.RemoveAndCopyValue((UEnum*)Enum, EnumDesc))
-            return false;
-        EnumDesc->UnLoad();
-        return true;
-    }
-
-    void FEnumRegistry::Cleanup()
-    {
-        for (const auto Pair : Name2Enums)
-            delete Pair.Value;
-        Name2Enums.Empty();
-        Enums.Empty();
-    }
-
-    FEnumDesc* FEnumRegistry::Register(const char* MetatableName)
-    {
-        FEnumDesc* EnumDesc = StaticRegister(MetatableName);
-        if (!EnumDesc)
-            return nullptr;
 
         const auto L = Env->GetMainState();
-        if (luaL_getmetatable(L, MetatableName) == LUA_TTABLE)
+        const auto MetatableNameUTF8 = FTCHARToUTF8(*MetatableName);
+        if (luaL_getmetatable(L, MetatableNameUTF8.Get()) == LUA_TTABLE)
         {
-            if (EnumDesc->IsValid())
+            if (Ret->IsValid())
             {
                 lua_pop(L, 1);
-                return EnumDesc;    
+                return Ret;
             }
         }
         lua_pop(L, 1);
 
-        luaL_newmetatable(L, MetatableName);
+        luaL_newmetatable(L, MetatableNameUTF8.Get());
 
         lua_pushstring(L, "Object");
-        Env->GetObjectRegistry()->Push(L, EnumDesc->GetEnum());
+        Env->GetObjectRegistry()->Push(L, Ret->GetEnum());
         lua_rawset(L, -3);
 
         lua_pushstring(L, "__index");
-        lua_pushcfunction(L, Enum_Index);
-        lua_rawset(L, -3);
-
-        lua_pushstring(L, "__gc");
-        lua_pushcfunction(L, Enum_Delete);
+        lua_pushcfunction(L, IndexFunc);
         lua_rawset(L, -3);
 
         // add other members here
@@ -133,13 +118,23 @@ namespace UnLua
         lua_pushvalue(L, -1); // set metatable to self
         lua_setmetatable(L, -2);
 
-        SetTableForClass(L, MetatableName);
-        return EnumDesc;
+        SetTableForClass(L, MetatableNameUTF8.Get());
+        return Ret;
     }
 
-    FEnumDesc* FEnumRegistry::Register(const UEnum* Enum)
+    void FEnumRegistry::Unregister(const UEnum* Enum)
     {
-        const auto MetatableName = LowLevel::GetMetatableName(Enum);
-        return Register(TCHAR_TO_UTF8(*MetatableName));
+        const auto Desc = Find(Enum);
+        if (!Desc)
+            return;
+
+        const auto L = Env->GetMainState();
+        const auto MetatableName = Desc->GetName();
+        lua_pushnil(L);
+        lua_setfield(L, LUA_REGISTRYINDEX, TCHAR_TO_UTF8(*MetatableName));
+
+        Enums.Remove(Enum);
+        Name2Enums.Remove(Desc->GetName());
+        Desc->UnLoad();
     }
 }

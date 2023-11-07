@@ -88,6 +88,13 @@ namespace UnLua
             return;
         }
 
+        // avoid invalid ptrs in containers from lua
+        if (!UnLua::IsUObjectValid(Object))
+        {
+            luaL_error(L, "attempt to read invalid uobject ptr from lua, maybe from containers like TArray.");
+            return;
+        }
+
         lua_getfield(L, LUA_REGISTRYINDEX, REGISTRY_KEY);
         lua_pushlightuserdata(L, Object);
         const auto Type = lua_rawget(L, -2);

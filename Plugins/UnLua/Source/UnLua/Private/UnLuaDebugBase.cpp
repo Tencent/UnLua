@@ -12,7 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
-#include "Misc/EngineVersionComparison.h"
+#include "UnLuaCompatibility.h"
 #include "UnLuaDebugBase.h"
 #include "Containers/LuaSet.h"
 #include "Containers/LuaMap.h"
@@ -227,7 +227,7 @@ namespace UnLua
         if (ClassNamePtr)
         {
             FString ClassName(ClassNamePtr);
-            UStruct *Struct = FindObject<UStruct>(ANY_PACKAGE, *ClassName + 1);
+            UStruct *Struct = FindFirstObject<UStruct>(*ClassName + 1);
             if (Struct)
             {
                 // the userdata is a struct instance

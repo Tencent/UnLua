@@ -1183,20 +1183,15 @@ public:
     explicit FScriptStructPropertyDesc(FProperty *InProperty)
         : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
     {
-        FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
-        StructSize = ClassDesc->GetSize();
-        UserdataPadding = ClassDesc->GetUserdataPadding();                          // padding size for userdata
-
-        //ClassDesc->AddRef();
+        const auto ScriptStruct = CastChecked<UScriptStruct>(StructProperty->Struct);
+        const auto CppStructOps = ScriptStruct->GetCppStructOps();
+        StructSize = CppStructOps ? CppStructOps->GetSize() : ScriptStruct->GetStructureSize();
+        UserdataPadding = UnLua::LowLevel::CalculateUserdataPadding(StructProperty->Struct);
     }
 
-    FScriptStructPropertyDesc(FProperty *InProperty, bool bDynamicallyCreated)
-        : FStructPropertyDesc(InProperty), StructName(*UnLua::LowLevel::GetMetatableName(StructProperty->Struct))
+    virtual int32 GetSize() const override
     {
-        FClassDesc *ClassDesc = UnLua::FClassRegistry::RegisterReflectedType(StructProperty->Struct);
-        StructSize = ClassDesc->GetSize();
-        UserdataPadding = ClassDesc->GetUserdataPadding();
-        bFirstPropOfScriptStruct = false;
+        return StructSize;
     }
 
     virtual bool CopyBack(lua_State *L, int32 SrcIndexInStack, void *DestContainerPtr) override
@@ -1288,7 +1283,7 @@ public:
                 return false;
             }
 
-            FClassDesc* CurrentClassDesc = UnLua::FClassRegistry::Find(MetatableName);
+            FClassDesc* CurrentClassDesc = UnLua::FLuaEnv::FindEnv(L)->GetClassRegistry()->Find(MetatableName);
             if (!CurrentClassDesc)
             {
                 ErrorMsg = FString::Printf(TEXT("metatable of userdata needed in registry but got no found"));
@@ -1308,7 +1303,7 @@ public:
 #endif
 
 private:
-    TStringConversion<TStringConvert<TCHAR, ANSICHAR>> StructName;
+    FTCHARToUTF8 StructName;
     int32 StructSize;
     uint8 UserdataPadding;
 };

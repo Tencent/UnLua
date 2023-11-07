@@ -104,6 +104,31 @@ namespace UnLua
         Handler->Reset();
     }
 
+    void FDelegateRegistry::CheckSignatureCompatible(lua_State* L, ULuaDelegateHandler* Handler, void* OtherDelegate)
+    {
+        check(L);
+        check(Handler);
+
+        if (!CheckSignatureCompatible(Handler->Delegate, OtherDelegate))
+            luaL_error(L, "delegate handler signatures are not compatible");
+    }
+
+    bool FDelegateRegistry::CheckSignatureCompatible(void* ADelegate, void* BDelegate)
+    {
+        if (ADelegate == BDelegate)
+            return true;
+
+        auto AInfo = Delegates.Find(ADelegate);
+        auto BInfo = Delegates.Find(BDelegate);
+        if (!AInfo || !BInfo)
+            return true;
+
+        if (!AInfo->SignatureFunction || !BInfo->SignatureFunction)
+            return false;
+
+        return AInfo->SignatureFunction->IsSignatureCompatibleWith(BInfo->SignatureFunction);
+    }
+
 #pragma region FScriptDelgate
 
     void FDelegateRegistry::Register(void* Delegate, FProperty* Property, UObject* Owner)
@@ -221,6 +246,7 @@ namespace UnLua
         const auto Cached = CachedHandlers.Find(DelegatePair);
         if (Cached && Cached->IsValid())
         {
+            CheckSignatureCompatible(L, Cached->Get(), Delegate);
             (*Cached)->AddTo(Info.MulticastProperty, Delegate);
             Info.Handlers.Add(*Cached);
             return;

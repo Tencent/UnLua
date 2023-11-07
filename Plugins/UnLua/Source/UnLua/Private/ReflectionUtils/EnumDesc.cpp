@@ -12,13 +12,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
 // See the License for the specific language governing permissions and limitations under the License.
 
+#include "UnLuaCompatibility.h"
 #include "EnumDesc.h"
+#include "LowLevel.h"
 
 FEnumDesc::FEnumDesc(UEnum* InEnum)
     : Enum(InEnum)
 {
     check(Enum.IsValid());
-    EnumName = Enum->GetName();
+    EnumName = UnLua::LowLevel::GetMetatableName(InEnum);
     bUserDefined = InEnum->IsA<UUserDefinedEnum>();
 }
 
@@ -27,7 +29,7 @@ void FEnumDesc::Load()
     if (Enum.IsValid())
         return;
 
-    Enum = FindObject<UEnum>(ANY_PACKAGE, *EnumName);
+    Enum = FindFirstObject<UEnum>(*EnumName);
     if (!Enum.IsValid())
         Enum = LoadObject<UEnum>(nullptr, *EnumName);
 
