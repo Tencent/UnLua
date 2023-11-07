@@ -613,6 +613,45 @@ namespace UnLua
     }
 
     /**
+     * Push arguments for Lua function
+     */
+    template <bool bCopy> FORCEINLINE int32 PushArgs(lua_State* L)
+    {
+        return 0;
+    }
+
+    template <bool bCopy, typename T1, typename... T2>
+    FORCEINLINE int32 PushArgs(lua_State* L, T1&& V1, T2&&... V2)
+    {
+        const int32 Ret1 = UnLua::Push(L, Forward<T1>(V1), bCopy);
+        const int32 Ret2 = PushArgs<bCopy>(L, Forward<T2>(V2)...);
+        return Ret1 + Ret2;
+    }
+
+    /**
+     * Internal helper to call a Lua function. Used internally only. Please do not use!
+     */
+    template <typename... T>
+    FORCEINLINE_DEBUGGABLE FLuaRetValues CallFunctionInternal(lua_State* L, T&&... Args)
+    {
+        // make sure the function is on the top of the stack, and the message handler is below the function
+        int32 MessageHandlerIdx = lua_gettop(L) - 1;
+        check(MessageHandlerIdx > 0);
+        int32 NumArgs = PushArgs<false>(L, Forward<T>(Args)...);
+        int32 Code = lua_pcall(L, NumArgs, LUA_MULTRET, MessageHandlerIdx);
+        int32 TopIdx = lua_gettop(L);
+        if (Code == LUA_OK)
+        {
+            int32 NumResults = TopIdx - MessageHandlerIdx;
+            lua_remove(L, MessageHandlerIdx);
+            FLuaRetValues Result(L, NumResults);
+            return Result;    // MoveTemp(Result);
+        }
+        lua_pop(L, TopIdx - MessageHandlerIdx + 1);
+        return FLuaRetValues(L, INDEX_NONE);
+    }
+
+    /**
      * Call Lua global function.
      *
      * @param FuncName - global Lua function name
@@ -728,47 +767,6 @@ namespace UnLua
     {
         return UnLua::Get(L, Index, TType<TMap<KeyType, ValueType, Allocator, KeyFunc>&>());
     }
-
-    /**
-     * Push arguments for Lua function
-     */
-    template <bool bCopy> FORCEINLINE int32 PushArgs(lua_State* L)
-    {
-        return 0;
-    }
-
-    template <bool bCopy, typename T1, typename... T2>
-    FORCEINLINE int32 PushArgs(lua_State* L, T1&& V1, T2&&... V2)
-    {
-        const int32 Ret1 = UnLua::Push(L, Forward<T1>(V1), bCopy);
-        const int32 Ret2 = PushArgs<bCopy>(L, Forward<T2>(V2)...);
-        return Ret1 + Ret2;
-    }
-
-
-    /**
-     * Internal helper to call a Lua function. Used internally only. Please do not use!
-     */
-    template <typename... T>
-    FORCEINLINE_DEBUGGABLE FLuaRetValues CallFunctionInternal(lua_State* L, T&&... Args)
-    {
-        // make sure the function is on the top of the stack, and the message handler is below the function
-        int32 MessageHandlerIdx = lua_gettop(L) - 1;
-        check(MessageHandlerIdx > 0);
-        int32 NumArgs = PushArgs<false>(L, Forward<T>(Args)...);
-        int32 Code = lua_pcall(L, NumArgs, LUA_MULTRET, MessageHandlerIdx);
-        int32 TopIdx = lua_gettop(L);
-        if (Code == LUA_OK)
-        {
-            int32 NumResults = TopIdx - MessageHandlerIdx;
-            lua_remove(L, MessageHandlerIdx);
-            FLuaRetValues Result(L, NumResults);
-            return Result;    // MoveTemp(Result);
-        }
-        lua_pop(L, TopIdx - MessageHandlerIdx + 1);
-        return FLuaRetValues(L, INDEX_NONE);
-    }
-
 
     /**
      * Call function in Lua table
