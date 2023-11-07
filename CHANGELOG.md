@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 同一个Lua函数绑定多个不同签名的代理导致崩溃 [#660](https://github.com/Tencent/UnLua/pull/660)
 - 应该支持从L构造FLuaValue类型 [#666](https://github.com/Tencent/UnLua/issue/666)
 - 特定情况下在Lua中调用TArray的Add接口时内存对齐引起的问题 [#668](https://github.com/Tencent/UnLua/issue/668)
+- 兼容蓝图Recompile导致FuncMap被清空的情况 [#669](https://github.com/Tencent/UnLua/issue/669)
 - 清理一些UE5下的编译警告
 
 ### Changed

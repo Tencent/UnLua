@@ -259,11 +259,15 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
 
     if (Classes.Contains(Class))
     {
+#if WITH_EDITOR
         // 兼容蓝图Recompile导致FuncMap被清空的情况
         if (Class->FindFunctionByName("__UClassBindSucceeded", EIncludeSuperFlag::Type::ExcludeSuper))
             return true;
         
         ULuaFunction::RestoreOverrides(Class);
+#else
+        return true;
+#endif
     }
 
     const auto  L = Env->GetMainState();
@@ -325,6 +329,7 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
         }
     }
 
+#if WITH_EDITOR
     // 兼容蓝图Recompile导致FuncMap被清空的情况
     for (const auto& Iter : BindInfo.UEFunctions)
     {
@@ -336,6 +341,7 @@ bool UUnLuaManager::BindClass(UClass* Class, const FString& InModuleName, FStrin
             break;
         }
     }
+#endif
 
     if (auto BPGC = Cast<UBlueprintGeneratedClass>(Class))
     {
