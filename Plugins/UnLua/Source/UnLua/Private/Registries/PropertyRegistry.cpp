@@ -110,13 +110,13 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 sizeof(bool),
                 sizeof(FPropertyCollector),
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
@@ -148,11 +148,11 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
@@ -184,11 +184,11 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
@@ -220,11 +220,11 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
@@ -256,11 +256,11 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
@@ -292,17 +292,17 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
 #endif
             };
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
             const auto Property = new FTextProperty(PropertyCollector, "", RF_Transient);
 #else
             const auto Property = new FTextProperty(PropertyCollector, Params);
@@ -336,12 +336,12 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
@@ -371,12 +371,12 @@ namespace UnLua
 #endif
                 nullptr,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 1,
 #endif
                 0,
                 nullptr,
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
                 METADATA_PARAMS(0, nullptr)
 #else
                 METADATA_PARAMS(nullptr, 0)
