@@ -286,7 +286,7 @@ void ULuaFunction::Bind()
     }
     else
     {
-#if UE_VERSION_NEWER_THAN(5, 2, 0)
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
         Super::Bind();
 #else
         SetNativeFunc(ProcessInternal);
