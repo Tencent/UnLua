@@ -267,6 +267,7 @@ namespace UnLua
         const auto Desc = Find(Class);
         if (!Desc)
             return;
+        Classes.Remove(Class);
         Desc->UnLoad();
         Unregister(Desc, true);
     }
