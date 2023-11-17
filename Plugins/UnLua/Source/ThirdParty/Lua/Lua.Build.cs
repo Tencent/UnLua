@@ -323,7 +323,7 @@ public class Lua : ModuleRules
             {
                 var buildDir = string.Format("\"{0}/build\"", m_LuaDirName);
                 writer.WriteLine("rm -rf {0} &&mkdir {0} &&cd {0}", buildDir);
-                writer.Write("cmake -G \"{0}\" ../.. ", m_BuildSystem);
+                writer.Write("cmake -G \"{0}\" -DCMAKE_BUILD_TYPE={1}  ../.. ", m_BuildSystem, m_Config);
                 var args = new Dictionary<string, string>
                 {
                     { "LUA_VERSION", m_LuaVersion },
@@ -335,7 +335,7 @@ public class Lua : ModuleRules
                     writer.Write(" -D{0}={1}", arg.Key, arg.Value);
                 writer.WriteLine();
                 writer.WriteLine("cd ../..");
-                writer.WriteLine("cmake --build {0}/build --config {1}", m_LuaDirName, m_Config);
+                writer.WriteLine("cmake --build {0}/build", m_LuaDirName);
             }
 
             process.WaitForExit();
