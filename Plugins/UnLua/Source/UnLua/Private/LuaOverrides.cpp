@@ -55,11 +55,17 @@ namespace UnLua
             }
         }
 
+        const auto OriginalFunctionFlags = Function->FunctionFlags;
+        Function->FunctionFlags &= (~EFunctionFlags::FUNC_Native);
+
         FObjectDuplicationParameters DuplicationParams(Function, OverridesClass);
         DuplicationParams.InternalFlagMask &= ~EInternalObjectFlags::Native;
         DuplicationParams.DestName = NewName;
         DuplicationParams.DestClass = ULuaFunction::StaticClass();
         LuaFunction = static_cast<ULuaFunction*>(StaticDuplicateObjectEx(DuplicationParams));
+
+        Function->FunctionFlags = OriginalFunctionFlags;
+        LuaFunction->FunctionFlags = OriginalFunctionFlags;
 
         LuaFunction->Next = OverridesClass->Children;
         OverridesClass->Children = LuaFunction;
