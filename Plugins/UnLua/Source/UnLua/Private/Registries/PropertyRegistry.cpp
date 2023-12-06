@@ -34,7 +34,7 @@ namespace UnLua
             TypeInterface = GetBoolProperty();
             break;
         case LUA_TNUMBER:
-            TypeInterface = lua_isinteger(L, Index) > 0 ? GetIntProperty() : GetFloatProperty();
+            TypeInterface = lua_isinteger(L, Index) > 0 ? GetInt64Property() : GetFloatProperty();
             break;
         case LUA_TSTRING:
             TypeInterface = GetStringProperty();
@@ -163,6 +163,33 @@ namespace UnLua
             IntProperty = TSharedPtr<ITypeInterface>(FPropertyDesc::Create(Property));
         }
         return IntProperty;
+    }
+    
+    TSharedPtr<ITypeInterface> FPropertyRegistry::GetInt64Property()
+    {
+        if (!Int64Property)
+        {
+#if UE_VERSION_OLDER_THAN(5, 1, 0)
+            const auto Property = new FInt64Property(PropertyCollector, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash);
+#else
+            constexpr auto Params = UECodeGen_Private::FInt64PropertyParams
+            {
+                nullptr,
+                nullptr,
+                CPF_HasGetValueTypeHash,
+                UECodeGen_Private::EPropertyGenFlags::Int64,
+                RF_Transient,
+                1,
+                nullptr,
+                nullptr,
+                0,
+                METADATA_PARAMS(nullptr, 0)
+            };
+            const auto Property = new FInt64Property(PropertyCollector, Params);
+#endif
+            Int64Property = TSharedPtr<ITypeInterface>(FPropertyDesc::Create(Property));
+        }
+        return Int64Property;
     }
 
     TSharedPtr<ITypeInterface> FPropertyRegistry::GetFloatProperty()
