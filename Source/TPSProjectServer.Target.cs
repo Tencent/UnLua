@@ -20,6 +20,12 @@ public class TPSProjectServerTarget : TargetRules
     {
         Type = TargetType.Server;
         DefaultBuildSettings = BuildSettingsVersion.V2;
+
+#if UE_5_4_OR_LATER
+        DefaultBuildSettings = BuildSettingsVersion.V4;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+#endif
+
         ExtraModuleNames.Add("TPSProject");
     }
 }
