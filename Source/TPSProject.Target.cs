@@ -17,6 +17,15 @@ using System.Collections.Generic;
 
 public class TPSProjectTarget : TargetRules{    public TPSProjectTarget(TargetInfo Target) : base(Target)    {        Type = TargetType.Game;
         DefaultBuildSettings = BuildSettingsVersion.V2;
+
+#if UE_5_4_OR_LATER
+        DefaultBuildSettings = BuildSettingsVersion.V4;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+#endif
+
         ExtraModuleNames.AddRange(            new string[]            {
+
+
+
                 "TPSProject"
             }            );    }}

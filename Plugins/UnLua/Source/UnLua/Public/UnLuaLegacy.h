@@ -853,18 +853,18 @@ namespace UnLua
         virtual void Destruct(void* Dest) const override
         {
             static_assert(TIsDestructible<T>::Value, "type must be destructible!");
-            DestructInternal((T*)Dest, typename TChooseClass<TIsTriviallyDestructible<T>::Value, FTrue, FFalse>::Result());
+            DestructInternal((T*)Dest, typename std::conditional<TIsTriviallyDestructible<T>::Value, FTrue, FFalse>::type());
         }
 
         virtual void Copy(void* Dest, const void* Src) const override
         {
             static_assert(TIsCopyConstructible<T>::Value, "type must be copy constructible!");
-            CopyInternal((T*)Dest, (const T*)Src, typename TChooseClass<TIsTriviallyCopyConstructible<T>::Value, FTrue, FFalse>::Result());
+            CopyInternal((T*)Dest, (const T*)Src, typename std::conditional<TIsTriviallyCopyConstructible<T>::Value, FTrue, FFalse>::type());
         }
 
         virtual bool Identical(const void* A, const void* B) const override
         {
-            return IdenticalInternal((const T*)A, (const T*)B, typename TChooseClass<THasEqualityOperator<T>::Value, FTrue, FFalse>::Result());
+            return IdenticalInternal((const T*)A, (const T*)B, typename std::conditional<THasEqualityOperator<T>::Value, FTrue, FFalse>::type());
         }
 
         virtual FString GetName() const override { return FString(TType<typename TDecay<T>::Type>::GetName()); }
@@ -890,7 +890,7 @@ namespace UnLua
         {
             static_assert(TIsCopyConstructible<T>::Value, "type must be copy constructible!");
             T V = UnLua::Get(L, IndexInStack, TType<T>());
-            CopyInternal((T*)ValuePtr, &V, typename TChooseClass<TIsTriviallyCopyConstructible<T>::Value, FTrue, FFalse>::Result());
+            CopyInternal((T*)ValuePtr, &V, typename std::conditional<TIsTriviallyCopyConstructible<T>::Value, FTrue, FFalse>::type());
             return false;
         }
 

@@ -91,7 +91,7 @@ namespace UnLua
     template <typename T> struct TArgTypeTraits
     {
         typedef typename TDecay<T>::Type RT;
-        typedef typename TChooseClass<TIsPrimitiveTypeOrPointer<RT>::Value, RT, typename std::remove_cv<T>::type>::Result Type;
+        typedef typename std::conditional<TIsPrimitiveTypeOrPointer<RT>::Value, RT, typename std::remove_cv<T>::type>::type Type;
     };
     
     
