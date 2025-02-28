@@ -26,18 +26,25 @@ public class UnLua : ModuleRules
     public UnLua(ReadOnlyTargetRules Target) : base(Target)
     {
 #if UE_5_2_OR_LATER
+        // 禁用 IWYU（Include What You Use）支持
         IWYUSupport = IWYUSupport.None;
 #else
+        // 禁用 IWYU（Include What You Use）支持
         bEnforceIWYU = false;
 #endif
+        // 使用显式或共享的 PCH（预编译头）
         PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        // 仅在发布版本中优化代码
+        OptimizeCode = CodeOptimization.InShippingBuildsOnly;
 
+        // 公共包含路径
         PublicIncludePaths.AddRange(
             new string[]
             {
             }
         );
 
+        // 私有包含路径
         PrivateIncludePaths.AddRange(
             new[]
             {
@@ -45,6 +52,7 @@ public class UnLua : ModuleRules
             }
         );
 
+        // 公共依赖模块
         PublicDependencyModuleNames.AddRange(
             new[]
             {
@@ -57,21 +65,27 @@ public class UnLua : ModuleRules
             }
         );
 
+        // 添加私有目录到公共包含路径
         PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Private"));
 
+        // 如果构建的是编辑器
         if (Target.bBuildEditor)
         {
+            // 从不优化代码
             OptimizeCode = CodeOptimization.Never;
+            // 添加编辑器依赖模块
             PrivateDependencyModuleNames.Add("UnrealEd");
         }
 
+        // 获取项目目录和配置文件路径
         var projectDir = Target.ProjectFile.Directory;
         var configFilePath = projectDir + "/Config/DefaultUnLuaEditor.ini";
-        var configFileReference = new FileReference(configFilePath); 
+        var configFileReference = new FileReference(configFilePath);
         var configFile = FileReference.Exists(configFileReference) ? new ConfigFile(configFileReference) : new ConfigFile();
         var config = new ConfigHierarchy(new[] { configFile });
         const string section = "/Script/UnLuaEditor.UnLuaEditorSettings";
 
+        // 定义加载布尔配置的委托
         Action<string, string, bool> loadBoolConfig = (key, macro, defaultValue) =>
         {
             bool flag;
@@ -79,8 +93,9 @@ public class UnLua : ModuleRules
                 flag = defaultValue;
             PublicDefinitions.Add(string.Format("{0}={1}", macro, (flag ? "1" : "0")));
         };
-        
-        Action<string, string, string > loadStringConfig = (key, macro, defaultValue) =>
+
+        // 定义加载字符串配置的委托
+        Action<string, string, string> loadStringConfig = (key, macro, defaultValue) =>
         {
             string value;
             if (!config.GetString(section, key, out value))
@@ -88,6 +103,7 @@ public class UnLua : ModuleRules
             PublicDefinitions.Add(string.Format("{0}={1}", macro, value));
         };
 
+        // 加载各种配置
         loadBoolConfig("bAutoStartup", "AUTO_UNLUA_STARTUP", true);
         loadBoolConfig("bEnableDebug", "UNLUA_ENABLE_DEBUG", false);
         loadBoolConfig("bEnablePersistentParamBuffer", "ENABLE_PERSISTENT_PARAM_BUFFER", true);
@@ -103,6 +119,7 @@ public class UnLua : ModuleRules
         loadBoolConfig("bLegacyArgsPassing", "UNLUA_LEGACY_ARGS_PASSING", true);
         loadStringConfig("LuaVersion", "UNLUA_LUA_VERSION", "lua-5.4.3");
 
+        // 加载热重载模式配置
         string hotReloadMode;
         if (!config.GetString(section, "HotReloadMode", out hotReloadMode))
             hotReloadMode = "Manual";
@@ -110,16 +127,18 @@ public class UnLua : ModuleRules
         var withHotReload = hotReloadMode != "Never";
         PublicDefinitions.Add("UNLUA_WITH_HOT_RELOAD=" + (withHotReload ? "1" : "0"));
 
+        // 如果启用了 LuaCompat 插件，添加其包含路径
         if (IsPluginEnabled("LuaCompat"))
             PublicIncludePaths.Add(Path.Combine(PluginDirectory, "Source/ThirdParty/Lua/lua-compat-5.3/c-api"));
     }
 
+    // 检查插件是否启用
     private bool IsPluginEnabled(string name)
     {
         var engineDir = DirectoryReference.FromString(EngineDirectory);
         var projectDir = Target.ProjectFile.Directory;
         var projectDesc = ProjectDescriptor.FromFile(Target.ProjectFile);
-        
+
         foreach (var plugin in Plugins.ReadAvailablePlugins(engineDir, projectDir, null))
         {
             if (plugin.Name != name)

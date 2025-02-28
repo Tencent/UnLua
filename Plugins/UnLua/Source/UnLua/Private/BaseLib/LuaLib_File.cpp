@@ -476,7 +476,7 @@ static const luaL_Reg UE4FileLib[] =
 };
 
 
-BEGIN_EXPORT_NAMED_CLASS(File,UE4File)
+BEGIN_EXPORT_NAMED_CLASS(File, UE4File)
 ADD_LIB(UE4FileLib)
 ADD_FUNCTION(Open)
 ADD_FUNCTION(Close)

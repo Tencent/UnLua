@@ -20,6 +20,7 @@
 #include "UnLuaSettings.h"
 #include "UnLuaIntelliSense.h"
 #include "Animation/AnimNotifies/AnimNotifyState.h"
+#include "Serialization/JsonSerializer.h"
 
 #define LOCTEXT_NAMESPACE "FUnLuaEditorModule"
 
@@ -37,8 +38,10 @@ void FUnLuaEditorToolbar::Initialize()
 void FUnLuaEditorToolbar::BindCommands()
 {
     const auto& Commands = FUnLuaEditorCommands::Get();
-    CommandList->MapAction(Commands.CreateLuaTemplate, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CreateLuaTemplate_Executed));
-    CommandList->MapAction(Commands.CopyAsRelativePath, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CopyAsRelativePath_Executed));
+	CommandList->MapAction(Commands.CreateLuaTemplate, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CreateLuaTemplate_Executed));
+	CommandList->MapAction(Commands.CopyAsRelativePath, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CopyAsRelativePath_Executed));
+    CommandList->MapAction(Commands.CreateDefaultLuaTemplate, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CreateLuaDefualtTemplate_Executed));
+    CommandList->MapAction(Commands.CopyAsDefaultModuleName, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::CopyAsDefualtModuleName_Executed));
     CommandList->MapAction(Commands.BindToLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::BindToLua_Executed));
     CommandList->MapAction(Commands.UnbindFromLua, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::UnbindFromLua_Executed));
     CommandList->MapAction(Commands.RevealInExplorer, FExecuteAction::CreateRaw(this, &FUnLuaEditorToolbar::RevealInExplorer_Executed));
@@ -66,9 +69,11 @@ void FUnLuaEditorToolbar::BuildToolbar(FToolBarBuilder& ToolbarBuilder, UObject*
             }
             else
             {
-                MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath, NAME_None, LOCTEXT("CopyAsRelativePath", "Copy as Relative Path"));
+				MenuBuilder.AddMenuEntry(Commands.CopyAsRelativePath, NAME_None, LOCTEXT("CopyAsRelativePath", "Copy as Relative Path"));
                 MenuBuilder.AddMenuEntry(Commands.RevealInExplorer, NAME_None, LOCTEXT("RevealInExplorer", "Reveal in Explorer"));
-                MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate, NAME_None, LOCTEXT("CreateLuaTemplate", "Create Lua Template"));
+				MenuBuilder.AddMenuEntry(Commands.CreateLuaTemplate, NAME_None, LOCTEXT("CreateLuaTemplate", "Create Lua Template"));
+                MenuBuilder.AddMenuEntry(Commands.CopyAsDefaultModuleName, NAME_None, LOCTEXT("CopyAsDefaultModuleName", "Copy as Default Module Name"));
+				MenuBuilder.AddMenuEntry(Commands.CreateDefaultLuaTemplate, NAME_None, LOCTEXT("CreateDefaultLuaTemplate", "Create Default Lua Template"));
                 MenuBuilder.AddMenuEntry(Commands.UnbindFromLua, NAME_None, LOCTEXT("Unbind", "Unbind"));
             }
             return MenuBuilder.MakeWidget();
@@ -295,7 +300,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     {
         auto TemplateClassName = TemplateClass->GetName().EndsWith("_C") ? TemplateClass->GetName().LeftChop(2) : TemplateClass->GetName();
         auto RelativeFilePath = "Config/LuaTemplates" / TemplateClassName + ".lua";
-        auto FullFilePath = FPaths::ProjectConfigDir() / RelativeFilePath;
+        auto FullFilePath = FPaths::ProjectDir() / RelativeFilePath;
         if (!FPaths::FileExists(FullFilePath))
             FullFilePath = BaseDir / RelativeFilePath;
 
@@ -374,6 +379,147 @@ void FUnLuaEditorToolbar::CopyAsRelativePath_Executed() const
 
     const auto RelativePath = ModuleName.Replace(TEXT("."), TEXT("/")) + TEXT(".lua");
     FPlatformApplicationMisc::ClipboardCopy(*RelativePath);
+}
+
+void FUnLuaEditorToolbar::CreateLuaDefualtTemplate_Executed()
+{
+	const auto Blueprint = Cast<UBlueprint>(ContextObject);
+	if (!IsValid(Blueprint))
+		return;
+
+	const UClass* Class = Blueprint->GeneratedClass;
+	const FString ClassName = Class->GetName();
+	FString OuterPath = Class->GetPathName();
+
+    int32 LastIndex;
+    if (OuterPath.FindLastChar('/', LastIndex))
+    {
+        OuterPath = OuterPath.Left(LastIndex + 1);
+    }
+
+    OuterPath = OuterPath.RightChop(1);
+    int32 FirstIndex;
+    if (OuterPath.FindChar('/', FirstIndex))
+    {
+        OuterPath = OuterPath.RightChop(FirstIndex + 1);
+    }
+    
+	const FString FileName = FString::Printf(TEXT("%s%s%s.lua"), *GLuaSrcFullPath, *OuterPath, *ClassName);
+	if (FPaths::FileExists(FileName))
+	{
+		UE_LOG(LogUnLua, Warning, TEXT("Lua file (%s) is already existed!"), *ClassName);
+		return;
+	}
+
+    const UClass* UnLuaSuperClass = nullptr;
+    for (auto TemplateClass = Class->GetSuperClass(); TemplateClass; TemplateClass = TemplateClass->GetSuperClass())
+    {
+        if (TemplateClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
+        {
+            UnLuaSuperClass = TemplateClass;
+            break;
+        }
+    }
+
+	static FString BaseDir = IPluginManager::Get().FindPlugin(TEXT("UnLua"))->GetBaseDir();
+	for (auto TemplateClass = Class; TemplateClass; TemplateClass = TemplateClass->GetSuperClass())
+	{
+		auto TemplateClassName = TemplateClass->GetName().EndsWith("_C") ? TemplateClass->GetName().LeftChop(2) : TemplateClass->GetName();
+		auto RelativeFilePath = "Config/LuaTemplates" / TemplateClassName + ".lua";
+		auto FullFilePath = FPaths::ProjectDir() / RelativeFilePath;
+		if (!FPaths::FileExists(FullFilePath))
+			FullFilePath = BaseDir / RelativeFilePath;
+
+		if (!FPaths::FileExists(FullFilePath))
+			continue;
+
+        FString CompanyName = "";
+        FString AuthorName = "";
+        static FString UnLuaFilename = FPaths::ProjectSavedDir() / TEXT("UnLua.json");
+        if (FPaths::FileExists(UnLuaFilename))
+        {
+            FString JsonContent;
+            FFileHelper::LoadFileToString(JsonContent, *UnLuaFilename);
+            TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonContent);
+            TSharedPtr<FJsonObject> JsonObject;
+            if (FJsonSerializer::Deserialize(JsonReader, JsonObject))
+            {
+                if (JsonObject->HasField(TEXT("company")))
+                {
+                    JsonObject->TryGetStringField(TEXT("company"), CompanyName);
+                }
+
+                if (JsonObject->HasField(TEXT("author")))
+                {
+                    JsonObject->TryGetStringField(TEXT("author"), AuthorName);
+                }
+            }
+        }
+
+		FString Content;
+		FFileHelper::LoadFileToString(Content, *FullFilePath);
+		Content = Content.Replace(TEXT("TemplateName"), *ClassName)
+						 .Replace(TEXT("ClassName"), *UnLua::IntelliSense::GetTypeName(Class))
+                         .Replace(TEXT("@COMPANY **"), *FString::Printf(TEXT("@COMPANY %s"), *CompanyName))
+                         .Replace(TEXT("@AUTHOR **"), *FString::Printf(TEXT("@AUTHOR %s"), *AuthorName))
+                         .Replace(TEXT("${date}"), *FDateTime::Now().ToString(TEXT("%Y/%m/%d")))
+                         .Replace(TEXT("${time}"), *FDateTime::Now().ToString(TEXT("%H:%M:%S")));
+        
+        if (UnLuaSuperClass)
+        {
+            const FString SuperClassName = UnLuaSuperClass->GetName();
+            FString SuperPath = UnLuaSuperClass->GetPathName();
+            int32 SuperLastIndex;
+            if (SuperPath.FindLastChar('/', SuperLastIndex))
+            {
+                SuperPath = SuperPath.Left(SuperLastIndex + 1);
+            }
+            SuperPath = SuperPath.RightChop(6); // ignore "/Game/"
+            const FString SuperFileName = FString::Printf(TEXT("%s%s"), *SuperPath, *SuperClassName).Replace(TEXT("/"), TEXT("."));
+
+            Content = Content.Replace(TEXT(" = Class()"), *FString::Printf(TEXT(", Super = Class(\"%s\")"), *SuperFileName))
+                             .Replace(TEXT("self.Overridden"), TEXT("Super"));
+        }
+
+		FFileHelper::SaveStringToFile(Content, *FileName, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+		break;
+	}
+}
+
+void FUnLuaEditorToolbar::CopyAsDefualtModuleName_Executed() const
+{
+	const auto Blueprint = Cast<UBlueprint>(ContextObject);
+	if (!IsValid(Blueprint))
+		return;
+
+	const auto TargetClass = Blueprint->GeneratedClass;
+	if (!IsValid(TargetClass))
+		return;
+
+	if (!TargetClass->ImplementsInterface(UUnLuaInterface::StaticClass()))
+		return;
+
+	const UClass* Class = Blueprint->GeneratedClass;
+	const FString ClassName = Class->GetName();
+	FString OuterPath = Class->GetPathName();
+	int32 LastIndex;
+	if (OuterPath.FindLastChar('/', LastIndex))
+	{
+		OuterPath = OuterPath.Left(LastIndex + 1);
+	}
+
+    OuterPath = OuterPath.RightChop(1);
+    int32 FirstIndex;
+    if (OuterPath.FindChar('/', FirstIndex))
+    {
+        OuterPath = OuterPath.RightChop(FirstIndex + 1);
+    }
+
+	const FString FileName = FString::Printf(TEXT("%s%s.lua"), *OuterPath, *ClassName);
+
+	const auto RelativePath = FileName.Replace(TEXT("/"), TEXT("."));
+	const auto ReturnRelativePath = RelativePath.Replace(TEXT(".lua"), TEXT(""));
+	FPlatformApplicationMisc::ClipboardCopy(*ReturnRelativePath);
 }
 
 #undef LOCTEXT_NAMESPACE

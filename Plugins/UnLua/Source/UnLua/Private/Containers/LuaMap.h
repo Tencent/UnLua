@@ -17,7 +17,7 @@
 #include "LuaArray.h"
 #include "Runtime/Launch/Resources/Version.h"
 
-class FLuaMap
+class UNLUA_API FLuaMap
 {
 public:
     struct FLuaMapEnumerator

@@ -831,7 +831,7 @@ namespace UnLua
         virtual bool IsTriviallyDestructible() const override
         {
             static_assert(TIsDestructible<T>::Value, "type must be destructible!");
-            return TIsTriviallyDestructible<T>::Value;
+            return std::is_trivially_destructible_v<T>;
         }
 
         virtual int32 GetSize() const override { return sizeof(T); }
@@ -853,7 +853,7 @@ namespace UnLua
         virtual void Destruct(void* Dest) const override
         {
             static_assert(TIsDestructible<T>::Value, "type must be destructible!");
-            DestructInternal((T*)Dest, std::conditional_t<TIsTriviallyDestructible<T>::Value, FTrue, FFalse>());
+            DestructInternal((T*)Dest, std::conditional_t<std::is_trivially_destructible_v<T>, FTrue, FFalse>());
         }
 
         virtual void Copy(void* Dest, const void* Src) const override

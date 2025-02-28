@@ -20,7 +20,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FLuaDeadLoopCheckSpec, "UnLua.Settings", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FLuaDeadLoopCheckSpec, "UnLua.Settings", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext| EAutomationTestFlags::ClientContext )
 
     virtual bool SuppressLogWarnings() override
     {

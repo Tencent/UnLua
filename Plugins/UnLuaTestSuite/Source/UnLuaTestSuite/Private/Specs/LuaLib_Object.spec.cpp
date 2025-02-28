@@ -20,7 +20,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FUnLuaLibObjectSpec, "UnLua.API.UObject", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FUnLuaLibObjectSpec, "UnLua.API.UObject", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     lua_State* L;
     UWorld* World;
 END_DEFINE_SPEC(FUnLuaLibObjectSpec)

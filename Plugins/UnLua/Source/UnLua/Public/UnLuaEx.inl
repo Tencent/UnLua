@@ -1026,11 +1026,18 @@ namespace UnLua
         FExportedClassBase::GlueFunctions.Add(new FGlueFunction(InName, InFunc));
     }
 
+    template <typename Type>
+    struct TLuaNot
+    {
+        static constexpr bool Value = !Type::value;
+        static constexpr bool value = !Type::value;
+    };
+
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>
     void TExportedClass<bIsReflected, ClassType, CtorArgType...>::AddDefaultFunctions(FFalse NotReflected)
     {
         AddConstructor(std::conditional_t<TIsConstructible<ClassType, CtorArgType...>::Value, FTrue, FFalse>());
-        AddDestructor(std::conditional_t<TAnd<TIsDestructible<ClassType>, TNot<TIsTriviallyDestructible<ClassType>>>::Value, FFalse, FTrue>());
+        AddDestructor(std::conditional_t<TAnd<TIsDestructible<ClassType>, TLuaNot<std::is_trivially_destructible<ClassType>>>::Value, FFalse, FTrue>());
     }
 
     template <bool bIsReflected, typename ClassType, typename... CtorArgType>

@@ -19,7 +19,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FUnLuaLibMulticastDelegateSpec, "UnLua.API.FMulticastScriptDelegate", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FUnLuaLibMulticastDelegateSpec, "UnLua.API.FMulticastScriptDelegate", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     lua_State* L;
     UUnLuaTestStub* Stub;
 END_DEFINE_SPEC(FUnLuaLibMulticastDelegateSpec)

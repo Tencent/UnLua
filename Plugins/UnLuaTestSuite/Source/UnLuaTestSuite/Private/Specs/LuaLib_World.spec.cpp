@@ -21,7 +21,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FUnLuaLibWorldSpec, "UnLua.API.World", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FUnLuaLibWorldSpec, "UnLua.API.World", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     lua_State* L;
     UWorld* World;
 END_DEFINE_SPEC(FUnLuaLibWorldSpec)

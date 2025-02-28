@@ -58,7 +58,7 @@ namespace UnLua
         }
 
     private:
-        TSet<UObject*> ReferencedObjects;
+        TSet<TObjectPtr<UObject>> ReferencedObjects;
         FString Name = TEXT("FObjectReferencer");
     };
 }

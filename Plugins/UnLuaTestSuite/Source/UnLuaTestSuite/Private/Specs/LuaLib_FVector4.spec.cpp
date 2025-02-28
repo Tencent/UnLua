@@ -19,7 +19,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FUnLuaLibFVector4Spec, "UnLua.API.FVector4", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FUnLuaLibFVector4Spec, "UnLua.API.FVector4", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     TSharedPtr<UnLua::FLuaEnv> Env;
     lua_State* L;
 END_DEFINE_SPEC(FUnLuaLibFVector4Spec)

@@ -20,7 +20,7 @@
 #if WITH_DEV_AUTOMATION_TESTS
 
 
-BEGIN_DEFINE_SPEC(FLuaEnvSpec, "UnLua.API.FLuaEnv", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FLuaEnvSpec, "UnLua.API.FLuaEnv", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     TSharedPtr<UnLua::FLuaEnv> Env;
 END_DEFINE_SPEC(FLuaEnvSpec)
 

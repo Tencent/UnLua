@@ -20,7 +20,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FUnLuaLibClassSpec, "UnLua.API.UClass", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FUnLuaLibClassSpec, "UnLua.API.UClass", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     lua_State* L;
 END_DEFINE_SPEC(FUnLuaLibClassSpec)
 

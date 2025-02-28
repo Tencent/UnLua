@@ -367,22 +367,27 @@ typedef struct GCObject {
 #define setsvalue2n	setsvalue
 
 
-/*
-** Header for a string value.
-*/
-typedef struct TString {
-  CommonHeader;
-  lu_byte extra;  /* reserved words for short strings; "has hash" for longs */
-  lu_byte shrlen;  /* length for short strings */
-  unsigned int hash;
-  union {
-    size_t lnglen;  /* length for long strings */
-    struct TString *hnext;  /* linked list for hash table */
-  } u;
-  char contents[1];
-} TString;
+namespace lua {
+	/*
+	** Header for a string value.
+	*/
+	typedef struct TString {
+		CommonHeader;
+		lu_byte extra;  /* reserved words for short strings; "has hash" for longs */
+		lu_byte shrlen;  /* length for short strings */
+		unsigned int hash;
+		union {
+			size_t lnglen;  /* length for long strings */
+			struct TString* hnext;  /* linked list for hash table */
+		} u;
+		char contents[1];
+	} TString;
+}
 
 
+#ifndef TString
+#define TString lua::TString
+#endif // !TString
 
 /*
 ** Get the actual string (array of bytes) from a 'TString'.

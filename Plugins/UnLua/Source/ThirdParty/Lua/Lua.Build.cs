@@ -31,7 +31,7 @@ public class Lua : ModuleRules
     public Lua(ReadOnlyTargetRules Target) : base(Target)
     {
         Type = ModuleType.External;
-        bEnableUndefinedIdentifierWarnings = false;
+        UndefinedIdentifierWarningLevel = WarningLevel.Off;
         ShadowVariableWarningLevel = WarningLevel.Off;
 
         m_LuaVersion = GetLuaVersion();

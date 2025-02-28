@@ -19,7 +19,7 @@
 
 #if WITH_DEV_AUTOMATION_TESTS
 
-BEGIN_DEFINE_SPEC(FUnLuaLibMapSpec, "UnLua.API.TMap", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::ApplicationContextMask)
+BEGIN_DEFINE_SPEC(FUnLuaLibMapSpec, "UnLua.API.TMap", EAutomationTestFlags::ProductFilter | EAutomationTestFlags::EditorContext | EAutomationTestFlags::ClientContext)
     TSharedPtr<UnLua::FLuaEnv> Env;
     lua_State* L;
 END_DEFINE_SPEC(FUnLuaLibMapSpec)

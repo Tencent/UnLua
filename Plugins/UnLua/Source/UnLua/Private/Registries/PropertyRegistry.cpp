@@ -384,17 +384,43 @@ namespace UnLua
             };
             const auto StructProperty = new FStructProperty(PropertyCollector, Params);
             StructProperty->Struct = ScriptStruct;
-            StructProperty->ElementSize = ScriptStruct->PropertiesSize;
+            StructProperty->SetElementSize(ScriptStruct->PropertiesSize);
             Property = StructProperty;
 #endif
         }
         else if (const auto Enum = Cast<UEnum>(Field))
-        {
+		{
+#if UE_VERSION_OLDER_THAN(5, 5, 0)
             const auto EnumProperty = new FEnumProperty(PropertyCollector, NAME_None, RF_Transient, 0, CPF_HasGetValueTypeHash, Enum);
+#else
+            const auto Params = UECodeGen_Private::FEnumPropertyParams{
+			    nullptr,
+		        nullptr,
+		        CPF_HasGetValueTypeHash,
+		        UECodeGen_Private::EPropertyGenFlags::Enum,
+		        RF_Transient,
+#if UE_VERSION_OLDER_THAN(5, 3, 0)
+		        1,
+#endif
+		        nullptr,
+		        nullptr,
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
+		        1,
+#endif
+		        0,
+		        nullptr,
+#if UE_VERSION_NEWER_THAN(5, 2, 1)
+		        METADATA_PARAMS(0, nullptr)
+#else
+		        METADATA_PARAMS(nullptr, 0)
+#endif
+            };
+            const auto EnumProperty = new FEnumProperty(PropertyCollector, Params);
+#endif
             const auto UnderlyingProperty = new FByteProperty(EnumProperty, TEXT("UnderlyingType"), RF_Transient);
             Property = EnumProperty;
             Property->AddCppProperty(UnderlyingProperty);
-            Property->ElementSize = UnderlyingProperty->ElementSize;
+            Property->SetElementSize(UnderlyingProperty->GetElementSize());
             Property->PropertyFlags |= CPF_IsPlainOldData | CPF_NoDestructor | CPF_ZeroConstructor;
         }
         else

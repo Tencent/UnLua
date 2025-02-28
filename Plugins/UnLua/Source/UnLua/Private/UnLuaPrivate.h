@@ -43,10 +43,10 @@
 
 #if STATS
 DECLARE_STATS_GROUP(TEXT("UnLua"), STATGROUP_UnLua, STATCAT_Advanced);
-DECLARE_MEMORY_STAT_EXTERN(TEXT("Lua Memory"), STAT_UnLua_Lua_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
-DECLARE_MEMORY_STAT_EXTERN(TEXT("Persistent Parameter Buffer Memory"), STAT_UnLua_PersistentParamBuffer_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
-DECLARE_MEMORY_STAT_EXTERN(TEXT("OutParmRec Memory"), STAT_UnLua_OutParmRec_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
-DECLARE_MEMORY_STAT_EXTERN(TEXT("Container Element Cache Memory"), STAT_UnLua_ContainerElementCache_Memory, STATGROUP_UnLua, /*UNLUA_API*/);
+DECLARE_MEMORY_STAT_EXTERN(TEXT("Lua Memory"), STAT_UnLua_Lua_Memory, STATGROUP_UnLua, UNLUA_API);
+DECLARE_MEMORY_STAT_EXTERN(TEXT("Persistent Parameter Buffer Memory"), STAT_UnLua_PersistentParamBuffer_Memory, STATGROUP_UnLua, UNLUA_API);
+DECLARE_MEMORY_STAT_EXTERN(TEXT("OutParmRec Memory"), STAT_UnLua_OutParmRec_Memory, STATGROUP_UnLua, UNLUA_API);
+DECLARE_MEMORY_STAT_EXTERN(TEXT("Container Element Cache Memory"), STAT_UnLua_ContainerElementCache_Memory, STATGROUP_UnLua, UNLUA_API);
 
 #define UNLUA_DEFINE_STAT(Name) \
     DEFINE_STAT(STAT_UnLua_##Name);

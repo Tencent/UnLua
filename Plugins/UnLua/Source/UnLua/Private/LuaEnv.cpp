@@ -33,7 +33,7 @@
 
 namespace UnLua
 {
-    constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags::AsyncLoading | EInternalObjectFlags::Async;
+    constexpr EInternalObjectFlags AsyncObjectFlags = EInternalObjectFlags_AsyncLoading | EInternalObjectFlags::Async;
 
     TMap<lua_State*, FLuaEnv*> FLuaEnv::AllEnvs;
     FLuaEnv::FOnCreated FLuaEnv::OnCreated;
