@@ -28,7 +28,7 @@ namespace UnLua
 
     FEnumRegistry::~FEnumRegistry()
     {
-        for (const auto Pair : Name2Enums)
+        for (const auto& Pair : Name2Enums)
             delete Pair.Value;
     }
 

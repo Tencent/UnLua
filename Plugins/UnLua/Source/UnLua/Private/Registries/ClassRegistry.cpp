@@ -33,7 +33,7 @@ namespace UnLua
 
     FClassRegistry::~FClassRegistry()
     {
-        for (const auto Pair : Name2Classes)
+        for (const auto& Pair : Name2Classes)
             delete Pair.Value;
     }
 
