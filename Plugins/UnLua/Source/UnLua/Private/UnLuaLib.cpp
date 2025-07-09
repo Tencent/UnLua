@@ -2,6 +2,11 @@
 #include "LowLevel.h"
 #include "LuaEnv.h"
 #include "UnLuaBase.h"
+#include "Misc/Paths.h"
+#include "Misc/App.h"
+
+// 在开头添加DEBUG标志，用于调试
+#define UNLUA_DEBUG_PATH 1
 
 namespace UnLua
 {
@@ -234,7 +239,26 @@ namespace UnLua
         {
             lua_newtable(L);
             luaL_setfuncs(L, UnLua_Functions, 0);
-            lua_pushstring(L, "Content/Script/?.lua;Plugins/UnLua/Content/Script/?.lua");
+            
+            // 生成完整的默认搜索路径
+            FString ProjectContentPath = "Content/Script/?.lua;";
+            FString PluginBasePath = "Plugins/UnLua/Content/Script/?.lua;";
+            FString PluginsPath = "Plugins/*/Content/Script/?.lua;";
+            FString GameFeaturesPath = "Plugins/GameFeatures/*/Content/Script/?.lua";
+            
+            // 完整的搜索路径
+            FString FullPackagePath = ProjectContentPath + PluginBasePath + PluginsPath + GameFeaturesPath;
+            
+#if UNLUA_DEBUG_PATH
+            // 输出搜索路径信息以便调试
+            UE_LOG(LogUnLua, Display, TEXT("=================== UnLua Package Path =================="));
+            UE_LOG(LogUnLua, Display, TEXT("Setting PackagePath: %s"), *FullPackagePath);
+            UE_LOG(LogUnLua, Display, TEXT("Project Dir: %s"), *FPaths::ProjectDir());
+            UE_LOG(LogUnLua, Display, TEXT("Engine Dir: %s"), *FPaths::EngineDir());
+            UE_LOG(LogUnLua, Display, TEXT("========================================================="));
+#endif
+            
+            lua_pushstring(L, TCHAR_TO_UTF8(*FullPackagePath));
             lua_setfield(L, -2, PACKAGE_PATH_KEY);
             return 1;
         }

@@ -30,6 +30,13 @@
 #include "UnLuaLib.h"
 #include "UnLuaSettings.h"
 #include "lstate.h"
+#include "Containers/Queue.h"
+#include "Interfaces/IPluginManager.h"
+#include "HAL/FileManager.h"
+#include "Misc/Paths.h"
+
+// 添加调试定义
+#define UNLUA_DEBUG_PATH 1
 
 namespace UnLua
 {
@@ -599,12 +606,19 @@ namespace UnLua
         FString FileName(UTF8_TO_TCHAR(lua_tostring(L, 1)));
         FileName.ReplaceInline(TEXT("."), TEXT("/"));
 
+#if UNLUA_DEBUG_PATH
+        UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Trying to load module: %s"), *FileName);
+#endif
+
         auto& Env = *(FLuaEnv*)lua_touserdata(L, lua_upvalueindex(1));
         TArray<uint8> Data;
         FString FullPath;
 
         auto LoadIt = [&]
         {
+#if UNLUA_DEBUG_PATH
+            UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Successfully loaded file: %s"), *FullPath);
+#endif
             if (Env.LoadString(L, Data, FullPath))
                 return 1;
             const auto Msg = FString::Printf(TEXT("file loading from file system error.\nfull path:%s"), *FullPath);
@@ -615,13 +629,169 @@ namespace UnLua
         if (PackagePath.IsEmpty())
             return 0;
 
+#if UNLUA_DEBUG_PATH
+        UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Package path: %s"), *PackagePath);
+#endif
+
         TArray<FString> Patterns;
         if (PackagePath.ParseIntoArray(Patterns, TEXT(";"), false) == 0)
             return 0;
 
+#if UNLUA_DEBUG_PATH
+        UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Found %d patterns"), Patterns.Num());
+#endif
+
+        // 特殊处理 GameFeature 插件路径
+        // 如果是PluginName.ModuleName这样的模块格式，尝试直接定位到对应插件
+        if (FileName.Contains(TEXT("/")))
+        {
+            TArray<FString> ModuleParts;
+            FileName.ParseIntoArray(ModuleParts, TEXT("/"));
+            
+            if (ModuleParts.Num() >= 2)
+            {
+                FString PluginName = ModuleParts[0];
+                FString ModuleFile = ModuleParts[ModuleParts.Num() - 1];
+                
+#if UNLUA_DEBUG_PATH
+                UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Searching for module in plugin - Plugin: %s, Module: %s"), 
+                       *PluginName, *ModuleFile);
+#endif
+
+                // 尝试在GameFeature插件中查找
+                FString GameFeaturePath = FPaths::Combine(
+                    FPaths::ProjectPluginsDir(),
+                    TEXT("GameFeatures"),
+                    PluginName,
+                    TEXT("Content/Script"),
+                    PluginName,
+                    ModuleFile + TEXT(".lua")
+                );
+                
+                FullPath = FPaths::ConvertRelativePathToFull(GameFeaturePath);
+                
+#if UNLUA_DEBUG_PATH
+                UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Checking GameFeature plugin path: %s"), *FullPath);
+#endif
+                
+                if (FPaths::FileExists(FullPath) && FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+                {
+                    return LoadIt();
+                }
+                
+                // 尝试在普通插件中查找
+                FString NormalPluginPath = FPaths::Combine(
+                    FPaths::ProjectPluginsDir(),
+                    PluginName,
+                    TEXT("Content/Script"),
+                    PluginName,
+                    ModuleFile + TEXT(".lua")
+                );
+                
+                FullPath = FPaths::ConvertRelativePathToFull(NormalPluginPath);
+                
+#if UNLUA_DEBUG_PATH
+                UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Checking normal plugin path: %s"), *FullPath);
+#endif
+                
+                if (FPaths::FileExists(FullPath) && FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+                {
+                    return LoadIt();
+                }
+                
+                // 尝试第二种常见结构 - 直接在Content/Script下
+                FString DirectPath = FPaths::Combine(
+                    FPaths::ProjectPluginsDir(),
+                    TEXT("GameFeatures"),
+                    PluginName,
+                    TEXT("Content/Script"),
+                    ModuleFile + TEXT(".lua")
+                );
+                
+                FullPath = FPaths::ConvertRelativePathToFull(DirectPath);
+                
+#if UNLUA_DEBUG_PATH
+                UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Checking direct GameFeature path: %s"), *FullPath);
+#endif
+                
+                if (FPaths::FileExists(FullPath) && FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+                {
+                    return LoadIt();
+                }
+                
+                // 尝试普通插件的直接路径
+                FString DirectNormalPath = FPaths::Combine(
+                    FPaths::ProjectPluginsDir(),
+                    PluginName,
+                    TEXT("Content/Script"),
+                    ModuleFile + TEXT(".lua")
+                );
+                
+                FullPath = FPaths::ConvertRelativePathToFull(DirectNormalPath);
+                
+#if UNLUA_DEBUG_PATH
+                UE_LOG(LogUnLua, Display, TEXT("[UnLua] LoadFromFileSystem - Checking direct normal plugin path: %s"), *FullPath);
+#endif
+                
+                if (FPaths::FileExists(FullPath) && FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+                {
+                    return LoadIt();
+                }
+            }
+        }
+
         // 优先加载下载目录下的单文件
         for (auto& Pattern : Patterns)
         {
+            // 处理通配符路径，例如Plugins/*/Content/Script
+            bool bHasWildcard = Pattern.Contains(TEXT("*"));
+            if (bHasWildcard)
+            {
+                // 找到通配符位置
+                int32 WildcardPos = Pattern.Find(TEXT("*"));
+                if (WildcardPos != INDEX_NONE)
+                {
+                    FString PreWildcard = Pattern.Left(WildcardPos);
+                    FString PostWildcard = Pattern.Mid(WildcardPos + 1);
+                    
+                    // 替换问号为文件名
+                    FString FilePartPattern = PostWildcard;
+                    FilePartPattern.ReplaceInline(TEXT("?"), *FileName);
+                    
+                    // 获取插件目录
+                    IFileManager& FileManager = IFileManager::Get();
+                    TArray<FString> Plugins;
+                    
+                    // 判断是GameFeature插件还是普通插件
+                    FString PluginsRoot;
+                    if (PreWildcard.Contains(TEXT("GameFeatures")))
+                    {
+                        PluginsRoot = FPaths::ProjectPluginsDir() / TEXT("GameFeatures");
+                    }
+                    else
+                    {
+                        PluginsRoot = FPaths::ProjectPluginsDir();
+                    }
+                    
+                    // 获取所有插件目录
+                    FileManager.FindFiles(Plugins, *PluginsRoot, false, true);
+                    
+                    // 检查每个插件目录下的文件
+                    for (const FString& Plugin : Plugins)
+                    {
+                        FString TestPath = FPaths::Combine(PluginsRoot, Plugin, FilePartPattern);
+                        FullPath = FPaths::ConvertRelativePathToFull(TestPath);
+                        
+                        if (FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+                            return LoadIt();
+                    }
+                    
+                    // 找不到文件时继续下一个模式
+                    continue;
+                }
+            }
+            
+            // 处理标准路径
             Pattern.ReplaceInline(TEXT("?"), *FileName);
             const auto PathWithPersistentDir = FPaths::Combine(FPaths::ProjectPersistentDownloadDir(), Pattern);
             FullPath = FPaths::ConvertRelativePathToFull(PathWithPersistentDir);
@@ -632,12 +802,64 @@ namespace UnLua
         // 其次是打包目录下的文件
         for (auto& Pattern : Patterns)
         {
+            // 同样处理通配符路径
+            bool bHasWildcard = Pattern.Contains(TEXT("*"));
+            if (bHasWildcard)
+            {
+                // 找到通配符位置
+                int32 WildcardPos = Pattern.Find(TEXT("*"));
+                if (WildcardPos != INDEX_NONE)
+                {
+                    FString PreWildcard = Pattern.Left(WildcardPos);
+                    FString PostWildcard = Pattern.Mid(WildcardPos + 1);
+                    
+                    // 替换问号为文件名
+                    FString FilePartPattern = PostWildcard;
+                    FilePartPattern.ReplaceInline(TEXT("?"), *FileName);
+                    
+                    // 获取插件目录
+                    IFileManager& FileManager = IFileManager::Get();
+                    TArray<FString> Plugins;
+                    
+                    // 判断是GameFeature插件还是普通插件
+                    FString PluginsRoot;
+                    if (PreWildcard.Contains(TEXT("GameFeatures")))
+                    {
+                        PluginsRoot = FPaths::ProjectPluginsDir() / TEXT("GameFeatures");
+                    }
+                    else
+                    {
+                        PluginsRoot = FPaths::ProjectPluginsDir();
+                    }
+                    
+                    // 获取所有插件目录
+                    FileManager.FindFiles(Plugins, *PluginsRoot, false, true);
+                    
+                    // 检查每个插件目录下的文件
+                    for (const FString& Plugin : Plugins)
+                    {
+                        FString TestPath = FPaths::Combine(FPaths::ProjectDir(), PreWildcard, Plugin, FilePartPattern);
+                        FullPath = FPaths::ConvertRelativePathToFull(TestPath);
+                        
+                        if (FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
+                            return LoadIt();
+                    }
+                    
+                    // 找不到文件时继续下一个模式
+                    continue;
+                }
+            }
+            
+            // 处理标准路径
             const auto PathWithProjectDir = FPaths::Combine(FPaths::ProjectDir(), Pattern);
             FullPath = FPaths::ConvertRelativePathToFull(PathWithProjectDir);
             if (FFileHelper::LoadFileToArray(Data, *FullPath, FILEREAD_Silent))
                 return LoadIt();
         }
-
+        
+#if UNLUA_DEBUG_PATH
+        UE_LOG(LogUnLua, Warning, TEXT("[UnLua] LoadFromFileSystem - File not found: %s"), *FileName);
+#endif
         return 0;
     }
 
