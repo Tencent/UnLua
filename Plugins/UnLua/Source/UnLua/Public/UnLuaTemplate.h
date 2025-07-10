@@ -343,3 +343,33 @@ DEFINE_TYPE(FText)
 DEFINE_SMART_POINTER(TSharedPtr)
 DEFINE_SMART_POINTER(TSharedRef)
 DEFINE_SMART_POINTER(TWeakPtr)
+
+/**
+ * Define container names
+ */
+template<typename ElementType, typename Allocator>
+struct UnLua::TType<TArray<ElementType, Allocator>, false>
+{
+	static const char * GetName()
+	{
+		return "TArray<>";
+	}
+};
+
+template<typename KeyType, typename ValueType, typename SetAllocator, typename KeyFunc>
+struct UnLua::TType<TMap<KeyType, ValueType, SetAllocator, KeyFunc>, false>
+{
+	static const char * GetName()
+	{
+		return "TMap<>";
+	}
+};
+
+template<typename InElementType, typename KeyFunc, typename Allocator>
+struct UnLua::TType<TSet<InElementType, KeyFunc, Allocator>, false>
+{
+	static const char * GetName()
+	{
+		return "TSet<>";
+	}
+};

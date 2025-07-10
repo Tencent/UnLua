@@ -474,12 +474,25 @@ namespace UnLua
     /**
      * Get value from the stack.
      */
-    template <typename T> T Get(lua_State* L, int32 Index, TType<T>);
+    template <typename T> auto Get(lua_State *L, int32 Index, TType<T>)
+		-> std::enable_if_t<!std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>;
 
-    template <typename T> T* Get(lua_State* L, int32 Index, TType<T*>);
+	template <typename T> auto Get(lua_State *L, int32 Index, TType<T>)
+		-> std::enable_if_t<std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>;
 
-    template <typename T> T& Get(lua_State* L, int32 Index, TType<T&>);
+    template <typename T> T* Get(lua_State *L, int32 Index, TType<T*>);
 
+    template <typename T> T& Get(lua_State *L, int32 Index, TType<T&>);
+
+	template <typename T> auto GetChecked(lua_State *L, int32 Index, TType<T>)
+		-> std::enable_if_t<!std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>;
+
+	template <typename T> auto GetChecked(lua_State *L, int32 Index, TType<T>)
+		-> std::enable_if_t<std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>;
+
+	template <typename T> T* GetChecked(lua_State *L, int32 Index, TType<T*>);
+
+	template <typename T> T& GetChecked(lua_State *L, int32 Index, TType<T&>);
     template <typename T> TSubclassOf<T> Get(lua_State* L, int32 Index, TType<TSubclassOf<T>>);
     template <typename T> TSubclassOf<T>* Get(lua_State* L, int32 Index, TType<TSubclassOf<T>*>);
     template <typename T> TSubclassOf<T>& Get(lua_State* L, int32 Index, TType<TSubclassOf<T>&>);
@@ -1007,9 +1020,11 @@ namespace UnLua
             return TPointerHelper<typename TRemoveReference<T>::Type>::Push(L, &V);
         }
 
-        static T Get(lua_State* L, int32 Index)
+        static T Get(lua_State *L, int32 Index, bool bIfNeedCheck = false)
         {
-            T* V = (T*)UnLua::GetPointer(L, Index);
+            T *V = (T*)UnLua::GetPointer(L, Index);
+        	if ( UNLIKELY(!V) && bIfNeedCheck )
+        		luaL_typeerror(L, lua_absindex(L, Index), TType<typename TDecay<T>::Type>::GetName());
             return *V;
         }
     };
@@ -1024,6 +1039,11 @@ namespace UnLua
         }
 
         static T Get(lua_State* L, int32 Index)
+        {
+            return (T)lua_tointeger(L, Index);
+        }
+
+        static T Get(lua_State *L, int32 Index, bool bIfNeedCheck = false)
         {
             return (T)lua_tointeger(L, Index);
         }
@@ -1068,22 +1088,62 @@ namespace UnLua
      * Get value from the stack.
      */
     template <typename T>
-    FORCEINLINE T Get(lua_State* L, int32 Index, TType<T>)
+	FORCEINLINE auto Get(lua_State *L, int32 Index, TType<T>)
+		-> std::enable_if_t<!std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>
     {
         return TGenericTypeHelper<T>::Get(L, Index);
     }
 
+	template <typename T>
+	FORCEINLINE auto Get(lua_State *L, int32 Index, TType<T> Ty)
+		-> std::enable_if_t<std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>
+    {
+    	return TGenericTypeHelper<T>::Get(L, Index, Ty.bIfNeedCheck);
+    }
+
     template <typename T>
-    FORCEINLINE T* Get(lua_State* L, int32 Index, TType<T*>)
+    FORCEINLINE T* Get(lua_State *L, int32 Index, TType<T*>)
     {
         return TPointerHelper<T>::Get(L, Index);
     }
 
     template <typename T>
-    FORCEINLINE T& Get(lua_State* L, int32 Index, TType<T&>)
+    FORCEINLINE T& Get(lua_State *L, int32 Index, TType<T&>)
     {
-        T* V = TPointerHelper<T>::Get(L, Index);
+        T *V = TPointerHelper<T>::Get(L, Index);
         return *V;
+    }
+
+	template <typename T>
+	FORCEINLINE auto GetChecked(lua_State *L, int32 Index, TType<T> Ty)
+		-> std::enable_if_t<!std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>
+    {
+    	// NOT Checkable type && in check context, using custom UnLua::Get
+    	return Get(L, Index, Ty);
+    }
+
+	template <typename T>
+	FORCEINLINE auto GetChecked(lua_State *L, int32 Index, TType<T> Ty)
+		-> std::enable_if_t<std::is_base_of<TTypeCheckable<T>, TType<T>>::value, T>
+    {
+    	// Checkable type && in check context, using custom UnLua::Get or TGenericTypeHelper<T>::Get
+    	Ty.EnableCheck();
+    	return Get(L, Index, Ty);
+    }
+
+	template <typename T>
+	FORCEINLINE T* GetChecked(lua_State *L, int32 Index, TType<T*> Ty)
+    {
+    	return Get(L, Index, Ty);
+    }
+
+	template <typename T>
+	FORCEINLINE T& GetChecked(lua_State *L, int32 Index, TType<T&>)
+    {
+    	T *V = TPointerHelper<T>::Get(L, Index);
+    	if ( UNLIKELY(!V) )
+    		luaL_typeerror(L, lua_absindex(L, Index), TType<typename TDecay<T>::Type>::GetName());
+    	return *V;
     }
 
     template <typename T>

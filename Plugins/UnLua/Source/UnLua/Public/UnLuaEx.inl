@@ -250,6 +250,14 @@ namespace UnLua
         return TTuple<T...>(UnLua::Get(L, Offset + N, TType<T>())...);
     }
 
+    /**
+	 * Get arguments from Lua stack, avoid nullptr access crash but throw lua error
+	 */
+	template <typename... T, uint32... N>
+	FORCEINLINE_DEBUGGABLE TTuple<T...> GetArgsChecked(lua_State *L, TIndices<N...>, uint32 Offset = 0)
+    {
+    	return TTuple<T...>(UnLua::GetChecked(L, Offset + N, TType<T>())...);
+    }
 
     /**
      * Generic closure to help invoke exported function
@@ -367,7 +375,7 @@ namespace UnLua
             return 0;
         }
 
-        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type(), 1);
+        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgsChecked<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type(), 1);
         Construct(L, Args, typename TZeroBasedIndices<Expected>::Type());
         return 1;
     }
@@ -444,7 +452,7 @@ namespace UnLua
             return 0;
         }
 
-        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
+        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgsChecked<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
         Construct(L, Args, typename TZeroBasedIndices<Expected>::Type());
         return 1;
     }
@@ -527,7 +535,7 @@ namespace UnLua
             UE_LOG(LogUnLua, Warning, TEXT("Attempted to call %s with invalid arguments. %d expected but got %d."), *Name, Expected, Actual);
             return 0;
         }
-        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
+        TTuple<typename TArgTypeTraits<ArgType>::Type...> Args = GetArgsChecked<typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
         return TInvokingHelper<RetType>::Invoke(L, Func, Args, typename TZeroBasedIndices<Expected>::Type());
     }
 
@@ -579,7 +587,7 @@ namespace UnLua
             UE_LOG(LogUnLua, Warning, TEXT("Attempted to call %s::%s with invalid arguments. %d expected but got %d."), *ClassName, *Name, Expected, Actual);
             return 0;
         }
-        TTuple<ClassType*, typename TArgTypeTraits<ArgType>::Type...> Args = GetArgs<ClassType*, typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
+        TTuple<ClassType*, typename TArgTypeTraits<ArgType>::Type...> Args = GetArgsChecked<ClassType*, typename TArgTypeTraits<ArgType>::Type...>(L, typename TOneBasedIndices<Expected>::Type());
         if (Args.template Get<0>() == nullptr)
         {
             UE_LOG(LogUnLua, Error, TEXT("Attempted to call %s::%s with nullptr of 'this'."), *ClassName, *Name);
