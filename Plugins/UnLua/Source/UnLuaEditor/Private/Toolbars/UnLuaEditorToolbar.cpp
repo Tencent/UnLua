@@ -295,7 +295,7 @@ void FUnLuaEditorToolbar::CreateLuaTemplate_Executed()
     {
         auto TemplateClassName = TemplateClass->GetName().EndsWith("_C") ? TemplateClass->GetName().LeftChop(2) : TemplateClass->GetName();
         auto RelativeFilePath = "Config/LuaTemplates" / TemplateClassName + ".lua";
-        auto FullFilePath = FPaths::ProjectConfigDir() / RelativeFilePath;
+        auto FullFilePath = FPaths::ProjectDir() / RelativeFilePath;
         if (!FPaths::FileExists(FullFilePath))
             FullFilePath = BaseDir / RelativeFilePath;
 
