@@ -32,6 +32,18 @@ DEFINE_FUNCTION(ULuaFunction::execCallLua)
         // PIE 结束时可能已经没有Lua环境了
         return;
     }
+
+    // 如果调用的 ULuaFunction 来自父类，且与对象的 UClass 不是同一个类。
+    // 这就是为什么我们跳过调用 Lua 端，而是调用被重写的函数，以防止继承相关的 bugs
+    if (LuaFunction->GetOverriddenUClass() != Context->GetClass())
+    {
+        const auto Overridden = LuaFunction->GetOverridden();
+        if (Overridden)
+        {
+            Context->CallFunction(Stack, RESULT_PARAM, Overridden);
+        }
+        return;
+    }
     Env->GetFunctionRegistry()->Invoke(LuaFunction, Context, Stack, RESULT_PARAM);
 }
 
@@ -44,6 +56,18 @@ DEFINE_FUNCTION(ULuaFunction::execScriptCallLua)
     if (!Env)
     {
         // PIE 结束时可能已经没有Lua环境了
+        return;
+    }
+
+    // 如果调用的 ULuaFunction 来自父类，且与对象的 UClass 不是同一个类。
+    // 这就是为什么我们跳过调用 Lua 端，而是调用被重写的函数，以防止继承相关的 bugs
+    if (LuaFunction->GetOverriddenUClass() != Context->GetClass())
+    {
+        const auto Overridden = LuaFunction->GetOverridden();
+        if (Overridden)
+        {
+            Context->CallFunction(Stack, RESULT_PARAM, Overridden);
+        }
         return;
     }
     Env->GetFunctionRegistry()->Invoke(LuaFunction, Context, Stack, RESULT_PARAM);
