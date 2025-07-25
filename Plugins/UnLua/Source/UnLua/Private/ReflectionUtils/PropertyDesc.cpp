@@ -271,7 +271,7 @@ public:
     explicit FObjectPropertyDesc(FProperty *InProperty, bool bSoftObject)
         : FPropertyDesc(InProperty), MetaClass(nullptr), IsSoftObject(bSoftObject)
     {
-        if (ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
+        if (ObjectBaseProperty->PropertyClass && ObjectBaseProperty->PropertyClass->IsChildOf(UClass::StaticClass()))
         {
             MetaClass = bSoftObject ? (((FSoftClassProperty*)Property)->MetaClass) : ((FClassProperty*)Property)->MetaClass;
         }
