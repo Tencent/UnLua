@@ -41,29 +41,43 @@ namespace UnLua
 
     void FDelegateRegistry::OnPostGarbageCollect()
     {
+        TSet<void*> InvalidDelegates;
         TArray<TTuple<void*, FDelegateInfo>> InvalidPairs;
         for (auto& Pair : Delegates)
         {
             if (!Pair.Value.Owner.IsValid())
+            {
                 InvalidPairs.Add(Pair);
+                InvalidDelegates.Add(Pair.Key);
+            }
         }
 
         for (int i = 0; i < InvalidPairs.Num(); i++)
         {
             const auto& Pair = InvalidPairs[i];
+
             if (Pair.Value.bIsMulticast)
+            {
                 Clear(Pair.Key);
+            }
             else
+            {
                 Unbind(Pair.Key);
+            }
             Delegates.Remove(Pair.Key);
+
             if (Pair.Value.bDeleteOnRemove)
+            {
                 delete (FScriptDelegate*)Pair.Key;
+            }
         }
 
         TArray<FLuaDelegatePair> ToRemove;
         for (auto& Pair : CachedHandlers)
         {
-            if (Pair.Key.SelfObject.IsStale())
+            if (Pair.Key.SelfObject.IsStale()
+                || !Pair.Value.IsValid()
+                || InvalidDelegates.Contains(Pair.Value->Delegate))
             {
                 ToRemove.Add(Pair.Key);
                 Env->AutoObjectReference.Remove(Pair.Value.Get());
