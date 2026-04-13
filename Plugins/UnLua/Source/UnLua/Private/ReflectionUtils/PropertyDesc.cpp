@@ -416,7 +416,7 @@ class FSoftObjectPropertyDesc : public FPropertyDesc
 {
 public:
     explicit FSoftObjectPropertyDesc(FProperty* InProperty)
-        : FPropertyDesc(InProperty)
+        : FPropertyDesc(InProperty), bFirstPropOfScriptStruct(GetPropertyOuter(Property)->IsA<UScriptStruct>() && Property->GetOffset_ForInternal() == 0)
     {
     }
 
@@ -463,7 +463,7 @@ public:
             }
             else
             {
-                UnLua::PushPointer(L, (void*)ValuePtr, "FSoftObjectPtr", false);
+                UnLua::PushPointer(L, (void*)ValuePtr, "FSoftObjectPtr", bFirstPropOfScriptStruct);
             }
         }
     }
@@ -525,6 +525,9 @@ public:
         return true;
     };
 #endif
+
+protected:
+	bool bFirstPropOfScriptStruct;
 };
 
 /**
