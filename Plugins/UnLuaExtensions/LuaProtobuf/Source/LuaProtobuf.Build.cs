@@ -27,7 +27,11 @@ public class LuaProtobuf : ModuleRules
 #endif
         bUseUnity = false;
         PCHUsage = PCHUsageMode.NoSharedPCHs;
+#if UE_5_5_OR_LATER
+        CppCompileWarningSettings.UndefinedIdentifierWarningLevel = WarningLevel.Off;
+#else
         bEnableUndefinedIdentifierWarnings = false;
+#endif
 
         PublicDependencyModuleNames.AddRange(
             new[]

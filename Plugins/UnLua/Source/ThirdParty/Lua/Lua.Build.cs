@@ -31,8 +31,13 @@ public class Lua : ModuleRules
     public Lua(ReadOnlyTargetRules Target) : base(Target)
     {
         Type = ModuleType.External;
+#if UE_5_5_OR_LATER
+        CppCompileWarningSettings.UndefinedIdentifierWarningLevel = WarningLevel.Off;
+        CppCompileWarningSettings.ShadowVariableWarningLevel = WarningLevel.Off;
+#else
         bEnableUndefinedIdentifierWarnings = false;
         ShadowVariableWarningLevel = WarningLevel.Off;
+#endif
 
         m_LuaVersion = GetLuaVersion();
         m_Config = GetConfigName();
@@ -442,12 +447,12 @@ public class Lua : ModuleRules
                 return "Ninja";
             if (Target.Platform.IsInGroup(UnrealPlatformGroup.Windows))
             {
+#if !UE_5_7_OR_LATER
                 if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2019)
                     return "Visual Studio 16 2019";
-#if UE_4_27_OR_LATER
+#endif
                 if (Target.WindowsPlatform.Compiler == WindowsCompiler.VisualStudio2022)
                     return "Visual Studio 17 2022";
-#endif
             }
         }
 
