@@ -59,12 +59,17 @@ void FUnLuaLibClassSpec::Define()
     {
         It(TEXT("正确获取类默认对象"), EAsyncExecution::TaskGraphMainThread, [this]()
         {
-            const UObject* Expected = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"))->GetDefaultObject();
+            const auto Class = LoadClass<AGameModeBase>(nullptr, TEXT("/Game/Core/Blueprints/BP_Game.BP_Game_C"));
+            if (!TestNotNull(TEXT("BP_Game class"), Class))
+                return;
+            const UObject* Expected = Class->GetDefaultObject();
             const char* Chunk = "\
             local GameModeClass = UE.UClass.Load('/Game/Core/Blueprints/BP_Game.BP_Game_C')\
             return GameModeClass:GetDefaultObject()";
             UnLua::RunChunk(L, Chunk);
-            const UObject* Actual = static_cast<UObject*>(UnLua::GetPointer(L, -1));
+            // UObject userdata is managed by FObjectRegistry, so it must be read back
+            // with GetUObject; GetPointer only understands raw/smart-pointer userdata
+            const UObject* Actual = UnLua::GetUObject(L, -1);
             TEST_EQUAL(Actual, Expected);
         });
     });
