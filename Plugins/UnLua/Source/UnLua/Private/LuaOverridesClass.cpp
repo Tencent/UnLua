@@ -71,7 +71,9 @@ void ULuaOverridesClass::AddToOwner()
     if (!Class)
         return;
 
-#if UE_VERSION_NEWER_THAN(5, 2, 1)
+#if UE_VERSION_NEWER_THAN(5, 2, 1) && UE_VERSION_OLDER_THAN(5, 7, 0)
+    // 5.3~5.6: Children is TObjectPtr but UField::Next is still a raw pointer,
+    // so the chain cannot be walked in place with a single slot type
     auto ChildrenPtr = Class->Children.Get();
 
     auto Field = &ChildrenPtr;
@@ -101,7 +103,9 @@ void ULuaOverridesClass::RemoveFromOwner()
     if (!Class)
         return;
 
-#if UE_VERSION_NEWER_THAN(5, 2, 1)
+#if UE_VERSION_NEWER_THAN(5, 2, 1) && UE_VERSION_OLDER_THAN(5, 7, 0)
+    // 5.3~5.6: Children is TObjectPtr but UField::Next is still a raw pointer,
+    // so the chain cannot be walked in place with a single slot type
     auto ChildrenPtr = Class->Children.Get();
 
     auto Field = &ChildrenPtr;
