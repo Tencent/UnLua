@@ -20,7 +20,10 @@ public class TPSProjectEditorTarget : TargetRules
     public TPSProjectEditorTarget(TargetInfo Target) : base(Target)
     {
         Type = TargetType.Editor;
-#if UE_5_4_OR_LATER
+#if UE_5_7_OR_LATER
+        DefaultBuildSettings = BuildSettingsVersion.V6;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
+#elif UE_5_4_OR_LATER
         DefaultBuildSettings = BuildSettingsVersion.V4;
         IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 #else
